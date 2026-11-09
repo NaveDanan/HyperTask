@@ -1,9 +1,10 @@
 import { ipcMain, type BrowserWindow } from 'electron';
-import { IpcChannel as C, type CompanyCertificate, type CustomThemeFiles, type OpenAIEndpointTestRequest } from '@shared/api';
+import { IpcChannel as C, type CompanyCertificate, type CustomThemeFiles, type JiraCredentials, type OpenAIEndpointTestRequest } from '@shared/api';
 import { CompanyCertificateStore } from './certificates';
 import { installCustomTheme, listCustomThemes, readPluginDirectory, removeCustomTheme } from './custom-themes';
 import { protect } from './dpapi';
 import { loadGoogleFont } from './google-fonts';
+import { JiraCredentialFiles } from './jira-credentials';
 import { testEndpoint, writeEndpointSettings } from './openai-endpoint';
 import { toIpcResult } from './settings-error';
 
@@ -20,6 +21,14 @@ export function registerSettingsIpc(deps: SettingsIpcDeps): void {
   const certificates = new CompanyCertificateStore(deps.supportDirectory);
 
   ipcMain.handle(C.DpapiProtect, (_, value: string) => toIpcResult(() => protect(value)));
+
+  const jira = new JiraCredentialFiles(deps.supportDirectory);
+  ipcMain.handle(C.JiraReadCredentials, (_, accountId: string) => toIpcResult(() => jira.read(accountId)));
+  ipcMain.handle(C.JiraWriteCredentials, (_, accountId: string, credentials: JiraCredentials) =>
+    toIpcResult(() => jira.write(accountId, credentials)),
+  );
+  ipcMain.handle(C.JiraDeleteCredentials, (_, accountId: string) => toIpcResult(() => jira.delete(accountId)));
+  ipcMain.handle(C.JiraCredentialsPersistent, () => jira.isPersistent);
 
   ipcMain.handle(C.AiEndpointWriteSettings, (_, json: string) =>
     toIpcResult(() => writeEndpointSettings(deps.supportDirectory(), json)),

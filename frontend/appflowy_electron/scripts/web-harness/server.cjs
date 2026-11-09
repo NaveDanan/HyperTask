@@ -44,6 +44,7 @@ const decode = (text) =>
     return v;
   });
 
+const jiraCredentials = new Map();
 const clients = new Set();
 const broadcast = (event) => {
   const data = `data: ${encode(event)}\n\n`;
@@ -85,6 +86,19 @@ const handlers = {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, content);
   },
+  'fs.writeBytes': (target, data) => {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, Buffer.from(data));
+  },
+  'net.request': async ({ url, method, headers, body }) => {
+    const response = await fetch(url, { method, headers, body });
+    return { status: response.status, headers: Object.fromEntries(response.headers), body: await response.text() };
+  },
+  // Session-only Jira credentials (no DPAPI in the harness).
+  'jira.readCredentials': (accountId) => ({ ok: true, value: jiraCredentials.get(accountId) ?? null }),
+  'jira.writeCredentials': (accountId, credentials) => (jiraCredentials.set(accountId, credentials), { ok: true, value: undefined }),
+  'jira.deleteCredentials': (accountId) => (jiraCredentials.delete(accountId), { ok: true, value: undefined }),
+  'jira.isPersistent': () => false,
   'window.isMaximized': () => false,
   'themes.list': () => [],
   'certificates.list': () => [],

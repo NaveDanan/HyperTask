@@ -203,6 +203,10 @@ function registerIpc() {
       return null;
     }
   });
+  ipcMain.handle(C.FsWriteBytes, async (_, target: string, data: Uint8Array) => {
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await fs.writeFile(target, data);
+  });
   ipcMain.handle(C.FsWriteText, async (_, target: string, content: string) => {
     await fs.mkdir(path.dirname(target), { recursive: true });
     await fs.writeFile(target, content, 'utf8');
