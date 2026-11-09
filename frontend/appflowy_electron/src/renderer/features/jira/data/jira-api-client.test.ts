@@ -69,6 +69,9 @@ describe('Flutter API client cases', () => {
     const error = await client(async () => jsonResponse(null, 429, { 'retry-after': '30' })).getMyself().catch(e => e);
     expect(error).toBeInstanceOf(JiraRateLimitException); expect(error.retryAfter).toBe(30_000);
   });
+  it('a missing response is a network error, not an unexpected failure', async () => {
+    await expect(client(async () => null as never).getMyself()).rejects.toBeInstanceOf(JiraNetworkException);
+  });
   it('IPC status/body works without headers and no retry hint remains null', async () => {
     expect((await client(async () => ({ status: 200, body: '{"name":"u"}' })).getMyself()).name).toBe('u');
     await expect(client(async () => ({ status: 429, body: '' })).getMyself()).rejects.toMatchObject({ retryAfter: null });

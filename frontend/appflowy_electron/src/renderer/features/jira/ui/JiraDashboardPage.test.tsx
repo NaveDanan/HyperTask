@@ -160,7 +160,7 @@ describe('Jira dialogs', () => {
       actions: { testConnection: vi.fn(), saveSettings: vi.fn() }, onClose: vi.fn() }));
     expect(html).toContain('value="https://jira.example.com"');
     expect(html).toContain('value="DEMO"');
-    expect(html).toContain('Kept in memory for this session only; re-enter after restarting AppFlowy.');
+    expect(html).toContain('Kept in memory for this session only; re-enter after restarting HyperTask.');
   });
 
   it('renders the edit fields and preserves the six-line description', () => {

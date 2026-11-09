@@ -101,7 +101,7 @@ function HyperJiraBanners({ store, onSettings }: { store: HyperJiraStoreHook; on
 }
 
 export function HyperJiraEmptyState({ onConnect }: { onConnect: () => void }) {
-  return <Empty><EmptyHeader><EmptyMedia variant="icon"><SquareCheckBig className="size-5" /></EmptyMedia><EmptyTitle>Connect a Jira project</EmptyTitle><EmptyDescription>Sync issues from Jira Server / Data Center, track progress and create, edit or close issues without leaving AppFlowy.</EmptyDescription></EmptyHeader><EmptyContent><Button type="button" data-testid="jira-connect" onClick={onConnect}>Connect to Jira</Button></EmptyContent></Empty>;
+  return <Empty><EmptyHeader><EmptyMedia variant="icon"><SquareCheckBig className="size-5" /></EmptyMedia><EmptyTitle>Connect a Jira project</EmptyTitle><EmptyDescription>Sync issues from Jira Server / Data Center, track progress and create, edit or close issues without leaving HyperTask.</EmptyDescription></EmptyHeader><EmptyContent><Button type="button" data-testid="jira-connect" onClick={onConnect}>Connect to Jira</Button></EmptyContent></Empty>;
 }
 
 const categoryDot: Record<JiraStatusCategory, string> = { new: 'bg-muted-foreground/50', indeterminate: 'bg-info', done: 'bg-success', undefined: 'bg-warning' };

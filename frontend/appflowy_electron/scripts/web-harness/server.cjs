@@ -7,6 +7,7 @@
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
+const tls = require('node:tls');
 
 const root = path.resolve(__dirname, '../..');
 const compiled = path.join(root, '.cache/harness');
@@ -14,6 +15,9 @@ const { CoreProcess } = require(path.join(compiled, 'core/process.js'));
 const { coreBinaryPath } = require(path.join(compiled, 'core/binary.js'));
 const { SharedPreferences } = require(path.join(compiled, 'prefs.js'));
 const { readDeviceId } = require(path.join(compiled, 'device-id.js'));
+
+// Trust the OS certificate store too (corporate CAs), as Electron's net.fetch does.
+tls.setDefaultCACertificates([...tls.getCACertificates('default'), ...tls.getCACertificates('system')]);
 
 const arg = (name, fallback) => {
   const index = process.argv.indexOf(`--${name}`);
@@ -91,7 +95,13 @@ const handlers = {
     fs.writeFileSync(target, Buffer.from(data));
   },
   'net.request': async ({ url, method, headers, body }) => {
-    const response = await fetch(url, { method, headers, body });
+    let response;
+    try {
+      // Same redirect policy as the main process (redirect: 'error').
+      response = await fetch(url, { method, headers, body, redirect: 'error' });
+    } catch (error) {
+      throw new Error(error?.cause?.message ?? error?.message ?? String(error));
+    }
     return { status: response.status, headers: Object.fromEntries(response.headers), body: await response.text() };
   },
   // Session-only Jira credentials (no DPAPI in the harness).

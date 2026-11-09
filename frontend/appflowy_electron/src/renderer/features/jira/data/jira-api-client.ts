@@ -51,6 +51,7 @@ export class HyperJiraApiClient {
       if (/tls|ssl|certificate|handshake/.test(m)) throw new JiraNetworkException('TLS handshake with ' + url.host + ' failed. If your company uses a private CA, install it in the OS trust store.');
       throw new JiraNetworkException('Cannot connect to ' + url.host + '. Check your network and Jira URL.');
     } finally { if (timer !== undefined) clearTimeout(timer); }
+    if (!response || typeof response.status !== 'number') throw new JiraNetworkException('Cannot connect to ' + url.host + '. Check your network and Jira URL.');
     return this.decode(response);
   }
   private decode(r: JiraHttpResponse): unknown {

@@ -80,7 +80,7 @@ export function HyperJiraSettingsForm({ config, hasCredentials, credentialsPersi
         </ToggleGroup>
       </HyperJiraField>
       {basic && <HyperJiraField id={id + 'username'} label="Username" required><Input id={id + 'username'} autoComplete="username" value={username} onChange={event => setUsername(event.target.value)} /></HyperJiraField>}
-      <HyperJiraField id={id + 'secret'} label={basic ? 'Password or token' : 'Personal access token'} required={!hasCredentials} error={errors.secret} helper={[hasCredentials ? 'Leave empty to keep the current one.' : '', credentialsPersist ? 'Stored in the OS secure storage.' : 'Kept in memory for this session only; re-enter after restarting AppFlowy.', 'Only sent to your Jira server.'].filter(Boolean).join(' ')}>
+      <HyperJiraField id={id + 'secret'} label={basic ? 'Password or token' : 'Personal access token'} required={!hasCredentials} error={errors.secret} helper={[hasCredentials ? 'Leave empty to keep the current one.' : '', credentialsPersist ? 'Stored in the OS secure storage.' : 'Kept in memory for this session only; re-enter after restarting HyperTask.', 'Only sent to your Jira server.'].filter(Boolean).join(' ')}>
         <InputGroup><InputGroupInput {...control('secret')} data-testid="jira-settings-secret" type={visible ? 'text' : 'password'} autoComplete="current-password" placeholder={hasCredentials ? '••••••••' : undefined} value={secret} onChange={event => setSecret(event.target.value)} />
           <InputGroupAddon align="inline-end"><HyperJiraIconButton label={visible ? 'Hide password' : 'Show password'} size="icon-xs" aria-pressed={visible} onClick={() => setVisible(value => !value)}>{visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</HyperJiraIconButton></InputGroupAddon>
         </InputGroup>
@@ -88,7 +88,7 @@ export function HyperJiraSettingsForm({ config, hasCredentials, credentialsPersi
       <HyperJiraField id={id + 'jql'} label="Custom JQL (optional)" helper={'Defaults to: project = "<key>". Ordering is applied automatically for stable paging.'}>
         <Textarea id={id + 'jql'} aria-describedby={id + 'jql-help'} className="font-mono text-xs" value={jql} onChange={event => setJql(event.target.value)} />
       </HyperJiraField>
-      <HyperJiraField id={id + 'database'} label="Mirror into AppFlowy database (optional)" helper={'View id of an existing Grid/Board. Issues are mirrored one-way (Jira → AppFlowy) into "Jira …" columns; rows are never deleted.'}>
+      <HyperJiraField id={id + 'database'} label="Mirror into HyperTask database (optional)" helper={'View id of an existing Grid/Board. Issues are mirrored one-way (Jira → HyperTask) into "Jira …" columns; rows are never deleted.'}>
         <Input id={id + 'database'} aria-describedby={id + 'database-help'} className="font-mono text-xs" value={viewId} onChange={event => setViewId(event.target.value)} />
       </HyperJiraField>
       {result && <HyperJiraNotice variant="success" message={result} />}
