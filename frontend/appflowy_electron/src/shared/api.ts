@@ -35,6 +35,8 @@ export interface FileFilter {
 
 export interface HttpResponse {
   status: number;
+  /** Response headers, lower-case names (absent from older harness builds). */
+  headers?: Record<string, string>;
   body: string;
 }
 

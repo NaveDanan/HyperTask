@@ -176,7 +176,7 @@ function registerIpc() {
         body: options.body,
         redirect: 'error',
       });
-      return { status: response.status, body: await response.text() };
+      return { status: response.status, headers: Object.fromEntries(response.headers), body: await response.text() };
     },
   );
   ipcMain.on(C.ClipboardWriteText, (_, text: string) => clipboard.writeText(text));
