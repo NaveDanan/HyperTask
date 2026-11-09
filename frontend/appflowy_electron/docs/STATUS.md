@@ -1,8 +1,12 @@
 # HyperTask Electron port status
 
-Milestone 1 (foundation and app shell) is in place. The document editor, databases, AI chat and the Jira/Templates tools are later milestones; their pages open with a placeholder body, while their tabs, headers and menus are real.
+Milestone 1 (foundation and app shell) is in place. The document editor, databases and AI chat are later milestones; their pages open with a placeholder body, while their tabs, headers and menus are real.
 
 ## Done
+
+**Local tools**
+- Jira dashboard (Server / Data Center): connection settings, sync with offline cache, stats, filters and search, create/edit with conflict handling, status transitions, database mirror. Settings, cache and DPAPI credential files are shared with the Flutter build.
+- Local template store: the 50 bundled templates, offline, imported as documents and databases with their media.
 
 **Interface**
 - Redesigned on Tailwind v4, shadcn/ui (base-nova, Base UI primitives) and ReUI: inset content panel, zinc tokens with colour-scheme accents, Geist fonts, lucide icons. The rules and per-screen specs are in [design/HYPERTASK_UI.md](design/HYPERTASK_UI.md).
@@ -24,7 +28,7 @@ Milestone 1 (foundation and app shell) is in place. The document editor, databas
 
 ## Placeholders and simplified parts
 
-- Document editor, grid/board/calendar, row pages, AI chat, Jira dashboard and the local template store: placeholder bodies.
+- Document editor, grid/board/calendar, row pages and AI chat: placeholder bodies. Pages imported from templates or mirrored from Jira are created correctly but open with these placeholders.
 - Document export to HTML/Markdown/clipboard needs the editor's converters ("Unimplemented" for now); CSV export works.
 - Icon and emoji pickers have no upload tab, skin tones or recent icons. The colour picker uses the native colour input.
 - Notification items show plain text instead of the mini editor.

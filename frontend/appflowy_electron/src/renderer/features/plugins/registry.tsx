@@ -19,6 +19,7 @@ import { listenView } from '../view-header/view-listener';
 import { BlankPage, HyperLayoutIcon, LocalToolPlaceholder, PlaceholderMessage, ViewPlaceholderPage } from './PlaceholderPage';
 import { TrashPage } from './trash/TrashPage';
 import { TemplateStorePage } from '../templates/TemplateStorePage';
+import { JiraDashboardPage } from '../jira/ui/JiraDashboardPage';
 
 /** PluginContext: onDeleted(view, index) and the user (null in the secondary view). */
 export interface PluginContext {
@@ -162,7 +163,7 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
         leftBarItem: <MediumLabel text={plugin.title} />,
         rightBarItem: null,
         contentPadding: 0,
-        buildWidget: (context) => plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
+        buildWidget: (context) => plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : plugin.toolId === 'jira' ? <JiraDashboardPage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
       };
     case 'databaseDocument':
       return {
