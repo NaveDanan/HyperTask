@@ -49,6 +49,7 @@ const api: AppFlowyApi = {
     ensureDir: (path) => ipcRenderer.invoke(C.FsEnsureDir, path),
     readText: (path) => ipcRenderer.invoke(C.FsReadText, path),
     writeText: (path, content) => ipcRenderer.invoke(C.FsWriteText, path, content),
+    writeBytes: (path, data) => ipcRenderer.invoke(C.FsWriteBytes, path, data),
   },
   window: {
     minimize: () => ipcRenderer.send(C.WindowMinimize),
@@ -67,6 +68,12 @@ const api: AppFlowyApi = {
     pickDirectory: (title) => ipcRenderer.invoke(C.DialogPickDirectory, title),
     pickFiles: (options) => ipcRenderer.invoke(C.DialogPickFiles, options),
     saveFile: (options) => ipcRenderer.invoke(C.DialogSaveFile, options),
+  },
+  jira: {
+    readCredentials: (accountId) => ipcRenderer.invoke(C.JiraReadCredentials, accountId),
+    writeCredentials: (accountId, credentials) => ipcRenderer.invoke(C.JiraWriteCredentials, accountId, credentials),
+    deleteCredentials: (accountId) => ipcRenderer.invoke(C.JiraDeleteCredentials, accountId),
+    isPersistent: () => ipcRenderer.invoke(C.JiraCredentialsPersistent),
   },
   dpapi: {
     protect: (value) => ipcRenderer.invoke(C.DpapiProtect, value),

@@ -1,42 +1,45 @@
 import { useEffect, useState } from 'react';
+import { ChevronDown, FolderOpen, Globe, TriangleAlert } from 'lucide-react';
 import { UserEventGetAnonUser, UserEventOpenAnonUser, UserEventSignOut } from '@/backend/events';
-import { FlowySvg } from '@/icons/FlowySvg';
+import { MenuRow } from '@/components/app/menu-row';
+import { TitleBar } from '@/components/app/window-controls';
+import { Button } from '@/components/ui/button';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
 import { HyperLogo } from '@/ui/HyperLogo';
 import { languageName, supportedLocales, useI18nStore, useTr } from '@/i18n';
 import { useAppStore } from '@/startup/app-store';
 import { KVKeys, KeyValueStorage } from '@/startup/kv';
 import { openWorkspaceOrHandleError, runAppFlowy, signUpAsGuest } from '@/startup/launcher';
 import { appearanceActions } from '@/theme/appearance-store';
-import { AppFlowyPopover, FlowyButton, FlowyText, Spinner, VSpace } from '@/ui';
-import { WindowTitleBar } from '@/ui/WindowTitleBar';
 import type { FlowyError } from '@shared/protobuf/flowy-error/errors_pb';
 
-/** SplashScreen: the launch image with a spinner. */
+const hyperAuthScreenClass =
+  'flex h-full flex-col bg-background bg-[radial-gradient(60rem_30rem_at_50%_-10%,color-mix(in_oklch,var(--muted)_100%,transparent),transparent)]';
+const hyperAuthColumnClass = 'mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6';
+
+/** SplashScreen: the launch image. */
 export function SplashScreen() {
   return (
-    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <WindowTitleBar style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1, background: 'transparent' }} />
-      <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center', justifyContent: 'center', background: 'var(--cs-surface)' }}>
-        <HyperLogo size={48} wordmark />
-        <Spinner />
+    <div className={hyperAuthScreenClass}>
+      <TitleBar />
+      <div className="flex flex-1 flex-col items-center justify-center gap-6">
+        <HyperLogo size={48} wordmark className="[&>span:last-child]:text-lg" />
       </div>
     </div>
   );
 }
 
-/** Shown while the core initializes: the router background, blank. */
+/** Shown while the core initializes. */
 export function LaunchingScreen() {
-  return <div style={{ height: '100%', background: 'var(--cs-surface)' }} />;
-}
-
-/** FlowyLogoTitle with a 40px logo (SkipLogInScreen). */
-function LogoTitle({ title, size }: { title: string; size: number }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <HyperLogo size={size} />
-      <VSpace size={20} />
-      <div style={{ fontSize: 'calc(20px * var(--text-scale, 1))', lineHeight: '28px', fontWeight: 600, color: 'var(--af-text-primary)' }}>
-        {title}
+    <div className={hyperAuthScreenClass}>
+      <TitleBar />
+      <div className="flex flex-1 flex-col items-center justify-center gap-6">
+        <HyperLogo size={48} wordmark className="[&>span:last-child]:text-lg" />
+        <Spinner className="size-4 text-muted-foreground" />
       </div>
     </div>
   );
@@ -79,67 +82,26 @@ export function SkipLogInScreen() {
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--cs-surface)' }}>
-      <WindowTitleBar style={{ height: 55, background: 'transparent' }} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ flex: 1 }} />
-        <LogoTitle title={tr('welcomeText')} size={40} />
-        <VSpace size={32} />
-        <FlowyButton
-          isSelected
-          radius={6}
-          onTap={() => void go()}
-          style={{ width: 340, height: 48, justifyContent: 'center' }}
-          text={
-            <FlowyText fontWeight={500} textAlign="center" style={{ width: '100%' }}>
-              {anonExists ? tr('signIn.continueAnonymousUser') : tr('letsGoButtonText')}
-            </FlowyText>
-          }
-        />
-        <VSpace size={32} />
-        <div
-          style={{
-            width: '70%',
-            padding: 16,
-            borderRadius: 4,
-            background: 'var(--cs-surface)',
-            boxShadow: '0 2px 1px -1px #00000033, 0 1px 1px #00000024, 0 1px 3px #0000001F',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 16,
-          }}
-        >
-          <FlowySvg svg="archive_m" />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <FlowyText fontWeight={500} ellipsis>
-              {tr('settings.files.defineWhereYourDataIsStored')}
-            </FlowyText>
-            <VSpace size={4} />
-            <FlowyText fontSize={12} fontWeight={400} ellipsis style={{ opacity: 0.8 }}>
-              {path}
-            </FlowyText>
-          </div>
-          <div
-            onClick={() => void pickFolder()}
-            style={{
-              minWidth: 100,
-              height: 30,
-              borderRadius: 6,
-              border: '1.5px solid var(--cs-primary)',
-              color: 'var(--cs-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            {tr('settings.files.set')}
-          </div>
+    <div className={hyperAuthScreenClass}>
+      <TitleBar />
+      <div className={hyperAuthColumnClass}>
+        <div className="flex flex-col items-center gap-3">
+          <HyperLogo size={40} />
+          <h1 className="text-center text-2xl font-semibold tracking-tight">{tr('welcomeText')}</h1>
         </div>
-        <div style={{ flex: 1 }} />
-        <SkipLoginFooter />
-        <VSpace size={20} />
+        <Button size="lg" className="h-10 w-full" onClick={() => void go()}>
+          {anonExists ? tr('signIn.continueAnonymousUser') : tr('letsGoButtonText')}
+        </Button>
+        <Item variant="outline" className="flex-nowrap">
+          <ItemMedia variant="icon" className="text-muted-foreground"><FolderOpen className="size-4" /></ItemMedia>
+          <ItemContent className="min-w-0">
+            <ItemTitle>{tr('settings.files.defineWhereYourDataIsStored')}</ItemTitle>
+            <ItemDescription className="truncate font-mono text-xs" title={path}>{path}</ItemDescription>
+          </ItemContent>
+          <ItemActions><Button variant="outline" size="sm" onClick={() => void pickFolder()}>{tr('settings.files.set')}</Button></ItemActions>
+        </Item>
       </div>
+      <SkipLoginFooter />
     </div>
   );
 }
@@ -147,54 +109,35 @@ export function SkipLogInScreen() {
 function SkipLoginFooter() {
   const { tr } = useTr();
   const locale = useI18nStore((s) => s.locale);
+  const [open, setOpen] = useState(false);
   const link = (text: string, url: string) => (
-    <span
-      onClick={() => void window.appflowy.shell.openExternal(url).catch(() => {})}
-      style={{ color: 'var(--cs-primary)', fontWeight: 500, padding: '0 4px', cursor: 'pointer', fontSize: 'calc(12px * var(--text-scale, 1))' }}
-    >
+    <button type="button" onClick={() => void window.appflowy.shell.openExternal(url).catch(() => {})} className="px-1 font-medium text-foreground underline-offset-4 hover:underline">
       {text}
-    </span>
+    </button>
   );
-  const small = { fontSize: 'calc(12px * var(--text-scale, 1))' };
   return (
-    <div style={{ width: '100%', padding: '0 16px', display: 'flex', alignItems: 'center' }}>
-      <div style={{ width: 180 }} />
-      <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 4 }}>
-        <span style={small}>{tr('youCanAlso')}</span>
+    <footer className="flex shrink-0 items-center justify-between px-4 py-3 text-xs text-muted-foreground">
+      <div className="w-44 shrink-0" />
+      <div className="flex flex-1 flex-wrap items-center justify-center gap-1">
+        <span>{tr('youCanAlso')}</span>
         {link(tr('githubStarText'), 'https://github.com/NaveDanan/HyperTask')}
       </div>
-      <div style={{ width: 180, display: 'flex', justifyContent: 'flex-end' }}>
-        <AppFlowyPopover
-          direction="topWithRightAligned"
-          constraints={{ maxHeight: 400, maxWidth: 240 }}
-          popup={(close) => (
-            <div style={{ overflowY: 'auto' }}>
-              {supportedLocales.map((value) => (
-                <FlowyButton
-                  key={value}
-                  height={32}
-                  text={<FlowyText fontWeight={500}>{languageName(value)}</FlowyText>}
-                  rightIcon={value === locale ? <FlowySvg svg="check_s" /> : undefined}
-                  onTap={() => {
-                    void appearanceActions.setLocale(value);
-                    close();
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        >
-          <FlowyButton
-            useIntrinsicWidth
-            leftIcon={<FlowySvg svg="ethernet_m" size={20} />}
-            leftIconSize={20}
-            iconPadding={4}
-            text={languageName(locale)}
-            rightIcon={<FlowySvg svg="drop_menu_hide_m" size={20} />}
-          />
-        </AppFlowyPopover>
+      <div className="flex w-44 shrink-0 justify-end">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger render={<Button variant="ghost" size="sm" className="text-muted-foreground" />}>
+            <Globe className="size-4" />{languageName(locale)}<ChevronDown className="size-4" />
+          </PopoverTrigger>
+          <PopoverContent side="top" align="end" className="max-h-100 w-60 overflow-y-auto p-1">
+            {supportedLocales.map((value) => (
+              <MenuRow key={value} label={languageName(value)} checked={value === locale} className="h-8" onClick={() => {
+                void appearanceActions.setLocale(value);
+                setOpen(false);
+              }} />
+            ))}
+          </PopoverContent>
+        </Popover>
       </div>
-    </div>
+    </footer>
   );
 }
 
@@ -202,31 +145,22 @@ function SkipLoginFooter() {
 export function WorkspaceErrorScreen({ error }: { error: FlowyError }) {
   const { tr } = useTr();
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--cs-surface)' }}>
-      <WindowTitleBar style={{ background: 'transparent' }} />
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 500, display: 'flex', flexDirection: 'column' }}>
-          <FlowyText fontWeight={500} maxLines={10}>
-            {error.msg}
-          </FlowyText>
-          <FlowyText fontWeight={500} fontSize={12}>
-            {`Error code: ${error.code}`}
-          </FlowyText>
-          <VSpace size={50} />
-          <FlowyButton
-            style={{ width: 200, height: 40, justifyContent: 'center' }}
-            text={
-              <FlowyText fontWeight={500} textAlign="center" style={{ width: '100%' }}>
-                {tr('settings.menu.logout')}
-              </FlowyText>
-            }
-            onTap={async () => {
+    <div className={hyperAuthScreenClass}>
+      <TitleBar />
+      <div className={hyperAuthColumnClass}>
+        <Empty className="flex-none p-0">
+          <EmptyHeader className="w-full">
+            <EmptyMedia variant="icon" className="bg-destructive/10 text-destructive"><TriangleAlert className="size-5" /></EmptyMedia>
+            <EmptyTitle className="w-full rounded-md bg-muted p-3 text-left font-mono text-xs font-normal break-words">{error.msg}</EmptyTitle>
+            <EmptyDescription className="w-full rounded-md bg-muted p-3 text-left font-mono text-xs">{`Error code: ${error.code}`}</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button size="lg" className="h-10 w-full" onClick={async () => {
               await UserEventSignOut();
               await runAppFlowy();
-            }}
-          />
-          <VSpace size={20} />
-        </div>
+            }}>{tr('settings.menu.logout')}</Button>
+          </EmptyContent>
+        </Empty>
       </div>
     </div>
   );
@@ -237,39 +171,25 @@ export function WorkspaceFailedScreen() {
   const { tr } = useTr();
   const version = useAppStore((s) => s.info?.version ?? '');
   const button = (text: string, url: string) => (
-    <div
-      onClick={() => void window.appflowy.shell.openExternal(url).catch(() => {})}
-      style={{
-        flex: 1,
-        height: 40,
-        borderRadius: 6,
-        background: 'var(--cs-primary)',
-        color: 'var(--cs-on-primary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        fontWeight: 500,
-      }}
-    >
-      {text}
-    </div>
+    <Button size="lg" className="h-10 w-full" onClick={() => void window.appflowy.shell.openExternal(url).catch(() => {})}>{text}</Button>
   );
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--cs-surface)' }}>
-      <WindowTitleBar style={{ background: 'transparent' }} />
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 400, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div>{tr('workspace.failedToLoad')}</div>
-          <VSpace size={20} />
-          <div style={{ display: 'flex', gap: 20, width: '100%' }}>
+    <div className={hyperAuthScreenClass}>
+      <TitleBar />
+      <div className={hyperAuthColumnClass}>
+        <Empty className="flex-none p-0">
+          <EmptyHeader>
+            <EmptyMedia variant="icon" className="bg-destructive/10 text-destructive"><TriangleAlert className="size-5" /></EmptyMedia>
+            <EmptyTitle className="text-2xl font-semibold tracking-tight">{tr('workspace.failedToLoad')}</EmptyTitle>
+          </EmptyHeader>
+          <EmptyContent>
             {button(
               tr('workspace.errorActions.reportIssue'),
               `https://github.com/NaveDanan/HyperTask/issues/new?title=[Bug]%20Workspace%20failed%20to%20load&version=${version}&os=windows`,
             )}
             {button(tr('workspace.errorActions.reachOut'), 'https://discord.gg/JucBXeU2FE')}
-          </div>
-        </div>
+          </EmptyContent>
+        </Empty>
       </div>
     </div>
   );
@@ -278,15 +198,17 @@ export function WorkspaceFailedScreen() {
 /** Startup failure (the Flutter app aborts launch on these errors). */
 export function FatalScreen({ message }: { message: string }) {
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--cs-surface)' }}>
-      <WindowTitleBar style={{ background: 'transparent' }} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <FlowyText fontWeight={500} maxLines={6}>
-          {message}
-        </FlowyText>
-        <FlowyButton useIntrinsicWidth text="Restart" onTap={() => void runAppFlowy()} />
+    <div className={hyperAuthScreenClass}>
+      <TitleBar />
+      <div className={hyperAuthColumnClass}>
+        <Empty className="flex-none p-0">
+          <EmptyHeader className="w-full">
+            <EmptyMedia variant="icon" className="bg-destructive/10 text-destructive"><TriangleAlert className="size-5" /></EmptyMedia>
+            <EmptyTitle className="w-full rounded-md bg-muted p-3 text-left font-mono text-xs font-normal break-words">{message}</EmptyTitle>
+          </EmptyHeader>
+          <EmptyContent><Button size="lg" className="h-10 w-full" onClick={() => void runAppFlowy()}>Restart</Button></EmptyContent>
+        </Empty>
       </div>
     </div>
   );
 }
-

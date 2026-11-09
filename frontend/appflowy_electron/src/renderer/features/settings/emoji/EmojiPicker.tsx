@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTr } from '@/i18n';
+import { Search } from 'lucide-react';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { emojiCategories } from './emoji-data';
 
 /** emoji-mart category id → `emoji.categories.*` key. */
@@ -31,13 +34,13 @@ export function EmojiPicker({ onSelected, width = 360, height = 380 }: { onSelec
   const empty = groups.every((g) => g.emojis.length === 0);
 
   return (
-    <div style={{ width, height, display: 'flex', flexDirection: 'column', padding: '8px 12px', boxSizing: 'border-box' }}>
-      <div className="af-textfield" data-size="m" style={{ marginBottom: 8 }}>
-        <input autoFocus value={query} placeholder={tr('emoji.search')} onChange={(event) => setQuery(event.target.value)} />
-      </div>
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+    <div style={{ width, height }} className="box-border flex flex-col gap-2 px-3 py-2">
+      <InputGroup data-size="m"><InputGroupAddon><Search className="size-4" /></InputGroupAddon>
+        <InputGroupInput autoFocus value={query} placeholder={tr('emoji.search')} onChange={(event) => setQuery(event.target.value)} />
+      </InputGroup>
+      <ScrollArea className="min-h-0 flex-1">
         {empty && (
-          <div style={{ padding: 16, textAlign: 'center', color: 'var(--th-hint)', fontSize: 'calc(14px * var(--text-scale, 1))' }}>
+          <div className="p-4 text-center text-sm text-muted-foreground">
             {tr('emoji.noEmojiFound')}
           </div>
         )}
@@ -46,33 +49,28 @@ export function EmojiPicker({ onSelected, width = 360, height = 380 }: { onSelec
             <div key={group.id || 'results'}>
               {group.id && (
                 <div
-                  style={{
-                    padding: '8px 4px 4px',
-                    fontSize: 'calc(12px * var(--text-scale, 1))',
-                    color: 'var(--th-hint)',
-                    textTransform: 'capitalize',
-                  }}
+                  className="px-1 pt-2 pb-1 text-xs capitalize text-muted-foreground"
                 >
                   {tr(CATEGORY_KEYS[group.id] ?? group.id)}
                 </div>
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 36px)' }}>
+              <div className="grid grid-cols-[repeat(auto-fill,2.25rem)]">
                 {group.emojis.map(([native, name]) => (
-                  <div
+                  <button
+                    type="button"
                     key={native + name}
                     title={name}
-                    className="flowy-hover"
+                    className="flex size-9 items-center justify-center rounded-lg text-2xl transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => onSelected(native)}
-                    style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, borderRadius: 8 }}
                   >
                     {native}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           ),
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 }

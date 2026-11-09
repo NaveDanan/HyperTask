@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SettingsPageProps } from '../page-props';
-import { SettingsBody } from '../shared';
-import { CheckboxListTile, LinearProgress, MdButton, MdText, MdTextField, SwitchListTile } from '../material';
+import { SettingsPageHeader, SettingsSection, SettingsGroup, SettingsRow } from '@/components/app/settings-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from '@/components/ui/input-group';
+import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/reui/alert';
+import { Eye, EyeOff } from 'lucide-react';
+
 import {
   encryptKey,
   endpointErrorMessage,
@@ -11,17 +20,17 @@ import {
   type OpenAIEndpointSettings,
 } from './openai-endpoint-settings';
 
-const gap = (height: number, key: string) => <div key={key} style={{ height }} />;
 
 /**
  * LocalSettingsAIView → OpenAIEndpointSettingsView
  * (pages/setting_ai_view/openai_endpoint_settings_view.dart) [CUSTOM]. Hard-coded English, as
- * in Dart. SettingsBody's autoSeparate puts a divider between every child, spacers included.
+ * in Dart.
  */
 export function AIPage(_: SettingsPageProps) {
   const [url, setUrl] = useState('');
   const [model, setModel] = useState('');
   const [key, setKey] = useState('');
+  const [obscured, setObscured] = useState(true);
   const [embedding, setEmbedding] = useState('');
   const [imageModel, setImageModel] = useState('');
   const [protectedKey, setProtectedKey] = useState('');
@@ -94,96 +103,34 @@ export function AIPage(_: SettingsPageProps) {
     }
   };
 
-  const children = loading
-    ? [<LinearProgress key="loading" />]
-    : [
-        <SwitchListTile key="enabled" title="Enable AI endpoint" value={enabled} disabled={busy} onChanged={setEnabled} />,
-        gap(12, 'g1'),
-        <MdTextField
-          key="url"
-          label="API base URL"
-          hint="http://localhost:8000/v1"
-          helper="Include the API prefix, usually /v1."
-          type="url"
-          value={url}
-          disabled={busy}
-          onChange={setUrl}
-        />,
-        gap(20, 'g2'),
-        <MdTextField
-          key="model"
-          label="Chat model ID"
-          helper="Use the exact model ID provided by your endpoint."
-          value={model}
-          disabled={busy}
-          onChange={setModel}
-        />,
-        gap(20, 'g3'),
-        <MdTextField
-          key="embedding"
-          label="Embeddings model ID (optional)"
-          helper="Leave empty for local text search. Semantic search sends workspace document text to this endpoint."
-          value={embedding}
-          disabled={busy}
-          onChange={setEmbedding}
-        />,
-        gap(20, 'g4'),
-        <MdTextField
-          key="image"
-          label="Image generation model ID (optional)"
-          helper="Requires POST /images/generations. Generated images are saved locally. Image attachments use your chat model and require vision support."
-          value={imageModel}
-          disabled={busy}
-          onChange={setImageModel}
-        />,
-        gap(20, 'g5'),
-        <MdTextField
-          key="key"
-          label="API key (optional)"
-          helper={
-            protectedKey === ''
-              ? 'Leave empty if your endpoint does not require a key.'
-              : 'A key is saved using Windows account encryption. Leave empty to keep it.'
-          }
-          obscure
-          value={key}
-          disabled={busy || removeKey}
-          onChange={setKey}
-        />,
-        protectedKey !== '' && (
-          <CheckboxListTile key="remove" title="Remove saved API key" value={removeKey} disabled={busy} onChanged={setRemoveKey} />
-        ),
-        gap(20, 'g6'),
-        <MdText key="info">
-          Chat, editor actions, summaries, translations, and selected-source answers use this model. Retrieval uses local text search,
-          or your optional embeddings model for semantic workspace search. Image output uses the optional image model. Unsupported image
-          or vision requests show a capability error.
-        </MdText>,
-        gap(20, 'g7'),
-        <div key="actions" style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-          <MdButton variant="filled" disabled={busy} onPressed={() => void act(false)}>
-            Save AI settings
-          </MdButton>
-          <MdButton variant="outlined" disabled={busy} onPressed={() => void act(true)}>
-            Test endpoint
-          </MdButton>
-        </div>,
-        busy && gap(12, 'g8'),
-        busy && <LinearProgress key="busy" />,
-        message !== null && gap(12, 'g9'),
-        message !== null && (
-          <div key="message" aria-live="polite">
-            <MdText color={failed ? 'var(--cs-error)' : undefined}>{message}</MdText>
-          </div>
-        ),
-      ];
-
   return (
-    <SettingsBody
-      title="AI"
-      description="Use your own OpenAI-compatible API. Workspace storage stays local. AI prompts, selected sources, and enabled semantic-search inputs are sent only to this endpoint."
-    >
-      {children}
-    </SettingsBody>
+    <>
+      <SettingsPageHeader title="AI" description="Use your own OpenAI-compatible API. Workspace storage stays local. AI prompts, selected sources, and enabled semantic-search inputs are sent only to this endpoint." />
+      <SettingsSection>
+        {loading ? <Spinner /> : <>
+          <SettingsGroup>
+            <SettingsRow label={<label htmlFor="hyper-ai-enabled" className="cursor-pointer">Enable AI endpoint</label>} control={<Switch id="hyper-ai-enabled" aria-label="Enable AI endpoint" checked={enabled} disabled={busy} onCheckedChange={setEnabled} />} />
+            <div className="flex flex-col gap-4 p-4">
+              <Field><FieldLabel htmlFor="hyper-ai-url">API base URL</FieldLabel><Input spellCheck={false} autoComplete="off" id="hyper-ai-url" type="url" className="font-mono text-xs" placeholder="http://localhost:8000/v1" value={url} disabled={busy} onChange={(event) => setUrl(event.target.value)} /><FieldDescription className="text-xs">Include the API prefix, usually /v1.</FieldDescription></Field>
+              <Field><FieldLabel htmlFor="hyper-ai-model">Chat model ID</FieldLabel><Input spellCheck={false} autoComplete="off" id="hyper-ai-model" value={model} disabled={busy} onChange={(event) => setModel(event.target.value)} /><FieldDescription className="text-xs">Use the exact model ID provided by your endpoint.</FieldDescription></Field>
+              <Field><FieldLabel htmlFor="hyper-ai-embedding">Embeddings model ID (optional)</FieldLabel><Input spellCheck={false} autoComplete="off" id="hyper-ai-embedding" value={embedding} disabled={busy} onChange={(event) => setEmbedding(event.target.value)} /><FieldDescription className="text-xs">Leave empty for local text search. Semantic search sends workspace document text to this endpoint.</FieldDescription></Field>
+              <Field><FieldLabel htmlFor="hyper-ai-image">Image generation model ID (optional)</FieldLabel><Input spellCheck={false} autoComplete="off" id="hyper-ai-image" value={imageModel} disabled={busy} onChange={(event) => setImageModel(event.target.value)} /><FieldDescription className="text-xs">Requires POST /images/generations. Generated images are saved locally. Image attachments use your chat model and require vision support.</FieldDescription></Field>
+              <Field><FieldLabel htmlFor="hyper-ai-key">API key (optional)</FieldLabel>
+                <InputGroup><InputGroupInput spellCheck={false} autoComplete="off" id="hyper-ai-key" type={obscured ? 'password' : 'text'} value={key} disabled={busy || removeKey} onChange={(event) => setKey(event.target.value)} />
+                  <InputGroupAddon align="inline-end"><InputGroupButton size="icon-xs" aria-label={obscured ? 'Show API key' : 'Hide API key'} onMouseDown={(event) => event.preventDefault()} onClick={() => setObscured(!obscured)}>{obscured ? <Eye /> : <EyeOff />}</InputGroupButton></InputGroupAddon>
+                </InputGroup>
+                <FieldDescription className="text-xs">{protectedKey === '' ? 'Leave empty if your endpoint does not require a key.' : 'A key is saved using Windows account encryption. Leave empty to keep it.'}</FieldDescription>
+              </Field>
+            </div>
+            {protectedKey !== '' && <SettingsRow label={<label htmlFor="hyper-ai-remove-key" className="cursor-pointer">Remove saved API key</label>} control={<Checkbox id="hyper-ai-remove-key" aria-label="Remove saved API key" checked={removeKey} disabled={busy} onCheckedChange={setRemoveKey} />} />}
+          </SettingsGroup>
+          <p className="text-sm text-muted-foreground">Chat, editor actions, summaries, translations, and selected-source answers use this model. Retrieval uses local text search,
+            or your optional embeddings model for semantic workspace search. Image output uses the optional image model. Unsupported image
+            or vision requests show a capability error.</p>
+          <div className="flex flex-wrap items-center gap-3"><Button disabled={busy} onClick={() => void act(false)}>Save AI settings</Button><Button variant="outline" disabled={busy} onClick={() => void act(true)}>Test endpoint</Button>{busy && <Spinner />}</div>
+          {message !== null && <div aria-live="polite"><Alert variant={failed ? 'destructive' : 'success'}><AlertDescription>{message}</AlertDescription></Alert></div>}
+        </>}
+      </SettingsSection>
+    </>
   );
 }

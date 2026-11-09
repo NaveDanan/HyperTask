@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { UserProfilePB } from '@shared/protobuf/flowy-user/user_profile_pb';
 import { AFRolePB } from '@shared/protobuf/flowy-user/workspace_pb';
-import { FlowyDivider, VSpace } from '@/ui';
+import { cn } from '@/lib/utils';
 import { useHomeStore } from '@/features/home/home-store';
 import { renameSelectedView } from '@/features/home/notifiers';
 import { blankPlugin } from '@/features/tabs/plugin';
@@ -13,7 +13,7 @@ import { resetRecentViews } from '@/features/search/recent-views-store';
 import { showLoading } from './components';
 import { SidebarFolder } from './folder/SidebarFolder';
 import { SidebarTopMenu, SidebarUser } from './header/SidebarHeader';
-import { JiraButton, SidebarFooter, SidebarNewPageButton, SidebarSearchButton } from './SidebarButtons';
+import { JiraButton, HyperTemplatesButton, SidebarFooter, SidebarNewPageButton, SidebarSearchButton } from './SidebarButtons';
 import { SidebarSpace } from './space/SidebarSpace';
 import { useSpaceState } from './space/space-context';
 import { favoriteActions } from './stores/favorite-store';
@@ -24,7 +24,6 @@ import { sidebarSpace } from './stores/space-store';
 import { useWorkspaceStore, workspaceActions, workspaceRole } from './stores/workspace-store';
 import { openRenamePopover } from './view/RenameViewPopover';
 import { SidebarWorkspace } from './workspace/SidebarWorkspace';
-import './sidebar.css';
 
 /** The sidebar's stores, for other features (command palette, view header, settings). */
 export { sidebarSpace } from './stores/space-store';
@@ -122,54 +121,24 @@ function SidebarBody({ user }: { user: UserProfilePB }) {
   const [role] = useState(() => workspaceRole(useWorkspaceStore.getState().currentWorkspace));
   const [scrolled, setScrolled] = useState(false);
   return (
-    <div
-      className="sb-root"
-      style={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--cs-surface-container-highest)',
-        borderRight: '1px solid var(--th-divider)',
-      }}
-    >
-      <div style={{ padding: '0 8px', flexShrink: 0 }}>
-        <SidebarTopMenu />
-      </div>
-      <div style={{ height: 32, padding: '0 2px 0 8px', flexShrink: 0 }}>
-        {showWorkspace ? <SidebarWorkspace user={user} /> : <SidebarUser user={user} />}
-      </div>
-      <VSpace size={6} />
-      <div style={{ padding: '0 8px', height: 30, flexShrink: 0 }}>
+    <div className="group/sidebar flex h-full flex-col px-2 text-sidebar-foreground">
+      <SidebarTopMenu />
+      {showWorkspace ? <SidebarWorkspace user={user} /> : <SidebarUser user={user} />}
+      <div className="flex shrink-0 flex-col gap-px py-1">
         <SidebarSearchButton />
+        {role !== AFRolePB.Guest && <SidebarNewPageButton />}
+        <JiraButton />
+        <HyperTemplatesButton />
       </div>
-      {role !== AFRolePB.Guest && (
-        <>
-          <VSpace size={6} />
-          <SidebarNewPageButton />
-        </>
-      )}
-      <JiraButton />
-      <VSpace size={12} />
-      <div style={{ padding: '0 12px', opacity: scrolled ? 1 : 0, flexShrink: 0 }}>
-        <FlowyDivider />
-      </div>
-      <FolderOrSpace onScrolled={setScrolled} />
-      <div style={{ padding: '0 12px', flexShrink: 0 }}>
-        <FlowyDivider />
-      </div>
-      <VSpace size={8} />
+      <FolderOrSpace onScrolled={setScrolled} scrolled={scrolled} />
       {/* SpaceMigration and the app-update banner are unreachable in this checkout. */}
-      <VSpace size={8} />
-      <div style={{ padding: '0 12px', flexShrink: 0 }}>
-        <SidebarFooter />
-      </div>
-      <VSpace size={14} />
+      <SidebarFooter />
     </div>
   );
 }
 
 /** _renderFolderOrSpace: legacy sections unless the (collab) workspace has spaces. */
-function FolderOrSpace({ onScrolled }: { onScrolled: (scrolled: boolean) => void }) {
+function FolderOrSpace({ onScrolled, scrolled }: { onScrolled: (scrolled: boolean) => void; scrolled: boolean }) {
   const isInitialized = useSpaceState((s) => s.isInitialized);
   const spacesEmpty = useSpaceState((s) => s.spaces.length === 0);
   const containsSpace = useSectionsStore((s) => s.containsSpace);
@@ -182,14 +151,11 @@ function FolderOrSpace({ onScrolled }: { onScrolled: (scrolled: boolean) => void
   if (!isInitialized) return null;
   const useFolder = !containsSpace || spacesEmpty || !isCollab;
   return (
-    <div style={{ flex: 1, minHeight: 0, padding: '0 2px 0 8px', display: 'flex', flexDirection: 'column' }}>
-      <div
-        className={`sb-scroll${useFolder ? '' : ' sb-scroll-hover-thumb'}`}
-        style={{ flex: 1, minHeight: 0, paddingRight: 6 }}
-        onScroll={(event) => onScrolled(event.currentTarget.scrollTop > 0)}
-      >
-        {useFolder ? <SidebarFolder /> : <SidebarSpace />}
-      </div>
+    <div
+      className={cn('-mx-2 min-h-0 flex-1 overflow-y-auto px-2 pb-2', scrolled && 'border-t border-sidebar-border')}
+      onScroll={(event) => onScrolled(event.currentTarget.scrollTop > 0)}
+    >
+      {useFolder ? <SidebarFolder /> : <SidebarSpace />}
     </div>
   );
 }

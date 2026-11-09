@@ -1,45 +1,22 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import type { WorkspaceMemberPB } from '@shared/protobuf/flowy-user/workspace_pb';
-import { WorkspacePlanPB, type AFRolePB } from '@shared/protobuf/flowy-user/workspace_pb';
-import { FlowySvg } from '@/icons/FlowySvg';
+import { WorkspacePlanPB, AFRolePB } from '@shared/protobuf/flowy-user/workspace_pb';
+import { Copy, Mail, MoreHorizontal, Trash2 } from 'lucide-react';
+import { SettingsPageHeader, SettingsSection, SettingsGroup, SettingsRow } from '@/components/app/settings-layout';
+import { Button } from '@/components/ui/button';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/reui/badge';
 import { tr as trNow, useI18nStore, useTr } from '@/i18n';
-import { AFAvatar, AFButton, AFTextField, ActionRow, AppFlowyPopover, FlowyButton, Tooltip, VSpace, showConfirmDialog, showToast } from '@/ui';
+import { AFAvatar, Tooltip, showConfirmDialog, showToast } from '@/ui';
 import type { SettingsPageProps } from '../page-props';
-import { SettingsBody, SettingsCategorySpacer } from '../shared';
 import { formatJoinedDate, isEmail, roleCan, roleDescriptionKey } from './members-core';
 import { createWorkspaceMemberStore, type WorkspaceMemberStore } from './members-store';
 
 // WorkspaceMembersPage (widgets/members/workspace_member_page.dart) and the desktop invitation
 // widgets (invitation/invite_member_by_link.dart, invite_member_by_email.dart).
-
-const body = (weight: 400 | 600, color = 'var(--af-text-primary)'): CSSProperties => ({
-  fontSize: 'calc(14px * var(--text-scale, 1))',
-  lineHeight: '20px',
-  fontWeight: weight,
-  color,
-});
-const caption = (color = 'var(--af-text-primary)'): CSSProperties => ({
-  fontSize: 'calc(12px * var(--text-scale, 1))',
-  lineHeight: '18px',
-  fontWeight: 400,
-  color,
-});
-const ellipsis: CSSProperties = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
-
-/** Material Divider (height 16, hairline centered). */
-const Divider = ({ color = 'var(--af-border-primary)' }: { color?: string }) => (
-  <div style={{ height: 16, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-    <div style={{ height: 1, flex: 1, background: color, transform: 'scaleY(0.5)' }} />
-  </div>
-);
-
-/** SettingsCategorySpacer(bottomSpacing: 0). */
-const SpacerNoBottom = () => (
-  <div style={{ paddingTop: 12, flexShrink: 0 }}>
-    <Divider />
-  </div>
-);
 
 export function MembersPage({ user }: SettingsPageProps) {
   const { tr } = useTr();
@@ -52,17 +29,14 @@ export function MembersPage({ user }: SettingsPageProps) {
   }, [bloc]);
 
   return (
-    <SettingsBody title={tr('settings.appearance.members.title')} autoSeparate={false}>
-      {roleCan.invite(state.myRole) && (
-        <div>
-          <InviteMemberByLink bloc={bloc} />
-          <SettingsCategorySpacer />
-          <InviteMemberByEmail bloc={bloc} />
-          <SpacerNoBottom />
-        </div>
-      )}
-      {state.members.length > 0 && <MemberList bloc={bloc} members={state.members} myRole={state.myRole} myEmail={user.email} />}
-    </SettingsBody>
+    <>
+      <SettingsPageHeader title={tr('settings.appearance.members.title')} />
+      {roleCan.invite(state.myRole) && <SettingsSection><SettingsGroup>
+        <InviteMemberByLink bloc={bloc} />
+        <InviteMemberByEmail bloc={bloc} />
+      </SettingsGroup></SettingsSection>}
+      {state.members.length > 0 && <SettingsSection><SettingsGroup><MemberList bloc={bloc} members={state.members} myRole={state.myRole} myEmail={user.email} /></SettingsGroup></SettingsSection>}
+    </>
   );
 }
 
@@ -92,7 +66,7 @@ function InviteMemberByLink({ bloc }: { bloc: WorkspaceMemberStore }) {
         description: tr('settings.appearance.members.resetInviteLinkDescription'),
         confirmLabel: tr('settings.appearance.members.reset'),
         // confirmButtonBuilder: AFFilledTextButton.destructive
-        confirmButtonColor: 'var(--af-fill-error-thick)',
+        confirmButtonColor: 'var(--destructive)',
         onConfirm: () => void bloc.actions.generateInviteLink(),
       });
     } else {
@@ -114,27 +88,10 @@ function InviteMemberByLink({ bloc }: { bloc: WorkspaceMemberStore }) {
     }
   };
 
-  return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ ...body(600), ...ellipsis }}>{tr('settings.appearance.members.inviteLinkToAddMember')}</div>
-        <div style={caption()}>
-          {tr('settings.appearance.members.clickToCopyLink')}
-          {` ${tr('settings.appearance.members.or')} `}
-          <span style={{ color: 'var(--af-text-action)', cursor: 'pointer' }} onClick={onGenerate}>
-            {tr('settings.appearance.members.generateANewLink')}
-          </span>
-        </div>
-      </div>
-      <AFButton
-        variant="outlinedNormal"
-        text={tr('settings.appearance.members.copyLink')}
-        padding="6px 12px"
-        style={{ fontWeight: 400, color: 'var(--af-text-primary)' }}
-        onTap={onCopy}
-      />
-    </div>
-  );
+  return <SettingsRow label={tr('settings.appearance.members.inviteLinkToAddMember')} description={<>
+    {tr('settings.appearance.members.clickToCopyLink')}{` ${tr('settings.appearance.members.or')} `}
+    <Button variant="link" className="h-auto p-0 text-xs" onClick={onGenerate}>{tr('settings.appearance.members.generateANewLink')}</Button>
+  </>} control={<Button variant="outline" size="sm" onClick={onCopy}><Copy className="size-4" />{tr('settings.appearance.members.copyLink')}</Button>} />;
 }
 
 function InviteMemberByEmail({ bloc }: { bloc: WorkspaceMemberStore }) {
@@ -151,24 +108,11 @@ function InviteMemberByEmail({ bloc }: { bloc: WorkspaceMemberStore }) {
     setEmail('');
   };
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={body(600)}>{tr('settings.appearance.members.inviteMemberByEmail')}</div>
-      <VSpace size={8} />
-      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-        <AFTextField
-          size="m"
-          value={email}
-          hintText={tr('settings.appearance.members.inviteHint')}
-          onChanged={setEmail}
-          onSubmitted={invite}
-          style={{ flex: 1, minWidth: 0 }}
-        />
-        <div style={{ width: 12, flexShrink: 0 }} />
-        <AFButton variant="filledPrimary" text={tr('settings.appearance.members.sendInvite')} onTap={invite} />
-      </div>
-    </div>
-  );
+  return <SettingsRow label={tr('settings.appearance.members.inviteMemberByEmail')}>
+    <div className="flex items-start gap-3"><InputGroup><InputGroupAddon><Mail className="size-4" /></InputGroupAddon>
+      <InputGroupInput spellCheck={false} value={email} aria-label={tr('settings.appearance.members.inviteMemberByEmail')} placeholder={tr('settings.appearance.members.inviteHint')} onChange={(event) => setEmail(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') invite(); }} />
+    </InputGroup><Button onClick={invite}>{tr('settings.appearance.members.sendInvite')}</Button></div>
+  </SettingsRow>;
 }
 
 function MemberList({
@@ -183,23 +127,12 @@ function MemberList({
   myEmail: string;
 }) {
   const { tr } = useTr();
-  const secondary = body(400, 'var(--af-text-secondary)');
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ flex: 4, minWidth: 0, ...secondary }}>{tr('settings.appearance.members.user')}</div>
-        <div style={{ flex: 2, minWidth: 0, ...secondary }}>{tr('settings.appearance.members.role')}</div>
-        <div style={{ flex: 3, minWidth: 0, ...secondary }}>{tr('settings.accountPage.email.title')}</div>
-        <div style={{ width: 28, flexShrink: 0 }} />
-      </div>
-      {members.map((member) => (
-        <div key={member.email}>
-          <Divider />
-          <MemberItem bloc={bloc} member={member} myRole={myRole} myEmail={myEmail} />
-        </div>
-      ))}
-    </div>
-  );
+  return <Table className="table-fixed"><TableHeader><TableRow>
+    <TableHead className="w-2/5 px-4 text-xs font-medium text-muted-foreground">{tr('settings.appearance.members.user')}</TableHead>
+    <TableHead className="text-xs font-medium text-muted-foreground">{tr('settings.appearance.members.role')}</TableHead>
+    <TableHead className="text-xs font-medium text-muted-foreground">{tr('settings.accountPage.email.title')}</TableHead>
+    <TableHead className="w-12" />
+  </TableRow></TableHeader><TableBody>{members.map((member) => <MemberItem key={member.email} bloc={bloc} member={member} myRole={myRole} myEmail={myEmail} />)}</TableBody></Table>;
 }
 
 function MemberItem({ bloc, member, myRole, myEmail }: { bloc: WorkspaceMemberStore; member: WorkspaceMemberPB; myRole: AFRolePB; myEmail: string }) {
@@ -207,59 +140,29 @@ function MemberItem({ bloc, member, myRole, myEmail }: { bloc: WorkspaceMemberSt
   const locale = useI18nStore((s) => s.locale);
   const avatarUrl = member.oneOfAvatarUrl.case === 'avatarUrl' ? member.oneOfAvatarUrl.value : '';
   const joinedAt = member.oneOfJoinedAt.case === 'joinedAt' ? Number(member.oneOfJoinedAt.value) : 0;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <div style={{ flex: 4, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-        <AFAvatar url={avatarUrl} name={member.name} size="s" />
-        <div style={{ width: 8, flexShrink: 0 }} />
-        <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ ...body(600), ...ellipsis }}>{member.name}</div>
-          <div style={{ ...caption('var(--af-text-secondary)'), ...ellipsis }}>{formatJoinedDate(joinedAt, locale)}</div>
-        </div>
-        <div style={{ width: 8, flexShrink: 0 }} />
-      </div>
-      {/* The role is read-only text for every role (_MemberRoleActionList renders text only). */}
-      <div style={{ flex: 2, minWidth: 0, ...body(400) }}>{tr(roleDescriptionKey(member.role))}</div>
-      <div style={{ flex: 3, minWidth: 0, display: 'flex' }}>
-        <Tooltip message={member.email}>
-          <div style={{ ...body(400), ...ellipsis, minWidth: 0 }}>{member.email}</div>
-        </Tooltip>
-      </div>
-      {roleCan.delete(myRole) && member.email !== myEmail ? (
-        <MemberMoreActionList bloc={bloc} member={member} />
-      ) : (
-        <div style={{ width: 28, flexShrink: 0 }} />
-      )}
-    </div>
-  );
+  return <TableRow>
+    <TableCell className="px-4 py-3"><div className="flex min-w-0 items-center gap-2">
+      <span className="contents [&_[data-slot=avatar]]:size-7!"><AFAvatar url={avatarUrl} name={member.name} size="s" /></span>
+      <div className="min-w-0"><div className="truncate text-sm font-medium">{member.name}</div><div className="truncate text-xs text-muted-foreground">{formatJoinedDate(joinedAt, locale)}</div></div>
+    </div></TableCell>
+    <TableCell><Badge variant={member.role === AFRolePB.Owner ? 'info-light' : 'secondary'} size="sm">{tr(roleDescriptionKey(member.role))}</Badge></TableCell>
+    <TableCell><Tooltip message={member.email}><span className="block truncate text-sm">{member.email}</span></Tooltip></TableCell>
+    <TableCell>{roleCan.delete(myRole) && member.email !== myEmail && <MemberMoreActionList bloc={bloc} member={member} />}</TableCell>
+  </TableRow>;
 }
 
 function MemberMoreActionList({ bloc, member }: { bloc: WorkspaceMemberStore; member: WorkspaceMemberPB }) {
   const { tr } = useTr();
-  return (
-    <AppFlowyPopover
-      asBarrier
-      direction="bottomWithCenterAligned"
-      constraints={{ minWidth: 120, maxWidth: 460, maxHeight: 300 }}
-      popup={(close) => (
-        <ActionRow
-          name={tr('settings.appearance.members.removeFromWorkspace')}
-          onTap={() => {
-            showConfirmDialog({
-              style: 'cancelAndOk',
-              title: tr('settings.appearance.members.removeMember'),
-              description: tr('settings.appearance.members.areYouSureToRemoveMember'),
-              confirmLabel: tr('button.yes'),
-              confirmButtonColor: 'var(--cs-primary)',
-              onConfirm: () => void bloc.actions.removeMember(member.email),
-            });
-            close();
-          }}
-        />
-      )}
-    >
-      <FlowyButton useIntrinsicWidth text={<FlowySvg svg="three_dots_s" />} />
-    </AppFlowyPopover>
-  );
+  return <DropdownMenu>
+    <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={tr('settings.appearance.members.removeFromWorkspace')} />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
+    <DropdownMenuContent align="end" className="w-56"><DropdownMenuItem variant="destructive" onClick={() => {
+      showConfirmDialog({
+        style: 'cancelAndOk',
+        title: tr('settings.appearance.members.removeMember'),
+        description: tr('settings.appearance.members.areYouSureToRemoveMember'),
+        confirmLabel: tr('button.yes'),
+        onConfirm: () => void bloc.actions.removeMember(member.email),
+      });
+    }}><Trash2 className="size-4" />{tr('settings.appearance.members.removeFromWorkspace')}</DropdownMenuItem></DropdownMenuContent>
+  </DropdownMenu>;
 }
-

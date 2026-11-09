@@ -10,6 +10,8 @@ import {
 import { DesktopHomeScreen } from '@/features/home/DesktopHomeScreen';
 import { useAppStore } from '@/startup/app-store';
 import { runAppFlowy } from '@/startup/launcher';
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { DialogHost } from '@/ui/Dialog';
 import { ToastHost } from '@/ui/toast';
 
@@ -49,10 +51,13 @@ export function App() {
   }, []);
 
   return (
-    <div key={launchId} style={{ height: '100%' }}>
-      <Routes />
-      <DialogHost />
-      <ToastHost />
-    </div>
+    <TooltipProvider delay={500}>
+      <div key={launchId} className="h-full">
+        <Routes />
+        <DialogHost />
+        <ToastHost />
+      </div>
+      <Toaster position="bottom-center" />
+    </TooltipProvider>
   );
 }

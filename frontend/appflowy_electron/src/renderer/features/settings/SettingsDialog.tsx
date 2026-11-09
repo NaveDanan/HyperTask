@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { UserProfilePB } from '@shared/protobuf/flowy-user/user_profile_pb';
 import { UserEventGetUserProfile } from '@/backend/events';
-import { FlowySvg } from '@/icons/FlowySvg';
-import type { FlowySvgName } from '@/icons/flowy-svgs';
+import { Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Server, ShieldCheck, Sparkles, UserRound, Users, X } from 'lucide-react';
+import { NavItem } from '@/components/app/nav';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTr } from '@/i18n';
 import { runAppFlowy } from '@/startup/launcher';
 import { closeAllDialogs, showDialog } from '@/ui';
@@ -12,7 +14,6 @@ import { passwordActions } from './account/password-store';
 import { AIPage } from './ai/AIPage';
 import { CertificatesPage } from './certificates/CertificatesPage';
 import { ManageDataPage } from './manage-data/ManageDataPage';
-import { MaterialIcon } from './material';
 import { NotificationsPage } from './notifications/NotificationsPage';
 import type { SettingsPageProps } from './page-props';
 import { FeatureFlagsPage } from './pages/FeatureFlagsPage';
@@ -31,71 +32,33 @@ import {
 import { fetchWorkspaces, startSettingsWorkspace, useSettingsWorkspaceStore } from './settings-workspace-store';
 import { ShortcutsPage } from './shortcuts/ShortcutsPage';
 import { WorkspacePage } from './workspace/WorkspacePage';
-import './settings.css';
 
 const MENU: Record<SettingsPage, { label: (tr: (key: string) => string) => string; icon: () => ReactNode }> = {
-  [SettingsPage.account]: { label: (tr) => tr('settings.accountPage.menuLabel'), icon: () => svg('settings_page_user_m') },
-  [SettingsPage.workspace]: { label: (tr) => tr('settings.workspacePage.menuLabel'), icon: () => svg('settings_page_workspace_m') },
-  [SettingsPage.member]: { label: (tr) => tr('settings.appearance.members.label'), icon: () => svg('settings_page_users_m') },
-  [SettingsPage.manageData]: { label: (tr) => tr('settings.manageDataPage.menuLabel'), icon: () => svg('settings_page_database_m') },
-  [SettingsPage.notifications]: { label: (tr) => tr('settings.menu.notifications'), icon: () => svg('settings_page_bell_m') },
+  [SettingsPage.account]: { label: (tr) => tr('settings.accountPage.menuLabel'), icon: () => <UserRound className="size-4" /> },
+  [SettingsPage.workspace]: { label: (tr) => tr('settings.workspacePage.menuLabel'), icon: () => <LayoutDashboard className="size-4" /> },
+  [SettingsPage.member]: { label: (tr) => tr('settings.appearance.members.label'), icon: () => <Users className="size-4" /> },
+  [SettingsPage.manageData]: { label: (tr) => tr('settings.manageDataPage.menuLabel'), icon: () => <Database className="size-4" /> },
+  [SettingsPage.notifications]: { label: (tr) => tr('settings.menu.notifications'), icon: () => <Bell className="size-4" /> },
   // [CUSTOM] hard-coded English labels.
-  [SettingsPage.cloud]: { label: () => 'Storage & server', icon: () => svg('settings_page_cloud_m') },
-  [SettingsPage.companyCertificates]: { label: () => 'Certificates', icon: () => MaterialIcon.verifiedUserOutlined(20) },
-  [SettingsPage.shortcuts]: { label: (tr) => tr('settings.shortcutsPage.menuLabel'), icon: () => svg('settings_page_keyboard_m') },
-  [SettingsPage.ai]: { label: (tr) => tr('settings.aiPage.menuLabel'), icon: () => svg('settings_page_ai_m') },
-  [SettingsPage.sites]: { label: (tr) => tr('settings.sites.title'), icon: () => svg('settings_page_earth_m') },
-  [SettingsPage.plan]: { label: (tr) => tr('settings.planPage.menuLabel'), icon: () => svg('settings_page_plan_m') },
-  [SettingsPage.billing]: { label: (tr) => tr('settings.billingPage.menuLabel'), icon: () => svg('settings_page_credit_card_m') },
-  [SettingsPage.featureFlags]: { label: () => 'Feature Flags', icon: () => MaterialIcon.flag(20) },
+  [SettingsPage.cloud]: { label: () => 'Storage & server', icon: () => <Server className="size-4" /> },
+  [SettingsPage.companyCertificates]: { label: () => 'Certificates', icon: () => <ShieldCheck className="size-4" /> },
+  [SettingsPage.shortcuts]: { label: (tr) => tr('settings.shortcutsPage.menuLabel'), icon: () => <Keyboard className="size-4" /> },
+  [SettingsPage.ai]: { label: (tr) => tr('settings.aiPage.menuLabel'), icon: () => <Sparkles className="size-4" /> },
+  [SettingsPage.sites]: { label: (tr) => tr('settings.sites.title'), icon: () => <Globe className="size-4" /> },
+  [SettingsPage.plan]: { label: (tr) => tr('settings.planPage.menuLabel'), icon: () => <Gem className="size-4" /> },
+  [SettingsPage.billing]: { label: (tr) => tr('settings.billingPage.menuLabel'), icon: () => <CreditCard className="size-4" /> },
+  [SettingsPage.featureFlags]: { label: () => 'Feature Flags', icon: () => <Flag className="size-4" /> },
 };
 
-function svg(name: FlowySvgName) {
-  return <FlowySvg svg={name} />;
-}
-
-/** SettingsMenuElement (widgets/settings_menu_element.dart): 38px AFBaseButton row. */
-function SettingsMenuElement({ page, selected, label, icon }: { page: SettingsPage; selected: boolean; label: string; icon: ReactNode }) {
-  return (
-    <div
-      className="settings-menu-item"
-      role="button"
-      tabIndex={0}
-      data-selected={selected ? 'true' : undefined}
-      onClick={() => settingsDialogActions.setSelectedPage(page)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') settingsDialogActions.setSelectedPage(page);
-      }}
-    >
-      <span style={{ display: 'flex', flexShrink: 0 }}>{icon}</span>
-      <div style={{ width: 8, flexShrink: 0 }} />
-      <div style={{ fontSize: 'calc(14px * var(--text-scale, 1))', lineHeight: '20px', color: 'var(--af-text-primary)', minWidth: 0, overflowWrap: 'anywhere' }}>{label}</div>
-    </div>
-  );
-}
-
-/** SettingsMenu (widgets/settings_menu.dart): flat list, layer01 background, 8px start radius. */
 function SettingsMenu({ pages, current }: { pages: SettingsPage[]; current: SettingsPage }) {
   const { tr } = useTr();
-  return (
-    <div
-      style={{
-        height: '100%',
-        background: 'var(--af-surface-container-layer01)',
-        borderStartStartRadius: 8,
-        borderEndStartRadius: 8,
-        overflowY: 'auto',
-        padding: '24px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-      }}
-    >
-      {pages.map((page) => (
-        <SettingsMenuElement key={page} page={page} selected={page === current} label={MENU[page].label(tr)} icon={MENU[page].icon()} />
-      ))}
-    </div>
-  );
+  return <nav className="flex h-full w-56 shrink-0 flex-col gap-px overflow-y-auto border-r bg-sidebar p-2">
+    <div className="px-2 pt-2 pb-2 text-xs font-medium text-muted-foreground">{tr('settings.title')}</div>
+    {pages.map((page) => <NavItem key={page} label={MENU[page].label(tr)} icon={MENU[page].icon()} active={page === current}
+      role="button" tabIndex={0} data-selected={page === current ? 'true' : undefined}
+      onClick={() => settingsDialogActions.setSelectedPage(page)}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') settingsDialogActions.setSelectedPage(page); }} />)}
+  </nav>;
 }
 
 function useWindowSize() {
@@ -180,26 +143,17 @@ function SettingsDialog({ close }: { close: () => void }) {
   };
 
   return (
-    <div
-      style={{
-        width: dialogWidth,
-        height: Math.min(height * 0.7, height - 48),
-        borderRadius: 16,
-        overflow: 'hidden',
-        background: 'var(--af-background-primary)',
-        boxShadow: '0 11px 15px -7px #00000033, 0 24px 38px 3px #00000024, 0 9px 46px 8px #0000001F',
-        display: 'flex',
-        alignItems: 'flex-start',
-        color: 'var(--text-color)',
-      }}
-    >
-      <div style={{ width: 204, height: '100%', flexShrink: 0 }}>
-        <SettingsMenu pages={pages} current={page} />
-      </div>
-      <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--af-border-primary)', flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
-        {/* Each page gets its own subtree, so page-local state resets on switch. */}
-        <SettingsView key={page} page={page} props={pageProps} />
+    <div className="flex overflow-hidden rounded-xl bg-background text-foreground shadow-2xl ring-1 ring-foreground/10"
+      style={{ width: dialogWidth, height: Math.min(height * 0.7, height - 48) }}>
+      <SettingsMenu pages={pages} current={page} />
+      <div className="relative h-full min-w-0 flex-1">
+        <ScrollArea key={page} className="h-full">
+          <div className="mx-auto w-full max-w-3xl px-10 py-8">
+            {/* Page-local state resets on switch. */}
+            <SettingsView key={page} page={page} props={pageProps} />
+          </div>
+        </ScrollArea>
+        <Button variant="ghost" size="icon-sm" className="absolute top-3 right-3" aria-label="Close" onClick={close}><X className="size-4" /></Button>
       </div>
     </div>
   );

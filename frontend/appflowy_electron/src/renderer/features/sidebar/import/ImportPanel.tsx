@@ -5,22 +5,23 @@ import { useEffect, useRef, useState } from 'react';
 import { DocumentDataPBSchema } from '@shared/protobuf/flowy-document/entities_pb';
 import { ImportItemPayloadPBSchema, ImportTypePB, type ImportItemPayloadPB } from '@shared/protobuf/flowy-folder/import_pb';
 import { ViewLayoutPB } from '@shared/protobuf/flowy-folder/view_pb';
-import type { FlowySvgName } from '@/icons/flowy-svgs';
+import { FileText, Table2, type LucideIcon } from 'lucide-react';
+import { Item, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { DocumentEventConvertDataToDocument, FolderEventImportData } from '@/backend/events';
 import { useTr } from '@/i18n';
-import { FlowyButton, FlowySvg, FlowyText, MaterialDialog, Spinner, showDialog } from '@/ui';
+import { MaterialDialog, Spinner, showDialog } from '@/ui';
 import { markdownToEditorJson } from './markdown';
 
 interface ImportTypeInfo {
   key: string;
-  /** ImportType.icon (the icons look swapped in Dart; kept as is). */
-  icon: FlowySvgName;
+  /** Source format icon. */
+  icon: LucideIcon;
   extensions: string[];
 }
 
 const IMPORT_TYPES: Record<'markdownOrText' | 'csv', ImportTypeInfo> = {
-  markdownOrText: { key: 'importPanel.textAndMarkdown', icon: 'text_s', extensions: ['md', 'txt'] },
-  csv: { key: 'importPanel.csv', icon: 'board_s', extensions: ['csv'] },
+  markdownOrText: { key: 'importPanel.textAndMarkdown', icon: FileText, extensions: ['md', 'txt'] },
+  csv: { key: 'importPanel.csv', icon: Table2, extensions: ['csv'] },
 };
 
 const basenameWithoutExtension = (path: string) => {
@@ -79,36 +80,17 @@ function ImportPanel({ parentViewId, onImported, close }: { parentViewId: string
     <div
       ref={ref}
       tabIndex={-1}
-      style={{ outline: 'none', position: 'relative' }}
+      className="relative outline-none"
       onKeyDown={(event) => {
         if (event.key === 'Escape') close();
       }}
     >
-      <div
-        style={{
-          width,
-          height: width * 0.5,
-          background: 'var(--cs-surface)',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gridAutoRows: width / 2 / 5,
-          alignContent: 'start',
-        }}
-      >
+      <div className="grid gap-2" style={{ width }}>
         {(Object.keys(IMPORT_TYPES) as Array<keyof typeof IMPORT_TYPES>).map((type) => {
           const info = IMPORT_TYPES[type];
           return (
-            <div key={type} style={{ margin: 4, borderRadius: 4, background: 'var(--th-card)', boxShadow: '0 1px 3px #0000001F, 0 1px 1px #00000024' }}>
-              <FlowyButton
-                height={width / 2 / 5 - 8}
-                leftIcon={<FlowySvg svg={info.icon} size={20} color="var(--cs-tertiary)" />}
-                leftIconSize={20}
-                text={
-                  <FlowyText fontWeight={500} fontSize={15} ellipsis color="var(--cs-tertiary)">
-                    {tr(info.key)}
-                  </FlowyText>
-                }
-                onTap={async () => {
+            <Item key={type} variant="outline" render={<button type="button" />} className="cursor-default hover:bg-accent"
+                onClick={async () => {
                   const paths = await window.appflowy.dialog.pickFiles({
                     filters: [{ name: tr(info.key), extensions: info.extensions }],
                     multiple: true,
@@ -119,14 +101,15 @@ function ImportPanel({ parentViewId, onImported, close }: { parentViewId: string
                   setLoading(false);
                   onImported();
                   close();
-                }}
-              />
-            </div>
+                }}>
+              <ItemMedia variant="icon"><info.icon className="size-5 text-muted-foreground" /></ItemMedia>
+              <ItemContent><ItemTitle>{tr(info.key)}</ItemTitle></ItemContent>
+            </Item>
           );
         })}
       </div>
       {loading && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="absolute inset-0 flex items-center justify-center">
           <Spinner />
         </div>
       )}
@@ -137,11 +120,11 @@ function ImportPanel({ parentViewId, onImported, close }: { parentViewId: string
 /** showImportPanel: a FlowyDialog titled "Import"; `callback` runs after a successful pick and import. */
 export function showImportPanel(parentViewId: string, callback: () => void) {
   showDialog((close) => (
-    <MaterialDialog radius={16} background="var(--cs-surface)" style={{ overflow: 'hidden' }}>
-      <div style={{ padding: '20px 20px 0' }}>
+    <MaterialDialog radius={12}>
+      <div className="px-4 pt-4">
         <ImportTitle />
       </div>
-      <div style={{ padding: '10px 20px' }}>
+      <div className="p-4">
         <ImportPanel parentViewId={parentViewId} onImported={callback} close={close} />
       </div>
     </MaterialDialog>
@@ -151,8 +134,8 @@ export function showImportPanel(parentViewId: string, callback: () => void) {
 function ImportTitle() {
   const { tr } = useTr();
   return (
-    <FlowyText fontWeight={600} fontSize={20} color="var(--cs-tertiary)">
+    <h2 className="text-xl font-semibold">
       {tr('moreAction.import')}
-    </FlowyText>
+    </h2>
   );
 }

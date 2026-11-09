@@ -1,16 +1,18 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { create } from 'zustand';
-import { FlowySvg } from '@/icons/FlowySvg';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AlertDialogFooter } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 import { tr } from '@/i18n';
-import { AFButton } from './Buttons';
-import { AFTextField, type AFTextFieldHandle } from './Inputs';
 
 // A small dialog host: showDialog(...) pushes a dialog; each closes itself via the close callback.
 interface DialogEntry {
   id: number;
   render: (close: () => void) => ReactNode;
-  barrierColor: string;
+  barrierColor?: string;
   barrierDismissible: boolean;
   onClosed?: () => void;
 }
@@ -39,7 +41,7 @@ export function showDialog(render: (close: () => void) => ReactNode, options: Sh
       {
         id,
         render,
-        barrierColor: options.barrierColor ?? '#0000008A',
+        barrierColor: options.barrierColor,
         barrierDismissible: options.barrierDismissible ?? true,
         onClosed: options.onClosed,
       },
@@ -77,16 +79,7 @@ export function DialogHost() {
         return (
           <div
             key={dialog.id}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 900,
-              background: dialog.barrierColor,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              animation: 'flowy-fade-in 150ms ease-out',
-            }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px] animate-in fade-in-0"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget && dialog.barrierDismissible) close();
             }}
@@ -100,13 +93,12 @@ export function DialogHost() {
   );
 }
 
-/** Material Dialog: surface bg, inset 40/24, elevation 24. */
+const dialogSurfaceClass = 'rounded-xl bg-popover text-popover-foreground shadow-xl ring-1 ring-foreground/10 animate-in fade-in-0 zoom-in-95 duration-100';
+const customColor = (color?: string) => color?.includes('var(') ? undefined : color;
+
+/** Compatibility surface; caller-computed dimensions remain inline. */
 export function MaterialDialog({
-  children,
-  radius = 4,
-  background = 'var(--cs-surface)',
-  width,
-  style,
+  children, radius, background, width, style,
 }: {
   children: ReactNode;
   radius?: number;
@@ -116,30 +108,16 @@ export function MaterialDialog({
 }) {
   return (
     <div
-      style={{
-        background,
-        borderRadius: radius,
-        width,
-        maxWidth: 'calc(100vw - 80px)',
-        maxHeight: 'calc(100vh - 48px)',
-        boxShadow: '0 11px 15px -7px #00000033, 0 24px 38px 3px #00000024, 0 9px 46px 8px #0000001F',
-        display: 'flex',
-        flexDirection: 'column',
-        ...style,
-      }}
+      className={cn(dialogSurfaceClass, 'flex max-h-[calc(100vh-48px)] max-w-[calc(100vw-80px)] flex-col')}
+      style={{ width, borderRadius: radius, backgroundColor: customColor(background), ...style }}
     >
       {children}
     </div>
   );
 }
 
-/** FlowyDialog: 70% of the window, radius 16, card color. */
 export function FlowyDialog({
-  children,
-  width,
-  minWidth,
-  maxWidth,
-  expandHeight = true,
+  children, width, minWidth, maxWidth, expandHeight = true,
 }: {
   children: ReactNode;
   width?: CSSProperties['width'];
@@ -148,59 +126,53 @@ export function FlowyDialog({
   expandHeight?: boolean;
 }) {
   return (
-    <MaterialDialog
-      radius={16}
-      background="var(--th-card)"
-      width={width ?? '70vw'}
-      style={{ minWidth, maxWidth: maxWidth ?? 'calc(100vw - 80px)', height: expandHeight ? '70vh' : undefined, overflow: 'hidden' }}
-    >
+    <MaterialDialog width={width ?? '70vw'} style={{ minWidth, maxWidth: maxWidth ?? 'calc(100vw - 80px)', height: expandHeight ? '70vh' : undefined, overflow: 'hidden' }}>
       {children}
     </MaterialDialog>
   );
 }
 
-/** AFModal: radius 16, surface.primary, shadow medium; header/body/footer paddings. */
 export function AFModal({ children, maxWidth = 400 }: { children: ReactNode; maxWidth?: number }) {
   return (
-    <div style={{ padding: 16, width: '100%', maxWidth: maxWidth + 32 }}>
-      <div
-        style={{
-          background: 'var(--af-surface-primary)',
-          borderRadius: 16,
-          boxShadow: 'var(--af-shadow-medium)',
-          display: 'flex',
-          flexDirection: 'column',
-          color: 'var(--af-text-primary)',
-        }}
-      >
-        {children}
-      </div>
+    <div className="w-full p-4" style={{ maxWidth: maxWidth + 32 }}>
+      <div className={cn(dialogSurfaceClass, 'flex flex-col')}>{children}</div>
     </div>
   );
 }
 
 AFModal.Header = function AFModalHeader({ title, onClose }: { title: ReactNode; onClose?: () => void }) {
   return (
-    <div style={{ padding: '16px 20px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-      <div style={{ flex: 1, fontSize: 'calc(16px * var(--text-scale, 1))', lineHeight: '22px', fontWeight: 700 }}>{title}</div>
-      {onClose && (
-        <AFButton variant="ghostPrimary" padding={4} onTap={onClose}>
-          <FlowySvg svg="toast_close_s" size={20} />
-        </AFButton>
-      )}
+    <div className="flex items-center gap-1.5 px-4 pt-4">
+      <div className="min-w-0 flex-1 text-base font-medium">{title}</div>
+      {onClose && <Button type="button" variant="ghost" size="icon-sm" onClick={onClose}><X className="size-4" /></Button>}
     </div>
   );
 };
 AFModal.Body = ({ children, minHeight }: { children: ReactNode; minHeight?: number }) => (
-  <div style={{ padding: '12px 20px', minHeight }}>{children}</div>
+  <div className="px-4 py-3" style={{ minHeight }}>{children}</div>
 );
 AFModal.Footer = ({ leading, trailing }: { leading?: ReactNode; trailing?: ReactNode }) => (
-  <div style={{ padding: '0 20px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+  <div className="flex items-center gap-3 rounded-b-xl border-t bg-muted/50 p-4">
     {leading}
-    <div style={{ flex: 1 }} />
+    <div className="flex-1" />
     {trailing}
   </div>
 );
+
+/** AlertDialog layout inside the existing imperative host, preserving its focus/Escape rules. */
+function HyperAlertDialogLayout({ children }: { children: ReactNode }) {
+  return <div className={cn(dialogSurfaceClass, 'grid w-[min(26rem,calc(100vw-2rem))] gap-4 p-4')}>{children}</div>;
+}
+function HyperAlertDialogHeading({ title, onClose }: { title: ReactNode; onClose: () => void }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="min-w-0 flex-1 truncate text-base font-medium">{title}</div>
+      <Button type="button" variant="ghost" size="icon-sm" onClick={onClose}><X className="size-4" /></Button>
+    </div>
+  );
+}
+const alertFooterClass = '-mx-4 -mb-4 flex flex-row justify-end gap-2 rounded-b-xl border-t bg-muted/50 p-4';
+const destructiveConfirmClass = 'bg-destructive text-white hover:bg-destructive/90';
 
 /** showSimpleAFDialog (dialog_v2.dart). */
 export function showSimpleAFDialog({
@@ -220,38 +192,16 @@ export function showSimpleAFDialog({
 }) {
   showDialog(
     (close) => (
-      <AFModal>
-        <AFModal.Header title={title} onClose={close} />
-        <AFModal.Body minHeight={108}>
-          <div style={{ fontSize: 'calc(14px * var(--text-scale, 1))', lineHeight: '20px' }}>{content}</div>
-        </AFModal.Body>
-        <AFModal.Footer
-          trailing={
-            <>
-              {secondaryAction && (
-                <AFButton
-                  variant="outlinedNormal"
-                  text={secondaryAction[0]}
-                  onTap={() => {
-                    secondaryAction[1]?.();
-                    close();
-                  }}
-                />
-              )}
-              <AFButton
-                variant={isDestructive ? 'filledDestructive' : 'filledPrimary'}
-                text={primaryAction[0]}
-                onTap={() => {
-                  primaryAction[1]?.();
-                  close();
-                }}
-              />
-            </>
-          }
-        />
-      </AFModal>
+      <HyperAlertDialogLayout>
+        <HyperAlertDialogHeading title={title} onClose={close} />
+        <div className="text-sm text-muted-foreground">{content}</div>
+        <AlertDialogFooter className={alertFooterClass}>
+          {secondaryAction && <Button type="button" variant="outline" onClick={() => { secondaryAction[1]?.(); close(); }}>{secondaryAction[0]}</Button>}
+          <Button type="button" className={isDestructive ? destructiveConfirmClass : undefined} onClick={() => { primaryAction[1]?.(); close(); }}>{primaryAction[0]}</Button>
+        </AlertDialogFooter>
+      </HyperAlertDialogLayout>
     ),
-    { barrierColor: 'var(--af-surface-overlay)', barrierDismissible },
+    { barrierDismissible },
   );
 }
 
@@ -272,7 +222,7 @@ function TextFieldDialog({
   onConfirm: (value: string) => void;
   close: () => void;
 }) {
-  const field = useRef<AFTextFieldHandle>(null);
+  const field = useRef<HTMLInputElement>(null);
   const valueRef = useRef(initialValue);
   const confirmRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -286,33 +236,27 @@ function TextFieldDialog({
     close();
   };
   return (
-    <AFModal>
-      <AFModal.Header title={title} onClose={close} />
-      <AFModal.Body>
-        <AFTextField
-          ref={field}
-          size="m"
-          initialText={initialValue}
-          hintText={hintText}
-          maxLength={maxLength}
-          onChanged={(value) => {
-            valueRef.current = value;
-            confirmRef.current?.setAttribute('data-empty', String(value.trim() === ''));
-          }}
-          onSubmitted={submit}
-        />
-      </AFModal.Body>
-      <AFModal.Footer
-        trailing={
-          <>
-            <AFButton variant="outlinedNormal" text={tr('button.cancel')} onTap={close} />
-            <div ref={confirmRef} style={{ display: 'contents' }}>
-              <AFButton variant="filledPrimary" text={tr('button.confirm')} onTap={submit} />
-            </div>
-          </>
-        }
+    <HyperAlertDialogLayout>
+      <HyperAlertDialogHeading title={title} onClose={close} />
+      <Input
+        ref={field}
+        defaultValue={initialValue}
+        placeholder={hintText}
+        maxLength={maxLength}
+        spellCheck={false}
+        onChange={(event) => {
+          valueRef.current = event.target.value;
+          confirmRef.current?.setAttribute('data-empty', String(event.target.value.trim() === ''));
+        }}
+        onKeyDown={(event) => { if (event.key === 'Enter') submit(); }}
       />
-    </AFModal>
+      <AlertDialogFooter className={alertFooterClass}>
+        <Button type="button" variant="outline" onClick={close}>{tr('button.cancel')}</Button>
+        <div ref={confirmRef} className="contents">
+          <Button type="button" onClick={submit}>{tr('button.confirm')}</Button>
+        </div>
+      </AlertDialogFooter>
+    </HyperAlertDialogLayout>
   );
 }
 
@@ -327,7 +271,6 @@ export function showAFTextFieldDialog(options: {
 }) {
   showDialog(
     (close) => <TextFieldDialog {...options} selectAll={options.selectAll ?? true} close={close} />,
-    { barrierColor: 'var(--af-surface-overlay)' },
   );
 }
 
@@ -361,7 +304,7 @@ export function showConfirmDialog({
       description={description}
       style={style}
       confirmLabel={confirmLabel ?? (style === 'cancelAndOk' ? tr('space.delete') : tr('button.ok'))}
-      confirmButtonColor={confirmButtonColor ?? (style === 'cancelAndOk' ? 'var(--cs-error)' : 'var(--cs-primary)')}
+      confirmButtonColor={confirmButtonColor}
       onCancel={() => {
         onCancel?.();
         close();
@@ -401,7 +344,7 @@ function ConfirmPopup({
   description: string;
   style: ConfirmStyle;
   confirmLabel: string;
-  confirmButtonColor: string;
+  confirmButtonColor?: string;
   onConfirm: () => void;
   onCancel: () => void;
   onClose: () => void;
@@ -410,71 +353,23 @@ function ConfirmPopup({
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => ref.current?.focus(), []);
   return (
-    <MaterialDialog radius={12} width={440} style={{ overflow: 'hidden' }}>
+    <HyperAlertDialogLayout>
       <div
         ref={ref}
         tabIndex={-1}
-        onKeyUp={(event) => {
-          if (event.key === 'Enter') onConfirm();
-        }}
-        style={{ outline: 'none', borderRadius: 16, background: 'var(--af-surface-primary)', padding: 20, color: 'var(--af-text-primary)' }}
+        className="grid gap-4 outline-none"
+        onKeyUp={(event) => { if (event.key === 'Enter') onConfirm(); }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div
-            style={{
-              flex: 1,
-              fontSize: 'calc(16px * var(--text-scale, 1))',
-              lineHeight: '22px',
-              fontWeight: 700,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {title}
-          </div>
-          <AFButton variant="ghostPrimary" size="s" padding={4} onTap={onClose}>
-            <FlowySvg svg="password_close_m" size={20} />
-          </AFButton>
-        </div>
-        {description && (
-          <div
-            style={{
-              marginTop: 12,
-              fontSize: 'calc(14px * var(--text-scale, 1))',
-              lineHeight: '20px',
-              display: '-webkit-box',
-              WebkitLineClamp: 5,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {description}
-          </div>
-        )}
-        {children && <div style={{ marginTop: 12 }}>{children}</div>}
-        <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-          {style === 'cancelAndOk' && (
-            <AFButton variant="outlinedNormal" text={tr('button.cancel')} onTap={onCancel} style={{ fontWeight: 400 }} />
-          )}
-          <AFButton
-            variant="filledPrimary"
-            text={confirmLabel}
-            onTap={onConfirm}
-            padding="6px 16px"
-            style={
-              {
-                '--btn-bg': style === 'cancelAndOk' ? confirmButtonColor : 'var(--cs-primary)',
-                '--btn-bg-hover': `color-mix(in srgb, ${style === 'cancelAndOk' ? confirmButtonColor : 'var(--cs-primary)'} 90%, transparent)`,
-                '--btn-fg': 'var(--cs-on-primary)',
-                fontWeight: 400,
-                minWidth: 0,
-              } as CSSProperties
-            }
-          />
-        </div>
+        <HyperAlertDialogHeading title={title} onClose={onClose} />
+        {description && <div className="line-clamp-5 whitespace-pre-wrap text-sm text-muted-foreground">{description}</div>}
+        {children && <div>{children}</div>}
+        <AlertDialogFooter className={alertFooterClass}>
+          {style === 'cancelAndOk' && <Button type="button" variant="outline" onClick={onCancel}>{tr('button.cancel')}</Button>}
+          <Button type="button" className={style === 'cancelAndOk' ? destructiveConfirmClass : undefined} onClick={onConfirm} style={{ backgroundColor: style === 'cancelAndOk' ? customColor(confirmButtonColor) : undefined }}>
+            {confirmLabel}
+          </Button>
+        </AlertDialogFooter>
       </div>
-    </MaterialDialog>
+    </HyperAlertDialogLayout>
   );
 }

@@ -1,4 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+import { Spinner as HyperSpinner } from '@/components/ui/spinner';
 import { Tooltip } from './Tooltip';
 
 export interface FlowyTextProps {
@@ -24,8 +27,8 @@ export interface FlowyTextProps {
 /** FlowyText (packages/flowy_infra_ui/lib/style_widget/text.dart). */
 export function FlowyText({
   children,
-  fontSize = 14,
-  fontWeight = 400,
+  fontSize,
+  fontWeight,
   color,
   lineHeight,
   maxLines = 1,
@@ -40,13 +43,13 @@ export function FlowyText({
   const multiline = maxLines === null || maxLines > 1;
   const text = (
     <div
-      className={`flowy-text${className ? ` ${className}` : ''}`}
+      className={cn('min-w-0 overflow-hidden text-sm font-normal text-foreground', multiline ? 'whitespace-pre-wrap wrap-anywhere' : 'whitespace-nowrap', ellipsis ? 'text-ellipsis' : 'text-clip', color?.includes('var(') && /secondary|tertiary|hint|muted/.test(color) && 'text-muted-foreground', className)}
       data-ellipsis={ellipsis ? 'true' : undefined}
       data-multiline={multiline ? 'true' : undefined}
       style={{
-        fontSize: `calc(${fontSize}px * var(--text-scale, 1))`,
+        fontSize,
         fontWeight,
-        color,
+        color: color?.includes('var(') ? undefined : color,
         lineHeight: lineHeight ? `${lineHeight}px` : undefined,
         textAlign,
         textDecoration: decoration,
@@ -68,30 +71,17 @@ type Variant = Omit<FlowyTextProps, 'fontWeight'>;
 FlowyText.regular = (props: Variant) => <FlowyText {...props} fontWeight={400} />;
 FlowyText.medium = (props: Variant) => <FlowyText {...props} fontWeight={500} />;
 FlowyText.semibold = (props: Variant) => <FlowyText {...props} fontWeight={600} />;
-FlowyText.small = (props: Omit<Variant, 'fontSize'>) => <FlowyText {...props} fontSize={12} fontWeight={400} />;
+FlowyText.small = (props: Omit<Variant, 'fontSize'>) => <FlowyText {...props} className={cn('text-xs', props.className)} fontWeight={400} />;
 
-export const VSpace = ({ size }: { size: number }) => <div style={{ height: size, flexShrink: 0 }} />;
-export const HSpace = ({ size }: { size: number }) => <div style={{ width: size, flexShrink: 0 }} />;
+export const VSpace = ({ size }: { size: number }) => <div className="shrink-0" style={{ height: size }} />;
+export const HSpace = ({ size }: { size: number }) => <div className="shrink-0" style={{ width: size }} />;
 
-/** FlowyDivider: 1px AFX.borderColor. */
-export const FlowyDivider = ({ margin }: { margin?: CSSProperties['margin'] }) => (
-  <div style={{ height: 1, background: 'var(--afx-border)', margin, flexShrink: 0 }} />
+export const FlowyDivider = ({ margin }: { margin?: CSSProperties['margin'] }) => <Separator style={{ margin }} />;
+
+export const AFDivider = ({ spacing = 0, vertical }: { spacing?: number; vertical?: boolean }) => (
+  <Separator orientation={vertical ? 'vertical' : 'horizontal'} style={{ margin: vertical ? '0 ' + spacing + 'px' : spacing + 'px 0' }} />
 );
 
-/** AFDivider: 1px AF.border.primary. */
-export const AFDivider = ({ spacing = 0, vertical }: { spacing?: number; vertical?: boolean }) =>
-  vertical ? (
-    <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--af-border-primary)', margin: `0 ${spacing}px` }} />
-  ) : (
-    <div style={{ height: 1, background: 'var(--af-border-primary)', margin: `${spacing}px 0`, flexShrink: 0 }} />
-  );
-
-/** Material CircularProgressIndicator.adaptive (36px default). */
 export function Spinner({ size = 36, stroke = 4, color }: { size?: number; stroke?: number; color?: string }) {
-  return (
-    <div
-      className="flowy-spinner"
-      style={{ width: size, height: size, borderWidth: stroke, ...(color ? { ['--spinner-color' as string]: color } : null) }}
-    />
-  );
+  return <HyperSpinner className="text-primary" strokeWidth={stroke} style={{ width: size, height: size, color: color?.includes('var(') ? undefined : color }} />;
 }

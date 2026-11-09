@@ -1,59 +1,40 @@
-import { useRef } from 'react';
-import { FlowySvg } from '@/icons/FlowySvg';
+import { useId, useImperativeHandle, useRef, useState } from 'react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Field, FieldLabel, FieldError } from '@/components/ui/field';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { useTr } from '@/i18n';
-import { AFButton, AFTextField, showDialog, showToast, type AFTextFieldHandle } from '@/ui';
+import { showDialog, showToast, type AFTextFieldHandle } from '@/ui';
 import { PasswordSuffixIcon } from '../shared-widgets';
 import { changePasswordErrorFor, setupPasswordErrorFor, validateChangePassword, validateSetupPassword, type PasswordField } from './password';
 import { passwordActions } from './password-store';
 
-const caption = { fontSize: 'calc(12px * var(--text-scale, 1))', lineHeight: '18px', fontWeight: 600, color: 'var(--af-text-secondary)' } as const;
-
 function PasswordField({ label, hint, fieldRef }: { label: string; hint: string; fieldRef: React.RefObject<AFTextFieldHandle | null> }) {
-  return (
-    <>
-      <div style={caption}>{label}</div>
-      <div style={{ height: 4 }} />
-      <AFTextField
-        ref={fieldRef}
-        hintText={hint}
-        obscureText
-        autoComplete="current-password"
-        suffixIcon={(obscured) => <PasswordSuffixIcon isObscured={obscured} onTap={() => fieldRef.current?.syncObscured(!obscured)} />}
-      />
-    </>
-  );
+  const id = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [obscured, setObscured] = useState(true);
+  useImperativeHandle(fieldRef, () => ({
+    syncError: setError, clearError: () => setError(null), syncObscured: setObscured,
+    focus: () => inputRef.current?.focus(), select: () => inputRef.current?.select(), value: () => inputRef.current?.value ?? '',
+  }));
+  return <Field data-invalid={error !== null ? 'true' : undefined}>
+    <FieldLabel htmlFor={id}>{label}</FieldLabel>
+    <InputGroup data-size="l" data-error={error !== null ? 'true' : undefined}>
+      <InputGroupInput ref={inputRef} id={id} placeholder={hint} type={obscured ? 'password' : 'text'} autoComplete="current-password" spellCheck={false} aria-invalid={error !== null ? true : undefined} />
+      <InputGroupAddon align="inline-end"><PasswordSuffixIcon isObscured={obscured} onTap={() => fieldRef.current?.syncObscured(!obscured)} /></InputGroupAddon>
+    </InputGroup>
+    {error && <FieldError className="text-xs">{error}</FieldError>}
+  </Field>;
 }
 
 function DialogShell({ title, close, children, onSave }: { title: string; close: () => void; children: React.ReactNode; onSave: () => void }) {
   const { tr } = useTr();
-  return (
-    <div
-      style={{
-        background: 'var(--af-surface-primary)',
-        borderRadius: 16,
-        padding: '16px 20px',
-        width: 400,
-        maxWidth: 'calc(100vw - 80px)',
-        boxShadow: '0 11px 15px -7px #00000033, 0 24px 38px 3px #00000024, 0 9px 46px 8px #0000001F',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ flex: 1, fontSize: 'calc(16px * var(--text-scale, 1))', lineHeight: '22px', fontWeight: 700, color: 'var(--af-text-primary)' }}>{title}</div>
-        <AFButton variant="ghostPrimary" size="s" padding={4} onTap={close}>
-          <FlowySvg svg="password_close_m" size={20} />
-        </AFButton>
-      </div>
-      <div style={{ height: 16 }} />
-      {children}
-      <div style={{ height: 16 }} />
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-        <AFButton variant="outlinedNormal" text={tr('button.cancel')} onTap={close} />
-        <AFButton variant="filledPrimary" text={tr('button.save')} onTap={onSave} />
-      </div>
-    </div>
-  );
+  return <div className="flex w-[min(25rem,calc(100vw-5rem))] flex-col gap-4 rounded-xl bg-popover p-4 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
+    <div className="flex items-center gap-2"><h2 className="flex-1 text-base font-medium">{title}</h2><Button variant="ghost" size="icon-sm" aria-label="Close" onClick={close}><X className="size-4" /></Button></div>
+    {children}
+    <div className="-mx-4 -mb-4 flex justify-end gap-2 rounded-b-xl border-t bg-muted/50 p-4"><Button variant="outline" onClick={close}>{tr('button.cancel')}</Button><Button onClick={onSave}>{tr('button.save')}</Button></div>
+  </div>;
 }
 
 /** ChangePasswordDialogContent (settings/pages/account/password/change_password.dart). */
@@ -85,9 +66,7 @@ function ChangePasswordDialog({ close }: { close: () => void }) {
   return (
     <DialogShell title={tr('newSettings.myAccount.password.changePassword')} close={close} onSave={() => void save()}>
       <PasswordField label={tr('newSettings.myAccount.password.currentPassword')} hint={tr('newSettings.myAccount.password.hint.enterYourCurrentPassword')} fieldRef={current} />
-      <div style={{ height: 16 }} />
       <PasswordField label={tr('newSettings.myAccount.password.newPassword')} hint={tr('newSettings.myAccount.password.hint.enterYourNewPassword')} fieldRef={next} />
-      <div style={{ height: 16 }} />
       <PasswordField label={tr('newSettings.myAccount.password.confirmNewPassword')} hint={tr('newSettings.myAccount.password.hint.confirmYourNewPassword')} fieldRef={confirm} />
     </DialogShell>
   );
@@ -119,7 +98,6 @@ function SetupPasswordDialog({ close }: { close: () => void }) {
   return (
     <DialogShell title={tr('newSettings.myAccount.password.setupPassword')} close={close} onSave={() => void save()}>
       <PasswordField label={tr('newSettings.myAccount.password.title')} hint={tr('newSettings.myAccount.password.hint.confirmYourPassword')} fieldRef={password} />
-      <div style={{ height: 16 }} />
       <PasswordField label={tr('newSettings.myAccount.password.confirmPassword')} hint={tr('newSettings.myAccount.password.hint.confirmYourPassword')} fieldRef={confirm} />
     </DialogShell>
   );

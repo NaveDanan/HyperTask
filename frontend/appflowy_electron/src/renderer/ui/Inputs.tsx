@@ -8,6 +8,11 @@ import {
   type ReactNode,
 } from 'react';
 
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+
 export interface AFTextFieldHandle {
   syncError(errorText: string): void;
   clearError(): void;
@@ -77,9 +82,11 @@ export const AFTextField = forwardRef<AFTextFieldHandle, AFTextFieldProps>(funct
   }, [autoFocus]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', ...style }}>
-      <div className="af-textfield" data-size={size} data-error={error !== null ? 'true' : undefined} data-readonly={readOnly ? 'true' : undefined}>
-        <input
+    <div className="flex flex-col" style={style}>
+      <div className="relative flex items-center" data-size={size} data-error={error !== null ? 'true' : undefined} data-readonly={readOnly ? 'true' : undefined}>
+        <Input
+          className={cn(size === 'l' ? 'h-9' : 'h-8', suffixIcon && 'pr-10')}
+          aria-invalid={error !== null ? true : undefined}
           ref={inputRef}
           type={obscured ? 'password' : type === 'number' ? 'text' : type}
           inputMode={type === 'number' ? 'numeric' : undefined}
@@ -102,32 +109,16 @@ export const AFTextField = forwardRef<AFTextFieldHandle, AFTextFieldProps>(funct
             if (event.key === 'Escape') onEscape?.();
           }}
         />
-        {suffixIcon && <div style={{ display: 'flex', paddingRight: 8 }}>{suffixIcon(obscured)}</div>}
+        {suffixIcon && <div className="absolute right-2 flex">{suffixIcon(obscured)}</div>}
       </div>
-      {error && (
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: 'calc(12px * var(--text-scale, 1))',
-            lineHeight: '18px',
-            color: 'var(--af-text-error)',
-            textAlign: 'start',
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div className="mt-1 text-start text-xs text-destructive">{error}</div>}
     </div>
   );
 });
 
-/** Toggle (workspace/presentation/widgets/toggle/toggle.dart): big 16×27 track, 14px thumb. */
+/** Toggle compatibility wrapper. */
 export function Toggle({
-  value,
-  onChanged,
-  small,
-  activeBackgroundColor = 'var(--cs-primary)',
-  inactiveBackgroundColor = 'var(--afx-toggle-button-bg)',
+  value, onChanged, small, activeBackgroundColor, inactiveBackgroundColor,
 }: {
   value: boolean;
   onChanged: (value: boolean) => void;
@@ -135,32 +126,11 @@ export function Toggle({
   activeBackgroundColor?: string;
   inactiveBackgroundColor?: string;
 }) {
-  const [h, w, d] = small ? [10, 16, 8] : [16, 27, 14];
+  const color = value ? activeBackgroundColor : inactiveBackgroundColor;
   return (
-    <div style={{ padding: 8, display: 'inline-flex' }} onClick={() => onChanged(!value)}>
-      <div
-        style={{
-          position: 'relative',
-          width: w,
-          height: h,
-          borderRadius: h / 2,
-          background: value ? activeBackgroundColor : inactiveBackgroundColor,
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: (h - d) / 2,
-            left: value ? w - d - 1 : 1,
-            width: d,
-            height: d,
-            borderRadius: '50%',
-            background: '#FFFFFF',
-            transition: 'left 150ms linear',
-          }}
-        />
-      </div>
-    </div>
+    <span className="inline-flex p-2">
+      <Switch checked={value} onCheckedChange={onChanged} size={small ? 'sm' : 'default'} style={{ backgroundColor: color?.includes('var(') ? undefined : color }} />
+    </span>
   );
 }
 
@@ -198,7 +168,7 @@ export function avatarColorIndex(seed: string | undefined): number {
   return Number(abs % 20n) + 1;
 }
 
-const AVATAR_SIZES = { xs: [16, 12], s: [24, 14], m: [32, 16], l: [48, 20], xl: [64, 24] } as const;
+const AVATAR_SIZES = { xs: 16, s: 24, m: 32, l: 48, xl: 64 } as const;
 
 /** AFAvatar (appflowy_ui avatar.dart). */
 export function AFAvatar({
@@ -212,38 +182,14 @@ export function AFAvatar({
   size?: keyof typeof AVATAR_SIZES;
   colorHash?: string;
 }) {
-  const [px, fontSize] = AVATAR_SIZES[size];
+  const px = AVATAR_SIZES[size];
   const [failed, setFailed] = useState(false);
-  if (url && !failed) {
-    return (
-      <img
-        src={url}
-        width={px}
-        height={px}
-        alt=""
-        onError={() => setFailed(true)}
-        style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-      />
-    );
-  }
   const [bg, fg] = AVATAR_COLORS[avatarColorIndex(colorHash ?? name) - 1];
   const initial = name?.trim().charAt(0).toUpperCase() ?? '';
   return (
-    <div
-      style={{
-        width: px,
-        height: px,
-        borderRadius: '50%',
-        background: bg,
-        color: fg,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize,
-        flexShrink: 0,
-      }}
-    >
-      {initial}
-    </div>
+    <Avatar style={{ width: px, height: px }}>
+      {url && !failed && <AvatarImage src={url} alt="" onError={() => setFailed(true)} />}
+      <AvatarFallback className="text-xs font-medium" style={{ backgroundColor: bg, color: fg }}>{initial}</AvatarFallback>
+    </Avatar>
   );
 }

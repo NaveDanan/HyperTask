@@ -3,10 +3,11 @@
 // checks where electron.exe cannot run. Not part of the app.
 //
 //   npm run build && npm run harness:compile
-//   node scripts/web-harness/server.cjs --port 5199 --support <scratch dir>
+//   node scripts/web-harness/server.cjs --port 5199 --support <scratch dir> [--renderer <built renderer dir>]
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
+const tls = require('node:tls');
 
 const root = path.resolve(__dirname, '../..');
 const compiled = path.join(root, '.cache/harness');
@@ -14,6 +15,9 @@ const { CoreProcess } = require(path.join(compiled, 'core/process.js'));
 const { coreBinaryPath } = require(path.join(compiled, 'core/binary.js'));
 const { SharedPreferences } = require(path.join(compiled, 'prefs.js'));
 const { readDeviceId } = require(path.join(compiled, 'device-id.js'));
+
+// Trust the OS certificate store too (corporate CAs), as Electron's net.fetch does.
+tls.setDefaultCACertificates([...tls.getCACertificates('default'), ...tls.getCACertificates('system')]);
 
 const arg = (name, fallback) => {
   const index = process.argv.indexOf(`--${name}`);
@@ -23,7 +27,7 @@ const port = Number(arg('port', '5199'));
 const support = path.resolve(arg('support', path.join(root, '.cache/harness-support')));
 fs.mkdirSync(support, { recursive: true });
 
-const rendererDir = path.join(root, 'out/renderer');
+const rendererDir = path.resolve(arg('renderer', path.join(root, 'out/renderer')));
 const prefs = new SharedPreferences(path.join(support, 'shared_preferences.json'));
 const core = new CoreProcess(coreBinaryPath(root, false));
 let started = null;
@@ -44,6 +48,7 @@ const decode = (text) =>
     return v;
   });
 
+const jiraCredentials = new Map();
 const clients = new Set();
 const broadcast = (event) => {
   const data = `data: ${encode(event)}\n\n`;
@@ -85,6 +90,25 @@ const handlers = {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, content);
   },
+  'fs.writeBytes': (target, data) => {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, Buffer.from(data));
+  },
+  'net.request': async ({ url, method, headers, body }) => {
+    let response;
+    try {
+      // Same redirect policy as the main process (redirect: 'error').
+      response = await fetch(url, { method, headers, body, redirect: 'error' });
+    } catch (error) {
+      throw new Error(error?.cause?.message ?? error?.message ?? String(error));
+    }
+    return { status: response.status, headers: Object.fromEntries(response.headers), body: await response.text() };
+  },
+  // Session-only Jira credentials (no DPAPI in the harness).
+  'jira.readCredentials': (accountId) => ({ ok: true, value: jiraCredentials.get(accountId) ?? null }),
+  'jira.writeCredentials': (accountId, credentials) => (jiraCredentials.set(accountId, credentials), { ok: true, value: undefined }),
+  'jira.deleteCredentials': (accountId) => (jiraCredentials.delete(accountId), { ok: true, value: undefined }),
+  'jira.isPersistent': () => false,
   'window.isMaximized': () => false,
   'themes.list': () => [],
   'certificates.list': () => [],

@@ -8,7 +8,7 @@ import { HomeSideBar } from '@/features/sidebar/Sidebar';
 import { HomeStack } from '@/features/tabs/HomeStack';
 import { CommandPaletteHost } from '@/features/search/CommandPalette';
 import { SettingsDialogHost } from '@/features/settings/SettingsDialog';
-import { Spinner } from '@/ui';
+import { Spinner } from '@/components/ui/spinner';
 import { PluginType, viewPlugin } from '../tabs/plugin';
 import { tabsActions, useTabsStore } from '../tabs/tabs-store';
 import { homeSettingActions, useHomeLayout } from './home-setting-store';
@@ -32,8 +32,8 @@ export function DesktopHomeScreen() {
 
   if (state === 'loading') {
     return (
-      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Spinner />
+      <div className="flex h-full items-center justify-center bg-sidebar text-foreground">
+        <Spinner className="size-5 text-muted-foreground" />
       </div>
     );
   }
@@ -81,15 +81,11 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
 
   const ease = (ms: number) => `${ms}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
   return (
-    <div style={{ position: 'relative', height: '100%', background: 'var(--cs-surface)', overflow: 'hidden' }}>
+    <div className="relative h-full overflow-hidden bg-sidebar text-foreground">
       <div
+        className="absolute inset-y-0 right-0 min-w-[500px]"
         style={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          right: 0,
           left: layout.homePageLOffset,
-          minWidth: 500,
           transition: `left ${ease(layout.animDuration)}`,
         }}
       >
@@ -100,15 +96,11 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
         <NotificationPanel left={layout.showMenu ? layout.menuWidth : 0} top={layout.showMenu ? 0 : 52} />
       )}
       <div
+        className="absolute inset-y-0 left-0 z-2"
         style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
           width: layout.menuWidth,
           transform: layout.showMenu ? 'translateX(0)' : `translateX(-${layout.menuWidth}px)`,
           transition: `transform ${ease(layout.animDuration)}, width ${ease(layout.animDuration)}`,
-          zIndex: 2,
         }}
       >
         <HomeSideBar user={user} />

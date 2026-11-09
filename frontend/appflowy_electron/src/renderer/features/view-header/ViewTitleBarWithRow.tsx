@@ -1,7 +1,11 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import type { ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { FolderEventGetViewAncestors } from '@/backend/events';
-import { FlowySvg, FlowyText, Tooltip } from '@/ui';
+import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip } from '@/ui';
+import { tabsActions } from '../tabs/tabs-store';
 import { ViewTitle } from './ViewTitleBar';
 
 /**
@@ -23,19 +27,24 @@ export function ViewTitleBarWithRow({ view }: { view: ViewPB }) {
 
   if (ancestors.length === 0) return null;
   const button = (v: ViewPB) => (
-    <Tooltip key={v.id} message={v.name}>
+    <BreadcrumbItem key={v.id}><Tooltip message={v.name}>
       <ViewTitle view={v} editable={false} onUpdated={() => {}} />
-    </Tooltip>
+    </Tooltip></BreadcrumbItem>
   );
-  const divider = (key: string) => <FlowySvg key={key} svg="title_bar_divider_s" />;
+  const divider = (key: string) => <BreadcrumbSeparator key={key} className="text-muted-foreground/60" />;
   const items: ReactNode[] =
     ancestors.length > 2
       ? [
           button(ancestors[1]),
           divider('d1'),
-          <FlowyText.regular key="e" style={{ whiteSpace: 'pre' }}>
-            {' ... '}
-          </FlowyText.regular>,
+          <BreadcrumbItem key="e">
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="h-7 px-1.5" />}><BreadcrumbEllipsis /></DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                {ancestors.slice(2, -1).map((ancestor) => <DropdownMenuItem key={ancestor.id} onMouseDown={() => tabsActions.openView(ancestor)}>{ancestor.name}</DropdownMenuItem>)}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </BreadcrumbItem>,
           divider('d2'),
           button(ancestors[ancestors.length - 1]),
           divider('d3'),
@@ -47,8 +56,8 @@ export function ViewTitleBarWithRow({ view }: { view: ViewPB }) {
           </Fragment>
         ));
   return (
-    <div style={{ overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none', minWidth: 0 }}>
-      <div style={{ height: 24, display: 'flex', alignItems: 'center', width: 'max-content' }}>{items}</div>
-    </div>
+    <Breadcrumb className="min-w-0 overflow-x-auto overflow-y-hidden [scrollbar-width:none]">
+      <BreadcrumbList className="w-max flex-nowrap gap-0.5 text-sm">{items}</BreadcrumbList>
+    </Breadcrumb>
   );
 }

@@ -4,7 +4,12 @@ import { WorkspaceTypePB } from '@shared/protobuf/flowy-user/workspace_pb';
 import { useTr } from '@/i18n';
 import type { FlowySvgName } from '@/icons/flowy-svgs';
 import { useAppearanceStore } from '@/theme/appearance-store';
-import { AppFlowyPopover, FlowyButton, FlowyDivider, FlowyHover, FlowySvg, FlowyText, PopoverMutex, Tooltip, showConfirmDeletionDialog } from '@/ui';
+import { Copy, FolderInput, Lock, Minus, MoreHorizontal, Plus, SquarePen, Trash2, Type } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import { Switch } from '@/components/ui/switch';
+import { MenuFootnote, MenuRow, MenuSeparator } from '@/components/app/menu-row';
+import { AppFlowyPopover, PopoverMutex, Tooltip, showConfirmDeletionDialog } from '@/ui';
 import { useHomeStore } from '../home/home-store';
 import { nameOrDefault } from '../view/view-ext';
 import { formatDate } from './date-format';
@@ -29,65 +34,17 @@ export interface CustomViewActionProps {
 /** CustomViewAction (more_view_actions/widgets/common_view_action.dart). */
 export function CustomViewAction({ leftIcon, label, tooltipMessage, disabled, onTap }: CustomViewActionProps) {
   return (
-    <div style={{ height: 34, padding: '2px 0', boxSizing: 'border-box' }}>
-      <Tooltip message={tooltipMessage}>
-        <FlowyButton
-          margin="0 6px"
-          height={30}
-          disable={disabled}
-          onTap={onTap}
-          iconPadding={10}
-          leftIcon={<FlowySvg svg={leftIcon} size={16} color={disabled ? 'var(--th-disabled)' : undefined} />}
-          text={
-            <FlowyText lineHeight={18} color={disabled ? 'var(--th-disabled)' : undefined}>
-              {label}
-            </FlowyText>
-          }
-        />
-      </Tooltip>
-    </div>
+    <Tooltip message={tooltipMessage}>
+      <div><MenuRow disabled={disabled} onClick={onTap} icon={leftIcon === 'ai_add_to_page_s' ? <SquarePen className="size-4" /> : <Copy className="size-4" />} label={label} /></div>
+    </Tooltip>
   );
 }
 
-const Divider = () => (
-  <div style={{ padding: 8 }}>
-    <FlowyDivider />
-  </div>
-);
-
-/** ViewMoreActionTypeWrapper._buildActionButton: 34px rows, 16px icon, 10px gap. */
-function ActionButton({
-  icon,
-  label,
-  isDelete,
-  onTap,
-  rightIcon,
-}: {
-  icon: FlowySvgName;
-  label: string;
-  isDelete?: boolean;
-  onTap?: () => void;
-  rightIcon?: ReactNode;
+function ActionButton({ icon, label, isDelete, onTap, rightIcon }: {
+  icon: FlowySvgName; label: string; isDelete?: boolean; onTap?: () => void; rightIcon?: ReactNode;
 }) {
-  const [hover, setHover] = useState(false);
-  const color = isDelete && hover ? 'var(--cs-error)' : undefined;
-  return (
-    <div style={{ height: 34, padding: '2px 0', boxSizing: 'border-box' }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-      <FlowyButton
-        margin="0 6px"
-        height={30}
-        iconPadding={10}
-        onTap={onTap}
-        leftIcon={<FlowySvg svg={icon} size={16} color={color} />}
-        rightIcon={rightIcon}
-        text={
-          <FlowyText.regular fontSize={14} lineHeight={18} color={color}>
-            {label}
-          </FlowyText.regular>
-        }
-      />
-    </div>
-  );
+  const Icon = icon === 'move_to_s' ? FolderInput : icon === 'trash_s' ? Trash2 : Copy;
+  return <MenuRow icon={<Icon className="size-4" />} label={label} destructive={isDelete} onClick={onTap} trailing={rightIcon} />;
 }
 
 /** LockPageButtonWrapper: disabled with a tooltip while the page is locked. */
@@ -96,71 +53,32 @@ function LockedWrapper({ locked, children }: { locked: boolean; children: ReactN
   if (!locked) return <>{children}</>;
   return (
     <Tooltip message={tr('lockPage.lockedOperationTooltip')}>
-      <div style={{ pointerEvents: 'none' }}>{children}</div>
+      <div className="pointer-events-none opacity-50">{children}</div>
     </Tooltip>
   );
 }
 
-// Material Icons.format_size_sharp.
-function FormatSizeIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--icon-color)" aria-hidden>
-      <path d="M9 4v3h5v12h3V7h5V4H9zm-6 8h3v7h3v-7h3V9H3v3z" />
-    </svg>
-  );
-}
-
-/** FontSizeAction + FontSizeStepper (min 10, max 24, 8 divisions). */
+/** Keep the existing 10–24 range and 1.75 step, now exposed as the specified stepper. */
 function FontSizeAction() {
   const { tr } = useTr();
   return (
-    <AppFlowyPopover
-      direction="leftWithCenterAligned"
-      constraints={{ maxHeight: 40, maxWidth: 240, width: 240 }}
-      offset={{ x: -10, y: 0 }}
-      onOpen={refreshDocumentFontSize}
-      popup={() => <FontSizeStepper />}
-    >
-      <div style={{ height: 34, padding: '2px 0', boxSizing: 'border-box' }}>
-        <FlowyButton
-          height={30}
-          hoverColor="var(--afx-light-grey-hover)"
-          leftIcon={<FormatSizeIcon />}
-          leftIconSize={18}
-          text={
-            <FlowyText.regular fontSize={14} lineHeight={18} color="var(--afx-text)">
-              {tr('moreAction.fontSize')}
-            </FlowyText.regular>
-          }
-        />
-      </div>
-    </AppFlowyPopover>
+    <div className="relative flex items-center">
+      <MenuRow icon={<Type className="size-4" />} label={tr('moreAction.fontSize')} className="pr-24" />
+      <div className="absolute right-1.5"><FontSizeStepper /></div>
+    </div>
   );
 }
 
 function FontSizeStepper() {
   const fontSize = useDocumentFontSize((s) => s.fontSize);
   const [value, setValue] = useState(() => Math.min(24, Math.max(10, fontSize)));
+  const update = (next: number) => { setValue(next); void syncFontSize(next); };
   return (
-    <div style={{ padding: '0 10px', display: 'flex', alignItems: 'center', height: 28 }}>
-      <FlowyText fontSize={14}>A</FlowyText>
-      <div style={{ width: 6 }} />
-      <input
-        type="range"
-        min={10}
-        max={24}
-        step={1.75}
-        value={value}
-        onChange={(event) => {
-          const next = Number(event.target.value);
-          setValue(next);
-          void syncFontSize(next);
-        }}
-        style={{ flex: 1, minWidth: 0, accentColor: 'var(--cs-primary)', cursor: 'pointer' }}
-      />
-      <div style={{ width: 6 }} />
-      <FlowyText fontSize={20}>A</FlowyText>
-    </div>
+    <ButtonGroup>
+      <Button variant="outline" size="icon-xs" aria-label="Decrease font size" disabled={value <= 10} onClick={() => update(Math.max(10, value - 1.75))}><Minus className="size-4" /></Button>
+      <span className="flex w-8 items-center justify-center text-center text-xs tabular-nums">{value}</span>
+      <Button variant="outline" size="icon-xs" aria-label="Increase font size" disabled={value >= 24} onClick={() => update(Math.min(24, value + 1.75))}><Plus className="size-4" /></Button>
+    </ButtonGroup>
   );
 }
 
@@ -172,45 +90,9 @@ function LockPageAction() {
   if (!scope || !access) return null;
   const toggle = () => void (access.isLocked ? scope.accessLevel.unlock() : scope.accessLevel.lock());
   return (
-    <div style={{ height: 34, padding: '2px 0', boxSizing: 'border-box' }}>
-      <FlowyButton
-        margin="0 6px"
-        height={30}
-        iconPadding={10}
-        onTap={toggle}
-        leftIcon={<FlowySvg svg="lock_page_s" size={16} />}
-        text={<FlowyText lineHeight={18}>{tr('disclosureAction.lockPage')}</FlowyText>}
-        rightIcon={
-          access.isLoadingLockStatus ? undefined : (
-            <div style={{ width: 30, height: 20, marginRight: 6, display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 18,
-                  borderRadius: 9,
-                  background: access.isLocked ? 'var(--cs-primary)' : 'var(--afx-toggle-off-fill)',
-                  position: 'relative',
-                  transition: 'background 150ms',
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    left: access.isLocked ? 14 : 2,
-                    width: 14,
-                    height: 14,
-                    borderRadius: '50%',
-                    background: '#FFFFFF',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
-                    transition: 'left 150ms',
-                  }}
-                />
-              </div>
-            </div>
-          )
-        }
-      />
+    <div className="relative flex items-center">
+      <MenuRow icon={<Lock className="size-4" />} label={tr('disclosureAction.lockPage')} onClick={toggle} className="pr-10" />
+      {!access.isLoadingLockStatus && <Switch size="sm" className="absolute right-1.5" aria-label={tr('disclosureAction.lockPage')} checked={access.isLocked} onCheckedChange={toggle} />}
     </div>
   );
 }
@@ -219,13 +101,7 @@ function LockPageAction() {
 function ViewMetaInfo({ createdAt }: { createdAt: Date }) {
   const { tr } = useTr();
   const dateTime = useAppearanceStore((s) => s.dateTime);
-  return (
-    <div style={{ padding: '0 6px', display: 'flex', flexDirection: 'column' }}>
-      <FlowyText.regular fontSize={12} maxLines={2} color="var(--th-hint)">
-        {tr('moreAction.createdAt', { args: [formatDate(createdAt, dateTime.dateFormat, true, dateTime.timeFormat)] })}
-      </FlowyText.regular>
-    </div>
-  );
+  return <MenuFootnote>{tr('moreAction.createdAt', { args: [formatDate(createdAt, dateTime.dateFormat, true, dateTime.timeFormat)] })}</MenuFootnote>;
 }
 
 /** MoreViewActions (workspace/presentation/widgets/more_view_actions/more_view_actions.dart). */
@@ -235,17 +111,15 @@ export function MoreViewActions({ view, customActions }: { view: ViewPB; customA
   return (
     <AppFlowyPopover
       mutex={mutexRef.current}
-      constraints={{ maxWidth: 245, maxHeight: 600, width: 245 }}
+      onOpen={view.layout === ViewLayoutPB.Document ? refreshDocumentFontSize : undefined}
+      constraints={{ maxWidth: 240, maxHeight: 600, width: 240 }}
       direction="bottomWithRightAligned"
       offset={{ x: 0, y: 12 }}
       popup={(close) => <MoreViewActionsMenu view={view} customActions={customActions} close={close} />}
     >
-      {/* A real element first: popovers and tooltips anchor to their first element child. */}
-      <div style={{ display: 'flex', flexShrink: 0 }}>
+      <div className="flex shrink-0">
         <Tooltip message={tr('moreAction.moreOptions')}>
-          <FlowyHover foregroundColorOnHover="var(--cs-on-surface)" style={{ padding: 6, display: 'flex' }}>
-            <FlowySvg svg="three_dots_s" size={18} />
-          </FlowyHover>
+          <Button variant="ghost" size="icon-sm" aria-label={tr('moreAction.moreOptions')}><MoreHorizontal className="size-4" /></Button>
         </Tooltip>
       </div>
     </AppFlowyPopover>
@@ -284,18 +158,18 @@ function MoreViewActionsMenu({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+    <div className="flex flex-col">
       {customActions}
       {isDocument(widgetView) && (
         <>
           <FontSizeAction />
-          <Divider />
+          <MenuSeparator />
         </>
       )}
       {serverWorkspace && (isDocument(widgetView) || isDatabase(widgetView)) && !readOnly && (
         <>
           <LockPageAction />
-          <Divider />
+          <MenuSeparator />
         </>
       )}
       {!readOnly && (
@@ -335,11 +209,10 @@ function MoreViewActionsMenu({
           <LockedWrapper locked={locked}>
             <ActionButton icon="trash_s" label={tr('disclosureAction.delete')} isDelete onTap={() => void onDelete()} />
           </LockedWrapper>
-          <Divider />
         </>
       )}
+      <MenuSeparator />
       <ViewMetaInfo createdAt={new Date(Number(widgetView.createTime) * 1000)} />
-      <div style={{ height: 4, flexShrink: 0 }} />
     </div>
   );
 }

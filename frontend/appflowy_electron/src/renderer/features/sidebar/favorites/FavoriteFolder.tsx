@@ -1,17 +1,15 @@
 // Favorites (menu/sidebar/favorites/*): FavoriteFolder with the pinned (reorderable) list,
 // FavoriteHeader, the "More" popover (FavoriteMenu), FavoriteMoreActions and FavoritePinAction.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { MoreHorizontal, Pin, PinOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { NavIconButton, NavSectionHeader } from '@/components/app/nav';
+import { floatingSurfaceClass, MenuLabel, MenuSeparator } from '@/components/app/menu-row';
 import type { ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { useTr } from '@/i18n';
 import {
-  AFButton,
   AppFlowyPopover,
-  FlowyButton,
-  FlowyDivider,
-  FlowySvg,
-  FlowyText,
   Tooltip,
-  VSpace,
   showAFTextFieldDialog,
   usePopoverContainer,
   type PopoverController,
@@ -19,7 +17,6 @@ import {
 import { tabsActions } from '@/features/tabs/tabs-store';
 import { isPinnedView, nameOrDefault } from '@/features/view/view-ext';
 import { ViewBackendService } from '@/features/view/view-service';
-import { SbIconButton } from '../components';
 import { openFromSidebar, useFolderExpanded } from '../folder/SidebarFolder';
 import { SpaceSearchField } from '../space/SpaceWidgets';
 import {
@@ -50,19 +47,17 @@ export function FavoriteFolder({ views }: { views: ViewPB[] }) {
       view={view}
       enableRightClickContext
       leftPadding={16}
-      leftIconBuilder={() => <div style={{ width: 16, flexShrink: 0 }} />}
+      leftIconBuilder={() => <span className="size-5 shrink-0" />}
       level={0}
       hoverGated
       rightIconsBuilder={(v, bloc) => (
         <>
-          <div style={{ display: 'flex' }} onMouseDown={() => bloc.setIsEditing(true)}>
+          <div className="flex" onMouseDown={() => bloc.setIsEditing(true)}>
             <FavoriteMoreActions view={v} bloc={bloc} />
           </div>
-          <div style={{ width: 8 }} />
-          <div style={{ display: 'flex' }} onMouseDown={() => bloc.setIsEditing(true)}>
+          <div className="flex" onMouseDown={() => bloc.setIsEditing(true)}>
             <FavoritePinAction view={v} />
           </div>
-          <div style={{ width: 4 }} />
         </>
       )}
       shouldRenderChildren={false}
@@ -73,18 +68,14 @@ export function FavoriteFolder({ views }: { views: ViewPB[] }) {
   );
   const pinnedViews = pinned.map((p) => p.item);
   return (
-    <div className="sb-hover-scope" style={{ display: 'flex', flexDirection: 'column' }}>
-      <FavoriteHeader onPressed={() => expand()} />
-      {isExpanded && pinnedViews.length === 1 && renderItem(pinnedViews[0])}
-      {isExpanded && pinnedViews.length > 1 && (
-        <ReorderableList items={pinnedViews} renderItem={renderItem} onReorder={(o, n) => void favoriteActions.reorder(o, n)} />
-      )}
-      {isExpanded && (
-        <>
-          <VSpace size={2} />
-          <FavoriteMoreButton />
-        </>
-      )}
+    <div className="flex flex-col">
+      <FavoriteHeader isExpanded={isExpanded} onPressed={() => expand()} />
+      <div className="mt-0.5 flex flex-col gap-px">
+        {isExpanded && pinnedViews.length === 1 && renderItem(pinnedViews[0])}
+        {isExpanded && pinnedViews.length > 1 && (
+          <ReorderableList items={pinnedViews} renderItem={renderItem} onReorder={(o, n) => void favoriteActions.reorder(o, n)} />
+        )}
+      </div>
     </div>
   );
 }
@@ -135,7 +126,7 @@ function ReorderableList({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="flex flex-col gap-px">
       {items.map((view, i) => {
         let offset = 0;
         if (drag?.active) {
@@ -153,11 +144,9 @@ function ReorderableList({
             onMouseDown={(event) => {
               if (event.button === 0 && event.currentTarget.contains(event.target as Node)) start(i, event.clientY);
             }}
+            className={cn('relative', dragged ? 'z-10' : drag?.active && 'transition-transform duration-200 ease-out')}
             style={{
               transform: offset ? `translateY(${offset}px)` : undefined,
-              transition: dragged || !drag?.active ? undefined : 'transform 200ms ease',
-              position: 'relative',
-              zIndex: dragged ? 1 : undefined,
             }}
           >
             {renderItem(view)}
@@ -169,21 +158,10 @@ function ReorderableList({
 }
 
 /** FavoriteHeader: AFGhostIconTextButton.primary, size l, padding h4 v6, radius 6. */
-function FavoriteHeader({ onPressed }: { onPressed: () => void }) {
+function FavoriteHeader({ onPressed, isExpanded }: { onPressed: () => void; isExpanded: boolean }) {
   const { tr } = useTr();
   return (
-    <AFButton
-      variant="ghostPrimary"
-      size="l"
-      fullWidth
-      justify="flex-start"
-      padding="6px 4px"
-      borderRadius={6}
-      icon={<FlowySvg svg="favorite_header_m" blendMode={null} />}
-      iconGap={8}
-      text={tr('sideBar.favorites')}
-      onTap={onPressed}
-    />
+    <NavSectionHeader label={tr('sideBar.favorites')} collapsed={!isExpanded} onToggle={onPressed} actions={isExpanded ? <FavoriteMoreButton /> : undefined} />
   );
 }
 
@@ -191,19 +169,16 @@ function FavoriteHeader({ onPressed }: { onPressed: () => void }) {
 function FavoriteMoreButton() {
   const { tr } = useTr();
   const unpinned = useFavoriteStore((s) => s.unpinnedViews);
+  const [open, setOpen] = useState(false);
   if (unpinned.length === 0) return null;
   return (
-    <AppFlowyPopover constraints={{ minWidth: 260 }} margin={0} popup={() => <FavoriteMenu minWidth={260} />}>
-      <FlowyButton
-        margin="7px 20px"
-        leftIcon={<FlowySvg svg="workspace_three_dots_s" />}
-        text={<FlowyText>{tr('button.more')}</FlowyText>}
-      />
+    <AppFlowyPopover plain onOpen={() => setOpen(true)} onClose={() => setOpen(false)} constraints={{ minWidth: 256, maxWidth: 256 }} margin={0} popup={() => <FavoriteMenu minWidth={256} />}>
+      <Tooltip message={tr('button.more')}><NavIconButton aria-expanded={open} aria-label={tr('button.more')}><MoreHorizontal className="size-3.5" /></NavIconButton></Tooltip>
     </AppFlowyPopover>
   );
 }
 
-const PADDING = 10;
+const PADDING = 4;
 
 /** FavoriteMenu + FavoriteMenuBloc: a one-shot read (it does not follow later changes). */
 function FavoriteMenu({ minWidth }: { minWidth: number }) {
@@ -238,20 +213,13 @@ function FavoriteMenu({ minWidth }: { minWidth: number }) {
         isDraggable={false}
         shouldRenderChildren={false}
         extendBuilder={(v) =>
-          isPinnedView(v) ? (
-            <>
-              <div style={{ width: 4, flexShrink: 0 }} />
-              <FlowySvg svg="favorite_pin_s" blendMode={null} />
-            </>
-          ) : null
+          isPinnedView(v) ? <Pin className="size-3.5 text-muted-foreground" /> : null
         }
-        leftIconBuilder={() => <div style={{ width: 4, flexShrink: 0 }} />}
+        leftIconBuilder={() => <span className="size-5 shrink-0" />}
         rightIconsBuilder={(v, bloc) => (
           <>
             <FavoriteMoreActions view={v} bloc={bloc} />
-            <div style={{ width: 6 }} />
             <FavoritePinAction view={v} />
-            <div style={{ width: 4 }} />
           </>
         )}
         onSelected={(v) => {
@@ -263,30 +231,21 @@ function FavoriteMenu({ minWidth }: { minWidth: number }) {
   const group = (views: ViewPB[], title: string, showHeader = true) =>
     views.length === 0 ? null : (
       <>
-        {showHeader && (
-          <FlowyText fontSize={12} color="var(--th-hint)">
-            {title}
-          </FlowyText>
-        )}
-        <VSpace size={2} />
+        {showHeader && <MenuLabel>{title}</MenuLabel>}
         {renderViews(views)}
-        <VSpace size={8} />
       </>
     );
   const { today, thisWeek, others } = groups;
   return (
-    <div style={{ padding: PADDING, display: 'flex', flexDirection: 'column' }}>
-      <VSpace size={4} />
+    <div className={cn(floatingSurfaceClass, 'flex w-64 flex-col gap-2 p-1')}>
       <SpaceSearchField width={width} onSearch={setQuery} />
-      <VSpace size={12} />
-      <div className="sb-scroll" style={{ width, maxHeight: 300, display: 'flex', flexDirection: 'column' }}>
+      <div className="flex max-h-80 flex-col gap-px overflow-y-auto">
         {group(today, tr('sideBar.today'))}
         {thisWeek.length > 0 && (
           <>
             {today.length > 0 && (
               <>
-                <FlowyDivider />
-                <VSpace size={16} />
+                <MenuSeparator />
               </>
             )}
             {group(thisWeek, tr('sideBar.thisWeek'))}
@@ -294,8 +253,7 @@ function FavoriteMenu({ minWidth }: { minWidth: number }) {
         )}
         {(thisWeek.length > 0 || today.length > 0) && others.length > 0 && (
           <>
-            <FlowyDivider />
-            <VSpace size={16} />
+            <MenuSeparator />
           </>
         )}
         {others.length > 0 && (today.length > 0 || thisWeek.length > 0)
@@ -342,9 +300,9 @@ function FavoriteMoreActions({ view, bloc }: { view: ViewPB; bloc: ViewBloc }) {
         }
       }}
     >
-      <div style={{ display: 'flex' }}>
+      <div className="flex">
         <Tooltip message={tr('menuAppHeader.moreButtonToolTip')}>
-          <SbIconButton width={24} icon={<FlowySvg svg="workspace_three_dots_s" />} onPressed={() => controller.current?.show()} />
+          <NavIconButton aria-label={tr('menuAppHeader.moreButtonToolTip')} onClick={(event) => { event.stopPropagation(); controller.current?.show(); }}><MoreHorizontal className="size-3.5" /></NavIconButton>
         </Tooltip>
       </div>
     </ViewMoreActionPopover>
@@ -356,11 +314,11 @@ function FavoritePinAction({ view }: { view: ViewPB }) {
   const { tr } = useTr();
   const pinned = isPinnedView(view);
   return (
-    <SbIconButton
-      width={24}
-      tooltip={tr(pinned ? 'favorite.removeFromSidebar' : 'favorite.addToSidebar')}
-      icon={<FlowySvg svg={pinned ? 'favorite_section_unpin_s' : 'favorite_section_pin_s'} />}
-      onPressed={() => void (pinned ? favoriteActions.unpin(view) : favoriteActions.pin(view))}
-    />
+    <Tooltip rich={tr(pinned ? 'favorite.removeFromSidebar' : 'favorite.addToSidebar')}>
+      <NavIconButton aria-label={tr(pinned ? 'favorite.removeFromSidebar' : 'favorite.addToSidebar')}
+        onClick={(event) => { event.stopPropagation(); void (pinned ? favoriteActions.unpin(view) : favoriteActions.pin(view)); }}>
+        {pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+      </NavIconButton>
+    </Tooltip>
   );
 }

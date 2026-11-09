@@ -1,0 +1,3291 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "0X_oCP",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {},
+     "relationId": "p4i8wT",
+     "type": "divider"
+    },
+    {
+     "blockId": "63-uV4",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Last Update: "
+        },
+        {
+         "mention": {
+          "date": "2025-12-03T20:47:00.000",
+          "include_time": false,
+          "reminder_option": "none",
+          "type": "date"
+         },
+         "text": "$"
+        }
+       ],
+       "textId": "ISmt5p",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "gXLmK8",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "TWnm0P",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {},
+     "relationId": "9BoclL",
+     "type": "divider"
+    },
+    {
+     "blockId": "TGg7fv",
+     "children": [
+      {
+       "children": [
+        {
+         "mention": {
+          "block_id": "bqDaCN",
+          "page_id": "1d6ec635-bf63-4f8b-b364-936458d42242",
+          "type": "page"
+         },
+         "text": "$"
+        }
+       ],
+       "textId": "eiHA1u",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "7cbi8k",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "SHnGVv",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {},
+     "relationId": "SqxgaS",
+     "type": "divider"
+    },
+    {
+     "blockId": "Fb1G4b",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Know me more"
+        }
+       ],
+       "textId": "Vx4oaI",
+       "type": "text"
+      },
+      {
+       "blockId": "2DHZzx",
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "data": {
+        "url": "https://github.com/AppFlowy-IO/AppFlowy"
+       },
+       "relationId": "kcEKJl",
+       "type": "link_preview"
+      },
+      {
+       "blockId": "_9O_J4",
+       "children": [
+        {
+         "children": [
+          {
+           "text": ""
+          }
+         ],
+         "textId": "EeFzDw",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "8qxmew",
+       "type": "paragraph"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint4",
+      "collapsed": true,
+      "level": 3
+     },
+     "relationId": "Vuav-3",
+     "type": "toggle_list"
+    },
+    {
+     "blockId": "TdoVwU",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Contact me"
+        }
+       ],
+       "textId": "otwLE-",
+       "type": "text"
+      },
+      {
+       "blockId": "m1pSyC",
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "data": {
+        "url": "https://discord.com/servers/appflowy-903549834160635914"
+       },
+       "relationId": "MgxwNV",
+       "type": "link_preview"
+      },
+      {
+       "blockId": "GlPZqc",
+       "children": [
+        {
+         "children": [
+          {
+           "text": ""
+          }
+         ],
+         "textId": "v5T8N4",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "oXstMM",
+       "type": "paragraph"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint4",
+      "collapsed": true,
+      "level": 3
+     },
+     "relationId": "1J2mKS",
+     "type": "toggle_list"
+    },
+    {
+     "blockId": "bqDaCN",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "🍎 Documentation for AppFlowy REST API"
+        }
+       ],
+       "textId": "l0zHCw",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "T3xFhg",
+     "type": "heading"
+    },
+    {
+     "blockId": "qz6gb8",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Documentation for API Endpoints"
+        }
+       ],
+       "textId": "hCXrx8",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "level": 3,
+      "textDirection": null
+     },
+     "relationId": "zgxCyh",
+     "type": "heading"
+    },
+    {
+     "blockId": "aVZyUa",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "All URIs are relative to "
+        },
+        {
+         "href": "https://beta.appflowy.cloud",
+         "text": "https://beta.appflowy.cloud"
+        }
+       ],
+       "textId": "QFc4yj",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "6coxDw",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "vdN53I",
+     "children": [
+      {
+       "blockId": "IDW6dW",
+       "children": [
+        {
+         "blockId": "XQXbeO",
+         "children": [
+          {
+           "blockId": "HaKAR8",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Class"
+              }
+             ],
+             "textId": "6q9I4Z",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "C0EP9N",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "gXEE1I",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "W-UJE_",
+         "children": [
+          {
+           "blockId": "pMTL4x",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Method"
+              }
+             ],
+             "textId": "JY59f7",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "K4s1YM",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "-g03k0",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "AkCU8g",
+         "children": [
+          {
+           "blockId": "ww9oj7",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "HTTP request"
+              }
+             ],
+             "textId": "UjYg6D",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ipGLaj",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "ajw3iY",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "RFx0gg",
+         "children": [
+          {
+           "blockId": "S-Y5Wi",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Description"
+              }
+             ],
+             "textId": "N8IVlm",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "0T-0vs",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "U94IQk",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "97Br3M",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "RNPfsg",
+       "children": [
+        {
+         "blockId": "5RZGdm",
+         "children": [
+          {
+           "blockId": "Z5cFZ0",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "DatabaseFieldsApi"
+              }
+             ],
+             "textId": "MVZIKF",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "i_WBG-",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "ezjjKS",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "qEdyjN",
+         "children": [
+          {
+           "blockId": "lhLb8h",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/DatabaseFieldsApi.md#getdatabasefields",
+               "text": "getDatabaseFields"
+              }
+             ],
+             "textId": "WP113H",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "zcYYWu",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "0d-awW",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "RbiNzB",
+         "children": [
+          {
+           "blockId": "9uJPZg",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "GET"
+              },
+              {
+               "text": " /api/workspace/{workspace_id}/database/{database_id}/fields"
+              }
+             ],
+             "textId": "i_MWob",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "gKOyWQ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "3uKXoN",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "PYy7Af",
+         "children": [
+          {
+           "blockId": "JKDrmI",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Retrieves a list of database fields in a selected database."
+              }
+             ],
+             "textId": "4sSz7f",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "fJc2jS",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "BkWybE",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "yzVGsL",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "Uk0HrV",
+       "children": [
+        {
+         "blockId": "FCmTU7",
+         "children": [
+          {
+           "blockId": "z_YP52",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "DatabaseRowDetailsApi"
+              }
+             ],
+             "textId": "bHVNGv",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "xe15ki",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "t6avsb",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "vntf5i",
+         "children": [
+          {
+           "blockId": "-03YsF",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/DatabaseRowDetailsApi.md#getdatabaserowdetails",
+               "text": "getDatabaseRowDetails"
+              }
+             ],
+             "textId": "v3RC6w",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "zd1zrb",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "G91fcp",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "eIgKnj",
+         "children": [
+          {
+           "blockId": "TUX19J",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "GET"
+              },
+              {
+               "text": " /api/workspace/{workspace_id}/database/{database_id}/row/detail"
+              }
+             ],
+             "textId": "5JwXLA",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "Bp3U4q",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "LPUUTL",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "3nuqBq",
+         "children": [
+          {
+           "blockId": "RvHagb",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Retrieves a list of database row details in a selected database."
+              }
+             ],
+             "textId": "FnMX0H",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "nyE2xz",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "aKA76K",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "wAQg6K",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "jGdN6r",
+       "children": [
+        {
+         "blockId": "9HUx_B",
+         "children": [
+          {
+           "blockId": "oQJlM2",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "DatabaseRowsApi"
+              }
+             ],
+             "textId": "7IS-yI",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "9bXo85",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "jea34b",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "FPsSAX",
+         "children": [
+          {
+           "blockId": "LBMEeq",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/DatabaseRowsApi.md#createdatabaserow",
+               "text": "createDatabaseRow"
+              }
+             ],
+             "textId": "Giv7Tr",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "pu5FJv",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "XYRrm6",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Uk7oi6",
+         "children": [
+          {
+           "blockId": "Z1FTEI",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "POST"
+              },
+              {
+               "text": " /api/workspace/{workspace_id}/database/{database_id}/row"
+              }
+             ],
+             "textId": "N0PGvt",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "x-7S8f",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "2xU0Sz",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "IVsqlb",
+         "children": [
+          {
+           "blockId": "7e-_tx",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Creates a new row in a selected database."
+              }
+             ],
+             "textId": "3EBZYY",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "LwuezX",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "BpYaGg",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "t12R9H",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "N-yZCK",
+       "children": [
+        {
+         "blockId": "5183_H",
+         "children": [
+          {
+           "blockId": "PcGgvZ",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "DatabaseRowsApi"
+              }
+             ],
+             "textId": "dWHd_O",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "GKA4Zy",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "EXhfTI",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "CtrwrO",
+         "children": [
+          {
+           "blockId": "YzkiiL",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/DatabaseRowsApi.md#getdatabaserowids",
+               "text": "getDatabaseRowIds"
+              }
+             ],
+             "textId": "uoyOEk",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "F7VdOc",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "s5y3Tl",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "x7Kztz",
+         "children": [
+          {
+           "blockId": "F-PY5Q",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "GET"
+              },
+              {
+               "text": " /api/workspace/{workspace_id}/database/{database_id}/row"
+              }
+             ],
+             "textId": "ClwpDD",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "7U0fBp",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "Ge2qRn",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Za9BAd",
+         "children": [
+          {
+           "blockId": "jV_Y0U",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Retrieves a list of database row ids in a selected database."
+              }
+             ],
+             "textId": "yeZDmC",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "cutWYZ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "uDtQZL",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "UASG3W",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "5Q0wG8",
+       "children": [
+        {
+         "blockId": "0J2rsm",
+         "children": [
+          {
+           "blockId": "_x3jl9",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "DatabaseRowsApi"
+              }
+             ],
+             "textId": "wvnhzw",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "90d7v0",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "pXCVLf",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "vpH0aW",
+         "children": [
+          {
+           "blockId": "Ou3JSU",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/DatabaseRowsApi.md#upsertdatabaserow",
+               "text": "upsertDatabaseRow"
+              }
+             ],
+             "textId": "PZ7bA_",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "r87IL8",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "pqsmOq",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "M-8y0T",
+         "children": [
+          {
+           "blockId": "BzjS8B",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "PUT"
+              },
+              {
+               "text": " /api/workspace/{workspace_id}/database/{database_id}/row"
+              }
+             ],
+             "textId": "sALbX8",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "e0SEZM",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "zyJXCI",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "zAK-Lf",
+         "children": [
+          {
+           "blockId": "ojwplF",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Updates or creates a row in a selected database. (Upsert)"
+              }
+             ],
+             "textId": "gU3hrZ",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "U0GtNU",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "RscAtG",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "69uAYM",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "CU6O-w",
+       "children": [
+        {
+         "blockId": "xmKq0K",
+         "children": [
+          {
+           "blockId": "lsG0s2",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "DatabaseRowsUpdatedApi"
+              }
+             ],
+             "textId": "EGQoI0",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ec-PSO",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "zcyp7S",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Fcr2mS",
+         "children": [
+          {
+           "blockId": "jo3lTP",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/DatabaseRowsUpdatedApi.md#getdatabaserowidsupdated",
+               "text": "getDatabaseRowIdsUpdated"
+              }
+             ],
+             "textId": "e3Rf1G",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "f32bLy",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "iwIHNA",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "2kyl-n",
+         "children": [
+          {
+           "blockId": "0fC4M4",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "GET"
+              },
+              {
+               "text": " /api/workspace/{workspace_id}/database/{database_id}/row/updated"
+              }
+             ],
+             "textId": "SMEPEu",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "AZ0-tB",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "7S3Drj",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "ffhUb7",
+         "children": [
+          {
+           "blockId": "apdddf",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Retrieves a list of database row id which are recently updated in a selected database."
+              }
+             ],
+             "textId": "BptQPv",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "lmPR7T",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "SHQnk5",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "DTDz1-",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "mhjgMg",
+       "children": [
+        {
+         "blockId": "RLogb0",
+         "children": [
+          {
+           "blockId": "iZUjqm",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "DatabasesApi"
+              }
+             ],
+             "textId": "1UkIUd",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "NUZzEL",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "CWMMkf",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "MvmTnn",
+         "children": [
+          {
+           "blockId": "rkJzWN",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/DatabasesApi.md#getdatabases",
+               "text": "getDatabases"
+              }
+             ],
+             "textId": "uCUVYo",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "Ttl4Lh",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "B6SXUV",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "5NPpVW",
+         "children": [
+          {
+           "blockId": "ZdUHHc",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "GET"
+              },
+              {
+               "text": " /api/workspace/{workspace_id}/database"
+              }
+             ],
+             "textId": "BLeiwq",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "0WpSwB",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "9IcpHT",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "CFeh_2",
+         "children": [
+          {
+           "blockId": "T6X821",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Retrieves a list of database in a workspace"
+              }
+             ],
+             "textId": "7oRxXs",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "XZsK-L",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "_B89-d",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "wRicUI",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "4J9_Mu",
+       "children": [
+        {
+         "blockId": "ngdAOw",
+         "children": [
+          {
+           "blockId": "J2dhau",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "OAuthApi"
+              }
+             ],
+             "textId": "GVhbKP",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ZHN1Oj",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "EfHsCa",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "ozeAqs",
+         "children": [
+          {
+           "blockId": "qMKzWU",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/OAuthApi.md#gotruetoken",
+               "text": "gotrueToken"
+              }
+             ],
+             "textId": "1Y7JS0",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "gQiBRk",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "-GwZeL",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "4jlI-b",
+         "children": [
+          {
+           "blockId": "M-NaTb",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "POST"
+              },
+              {
+               "text": " /gotrue/token"
+              }
+             ],
+             "textId": "AqzAZo",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ox7-Ro",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "1yS3dJ",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "PQMnj2",
+         "children": [
+          {
+           "blockId": "N0ushT",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Get a new access token and refresh token based on grant type"
+              }
+             ],
+             "textId": "5pW2dq",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "RxXw68",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "xAQRjl",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "EwYdeC",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "TMbijm",
+       "children": [
+        {
+         "blockId": "c05rJU",
+         "children": [
+          {
+           "blockId": "OxCVNL",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "OAuthApi"
+              }
+             ],
+             "textId": "q6deVn",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "9Rt5VQ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "oc7lKC",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "0c53VM",
+         "children": [
+          {
+           "blockId": "nJLoDe",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/OAuthApi.md#oauthredirecttoken",
+               "text": "oauthRedirectToken"
+              }
+             ],
+             "textId": "sMLIun",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "5RM-eH",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "r2OkPS",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "-XT2vV",
+         "children": [
+          {
+           "blockId": "dItDVY",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "GET"
+              },
+              {
+               "text": " /web-api/oauth-redirect/token"
+              }
+             ],
+             "textId": "lDrSQK",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "RJyqhN",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "clKBAB",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Lsb7Hx",
+         "children": [
+          {
+           "blockId": "_0EKuG",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Sign in with AppFlowy OAuth 2.0"
+              }
+             ],
+             "textId": "5OjIms",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "aewwQ_",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "VJSVVj",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "E_SlHc",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "76Do1A",
+       "children": [
+        {
+         "blockId": "cGhlRs",
+         "children": [
+          {
+           "blockId": "KoeQ-f",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "WorkspacesApi"
+              }
+             ],
+             "textId": "pl6KJb",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "chIuCl",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "Dyr1qu",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "-uqeaG",
+         "children": [
+          {
+           "blockId": "6mmWwJ",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/WorkspacesApi.md#getworkspacefolder",
+               "text": "getWorkspaceFolder"
+              }
+             ],
+             "textId": "4amb4C",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "zLffBt",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "FGhXUA",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "s_tsGu",
+         "children": [
+          {
+           "blockId": "E-k3bw",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "GET"
+              },
+              {
+               "text": " /api/workspace/{workspace_id}/folder"
+              }
+             ],
+             "textId": "yOZ1D8",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "e7xGE1",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "sHJiye",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "-h7nlU",
+         "children": [
+          {
+           "blockId": "Pb_Akn",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Retrieves workspace folder or subfolder"
+              }
+             ],
+             "textId": "TsWdKB",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "4N8awe",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "o2lrNd",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "ScuSZQ",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "EFvH-g",
+       "children": [
+        {
+         "blockId": "3Yc3aD",
+         "children": [
+          {
+           "blockId": "Oa-T9L",
+           "children": [
+            {
+             "children": [
+              {
+               "italic": true,
+               "text": "WorkspacesApi"
+              }
+             ],
+             "textId": "xqa0nK",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "rZY6hr",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "LxVjCr",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "M38o1Q",
+         "children": [
+          {
+           "blockId": "gNw-tD",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "href": "Apis/WorkspacesApi.md#getworkspaces",
+               "text": "getWorkspaces"
+              }
+             ],
+             "textId": "6u7s9h",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "K1TYnt",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "_6iRgo",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "WqPQNB",
+         "children": [
+          {
+           "blockId": "q0Lfb1",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "GET"
+              },
+              {
+               "text": " /api/workspace"
+              }
+             ],
+             "textId": "OE4E3A",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "AYLk-f",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "z8vRHD",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "3k75l2",
+         "children": [
+          {
+           "blockId": "WbtlsC",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Retrieves a list of all workspaces"
+              }
+             ],
+             "textId": "YaeTpI",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "1OI2tX",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "kBPYSE",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "Y4yil3",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 255,
+       "1": 255,
+       "2": 255,
+       "3": 255
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {}
+     },
+     "relationId": "9oWMHz",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "kY-Qkp",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "1Tp43O",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "Et2i_H",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "FD-EQv",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "z9Kh2u",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "jzGEyJ",
+     "type": "paragraph"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "-03YsF": {
+       "children": "zd1zrb",
+       "data": {},
+       "external_id": "v3RC6w",
+       "external_type": "text",
+       "id": "-03YsF",
+       "parent": "vntf5i",
+       "ty": "paragraph"
+      },
+      "-XT2vV": {
+       "children": "clKBAB",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "-XT2vV",
+       "parent": "TMbijm",
+       "ty": "simple_table_cell"
+      },
+      "-h7nlU": {
+       "children": "o2lrNd",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "-h7nlU",
+       "parent": "76Do1A",
+       "ty": "simple_table_cell"
+      },
+      "-uqeaG": {
+       "children": "FGhXUA",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "-uqeaG",
+       "parent": "76Do1A",
+       "ty": "simple_table_cell"
+      },
+      "0J2rsm": {
+       "children": "pXCVLf",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "0J2rsm",
+       "parent": "5Q0wG8",
+       "ty": "simple_table_cell"
+      },
+      "0X_oCP": {
+       "children": "p4i8wT",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "0X_oCP",
+       "parent": "F_7vLL",
+       "ty": "divider"
+      },
+      "0c53VM": {
+       "children": "r2OkPS",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "0c53VM",
+       "parent": "TMbijm",
+       "ty": "simple_table_cell"
+      },
+      "0fC4M4": {
+       "children": "AZ0-tB",
+       "data": {},
+       "external_id": "SMEPEu",
+       "external_type": "text",
+       "id": "0fC4M4",
+       "parent": "2kyl-n",
+       "ty": "paragraph"
+      },
+      "2DHZzx": {
+       "children": "kcEKJl",
+       "data": {
+        "url": "https://github.com/AppFlowy-IO/AppFlowy"
+       },
+       "external_id": null,
+       "external_type": null,
+       "id": "2DHZzx",
+       "parent": "Fb1G4b",
+       "ty": "link_preview"
+      },
+      "2kyl-n": {
+       "children": "7S3Drj",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "2kyl-n",
+       "parent": "CU6O-w",
+       "ty": "simple_table_cell"
+      },
+      "3Yc3aD": {
+       "children": "LxVjCr",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "3Yc3aD",
+       "parent": "EFvH-g",
+       "ty": "simple_table_cell"
+      },
+      "3k75l2": {
+       "children": "kBPYSE",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "3k75l2",
+       "parent": "EFvH-g",
+       "ty": "simple_table_cell"
+      },
+      "3nuqBq": {
+       "children": "aKA76K",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "3nuqBq",
+       "parent": "Uk0HrV",
+       "ty": "simple_table_cell"
+      },
+      "4J9_Mu": {
+       "children": "EwYdeC",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "4J9_Mu",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "4jlI-b": {
+       "children": "1yS3dJ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "4jlI-b",
+       "parent": "4J9_Mu",
+       "ty": "simple_table_cell"
+      },
+      "5183_H": {
+       "children": "EXhfTI",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "5183_H",
+       "parent": "N-yZCK",
+       "ty": "simple_table_cell"
+      },
+      "5NPpVW": {
+       "children": "9IcpHT",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "5NPpVW",
+       "parent": "mhjgMg",
+       "ty": "simple_table_cell"
+      },
+      "5Q0wG8": {
+       "children": "69uAYM",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "5Q0wG8",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "5RZGdm": {
+       "children": "ezjjKS",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "5RZGdm",
+       "parent": "RNPfsg",
+       "ty": "simple_table_cell"
+      },
+      "63-uV4": {
+       "children": "gXLmK8",
+       "data": {},
+       "external_id": "ISmt5p",
+       "external_type": "text",
+       "id": "63-uV4",
+       "parent": "F_7vLL",
+       "ty": "paragraph"
+      },
+      "6mmWwJ": {
+       "children": "zLffBt",
+       "data": {},
+       "external_id": "4amb4C",
+       "external_type": "text",
+       "id": "6mmWwJ",
+       "parent": "-uqeaG",
+       "ty": "paragraph"
+      },
+      "76Do1A": {
+       "children": "ScuSZQ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "76Do1A",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "7e-_tx": {
+       "children": "LwuezX",
+       "data": {},
+       "external_id": "3EBZYY",
+       "external_type": "text",
+       "id": "7e-_tx",
+       "parent": "IVsqlb",
+       "ty": "paragraph"
+      },
+      "9HUx_B": {
+       "children": "jea34b",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "9HUx_B",
+       "parent": "jGdN6r",
+       "ty": "simple_table_cell"
+      },
+      "9uJPZg": {
+       "children": "gKOyWQ",
+       "data": {},
+       "external_id": "i_MWob",
+       "external_type": "text",
+       "id": "9uJPZg",
+       "parent": "RbiNzB",
+       "ty": "paragraph"
+      },
+      "AkCU8g": {
+       "children": "ajw3iY",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "AkCU8g",
+       "parent": "IDW6dW",
+       "ty": "simple_table_cell"
+      },
+      "BzjS8B": {
+       "children": "e0SEZM",
+       "data": {},
+       "external_id": "sALbX8",
+       "external_type": "text",
+       "id": "BzjS8B",
+       "parent": "M-8y0T",
+       "ty": "paragraph"
+      },
+      "CFeh_2": {
+       "children": "_B89-d",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "CFeh_2",
+       "parent": "mhjgMg",
+       "ty": "simple_table_cell"
+      },
+      "CU6O-w": {
+       "children": "DTDz1-",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "CU6O-w",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "CtrwrO": {
+       "children": "s5y3Tl",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "CtrwrO",
+       "parent": "N-yZCK",
+       "ty": "simple_table_cell"
+      },
+      "E-k3bw": {
+       "children": "e7xGE1",
+       "data": {},
+       "external_id": "yOZ1D8",
+       "external_type": "text",
+       "id": "E-k3bw",
+       "parent": "s_tsGu",
+       "ty": "paragraph"
+      },
+      "EFvH-g": {
+       "children": "Y4yil3",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "EFvH-g",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "F-PY5Q": {
+       "children": "7U0fBp",
+       "data": {},
+       "external_id": "ClwpDD",
+       "external_type": "text",
+       "id": "F-PY5Q",
+       "parent": "x7Kztz",
+       "ty": "paragraph"
+      },
+      "FCmTU7": {
+       "children": "t6avsb",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "FCmTU7",
+       "parent": "Uk0HrV",
+       "ty": "simple_table_cell"
+      },
+      "FD-EQv": {
+       "children": "jzGEyJ",
+       "data": {},
+       "external_id": "z9Kh2u",
+       "external_type": "text",
+       "id": "FD-EQv",
+       "parent": "F_7vLL",
+       "ty": "paragraph"
+      },
+      "FPsSAX": {
+       "children": "XYRrm6",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "FPsSAX",
+       "parent": "jGdN6r",
+       "ty": "simple_table_cell"
+      },
+      "F_7vLL": {
+       "children": "F_7vLL",
+       "data": {
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"images_photography\",\"iconName\":\"flash-2\",\"color\":\"0xFF2AC985\"}"
+       },
+       "external_id": "J56gGQ",
+       "external_type": "text",
+       "id": "F_7vLL",
+       "parent": "",
+       "ty": "page"
+      },
+      "Fb1G4b": {
+       "children": "Vuav-3",
+       "data": {
+        "bgColor": "appflowy_them_color_tint4",
+        "collapsed": true,
+        "level": 3
+       },
+       "external_id": "Vx4oaI",
+       "external_type": "text",
+       "id": "Fb1G4b",
+       "parent": "F_7vLL",
+       "ty": "toggle_list"
+      },
+      "Fcr2mS": {
+       "children": "iwIHNA",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Fcr2mS",
+       "parent": "CU6O-w",
+       "ty": "simple_table_cell"
+      },
+      "GlPZqc": {
+       "children": "oXstMM",
+       "data": {},
+       "external_id": "v5T8N4",
+       "external_type": "text",
+       "id": "GlPZqc",
+       "parent": "TdoVwU",
+       "ty": "paragraph"
+      },
+      "HaKAR8": {
+       "children": "C0EP9N",
+       "data": {},
+       "external_id": "6q9I4Z",
+       "external_type": "text",
+       "id": "HaKAR8",
+       "parent": "XQXbeO",
+       "ty": "paragraph"
+      },
+      "IDW6dW": {
+       "children": "97Br3M",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "IDW6dW",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "IVsqlb": {
+       "children": "BpYaGg",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "IVsqlb",
+       "parent": "jGdN6r",
+       "ty": "simple_table_cell"
+      },
+      "J2dhau": {
+       "children": "ZHN1Oj",
+       "data": {},
+       "external_id": "GVhbKP",
+       "external_type": "text",
+       "id": "J2dhau",
+       "parent": "ngdAOw",
+       "ty": "paragraph"
+      },
+      "JKDrmI": {
+       "children": "fJc2jS",
+       "data": {},
+       "external_id": "4sSz7f",
+       "external_type": "text",
+       "id": "JKDrmI",
+       "parent": "PYy7Af",
+       "ty": "paragraph"
+      },
+      "KoeQ-f": {
+       "children": "chIuCl",
+       "data": {},
+       "external_id": "pl6KJb",
+       "external_type": "text",
+       "id": "KoeQ-f",
+       "parent": "cGhlRs",
+       "ty": "paragraph"
+      },
+      "LBMEeq": {
+       "children": "pu5FJv",
+       "data": {},
+       "external_id": "Giv7Tr",
+       "external_type": "text",
+       "id": "LBMEeq",
+       "parent": "FPsSAX",
+       "ty": "paragraph"
+      },
+      "Lsb7Hx": {
+       "children": "VJSVVj",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Lsb7Hx",
+       "parent": "TMbijm",
+       "ty": "simple_table_cell"
+      },
+      "M-8y0T": {
+       "children": "zyJXCI",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "M-8y0T",
+       "parent": "5Q0wG8",
+       "ty": "simple_table_cell"
+      },
+      "M-NaTb": {
+       "children": "ox7-Ro",
+       "data": {},
+       "external_id": "AqzAZo",
+       "external_type": "text",
+       "id": "M-NaTb",
+       "parent": "4jlI-b",
+       "ty": "paragraph"
+      },
+      "M38o1Q": {
+       "children": "_6iRgo",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "M38o1Q",
+       "parent": "EFvH-g",
+       "ty": "simple_table_cell"
+      },
+      "MvmTnn": {
+       "children": "B6SXUV",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "MvmTnn",
+       "parent": "mhjgMg",
+       "ty": "simple_table_cell"
+      },
+      "N-yZCK": {
+       "children": "UASG3W",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "N-yZCK",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "N0ushT": {
+       "children": "RxXw68",
+       "data": {},
+       "external_id": "5pW2dq",
+       "external_type": "text",
+       "id": "N0ushT",
+       "parent": "PQMnj2",
+       "ty": "paragraph"
+      },
+      "Oa-T9L": {
+       "children": "rZY6hr",
+       "data": {},
+       "external_id": "xqa0nK",
+       "external_type": "text",
+       "id": "Oa-T9L",
+       "parent": "3Yc3aD",
+       "ty": "paragraph"
+      },
+      "Ou3JSU": {
+       "children": "r87IL8",
+       "data": {},
+       "external_id": "PZ7bA_",
+       "external_type": "text",
+       "id": "Ou3JSU",
+       "parent": "vpH0aW",
+       "ty": "paragraph"
+      },
+      "OxCVNL": {
+       "children": "9Rt5VQ",
+       "data": {},
+       "external_id": "q6deVn",
+       "external_type": "text",
+       "id": "OxCVNL",
+       "parent": "c05rJU",
+       "ty": "paragraph"
+      },
+      "PQMnj2": {
+       "children": "xAQRjl",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "PQMnj2",
+       "parent": "4J9_Mu",
+       "ty": "simple_table_cell"
+      },
+      "PYy7Af": {
+       "children": "BkWybE",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "PYy7Af",
+       "parent": "RNPfsg",
+       "ty": "simple_table_cell"
+      },
+      "Pb_Akn": {
+       "children": "4N8awe",
+       "data": {},
+       "external_id": "TsWdKB",
+       "external_type": "text",
+       "id": "Pb_Akn",
+       "parent": "-h7nlU",
+       "ty": "paragraph"
+      },
+      "PcGgvZ": {
+       "children": "GKA4Zy",
+       "data": {},
+       "external_id": "dWHd_O",
+       "external_type": "text",
+       "id": "PcGgvZ",
+       "parent": "5183_H",
+       "ty": "paragraph"
+      },
+      "RFx0gg": {
+       "children": "U94IQk",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "RFx0gg",
+       "parent": "IDW6dW",
+       "ty": "simple_table_cell"
+      },
+      "RLogb0": {
+       "children": "CWMMkf",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "RLogb0",
+       "parent": "mhjgMg",
+       "ty": "simple_table_cell"
+      },
+      "RNPfsg": {
+       "children": "yzVGsL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "RNPfsg",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "RbiNzB": {
+       "children": "3uKXoN",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "RbiNzB",
+       "parent": "RNPfsg",
+       "ty": "simple_table_cell"
+      },
+      "RvHagb": {
+       "children": "nyE2xz",
+       "data": {},
+       "external_id": "FnMX0H",
+       "external_type": "text",
+       "id": "RvHagb",
+       "parent": "3nuqBq",
+       "ty": "paragraph"
+      },
+      "S-Y5Wi": {
+       "children": "0T-0vs",
+       "data": {},
+       "external_id": "N8IVlm",
+       "external_type": "text",
+       "id": "S-Y5Wi",
+       "parent": "RFx0gg",
+       "ty": "paragraph"
+      },
+      "SHnGVv": {
+       "children": "SqxgaS",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "SHnGVv",
+       "parent": "F_7vLL",
+       "ty": "divider"
+      },
+      "T6X821": {
+       "children": "XZsK-L",
+       "data": {},
+       "external_id": "7oRxXs",
+       "external_type": "text",
+       "id": "T6X821",
+       "parent": "CFeh_2",
+       "ty": "paragraph"
+      },
+      "TGg7fv": {
+       "children": "7cbi8k",
+       "data": {},
+       "external_id": "eiHA1u",
+       "external_type": "text",
+       "id": "TGg7fv",
+       "parent": "F_7vLL",
+       "ty": "paragraph"
+      },
+      "TMbijm": {
+       "children": "E_SlHc",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "TMbijm",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "TUX19J": {
+       "children": "Bp3U4q",
+       "data": {},
+       "external_id": "5JwXLA",
+       "external_type": "text",
+       "id": "TUX19J",
+       "parent": "eIgKnj",
+       "ty": "paragraph"
+      },
+      "TWnm0P": {
+       "children": "9BoclL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "TWnm0P",
+       "parent": "F_7vLL",
+       "ty": "divider"
+      },
+      "TdoVwU": {
+       "children": "1J2mKS",
+       "data": {
+        "bgColor": "appflowy_them_color_tint4",
+        "collapsed": true,
+        "level": 3
+       },
+       "external_id": "otwLE-",
+       "external_type": "text",
+       "id": "TdoVwU",
+       "parent": "F_7vLL",
+       "ty": "toggle_list"
+      },
+      "Uk0HrV": {
+       "children": "wAQg6K",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Uk0HrV",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "Uk7oi6": {
+       "children": "2xU0Sz",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Uk7oi6",
+       "parent": "jGdN6r",
+       "ty": "simple_table_cell"
+      },
+      "W-UJE_": {
+       "children": "-g03k0",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "W-UJE_",
+       "parent": "IDW6dW",
+       "ty": "simple_table_cell"
+      },
+      "WbtlsC": {
+       "children": "1OI2tX",
+       "data": {},
+       "external_id": "YaeTpI",
+       "external_type": "text",
+       "id": "WbtlsC",
+       "parent": "3k75l2",
+       "ty": "paragraph"
+      },
+      "WqPQNB": {
+       "children": "z8vRHD",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "WqPQNB",
+       "parent": "EFvH-g",
+       "ty": "simple_table_cell"
+      },
+      "XQXbeO": {
+       "children": "gXEE1I",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "XQXbeO",
+       "parent": "IDW6dW",
+       "ty": "simple_table_cell"
+      },
+      "YzkiiL": {
+       "children": "F7VdOc",
+       "data": {},
+       "external_id": "uoyOEk",
+       "external_type": "text",
+       "id": "YzkiiL",
+       "parent": "CtrwrO",
+       "ty": "paragraph"
+      },
+      "Z1FTEI": {
+       "children": "x-7S8f",
+       "data": {},
+       "external_id": "N0PGvt",
+       "external_type": "text",
+       "id": "Z1FTEI",
+       "parent": "Uk7oi6",
+       "ty": "paragraph"
+      },
+      "Z5cFZ0": {
+       "children": "i_WBG-",
+       "data": {},
+       "external_id": "MVZIKF",
+       "external_type": "text",
+       "id": "Z5cFZ0",
+       "parent": "5RZGdm",
+       "ty": "paragraph"
+      },
+      "Za9BAd": {
+       "children": "uDtQZL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Za9BAd",
+       "parent": "N-yZCK",
+       "ty": "simple_table_cell"
+      },
+      "ZdUHHc": {
+       "children": "0WpSwB",
+       "data": {},
+       "external_id": "BLeiwq",
+       "external_type": "text",
+       "id": "ZdUHHc",
+       "parent": "5NPpVW",
+       "ty": "paragraph"
+      },
+      "_0EKuG": {
+       "children": "aewwQ_",
+       "data": {},
+       "external_id": "5OjIms",
+       "external_type": "text",
+       "id": "_0EKuG",
+       "parent": "Lsb7Hx",
+       "ty": "paragraph"
+      },
+      "_9O_J4": {
+       "children": "8qxmew",
+       "data": {},
+       "external_id": "EeFzDw",
+       "external_type": "text",
+       "id": "_9O_J4",
+       "parent": "Fb1G4b",
+       "ty": "paragraph"
+      },
+      "_x3jl9": {
+       "children": "90d7v0",
+       "data": {},
+       "external_id": "wvnhzw",
+       "external_type": "text",
+       "id": "_x3jl9",
+       "parent": "0J2rsm",
+       "ty": "paragraph"
+      },
+      "aVZyUa": {
+       "children": "6coxDw",
+       "data": {},
+       "external_id": "QFc4yj",
+       "external_type": "text",
+       "id": "aVZyUa",
+       "parent": "F_7vLL",
+       "ty": "paragraph"
+      },
+      "apdddf": {
+       "children": "lmPR7T",
+       "data": {},
+       "external_id": "BptQPv",
+       "external_type": "text",
+       "id": "apdddf",
+       "parent": "ffhUb7",
+       "ty": "paragraph"
+      },
+      "bqDaCN": {
+       "children": "T3xFhg",
+       "data": {
+        "level": 2
+       },
+       "external_id": "l0zHCw",
+       "external_type": "text",
+       "id": "bqDaCN",
+       "parent": "F_7vLL",
+       "ty": "heading"
+      },
+      "c05rJU": {
+       "children": "oc7lKC",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "c05rJU",
+       "parent": "TMbijm",
+       "ty": "simple_table_cell"
+      },
+      "cGhlRs": {
+       "children": "Dyr1qu",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "cGhlRs",
+       "parent": "76Do1A",
+       "ty": "simple_table_cell"
+      },
+      "dItDVY": {
+       "children": "RJyqhN",
+       "data": {},
+       "external_id": "lDrSQK",
+       "external_type": "text",
+       "id": "dItDVY",
+       "parent": "-XT2vV",
+       "ty": "paragraph"
+      },
+      "eIgKnj": {
+       "children": "LPUUTL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "eIgKnj",
+       "parent": "Uk0HrV",
+       "ty": "simple_table_cell"
+      },
+      "ffhUb7": {
+       "children": "SHQnk5",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ffhUb7",
+       "parent": "CU6O-w",
+       "ty": "simple_table_cell"
+      },
+      "gNw-tD": {
+       "children": "K1TYnt",
+       "data": {},
+       "external_id": "6u7s9h",
+       "external_type": "text",
+       "id": "gNw-tD",
+       "parent": "M38o1Q",
+       "ty": "paragraph"
+      },
+      "iZUjqm": {
+       "children": "NUZzEL",
+       "data": {},
+       "external_id": "1UkIUd",
+       "external_type": "text",
+       "id": "iZUjqm",
+       "parent": "RLogb0",
+       "ty": "paragraph"
+      },
+      "jGdN6r": {
+       "children": "t12R9H",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "jGdN6r",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "jV_Y0U": {
+       "children": "cutWYZ",
+       "data": {},
+       "external_id": "yeZDmC",
+       "external_type": "text",
+       "id": "jV_Y0U",
+       "parent": "Za9BAd",
+       "ty": "paragraph"
+      },
+      "jo3lTP": {
+       "children": "f32bLy",
+       "data": {},
+       "external_id": "e3Rf1G",
+       "external_type": "text",
+       "id": "jo3lTP",
+       "parent": "Fcr2mS",
+       "ty": "paragraph"
+      },
+      "kY-Qkp": {
+       "children": "Et2i_H",
+       "data": {},
+       "external_id": "1Tp43O",
+       "external_type": "text",
+       "id": "kY-Qkp",
+       "parent": "F_7vLL",
+       "ty": "paragraph"
+      },
+      "lhLb8h": {
+       "children": "zcYYWu",
+       "data": {},
+       "external_id": "WP113H",
+       "external_type": "text",
+       "id": "lhLb8h",
+       "parent": "qEdyjN",
+       "ty": "paragraph"
+      },
+      "lsG0s2": {
+       "children": "ec-PSO",
+       "data": {},
+       "external_id": "EGQoI0",
+       "external_type": "text",
+       "id": "lsG0s2",
+       "parent": "xmKq0K",
+       "ty": "paragraph"
+      },
+      "m1pSyC": {
+       "children": "MgxwNV",
+       "data": {
+        "url": "https://discord.com/servers/appflowy-903549834160635914"
+       },
+       "external_id": null,
+       "external_type": null,
+       "id": "m1pSyC",
+       "parent": "TdoVwU",
+       "ty": "link_preview"
+      },
+      "mhjgMg": {
+       "children": "wRicUI",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "mhjgMg",
+       "parent": "vdN53I",
+       "ty": "simple_table_row"
+      },
+      "nJLoDe": {
+       "children": "5RM-eH",
+       "data": {},
+       "external_id": "sMLIun",
+       "external_type": "text",
+       "id": "nJLoDe",
+       "parent": "0c53VM",
+       "ty": "paragraph"
+      },
+      "ngdAOw": {
+       "children": "EfHsCa",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ngdAOw",
+       "parent": "4J9_Mu",
+       "ty": "simple_table_cell"
+      },
+      "oQJlM2": {
+       "children": "9bXo85",
+       "data": {},
+       "external_id": "7IS-yI",
+       "external_type": "text",
+       "id": "oQJlM2",
+       "parent": "9HUx_B",
+       "ty": "paragraph"
+      },
+      "ojwplF": {
+       "children": "U0GtNU",
+       "data": {},
+       "external_id": "gU3hrZ",
+       "external_type": "text",
+       "id": "ojwplF",
+       "parent": "zAK-Lf",
+       "ty": "paragraph"
+      },
+      "ozeAqs": {
+       "children": "-GwZeL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ozeAqs",
+       "parent": "4J9_Mu",
+       "ty": "simple_table_cell"
+      },
+      "pMTL4x": {
+       "children": "K4s1YM",
+       "data": {},
+       "external_id": "JY59f7",
+       "external_type": "text",
+       "id": "pMTL4x",
+       "parent": "W-UJE_",
+       "ty": "paragraph"
+      },
+      "q0Lfb1": {
+       "children": "AYLk-f",
+       "data": {},
+       "external_id": "OE4E3A",
+       "external_type": "text",
+       "id": "q0Lfb1",
+       "parent": "WqPQNB",
+       "ty": "paragraph"
+      },
+      "qEdyjN": {
+       "children": "0d-awW",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "qEdyjN",
+       "parent": "RNPfsg",
+       "ty": "simple_table_cell"
+      },
+      "qMKzWU": {
+       "children": "gQiBRk",
+       "data": {},
+       "external_id": "1Y7JS0",
+       "external_type": "text",
+       "id": "qMKzWU",
+       "parent": "ozeAqs",
+       "ty": "paragraph"
+      },
+      "qz6gb8": {
+       "children": "zgxCyh",
+       "data": {
+        "bgColor": null,
+        "level": 3,
+        "textDirection": null
+       },
+       "external_id": "hCXrx8",
+       "external_type": "text",
+       "id": "qz6gb8",
+       "parent": "F_7vLL",
+       "ty": "heading"
+      },
+      "rkJzWN": {
+       "children": "Ttl4Lh",
+       "data": {},
+       "external_id": "uCUVYo",
+       "external_type": "text",
+       "id": "rkJzWN",
+       "parent": "MvmTnn",
+       "ty": "paragraph"
+      },
+      "s_tsGu": {
+       "children": "sHJiye",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "s_tsGu",
+       "parent": "76Do1A",
+       "ty": "simple_table_cell"
+      },
+      "vdN53I": {
+       "children": "9oWMHz",
+       "data": {
+        "column_widths": {
+         "0": 255,
+         "1": 255,
+         "2": 255,
+         "3": 255
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {}
+       },
+       "external_id": "rgAlq2",
+       "external_type": "text",
+       "id": "vdN53I",
+       "parent": "F_7vLL",
+       "ty": "simple_table"
+      },
+      "vntf5i": {
+       "children": "G91fcp",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "vntf5i",
+       "parent": "Uk0HrV",
+       "ty": "simple_table_cell"
+      },
+      "vpH0aW": {
+       "children": "pqsmOq",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "vpH0aW",
+       "parent": "5Q0wG8",
+       "ty": "simple_table_cell"
+      },
+      "ww9oj7": {
+       "children": "ipGLaj",
+       "data": {},
+       "external_id": "UjYg6D",
+       "external_type": "text",
+       "id": "ww9oj7",
+       "parent": "AkCU8g",
+       "ty": "paragraph"
+      },
+      "x7Kztz": {
+       "children": "Ge2qRn",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "x7Kztz",
+       "parent": "N-yZCK",
+       "ty": "simple_table_cell"
+      },
+      "xmKq0K": {
+       "children": "zcyp7S",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "xmKq0K",
+       "parent": "CU6O-w",
+       "ty": "simple_table_cell"
+      },
+      "zAK-Lf": {
+       "children": "RscAtG",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "zAK-Lf",
+       "parent": "5Q0wG8",
+       "ty": "simple_table_cell"
+      },
+      "z_YP52": {
+       "children": "xe15ki",
+       "data": {},
+       "external_id": "bHVNGv",
+       "external_type": "text",
+       "id": "z_YP52",
+       "parent": "FCmTU7",
+       "ty": "paragraph"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "-GwZeL": [
+        "qMKzWU"
+       ],
+       "-g03k0": [
+        "pMTL4x"
+       ],
+       "0T-0vs": [],
+       "0WpSwB": [],
+       "0d-awW": [
+        "lhLb8h"
+       ],
+       "1J2mKS": [
+        "m1pSyC",
+        "GlPZqc"
+       ],
+       "1OI2tX": [],
+       "1yS3dJ": [
+        "M-NaTb"
+       ],
+       "2xU0Sz": [
+        "Z1FTEI"
+       ],
+       "3uKXoN": [
+        "9uJPZg"
+       ],
+       "4N8awe": [],
+       "5RM-eH": [],
+       "69uAYM": [
+        "0J2rsm",
+        "vpH0aW",
+        "M-8y0T",
+        "zAK-Lf"
+       ],
+       "6coxDw": [],
+       "7S3Drj": [
+        "0fC4M4"
+       ],
+       "7U0fBp": [],
+       "7cbi8k": [],
+       "8qxmew": [],
+       "90d7v0": [],
+       "97Br3M": [
+        "XQXbeO",
+        "W-UJE_",
+        "AkCU8g",
+        "RFx0gg"
+       ],
+       "9BoclL": [],
+       "9IcpHT": [
+        "ZdUHHc"
+       ],
+       "9Rt5VQ": [],
+       "9bXo85": [],
+       "9oWMHz": [
+        "IDW6dW",
+        "RNPfsg",
+        "Uk0HrV",
+        "jGdN6r",
+        "N-yZCK",
+        "5Q0wG8",
+        "CU6O-w",
+        "mhjgMg",
+        "4J9_Mu",
+        "TMbijm",
+        "76Do1A",
+        "EFvH-g"
+       ],
+       "AYLk-f": [],
+       "AZ0-tB": [],
+       "B6SXUV": [
+        "rkJzWN"
+       ],
+       "BkWybE": [
+        "JKDrmI"
+       ],
+       "Bp3U4q": [],
+       "BpYaGg": [
+        "7e-_tx"
+       ],
+       "C0EP9N": [],
+       "CWMMkf": [
+        "iZUjqm"
+       ],
+       "DTDz1-": [
+        "xmKq0K",
+        "Fcr2mS",
+        "2kyl-n",
+        "ffhUb7"
+       ],
+       "Dyr1qu": [
+        "KoeQ-f"
+       ],
+       "EXhfTI": [
+        "PcGgvZ"
+       ],
+       "E_SlHc": [
+        "c05rJU",
+        "0c53VM",
+        "-XT2vV",
+        "Lsb7Hx"
+       ],
+       "EfHsCa": [
+        "J2dhau"
+       ],
+       "Et2i_H": [],
+       "EwYdeC": [
+        "ngdAOw",
+        "ozeAqs",
+        "4jlI-b",
+        "PQMnj2"
+       ],
+       "F7VdOc": [],
+       "FGhXUA": [
+        "6mmWwJ"
+       ],
+       "F_7vLL": [
+        "0X_oCP",
+        "63-uV4",
+        "TWnm0P",
+        "TGg7fv",
+        "SHnGVv",
+        "Fb1G4b",
+        "TdoVwU",
+        "bqDaCN",
+        "qz6gb8",
+        "aVZyUa",
+        "vdN53I",
+        "kY-Qkp",
+        "FD-EQv"
+       ],
+       "G91fcp": [
+        "-03YsF"
+       ],
+       "GKA4Zy": [],
+       "Ge2qRn": [
+        "F-PY5Q"
+       ],
+       "K1TYnt": [],
+       "K4s1YM": [],
+       "LPUUTL": [
+        "TUX19J"
+       ],
+       "LwuezX": [],
+       "LxVjCr": [
+        "Oa-T9L"
+       ],
+       "MgxwNV": [],
+       "NUZzEL": [],
+       "RJyqhN": [],
+       "RscAtG": [
+        "ojwplF"
+       ],
+       "RxXw68": [],
+       "SHQnk5": [
+        "apdddf"
+       ],
+       "ScuSZQ": [
+        "cGhlRs",
+        "-uqeaG",
+        "s_tsGu",
+        "-h7nlU"
+       ],
+       "SqxgaS": [],
+       "T3xFhg": [],
+       "Ttl4Lh": [],
+       "U0GtNU": [],
+       "U94IQk": [
+        "S-Y5Wi"
+       ],
+       "UASG3W": [
+        "5183_H",
+        "CtrwrO",
+        "x7Kztz",
+        "Za9BAd"
+       ],
+       "VJSVVj": [
+        "_0EKuG"
+       ],
+       "Vuav-3": [
+        "2DHZzx",
+        "_9O_J4"
+       ],
+       "XYRrm6": [
+        "LBMEeq"
+       ],
+       "XZsK-L": [],
+       "Y4yil3": [
+        "3Yc3aD",
+        "M38o1Q",
+        "WqPQNB",
+        "3k75l2"
+       ],
+       "ZHN1Oj": [],
+       "_6iRgo": [
+        "gNw-tD"
+       ],
+       "_B89-d": [
+        "T6X821"
+       ],
+       "aKA76K": [
+        "RvHagb"
+       ],
+       "aewwQ_": [],
+       "ajw3iY": [
+        "ww9oj7"
+       ],
+       "chIuCl": [],
+       "clKBAB": [
+        "dItDVY"
+       ],
+       "cutWYZ": [],
+       "e0SEZM": [],
+       "e7xGE1": [],
+       "ec-PSO": [],
+       "ezjjKS": [
+        "Z5cFZ0"
+       ],
+       "f32bLy": [],
+       "fJc2jS": [],
+       "gKOyWQ": [],
+       "gQiBRk": [],
+       "gXEE1I": [
+        "HaKAR8"
+       ],
+       "gXLmK8": [],
+       "i_WBG-": [],
+       "ipGLaj": [],
+       "iwIHNA": [
+        "jo3lTP"
+       ],
+       "jea34b": [
+        "oQJlM2"
+       ],
+       "jzGEyJ": [],
+       "kBPYSE": [
+        "WbtlsC"
+       ],
+       "kcEKJl": [],
+       "lmPR7T": [],
+       "nyE2xz": [],
+       "o2lrNd": [
+        "Pb_Akn"
+       ],
+       "oXstMM": [],
+       "oc7lKC": [
+        "OxCVNL"
+       ],
+       "ox7-Ro": [],
+       "p4i8wT": [],
+       "pXCVLf": [
+        "_x3jl9"
+       ],
+       "pqsmOq": [
+        "Ou3JSU"
+       ],
+       "pu5FJv": [],
+       "r2OkPS": [
+        "nJLoDe"
+       ],
+       "r87IL8": [],
+       "rZY6hr": [],
+       "s5y3Tl": [
+        "YzkiiL"
+       ],
+       "sHJiye": [
+        "E-k3bw"
+       ],
+       "t12R9H": [
+        "9HUx_B",
+        "FPsSAX",
+        "Uk7oi6",
+        "IVsqlb"
+       ],
+       "t6avsb": [
+        "z_YP52"
+       ],
+       "uDtQZL": [
+        "jV_Y0U"
+       ],
+       "wAQg6K": [
+        "FCmTU7",
+        "vntf5i",
+        "eIgKnj",
+        "3nuqBq"
+       ],
+       "wRicUI": [
+        "RLogb0",
+        "MvmTnn",
+        "5NPpVW",
+        "CFeh_2"
+       ],
+       "x-7S8f": [],
+       "xAQRjl": [
+        "N0ushT"
+       ],
+       "xe15ki": [],
+       "yzVGsL": [
+        "5RZGdm",
+        "qEdyjN",
+        "RbiNzB",
+        "PYy7Af"
+       ],
+       "z8vRHD": [
+        "q0Lfb1"
+       ],
+       "zLffBt": [],
+       "zcYYWu": [],
+       "zcyp7S": [
+        "lsG0s2"
+       ],
+       "zd1zrb": [],
+       "zgxCyh": [],
+       "zyJXCI": [
+        "BzjS8B"
+       ]
+      },
+      "text_map": {
+       "1Tp43O": "[]",
+       "1UkIUd": "[{\"insert\":\"DatabasesApi\",\"attributes\":{\"italic\":true}}]",
+       "1Y7JS0": "[{\"insert\":\"gotrueToken\",\"attributes\":{\"bold\":true,\"href\":\"Apis/OAuthApi.md#gotruetoken\"}}]",
+       "3EBZYY": "[{\"insert\":\"Creates a new row in a selected database.\"}]",
+       "4amb4C": "[{\"insert\":\"getWorkspaceFolder\",\"attributes\":{\"href\":\"Apis/WorkspacesApi.md#getworkspacefolder\",\"bold\":true}}]",
+       "4sSz7f": "[{\"insert\":\"Retrieves a list of database fields in a selected database.\"}]",
+       "5JwXLA": "[{\"insert\":\"GET\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace/{workspace_id}/database/{database_id}/row/detail\"}]",
+       "5OjIms": "[{\"insert\":\"Sign in with AppFlowy OAuth 2.0\"}]",
+       "5pW2dq": "[{\"insert\":\"Get a new access token and refresh token based on grant type\"}]",
+       "6q9I4Z": "[{\"insert\":\"Class\"}]",
+       "6u7s9h": "[{\"insert\":\"getWorkspaces\",\"attributes\":{\"href\":\"Apis/WorkspacesApi.md#getworkspaces\",\"bold\":true}}]",
+       "7IS-yI": "[{\"insert\":\"DatabaseRowsApi\",\"attributes\":{\"italic\":true}}]",
+       "7oRxXs": "[{\"insert\":\"Retrieves a list of database in a workspace\"}]",
+       "AqzAZo": "[{\"insert\":\"POST\",\"attributes\":{\"bold\":true}},{\"insert\":\" /gotrue/token\"}]",
+       "BLeiwq": "[{\"insert\":\"GET\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace/{workspace_id}/database\"}]",
+       "BptQPv": "[{\"insert\":\"Retrieves a list of database row id which are recently updated in a selected database.\"}]",
+       "ClwpDD": "[{\"insert\":\"GET\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace/{workspace_id}/database/{database_id}/row\"}]",
+       "EGQoI0": "[{\"insert\":\"DatabaseRowsUpdatedApi\",\"attributes\":{\"italic\":true}}]",
+       "EeFzDw": "[]",
+       "FnMX0H": "[{\"insert\":\"Retrieves a list of database row details in a selected database.\"}]",
+       "GVhbKP": "[{\"insert\":\"OAuthApi\",\"attributes\":{\"italic\":true}}]",
+       "Giv7Tr": "[{\"insert\":\"createDatabaseRow\",\"attributes\":{\"href\":\"Apis/DatabaseRowsApi.md#createdatabaserow\",\"bold\":true}}]",
+       "ISmt5p": "[{\"insert\":\"Last Update: \"},{\"insert\":\"$\",\"attributes\":{\"mention\":{\"include_time\":false,\"date\":\"2025-12-03T20:47:00.000\",\"reminder_option\":\"none\",\"type\":\"date\"}}}]",
+       "JY59f7": "[{\"insert\":\"Method\"}]",
+       "MVZIKF": "[{\"insert\":\"DatabaseFieldsApi\",\"attributes\":{\"italic\":true}}]",
+       "N0PGvt": "[{\"insert\":\"POST\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace/{workspace_id}/database/{database_id}/row\"}]",
+       "N8IVlm": "[{\"insert\":\"Description\"}]",
+       "OE4E3A": "[{\"insert\":\"GET\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace\"}]",
+       "PZ7bA_": "[{\"insert\":\"upsertDatabaseRow\",\"attributes\":{\"bold\":true,\"href\":\"Apis/DatabaseRowsApi.md#upsertdatabaserow\"}}]",
+       "QFc4yj": "[{\"insert\":\"All URIs are relative to \"},{\"insert\":\"https://beta.appflowy.cloud\",\"attributes\":{\"href\":\"https://beta.appflowy.cloud\"}}]",
+       "SMEPEu": "[{\"insert\":\"GET\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace/{workspace_id}/database/{database_id}/row/updated\"}]",
+       "TsWdKB": "[{\"insert\":\"Retrieves workspace folder or subfolder\"}]",
+       "UjYg6D": "[{\"insert\":\"HTTP request\"}]",
+       "Vx4oaI": "[{\"insert\":\"Know me more\"}]",
+       "WP113H": "[{\"insert\":\"getDatabaseFields\",\"attributes\":{\"href\":\"Apis/DatabaseFieldsApi.md#getdatabasefields\",\"bold\":true}}]",
+       "YaeTpI": "[{\"insert\":\"Retrieves a list of all workspaces\"}]",
+       "bHVNGv": "[{\"insert\":\"DatabaseRowDetailsApi\",\"attributes\":{\"italic\":true}}]",
+       "dWHd_O": "[{\"insert\":\"DatabaseRowsApi\",\"attributes\":{\"italic\":true}}]",
+       "e3Rf1G": "[{\"insert\":\"getDatabaseRowIdsUpdated\",\"attributes\":{\"href\":\"Apis/DatabaseRowsUpdatedApi.md#getdatabaserowidsupdated\",\"bold\":true}}]",
+       "eiHA1u": "[{\"insert\":\"$\",\"attributes\":{\"mention\":{\"page_id\":\"1d6ec635-bf63-4f8b-b364-936458d42242\",\"block_id\":\"bqDaCN\",\"type\":\"page\"}}}]",
+       "gU3hrZ": "[{\"insert\":\"Updates or creates a row in a selected database. (Upsert)\"}]",
+       "hCXrx8": "[{\"insert\":\"Documentation for API Endpoints\"}]",
+       "i_MWob": "[{\"insert\":\"GET\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace/{workspace_id}/database/{database_id}/fields\"}]",
+       "l0zHCw": "[{\"insert\":\"🍎 Documentation for AppFlowy REST API\"}]",
+       "lDrSQK": "[{\"insert\":\"GET\",\"attributes\":{\"bold\":true}},{\"insert\":\" /web-api/oauth-redirect/token\"}]",
+       "otwLE-": "[{\"insert\":\"Contact me\"}]",
+       "pl6KJb": "[{\"insert\":\"WorkspacesApi\",\"attributes\":{\"italic\":true}}]",
+       "q6deVn": "[{\"insert\":\"OAuthApi\",\"attributes\":{\"italic\":true}}]",
+       "sALbX8": "[{\"insert\":\"PUT\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace/{workspace_id}/database/{database_id}/row\"}]",
+       "sMLIun": "[{\"insert\":\"oauthRedirectToken\",\"attributes\":{\"href\":\"Apis/OAuthApi.md#oauthredirecttoken\",\"bold\":true}}]",
+       "uCUVYo": "[{\"insert\":\"getDatabases\",\"attributes\":{\"bold\":true,\"href\":\"Apis/DatabasesApi.md#getdatabases\"}}]",
+       "uoyOEk": "[{\"insert\":\"getDatabaseRowIds\",\"attributes\":{\"bold\":true,\"href\":\"Apis/DatabaseRowsApi.md#getdatabaserowids\"}}]",
+       "v3RC6w": "[{\"insert\":\"getDatabaseRowDetails\",\"attributes\":{\"href\":\"Apis/DatabaseRowDetailsApi.md#getdatabaserowdetails\",\"bold\":true}}]",
+       "v5T8N4": "[]",
+       "wvnhzw": "[{\"insert\":\"DatabaseRowsApi\",\"attributes\":{\"italic\":true}}]",
+       "xqa0nK": "[{\"insert\":\"WorkspacesApi\",\"attributes\":{\"italic\":true}}]",
+       "yOZ1D8": "[{\"insert\":\"GET\",\"attributes\":{\"bold\":true}},{\"insert\":\" /api/workspace/{workspace_id}/folder\"}]",
+       "yeZDmC": "[{\"insert\":\"Retrieves a list of database row ids in a selected database.\"}]",
+       "z9Kh2u": "[]"
+      }
+     },
+     "page_id": "F_7vLL"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "API-Documentation",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1741180817,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"mail/send-email\",\"space_icon_color\":\"0xFF2AC985\",\"space_permission\":0,\"space_created_at\":1724393746516}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1744870380,
+     "layout": 0,
+     "name": "Engineering",
+     "view_id": "aacd640c-d9d1-43ce-a656-01f9e3575a47"
+    },
+    {
+     "child_views": null,
+     "created_at": 1741178820,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"none\",\"value\":\"\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"images_photography\",\"iconName\":\"flash-2\",\"color\":\"0xFF2AC985\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764760174,
+     "layout": 0,
+     "name": "API Documentation",
+     "view_id": "1d6ec635-bf63-4f8b-b364-936458d42242"
+    }
+   ],
+   "childViews": [],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"none\",\"value\":\"\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"images_photography\",\"iconName\":\"flash-2\",\"color\":\"0xFF2AC985\"}"
+   },
+   "layout": 0,
+   "name": "API Documentation",
+   "viewId": "1d6ec635-bf63-4f8b-b364-936458d42242",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

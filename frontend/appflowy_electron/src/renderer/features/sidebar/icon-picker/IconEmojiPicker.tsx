@@ -2,10 +2,15 @@
 // the Emojis tab (emoji-mart catalog, search, random) and the Icons tab (icons.json, search,
 // random, background color) are implemented; skin tones, recent icons and the Upload (custom
 // image) tab are not.
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTr } from '@/i18n';
-import { AppFlowyPopover, FlowyButton, FlowyDivider, FlowySvg, FlowyText, Spinner, Tooltip } from '@/ui';
-import { useBrightness } from '@/theme/appearance-store';
+import { AppFlowyPopover, Spinner, Tooltip } from '@/ui';
+import { Search, Shuffle, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { floatingSurfaceClass, MenuLabel } from '@/components/app/menu-row';
+import { cn } from '@/lib/utils';
 import { emptyEmojiIcon, type EmojiIconData, type FlowyIconType } from '@/features/view/view-ext';
 import { builtInSpaceColors, dartColorToCss } from '../stores/types';
 import { EMOJI_CATEGORIES } from './emoji-data';
@@ -60,7 +65,7 @@ export function IconEmojiPicker({
   tabs = ['emoji', 'icon'],
   initialType,
   onSelected,
-  width = 364,
+  width: _width = 352,
   height = 356,
 }: {
   tabs?: PickerTabType[];
@@ -69,93 +74,41 @@ export function IconEmojiPicker({
   width?: number;
   height?: number;
 }) {
-  const { tr } = useTr();
   // The Upload tab (custom images) is not ported.
   const visibleTabs: PickerTabType[] = tabs.filter((t) => t !== 'custom');
   const [current, setCurrent] = useState<PickerTabType>(
     initialType && visibleTabs.includes(initialType) ? initialType : (visibleTabs[0] ?? 'emoji'),
   );
   return (
-    <div style={{ width, height, maxWidth: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: 46, padding: '0 12px 0 4px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-        <div style={{ flex: 1, display: 'flex', height: '100%' }}>
-          {visibleTabs.map((tab) => (
-            <div key={tab} className="sb-tab" style={{ padding: '0 12px' }} onClick={() => setCurrent(tab)}>
-              <FlowyText fontWeight={500} lineHeight={16} color={tab === current ? undefined : 'var(--th-hint)'}>
-                {TAB_LABEL[tab]}
-              </FlowyText>
-              {tab === current && <div className="sb-tab-indicator" style={{ width: 34, background: 'var(--cs-primary)' }} />}
-            </div>
-          ))}
-        </div>
-        <FlowyButton
-          useIntrinsicWidth
-          height={32}
-          text={
-            <FlowyText fontWeight={500} lineHeight={16} color="var(--th-hint)">
-              {tr('button.remove')}
-            </FlowyText>
-          }
-          onTap={() => onSelected({ data: emptyEmojiIcon(), keepOpen: false })}
-        />
+    <Tabs value={current} onValueChange={(value) => setCurrent(value as PickerTabType)} className={cn(floatingSurfaceClass, 'flex w-[22rem] max-w-full flex-col gap-0 p-0')} style={{ height }}>
+      <TabsList variant="line" className="h-9 w-full shrink-0 justify-start rounded-none border-b px-2">
+        {visibleTabs.map((tab) => <TabsTrigger key={tab} value={tab} className="flex-none">{TAB_LABEL[tab]}</TabsTrigger>)}
+      </TabsList>
+      <div className="flex min-h-0 flex-1 flex-col">
+        {current === 'emoji' ? <EmojiTab onSelected={onSelected} onRemove={() => onSelected({ data: emptyEmojiIcon(), keepOpen: false })} /> : <IconTab onSelected={onSelected} onRemove={() => onSelected({ data: emptyEmojiIcon(), keepOpen: false })} />}
       </div>
-      <FlowyDivider />
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        {current === 'emoji' ? <EmojiTab onSelected={onSelected} /> : <IconTab onSelected={onSelected} />}
-      </div>
-    </div>
+    </Tabs>
   );
 }
 
-function SearchRow({ onChanged, onRandom }: { onChanged: (value: string) => void; onRandom: () => void }) {
+function SearchRow({ onChanged, onRandom, onRemove }: { onChanged: (value: string) => void; onRandom: () => void; onRemove: () => void }) {
   const { tr } = useTr();
-  const light = useBrightness() === 'light';
-  const border = light ? '#1717171E' : 'rgba(255,255,255,0.12)';
   const [value, setValue] = useState('');
   return (
-    <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-      <div style={{ flex: 1, height: 36, display: 'flex', alignItems: 'center', border: `1px solid ${border}`, borderRadius: 8 }}>
-        <div style={{ padding: '0 8px 0 14px', display: 'flex' }}>
-          <FlowySvg svg="search_s" />
-        </div>
-        <input
-          autoFocus
-          value={value}
-          placeholder={tr('search.label')}
-          onChange={(event) => {
-            setValue(event.target.value);
-            onChanged(event.target.value);
-          }}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            fontSize: 'calc(14px * var(--text-scale, 1))',
-            color: 'var(--text-color)',
-          }}
-        />
-        {value && (
-          <div style={{ padding: 4, display: 'flex', cursor: 'pointer' }} onClick={() => (setValue(''), onChanged(''))}>
-            <FlowySvg svg="m_app_bar_close_s" />
-          </div>
-        )}
-      </div>
-      <Tooltip message={tr('emoji.random')}>
-        <div
-          className="flowy-hover"
-          onClick={onRandom}
-          style={{ width: 36, height: 36, border: `1px solid ${border}`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <FlowySvg svg="icon_shuffle_s" />
-        </div>
-      </Tooltip>
+    <div className="flex shrink-0 items-center gap-1 p-2">
+      <InputGroup className="min-w-0 flex-1">
+        <InputGroupAddon><Search className="size-4" /></InputGroupAddon>
+        <InputGroupInput autoFocus value={value} placeholder={tr('search.label')}
+          onChange={(event) => { setValue(event.target.value); onChanged(event.target.value); }} />
+        {value && <InputGroupAddon align="inline-end"><Button variant="ghost" size="icon-xs" aria-label={tr('button.remove')} onClick={() => (setValue(''), onChanged(''))}><X className="size-4" /></Button></InputGroupAddon>}
+      </InputGroup>
+      <Tooltip message={tr('emoji.random')}><Button variant="ghost" size="icon-sm" aria-label={tr('emoji.random')} onClick={onRandom}><Shuffle className="size-4" /></Button></Tooltip>
+      <Button variant="ghost" size="sm" onClick={onRemove}>{tr('button.remove')}</Button>
     </div>
   );
 }
 
-function EmojiTab({ onSelected }: { onSelected: (result: SelectedEmojiIconResult) => void }) {
+function EmojiTab({ onSelected, onRemove }: { onSelected: (result: SelectedEmojiIconResult) => void; onRemove: () => void }) {
   const [keyword, setKeyword] = useState('');
   const categories = emojiCategories();
   const filtered = useMemo(() => {
@@ -168,30 +121,29 @@ function EmojiTab({ onSelected }: { onSelected: (result: SelectedEmojiIconResult
   return (
     <>
       <SearchRow
+        onRemove={onRemove}
         onChanged={setKeyword}
         onRandom={() => {
           const all = categories.flatMap((c) => c.emojis);
           pick(all[Math.floor(Math.random() * all.length)].emoji, true);
         }}
       />
-      <div className="sb-scroll" style={{ flex: 1, padding: '0 16px' }}>
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {filtered.slice(0, visible).map((category) => (
           <div key={category.id}>
-            <div style={{ height: 22, paddingBottom: 4, background: 'var(--th-card)', position: 'sticky', top: 0 }}>
-              <FlowyText color="var(--th-hint)">{capitalize(category.id)}</FlowyText>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 36px)', contentVisibility: 'auto' } as CSSProperties}>
+            <MenuLabel className="sticky top-0 z-10 bg-popover">{capitalize(category.id)}</MenuLabel>
+            <div className="grid grid-cols-9 gap-0.5 p-2 [content-visibility:auto]">
               {category.emojis.map((e) => (
                 <Tooltip key={e.emoji + e.name} message={e.name} preferBelow={false}>
-                  <div
-                    className="flowy-hover"
+                  <button
+                    type="button"
+                    className="flex size-8 items-center justify-center rounded-md text-xl transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => pick(e.emoji)}
-                    style={{ width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <span className="sb-emoji" style={{ fontSize: 24 * 0.9 }}>
+                    <span className="leading-none">
                       {e.emoji}
                     </span>
-                  </div>
+                  </button>
                 </Tooltip>
               ))}
             </div>
@@ -202,10 +154,9 @@ function EmojiTab({ onSelected }: { onSelected: (result: SelectedEmojiIconResult
   );
 }
 
-function IconTab({ onSelected }: { onSelected: (result: SelectedEmojiIconResult) => void }) {
+function IconTab({ onSelected, onRemove }: { onSelected: (result: SelectedEmojiIconResult) => void; onRemove: () => void }) {
   const groups = useIconGroups();
   const [keyword, setKeyword] = useState('');
-  const light = useBrightness() === 'light';
   const filtered = useMemo(() => {
     if (!groups) return null;
     const k = keyword.toLowerCase();
@@ -223,6 +174,7 @@ function IconTab({ onSelected }: { onSelected: (result: SelectedEmojiIconResult)
   return (
     <>
       <SearchRow
+        onRemove={onRemove}
         onChanged={setKeyword}
         onRandom={() => {
           if (!groups || groups.length === 0) return;
@@ -232,23 +184,20 @@ function IconTab({ onSelected }: { onSelected: (result: SelectedEmojiIconResult)
         }}
       />
       {!filtered ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="flex flex-1 items-center justify-center">
           <Spinner size={24} stroke={2} />
         </div>
       ) : (
-        <div className="sb-scroll" style={{ flex: 1, padding: '0 16px' }}>
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {filtered.slice(0, visible).map((group) => (
-            <div key={group.name} style={{ marginBottom: 12 }}>
-              <FlowyText fontSize={12} lineHeight={18} color={light ? '#17171780' : 'rgba(255,255,255,0.5)'}>
-                {capitalize(groupDisplayName(group.name))}
-              </FlowyText>
-              <div style={{ height: 4 }} />
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', contentVisibility: 'auto' } as CSSProperties}>
+            <div key={group.name} className="mb-3">
+              <MenuLabel className="sticky top-0 z-10 bg-popover">{capitalize(groupDisplayName(group.name))}</MenuLabel>
+              <div className="grid grid-cols-9 gap-0.5 p-2 [content-visibility:auto]">
                 {group.icons.map((icon) => (
                   <PickerIcon
                     key={icon.name}
                     icon={icon}
-                    iconColor={light ? '#171717' : '#FFFFFF'}
+                    iconColor="currentColor"
                     onColor={(color) => select(group.name, icon, color)}
                   />
                 ))}
@@ -262,7 +211,7 @@ function IconTab({ onSelected }: { onSelected: (result: SelectedEmojiIconResult)
 }
 
 /** _Icon: tapping an icon opens the background color picker (IconColorPicker). */
-function PickerIcon({ icon, iconColor, onColor }: { icon: IconItem; iconColor: string; onColor: (color: string) => void }) {
+function PickerIcon({ icon, iconColor: _iconColor, onColor }: { icon: IconItem; iconColor: string; onColor: (color: string) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <AppFlowyPopover
@@ -271,41 +220,37 @@ function PickerIcon({ icon, iconColor, onColor }: { icon: IconItem; iconColor: s
       onOpen={() => setOpen(true)}
       onClose={() => setOpen(false)}
       popup={(close) => (
-        <div style={{ width: 228, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', rowGap: 4 }}>
+        <div className="grid w-56 grid-cols-6 gap-1 p-1">
           {builtInSpaceColors.map((color) => (
-            <div
+            <button
+              type="button"
               key={color}
-              className="flowy-hover"
+              aria-label={color}
+              className="size-8 rounded-md p-1 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => {
                 onColor(color);
                 close();
               }}
-              style={{ width: 34, height: 34, padding: 5, borderRadius: 8 }}
             >
-              <div style={{ width: '100%', height: '100%', borderRadius: 8, background: dartColorToCss(color) ?? undefined, border: '1px solid #3333332D' }} />
-            </div>
+              <span className="block size-full rounded-md ring-1 ring-foreground/10" style={{ background: dartColorToCss(color) ?? undefined }} />
+            </button>
           ))}
         </div>
       )}
     >
       <Tooltip message={iconDisplayName(icon.name)} preferBelow={false}>
-        <div
-          className="flowy-hover"
+        <button
+          type="button"
+          className="flex size-8 items-center justify-center rounded-md text-xl transition-colors hover:bg-accent data-[selected=true]:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
           data-selected={open ? 'true' : undefined}
-          style={{ aspectRatio: '1', padding: 8, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <span
+            className="size-5 bg-current opacity-70 [mask-size:100%_100%] [mask-repeat:no-repeat]"
             style={{
-              width: 20,
-              height: 20,
-              opacity: 0.7,
-              background: iconColor,
               WebkitMaskImage: `url("${svgDataUrl(icon.content)}")`,
-              WebkitMaskSize: '100% 100%',
-              WebkitMaskRepeat: 'no-repeat',
             }}
           />
-        </div>
+        </button>
       </Tooltip>
     </AppFlowyPopover>
   );

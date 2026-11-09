@@ -33,7 +33,6 @@ export function themeVariables(colors: FlowyColorScheme, brightness: Brightness)
   }
   Object.assign(vars, {
     // ColorScheme (desktop_appearance.dart)
-    '--hyper-logo-color': light ? '#000000' : '#FFFFFF',
     '--cs-primary': colors.primary,
     '--cs-on-primary': colors.onPrimary,
     '--cs-primary-container': colors.main2,
@@ -102,16 +101,54 @@ export function themeVariables(colors: FlowyColorScheme, brightness: Brightness)
 
 const quote = (family: string) => (/^[\w-]+$/.test(family) ? family : `"${family}"`);
 
+const SANS_FALLBACK = `"Geist Variable", ${PLATFORM_FONT}, sans-serif`;
+const MONO_FALLBACK = '"Geist Mono Variable", ui-monospace, monospace';
+
+/** Shadcn tokens a color scheme overrides; the Default scheme keeps the monochrome values in app.css. */
+const ACCENT_VARS = ['--primary', '--primary-foreground', '--ring', '--sidebar-primary', '--sidebar-primary-foreground', '--sidebar-ring'];
+
+/** Near-black or near-white, whichever reads better on a #RRGGBB background. */
+function readableOn(hex: string): string {
+  const value = hex.replace('#', '').slice(-6);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? 'oklch(0.21 0.006 285.885)' : 'oklch(0.985 0 0)';
+}
+
+/** The scheme's primary color as the shadcn accent; null for Default. */
+export function accentVariables(schemeName: string, colors: FlowyColorScheme): Record<string, string> | null {
+  if (schemeName === 'Default' || !colors.primary) return null;
+  const foreground = readableOn(colors.primary);
+  return {
+    '--primary': colors.primary,
+    '--primary-foreground': foreground,
+    '--ring': colors.primary,
+    '--sidebar-primary': colors.primary,
+    '--sidebar-primary-foreground': foreground,
+    '--sidebar-ring': colors.primary,
+  };
+}
+
 export function applyTheme(options: ThemeOptions): void {
-  const scheme = builtInColorSchemes[options.scheme] ?? builtInColorSchemes.Default;
+  const schemeName = builtInColorSchemes[options.scheme] ? options.scheme : 'Default';
+  const scheme = builtInColorSchemes[schemeName];
   const root = document.documentElement;
   for (const [name, value] of Object.entries(themeVariables(scheme[options.brightness], options.brightness))) {
     root.style.setProperty(name, value);
   }
+  const accent = accentVariables(schemeName, scheme[options.brightness]);
+  for (const name of ACCENT_VARS) {
+    if (accent) root.style.setProperty(name, accent[name]);
+    else root.style.removeProperty(name);
+  }
   root.dataset.theme = options.brightness;
   root.style.colorScheme = options.brightness;
-  root.style.setProperty('--font-family', options.font ? `${quote(options.font)}, ${PLATFORM_FONT}` : PLATFORM_FONT);
-  root.style.setProperty('--font-mono', `${quote(options.monospaceFont || 'RobotoMono')}, RobotoMono, monospace`);
+  const sans = options.font ? `${quote(options.font)}, ${SANS_FALLBACK}` : SANS_FALLBACK;
+  const mono = options.monospaceFont ? `${quote(options.monospaceFont)}, ${MONO_FALLBACK}` : MONO_FALLBACK;
+  root.style.setProperty('--app-font-sans', sans);
+  root.style.setProperty('--app-font-mono', mono);
+  // Legacy names, read by screens that have not moved to Tailwind yet.
+  root.style.setProperty('--font-family', sans);
+  root.style.setProperty('--font-mono', mono);
   root.style.setProperty('--text-scale', String(options.textScaleFactor));
   // AppearanceSettingsPB.layout_direction only mirrors the document editor in Flutter,
   // not the app chrome; the editor reads this attribute.

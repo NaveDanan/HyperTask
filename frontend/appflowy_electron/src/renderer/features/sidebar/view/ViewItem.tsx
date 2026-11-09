@@ -1,11 +1,10 @@
 // ViewItem (workspace/presentation/home/menu/view/view_item.dart) and DraggableViewItem
 // (menu/view/draggable_view_item.dart): one node of the sidebar page tree.
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useStore } from 'zustand';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { useTr } from '@/i18n';
-import { useBrightness } from '@/theme/appearance-store';
-import { AppFlowyPopover, FlowySvg, FlowyText, Tooltip, type PopoverController } from '@/ui';
+import { AppFlowyPopover, Tooltip, type PopoverController } from '@/ui';
 import { useTabsStore } from '@/features/tabs/tabs-store';
 import { useSwitchToSpace } from '@/features/home/notifiers';
 import {
@@ -15,9 +14,10 @@ import {
   viewIconData,
   type EmojiIconData,
 } from '@/features/view/view-ext';
-import { layoutIcon } from '@/features/tabs/plugin';
+import { CalendarDays, FileText, Lock, MessageSquareText, MoreHorizontal, SquareKanban, Table2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { NavIconButton, TreeDisclosure, TreeRowActions, treeIndent, treeRowClass } from '@/components/app/nav';
 import { ViewBackendService } from '@/features/view/view-service';
-import { SbIconButton } from '../components';
 import { IconEmojiPicker } from '../icon-picker/IconEmojiPicker';
 import { sectionsActions } from '../stores/sections-store';
 import { sidebarSpace } from '../stores/space-store';
@@ -90,8 +90,8 @@ export function ViewItem(props: ViewItemProps) {
   if (shouldIgnoreView?.(view) === 'disable') {
     return (
       <Tooltip message={tr('space.cannotMovePageToDatabase')}>
-        <div style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-          <div style={{ pointerEvents: 'none' }}>{inner}</div>
+        <div className="cursor-not-allowed opacity-50">
+          <div className="pointer-events-none">{inner}</div>
         </div>
       </Tooltip>
     );
@@ -138,7 +138,7 @@ function InnerViewItem(props: InnerProps) {
 
   if (isExpanded && shouldRenderChildren && childViews.length > 0) {
     child = (
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="flex flex-col gap-px">
         {child}
         {childViews.map((childView) => (
           <ViewItem
@@ -173,6 +173,7 @@ function InnerViewItem(props: InnerProps) {
       <DraggableNode
         view={view}
         bloc={bloc}
+        level={level}
         isFirstChild={isFirstChild}
         isPlaceholder={isPlaceholder}
         onMove={
@@ -185,11 +186,10 @@ function InnerViewItem(props: InnerProps) {
       </DraggableNode>
     );
   }
-  // Keeps the same height as a draggable node's divider.
-  return <div style={{ paddingTop: 2 }}>{child}</div>;
+  return <div>{child}</div>;
 }
 
-// ---- the 30px row ------------------------------------------------------------------------
+// ---- the page row ------------------------------------------------------------------------
 
 const CLICK_THROTTLE_MS = 200;
 
@@ -201,7 +201,6 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
     parentView,
     level,
     leftPadding = 10,
-    height = 30,
     isExpanded,
     showActions,
     isSelected,
@@ -220,7 +219,9 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
     return registerRenameAnchor(() => renameController.current?.show());
   }, [isSelected, isFeedback, isPlaceholder]);
 
-  if (isPlaceholder) return <div style={{ height: 4, width: '100%' }} />;
+  const dropTarget = useContext(HyperDropContext);
+  const dropPosition = dropTarget?.viewId === view.id ? dropTarget.position : 'none';
+  if (isPlaceholder) return <div className="h-1 w-full" />;
 
   const hoverable = !isFeedback;
   const selected = hoverable && (showActions || isSelected);
@@ -237,19 +238,14 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
         onEditing={(value) => bloc.setIsEditing(value)}
         onAction={(type, data) => handleViewMoreAction(type, data, { view, parentView: parentView ?? null, bloc })}
       >
-        <div style={{ display: 'flex' }}>
+        <div className="flex">
           <Tooltip message={tr('menuAppHeader.moreButtonToolTip')}>
-            <SbIconButton
-              width={24}
-              icon={<FlowySvg svg="workspace_three_dots_s" />}
-              onPressed={() => moreController.current?.show()}
-            />
+            <NavIconButton aria-label={tr('menuAppHeader.moreButtonToolTip')} onClick={(event) => { event.stopPropagation(); moreController.current?.show(); }}><MoreHorizontal className="size-3.5" /></NavIconButton>
           </Tooltip>
         </div>
       </ViewMoreActionPopover>
       {view.layout === ViewLayoutPB.Document && (
         <>
-          <div style={{ width: 8 }} />
           <ViewAddButton
             parentViewId={view.id}
             tooltip={tr('menuAppHeader.addPageTooltip')}
@@ -263,17 +259,18 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
           />
         </>
       )}
-      <div style={{ width: 4 }} />
     </>
   );
 
   const row = (
     <div
-      className="sb-row"
+      className={treeRowClass}
+      data-sb-row=""
+      data-drop={dropPosition === 'center' ? 'into' : undefined}
       data-hoverable={hoverable ? 'true' : undefined}
       data-selected={selected ? 'true' : undefined}
       data-actions={hoverable && showActions ? 'true' : undefined}
-      style={{ height, paddingLeft: level * leftPadding }}
+      style={{ paddingLeft: treeIndent(level) }}
       onClick={(event) => {
         // Popover content is portaled but still bubbles through the React tree.
         if (isFeedback || !event.currentTarget.contains(event.target as Node)) return;
@@ -293,7 +290,6 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
       }}
       onContextMenu={(event) => event.preventDefault()}
     >
-      <div style={{ width: 2, flexShrink: 0 }} />
       {props.leftIconBuilder ? (
         props.leftIconBuilder(view)
       ) : (
@@ -307,25 +303,12 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
           onToggle={() => void bloc.setIsExpanded(!isExpanded)}
         />
       )}
-      <div style={{ width: 2, flexShrink: 0 }} />
       <ViewIconButton view={view} />
-      <div style={{ width: 6, flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-        {props.extendBuilder ? (
-          <>
-            <FlowyText lineHeight={18} ellipsis style={{ flexShrink: 1 }}>
-              {nameOrDefault(view)}
-            </FlowyText>
-            {props.extendBuilder(view)}
-          </>
-        ) : (
-          <FlowyText lineHeight={18} ellipsis style={{ flex: 1 }}>
-            {nameOrDefault(view)}
-          </FlowyText>
-        )}
-      </div>
-      <div className="sb-row-actions" onClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()}>
-        {rightIcons}
+      <span className="min-w-0 flex-1 truncate">{nameOrDefault(view)}</span>
+      {props.extendBuilder?.(view)}
+      {isViewLocked(view) && <Lock className="size-3 shrink-0 text-sidebar-foreground/50" />}
+      <div className="contents" onClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()}>
+        <TreeRowActions className={hoverable && showActions ? 'opacity-100' : undefined}>{rightIcons}</TreeRowActions>
       </div>
     </div>
   );
@@ -334,6 +317,8 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
     return (
       <AppFlowyPopover
         controllerRef={renameController}
+        plain
+        margin={0}
         trigger="none"
         offset={{ x: 0, y: 5 }}
         direction="bottomWithLeftAligned"
@@ -352,8 +337,8 @@ function ViewItemDefaultLeftIcon({
   parentView,
   hasChildren,
   isExpanded,
-  leftPadding,
-  hoverGated,
+  leftPadding: _leftPadding,
+  hoverGated: _hoverGated,
   onToggle,
 }: {
   view: ViewPB;
@@ -365,25 +350,9 @@ function ViewItemDefaultLeftIcon({
   onToggle: () => void;
 }) {
   if (isReferencedDatabaseView(view, parentView)) {
-    return (
-      <div style={{ padding: 6, flexShrink: 0 }}>
-        <div style={{ width: 4, height: 4, borderRadius: 2, background: 'var(--icon-color)' }} />
-      </div>
-    );
+    return <span className="flex size-5 shrink-0 items-center justify-center"><span className="size-1 rounded-full bg-sidebar-foreground/50" /></span>;
   }
-  if (!hasChildren) return <div style={{ width: leftPadding, flexShrink: 0 }} />;
-  return (
-    <div
-      className={`flowy-hover${hoverGated ? ' sb-arrow-gated' : ''}`}
-      style={{ display: 'flex', flexShrink: 0 }}
-      onClick={(event) => {
-        event.stopPropagation();
-        onToggle();
-      }}
-    >
-      <FlowySvg svg={isExpanded ? 'view_item_expand_s' : 'view_item_unexpand_s'} size={16} />
-    </div>
-  );
+  return <TreeDisclosure expanded={isExpanded} hasChildren={hasChildren} onToggle={onToggle} />;
 }
 
 /** _buildViewIconButton: the page icon (or the layout's default icon at 60%), opens the icon picker. */
@@ -395,10 +364,11 @@ function ViewIconButton({ view }: { view: ViewPB }) {
     iconData.emoji !== '' ? (
       <ViewIcon icon={iconData} size={16} lineHeight={18} />
     ) : (
-      <FlowySvg svg={layoutIcon(view.layout)} opacity={0.6} />
+      <HyperLayoutIcon layout={view.layout} />
     );
   const button = (
     <AppFlowyPopover
+      plain
       direction="rightWithCenterAligned"
       offset={{ x: 20, y: 0 }}
       constraints={{ maxWidth: 364, maxHeight: 356 }}
@@ -414,25 +384,34 @@ function ViewIconButton({ view }: { view: ViewPB }) {
         />
       )}
     >
-      <div
-        style={{ width: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, pointerEvents: locked ? 'none' : undefined }}
+      <button
+        type="button"
+        aria-label={tr('document.plugins.cover.changeIcon')}
+        className={cn('flex size-5 shrink-0 items-center justify-center rounded-md text-base transition-colors hover:bg-sidebar-foreground/10', locked && 'pointer-events-none')}
         onClick={(event) => event.stopPropagation()}
       >
         <Tooltip message={tr('document.plugins.cover.changeIcon')}>
-          <div style={{ display: 'flex' }}>{icon}</div>
+          <div className="flex">{icon}</div>
         </Tooltip>
-      </div>
+      </button>
     </AppFlowyPopover>
   );
   if (locked) {
     return (
       <Tooltip message={tr('lockPage.lockedOperationTooltip')}>
-        <div style={{ display: 'flex', flexShrink: 0 }}>{button}</div>
+        <div className="flex shrink-0">{button}</div>
       </Tooltip>
     );
   }
   return button;
 }
+
+function HyperLayoutIcon({ layout }: { layout: ViewLayoutPB }) {
+  const Icon = layout === ViewLayoutPB.Grid ? Table2 : layout === ViewLayoutPB.Board ? SquareKanban : layout === ViewLayoutPB.Calendar ? CalendarDays : layout === ViewLayoutPB.Chat ? MessageSquareText : FileText;
+  return <Icon className="size-4 text-sidebar-foreground/70" />;
+}
+
+const HyperDropContext = createContext<{ viewId: string; position: DraggableHoverPosition } | null>(null);
 
 // ---- drag and drop ---------------------------------------------------------------------
 
@@ -472,6 +451,7 @@ function startDragSession() {
 function DraggableNode({
   view,
   bloc,
+  level,
   isFirstChild,
   isPlaceholder,
   onMove,
@@ -479,6 +459,7 @@ function DraggableNode({
 }: {
   view: ViewPB;
   bloc: ViewBloc;
+  level: number;
   isFirstChild: boolean;
   isPlaceholder: boolean;
   onMove?: (from: ViewPB, to: ViewPB) => void;
@@ -488,7 +469,6 @@ function DraggableNode({
   const [position, setPosition] = useState<DraggableHoverPosition>('none');
   const positionRef = useRef<DraggableHoverPosition>('none');
   const id = useRef(Symbol('node'));
-  const light = useBrightness() === 'light';
   const update = (next: DraggableHoverPosition) => {
     positionRef.current = next;
     setPosition(next);
@@ -514,7 +494,7 @@ function DraggableNode({
       ref={ref}
       data-sb-node=""
       draggable={!isPlaceholder}
-      style={{ display: 'flex', flexDirection: 'column' }}
+      className="relative flex flex-col"
       onDragStart={(event) => {
         const el = ref.current;
         if (!el || !el.contains(event.target as Node)) return;
@@ -524,12 +504,10 @@ function DraggableNode({
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData(VIEW_DRAG_MIME, JSON.stringify({ id: view.id, name: view.name, layout: view.layout }));
         // Feedback: the row in a 250px card at 50% opacity.
-        const row = el.querySelector('.sb-row') as HTMLElement | null;
+        const row = el.querySelector('[data-sb-row]') as HTMLElement | null;
         if (row) {
           const ghost = document.createElement('div');
-          ghost.style.cssText = `position:fixed;left:-2000px;top:-2000px;width:250px;border-radius:8px;opacity:0.5;pointer-events:none;background:${
-            light ? '#FFFFFF' : 'rgba(0,0,0,0.54)'
-          }`;
+          ghost.className = 'fixed -left-[2000px] -top-[2000px] w-62.5 rounded-lg bg-popover opacity-50 pointer-events-none';
           const clone = row.cloneNode(true) as HTMLElement;
           clone.removeAttribute('data-selected');
           clone.removeAttribute('data-actions');
@@ -570,9 +548,9 @@ function DraggableNode({
         move(from, view, at);
       }}
     >
-      {isFirstChild && <div className="sb-drop-line" data-active={position === 'top' ? 'true' : undefined} />}
-      <div style={{ borderRadius: 6, background: position === 'center' ? 'rgba(0, 200, 255, 0.5)' : undefined }}>{children}</div>
-      <div className="sb-drop-line" data-active={position === 'bottom' ? 'true' : undefined} />
+      {isFirstChild && <div data-active={position === 'top' ? 'true' : undefined} className="pointer-events-none absolute top-0 right-0 z-10 h-0.5 rounded-full bg-sidebar-primary opacity-0 data-[active=true]:opacity-100" style={{ left: treeIndent(level) }} />}
+      <HyperDropContext.Provider value={{ viewId: view.id, position }}>{children}</HyperDropContext.Provider>
+      <div data-active={position === 'bottom' ? 'true' : undefined} className="pointer-events-none absolute right-0 bottom-0 z-10 h-0.5 rounded-full bg-sidebar-primary opacity-0 data-[active=true]:opacity-100" style={{ left: treeIndent(level) }} />
     </div>
   );
 }

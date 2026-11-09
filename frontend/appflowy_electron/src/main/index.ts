@@ -176,7 +176,7 @@ function registerIpc() {
         body: options.body,
         redirect: 'error',
       });
-      return { status: response.status, body: await response.text() };
+      return { status: response.status, headers: Object.fromEntries(response.headers), body: await response.text() };
     },
   );
   ipcMain.on(C.ClipboardWriteText, (_, text: string) => clipboard.writeText(text));
@@ -202,6 +202,10 @@ function registerIpc() {
     } catch {
       return null;
     }
+  });
+  ipcMain.handle(C.FsWriteBytes, async (_, target: string, data: Uint8Array) => {
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await fs.writeFile(target, data);
   });
   ipcMain.handle(C.FsWriteText, async (_, target: string, content: string) => {
     await fs.mkdir(path.dirname(target), { recursive: true });

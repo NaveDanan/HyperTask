@@ -1,0 +1,839 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "P2E6ka",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Use this database to keep all information about potential investors in one place. "
+        }
+       ],
+       "textId": "N0tnFo",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Use this database to keep all information about potential investors in one place. "
+       }
+      ]
+     },
+     "relationId": "r10A2_",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "L1hNdR",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Hover over each investor's name and click OPEN to add meeting notes, links, and much more inside the page. "
+        }
+       ],
+       "textId": "JdW5hB",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Hover over each investor's name and click OPEN to add meeting notes, links, and much more inside the page. "
+       }
+      ]
+     },
+     "relationId": "LO5aWv",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "VOIX7D",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "You can customize any of the properties to track whatever information is important to you. "
+        }
+       ],
+       "textId": "CpAZDE",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "You can customize any of the properties to track whatever information is important to you. "
+       }
+      ]
+     },
+     "relationId": "WK02DG",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "Gz-lUb",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Here are our suggestions for what to start with: "
+        }
+       ],
+       "textId": "-aVVXx",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Here are our suggestions for what to start with: "
+       }
+      ]
+     },
+     "relationId": "fj4UHb",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "eYvzqY",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Status:"
+        },
+        {
+         "text": " what stage of the investment process is the firm in? "
+        }
+       ],
+       "textId": "HR1hiw",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Status:"
+       },
+       {
+        "insert": " what stage of the investment process is the firm in? "
+       }
+      ]
+     },
+     "relationId": "GcRO4w",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "GAK2qc",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Average check size"
+        },
+        {
+         "text": ": the average amount the firm invests in seed deals "
+        }
+       ],
+       "textId": "1rWgQ9",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Average check size"
+       },
+       {
+        "insert": ": the average amount the firm invests in seed deals "
+       }
+      ]
+     },
+     "relationId": "eBkWWJ",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "SgUPcx",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Capital committed:"
+        },
+        {
+         "text": " how much the firm has committed to invest via the "
+        },
+        {
+         "href": "https://www.ycombinator.com/handshake/",
+         "text": "handshake protocol"
+        },
+        {
+         "text": " "
+        }
+       ],
+       "textId": "PtdF02",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Capital committed:"
+       },
+       {
+        "insert": " how much the firm has committed to invest via the "
+       },
+       {
+        "attributes": {
+         "href": "https://www.ycombinator.com/handshake/"
+        },
+        "insert": "handshake protocol"
+       },
+       {
+        "insert": " "
+       }
+      ]
+     },
+     "relationId": "6lMjvI",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "bq7bHz",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Partner name:"
+        },
+        {
+         "text": " the partner at the firm you are targeting "
+        }
+       ],
+       "textId": "25mrkw",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Partner name:"
+       },
+       {
+        "insert": " the partner at the firm you are targeting "
+       }
+      ]
+     },
+     "relationId": "Hpzvxu",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "dV-uQo",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Portfolio:"
+        },
+        {
+         "text": " companies that the firm has already invested in "
+        }
+       ],
+       "textId": "RaBlPk",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Portfolio:"
+       },
+       {
+        "insert": " companies that the firm has already invested in "
+       }
+      ]
+     },
+     "relationId": "xTgdpr",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "rhWXE4",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Warm contact name:"
+        },
+        {
+         "text": " the person connected to the firm and has agreed to do an intro "
+        }
+       ],
+       "textId": "s-OTF7",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Warm contact name:"
+       },
+       {
+        "insert": " the person connected to the firm and has agreed to do an intro "
+       }
+      ]
+     },
+     "relationId": "I2tTnP",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "uNByZt",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Lost reason:"
+        },
+        {
+         "text": " the reasons the firm gave when they decided not to invest"
+        }
+       ],
+       "textId": "z0j0Ya",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Lost reason:"
+       },
+       {
+        "insert": " the reasons the firm gave when they decided not to invest"
+       }
+      ]
+     },
+     "relationId": "528WN4",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "nD6_5g",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "BUMsoO",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "Sv3AMU",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "CO6gYv",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {
+      "database_id": "d0918fde-33ef-4f09-9294-e6f4c08cb5ab",
+      "parent_id": "4c488d3f-0aa2-4da8-99a5-9198afdeb97c",
+      "view_id": "a4210294-e883-40da-b24e-f433f5e5813f",
+      "view_ids": [
+       "a4210294-e883-40da-b24e-f433f5e5813f"
+      ]
+     },
+     "relationId": "ibbH3x",
+     "type": "grid"
+    },
+    {
+     "blockId": "VU2jnC",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "q-o58V",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "F5u251",
+     "type": "paragraph"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "19ae9370-7c9e-5be6-9a20-1e64afdedaa0": {
+       "children": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "data": {
+        "cover_selection": "https://images.unsplash.com/photo-1495366554757-8568e69d7f80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ1NzMwMDd8&ixlib=rb-4.0.3&q=80&w=1080",
+        "cover_selection_type": "CoverType.file",
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"money_shopping\",\"iconName\":\"bag-dollar\",\"color\":\"0xFFA34AFD\"}"
+       },
+       "external_id": "YPnxyl",
+       "external_type": "text",
+       "id": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "parent": "",
+       "ty": "page"
+      },
+      "CO6gYv": {
+       "children": "ibbH3x",
+       "data": {
+        "database_id": "d0918fde-33ef-4f09-9294-e6f4c08cb5ab",
+        "parent_id": "4c488d3f-0aa2-4da8-99a5-9198afdeb97c",
+        "view_id": "a4210294-e883-40da-b24e-f433f5e5813f",
+        "view_ids": [
+         "a4210294-e883-40da-b24e-f433f5e5813f"
+        ]
+       },
+       "external_id": null,
+       "external_type": null,
+       "id": "CO6gYv",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "grid"
+      },
+      "GAK2qc": {
+       "children": "eBkWWJ",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Average check size"
+         },
+         {
+          "insert": ": the average amount the firm invests in seed deals "
+         }
+        ]
+       },
+       "external_id": "1rWgQ9",
+       "external_type": "text",
+       "id": "GAK2qc",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "bulleted_list"
+      },
+      "Gz-lUb": {
+       "children": "fj4UHb",
+       "data": {
+        "delta": [
+         {
+          "insert": "Here are our suggestions for what to start with: "
+         }
+        ]
+       },
+       "external_id": "-aVVXx",
+       "external_type": "text",
+       "id": "Gz-lUb",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "paragraph"
+      },
+      "L1hNdR": {
+       "children": "LO5aWv",
+       "data": {
+        "delta": [
+         {
+          "insert": "Hover over each investor's name and click OPEN to add meeting notes, links, and much more inside the page. "
+         }
+        ]
+       },
+       "external_id": "JdW5hB",
+       "external_type": "text",
+       "id": "L1hNdR",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "paragraph"
+      },
+      "P2E6ka": {
+       "children": "r10A2_",
+       "data": {
+        "delta": [
+         {
+          "insert": "Use this database to keep all information about potential investors in one place. "
+         }
+        ]
+       },
+       "external_id": "N0tnFo",
+       "external_type": "text",
+       "id": "P2E6ka",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "paragraph"
+      },
+      "SgUPcx": {
+       "children": "6lMjvI",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Capital committed:"
+         },
+         {
+          "insert": " how much the firm has committed to invest via the "
+         },
+         {
+          "attributes": {
+           "href": "https://www.ycombinator.com/handshake/"
+          },
+          "insert": "handshake protocol"
+         },
+         {
+          "insert": " "
+         }
+        ]
+       },
+       "external_id": "PtdF02",
+       "external_type": "text",
+       "id": "SgUPcx",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "bulleted_list"
+      },
+      "VOIX7D": {
+       "children": "WK02DG",
+       "data": {
+        "delta": [
+         {
+          "insert": "You can customize any of the properties to track whatever information is important to you. "
+         }
+        ]
+       },
+       "external_id": "CpAZDE",
+       "external_type": "text",
+       "id": "VOIX7D",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "paragraph"
+      },
+      "VU2jnC": {
+       "children": "F5u251",
+       "data": {},
+       "external_id": "q-o58V",
+       "external_type": "text",
+       "id": "VU2jnC",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "paragraph"
+      },
+      "bq7bHz": {
+       "children": "Hpzvxu",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Partner name:"
+         },
+         {
+          "insert": " the partner at the firm you are targeting "
+         }
+        ]
+       },
+       "external_id": "25mrkw",
+       "external_type": "text",
+       "id": "bq7bHz",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "bulleted_list"
+      },
+      "dV-uQo": {
+       "children": "xTgdpr",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Portfolio:"
+         },
+         {
+          "insert": " companies that the firm has already invested in "
+         }
+        ]
+       },
+       "external_id": "RaBlPk",
+       "external_type": "text",
+       "id": "dV-uQo",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "bulleted_list"
+      },
+      "eYvzqY": {
+       "children": "GcRO4w",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Status:"
+         },
+         {
+          "insert": " what stage of the investment process is the firm in? "
+         }
+        ]
+       },
+       "external_id": "HR1hiw",
+       "external_type": "text",
+       "id": "eYvzqY",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "bulleted_list"
+      },
+      "nD6_5g": {
+       "children": "Sv3AMU",
+       "data": {
+        "delta": []
+       },
+       "external_id": "BUMsoO",
+       "external_type": "text",
+       "id": "nD6_5g",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "paragraph"
+      },
+      "rhWXE4": {
+       "children": "I2tTnP",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Warm contact name:"
+         },
+         {
+          "insert": " the person connected to the firm and has agreed to do an intro "
+         }
+        ]
+       },
+       "external_id": "s-OTF7",
+       "external_type": "text",
+       "id": "rhWXE4",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "bulleted_list"
+      },
+      "uNByZt": {
+       "children": "528WN4",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Lost reason:"
+         },
+         {
+          "insert": " the reasons the firm gave when they decided not to invest"
+         }
+        ]
+       },
+       "external_id": "z0j0Ya",
+       "external_type": "text",
+       "id": "uNByZt",
+       "parent": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0",
+       "ty": "bulleted_list"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "19ae9370-7c9e-5be6-9a20-1e64afdedaa0": [
+        "P2E6ka",
+        "L1hNdR",
+        "VOIX7D",
+        "Gz-lUb",
+        "eYvzqY",
+        "GAK2qc",
+        "SgUPcx",
+        "bq7bHz",
+        "dV-uQo",
+        "rhWXE4",
+        "uNByZt",
+        "nD6_5g",
+        "CO6gYv",
+        "VU2jnC"
+       ],
+       "528WN4": [],
+       "6lMjvI": [],
+       "F5u251": [],
+       "GcRO4w": [],
+       "Hpzvxu": [],
+       "I2tTnP": [],
+       "LO5aWv": [],
+       "Sv3AMU": [],
+       "WK02DG": [],
+       "eBkWWJ": [],
+       "fj4UHb": [],
+       "ibbH3x": [],
+       "r10A2_": [],
+       "xTgdpr": []
+      },
+      "text_map": {
+       "-aVVXx": "[{\"insert\":\"Here are our suggestions for what to start with: \"}]",
+       "1rWgQ9": "[{\"insert\":\"Average check size\",\"attributes\":{\"bold\":true}},{\"insert\":\": the average amount the firm invests in seed deals \"}]",
+       "25mrkw": "[{\"insert\":\"Partner name:\",\"attributes\":{\"bold\":true}},{\"insert\":\" the partner at the firm you are targeting \"}]",
+       "BUMsoO": "[]",
+       "CpAZDE": "[{\"insert\":\"You can customize any of the properties to track whatever information is important to you. \"}]",
+       "HR1hiw": "[{\"insert\":\"Status:\",\"attributes\":{\"bold\":true}},{\"insert\":\" what stage of the investment process is the firm in? \"}]",
+       "JdW5hB": "[{\"insert\":\"Hover over each investor's name and click OPEN to add meeting notes, links, and much more inside the page. \"}]",
+       "N0tnFo": "[{\"insert\":\"Use this database to keep all information about potential investors in one place. \"}]",
+       "PtdF02": "[{\"insert\":\"Capital committed:\",\"attributes\":{\"bold\":true}},{\"insert\":\" how much the firm has committed to invest via the \"},{\"insert\":\"handshake protocol\",\"attributes\":{\"href\":\"https://www.ycombinator.com/handshake/\"}},{\"insert\":\" \"}]",
+       "RaBlPk": "[{\"insert\":\"Portfolio:\",\"attributes\":{\"bold\":true}},{\"insert\":\" companies that the firm has already invested in \"}]",
+       "q-o58V": "[]",
+       "s-OTF7": "[{\"insert\":\"Warm contact name:\",\"attributes\":{\"bold\":true}},{\"insert\":\" the person connected to the firm and has agreed to do an intro \"}]",
+       "z0j0Ya": "[{\"insert\":\"Lost reason:\",\"attributes\":{\"bold\":true}},{\"insert\":\" the reasons the firm gave when they decided not to invest\"}]"
+      }
+     },
+     "page_id": "19ae9370-7c9e-5be6-9a20-1e64afdedaa0"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Fundraising-tracker-4c488d3f-0aa2-4da8-99a5-9198afdeb97c",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731912012,
+     "created_by": 276057230200016900,
+     "extra": "{\"space_created_at\":1724416490474,\"space_icon\":\"entertainment/pacman\",\"space_icon_color\":\"0xFFA34AFD\",\"space_permission\":0}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1788873090,
+     "layout": 0,
+     "name": "Startups",
+     "view_id": "a159ba4a-2965-408a-913d-a934b8bcd663"
+    },
+    {
+     "child_views": null,
+     "created_at": 1724416894,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1495366554757-8568e69d7f80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ1NzMwMDd8&ixlib=rb-4.0.3&q=80&w=1080\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"money_shopping\",\"iconName\":\"bag-dollar\",\"color\":\"0xFFA34AFD\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1788873839,
+     "layout": 0,
+     "name": "Fundraising tracker",
+     "view_id": "4c488d3f-0aa2-4da8-99a5-9198afdeb97c"
+    }
+   ],
+   "childViews": [
+    {
+     "child_views": [
+      {
+       "child_views": null,
+       "created_at": 1788098163,
+       "created_by": 276057230200016900,
+       "extra": "{\"database_id\":\"d0918fde-33ef-4f09-9294-e6f4c08cb5ab\",\"embedded\":true}",
+       "icon": null,
+       "last_edited_by": 276057230200016900,
+       "last_edited_time": 1788873774,
+       "layout": 1,
+       "name": "List",
+       "view_id": "7287c548-8ccb-4d82-b0d9-5f60af0d5f35"
+      },
+      {
+       "child_views": null,
+       "created_at": 1788098237,
+       "created_by": 276057230200016900,
+       "extra": "{\"database_id\":\"d0918fde-33ef-4f09-9294-e6f4c08cb5ab\"}",
+       "icon": null,
+       "last_edited_by": 276057230200016900,
+       "last_edited_time": 1788873781,
+       "layout": 2,
+       "name": "Status",
+       "view_id": "daa9f112-4b44-47b5-b85c-e0db98113110"
+      }
+     ],
+     "created_at": 1788098163,
+     "created_by": 276057230200016900,
+     "extra": "{\"database_id\":\"d0918fde-33ef-4f09-9294-e6f4c08cb5ab\",\"embedded\":true,\"is_database_container\":true}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"money_shopping\",\"iconName\":\"coin-share\",\"color\":\"0xFFA34AFD\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1788873613,
+     "layout": 1,
+     "name": "Table",
+     "view_id": "47bd5019-59b4-4ffc-8a27-f0b619472ef3"
+    },
+    {
+     "child_views": null,
+     "created_at": 1788873835,
+     "created_by": 276057230200016900,
+     "extra": "{\"database_id\":\"d0918fde-33ef-4f09-9294-e6f4c08cb5ab\",\"embedded\":true}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"map_travel\",\"iconName\":\"baggage\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1788874023,
+     "layout": 1,
+     "name": "Waitlist",
+     "view_id": "a4210294-e883-40da-b24e-f433f5e5813f"
+    }
+   ],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1495366554757-8568e69d7f80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ1NzMwMDd8&ixlib=rb-4.0.3&q=80&w=1080\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"money_shopping\",\"iconName\":\"bag-dollar\",\"color\":\"0xFFA34AFD\"}"
+   },
+   "layout": 0,
+   "name": "Fundraising tracker",
+   "viewId": "4c488d3f-0aa2-4da8-99a5-9198afdeb97c",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

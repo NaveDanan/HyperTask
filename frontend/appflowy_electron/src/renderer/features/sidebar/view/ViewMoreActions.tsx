@@ -3,13 +3,14 @@
 import type { ReactNode, Ref } from 'react';
 import type { ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { WorkspaceTypePB } from '@shared/protobuf/flowy-user/workspace_pb';
-import type { FlowySvgName } from '@/icons/flowy-svgs';
+import { ChevronsDownUp, Copy, FolderInput, PencilLine, SmilePlus, SquareArrowOutUpRight, Star, Trash2, type LucideIcon } from 'lucide-react';
 import { tr as translate, useTr } from '@/i18n';
 import { AppFlowyPopover, Tooltip, showAFTextFieldDialog, showConfirmDeletionDialog, type PopoverController } from '@/ui';
 import { tabsActions } from '@/features/tabs/tabs-store';
 import { isViewLocked, nameOrDefault, viewIconData } from '@/features/view/view-ext';
 import { ViewBackendService } from '@/features/view/view-service';
-import { ActionListPopover, MenuDivider, MenuItem } from '../components';
+import { ActionListPopover, MenuDivider } from '../components';
+import { MenuRow } from '@/components/app/menu-row';
 import { IconEmojiPicker, type SelectedEmojiIconResult } from '../icon-picker/IconEmojiPicker';
 import { favoriteActions } from '../stores/favorite-store';
 import { sidebarSpace } from '../stores/space-store';
@@ -19,16 +20,16 @@ import { MovePageMenu } from './MovePageMenu';
 import { buildViewMoreActionTypes, type ViewMoreActionType } from './view-actions';
 import { moveViewCrossSpace } from './ViewItem';
 
-const META: Record<Exclude<ViewMoreActionType, 'divider'>, { key: string; icon: FlowySvgName; disabledWhenLocked: boolean }> = {
-  favorite: { key: 'disclosureAction.favorite', icon: 'favorite_s', disabledWhenLocked: false },
-  unFavorite: { key: 'disclosureAction.unfavorite', icon: 'unfavorite_s', disabledWhenLocked: false },
-  rename: { key: 'disclosureAction.rename', icon: 'view_item_rename_s', disabledWhenLocked: true },
-  changeIcon: { key: 'disclosureAction.changeIcon', icon: 'change_icon_s', disabledWhenLocked: true },
-  duplicate: { key: 'disclosureAction.duplicate', icon: 'duplicate_s', disabledWhenLocked: false },
-  moveTo: { key: 'disclosureAction.moveTo', icon: 'move_to_s', disabledWhenLocked: true },
-  delete: { key: 'disclosureAction.delete', icon: 'trash_s', disabledWhenLocked: true },
-  collapseAllPages: { key: 'disclosureAction.collapseAllPages', icon: 'collapse_all_page_s', disabledWhenLocked: false },
-  openInNewTab: { key: 'disclosureAction.openNewTab', icon: 'view_item_open_in_new_tab_s', disabledWhenLocked: false },
+const META: Record<Exclude<ViewMoreActionType, 'divider'>, { key: string; icon: LucideIcon; disabledWhenLocked: boolean }> = {
+  favorite: { key: 'disclosureAction.favorite', icon: Star, disabledWhenLocked: false },
+  unFavorite: { key: 'disclosureAction.unfavorite', icon: Star, disabledWhenLocked: false },
+  rename: { key: 'disclosureAction.rename', icon: PencilLine, disabledWhenLocked: true },
+  changeIcon: { key: 'disclosureAction.changeIcon', icon: SmilePlus, disabledWhenLocked: true },
+  duplicate: { key: 'disclosureAction.duplicate', icon: Copy, disabledWhenLocked: false },
+  moveTo: { key: 'disclosureAction.moveTo', icon: FolderInput, disabledWhenLocked: true },
+  delete: { key: 'disclosureAction.delete', icon: Trash2, disabledWhenLocked: true },
+  collapseAllPages: { key: 'disclosureAction.collapseAllPages', icon: ChevronsDownUp, disabledWhenLocked: false },
+  openInNewTab: { key: 'disclosureAction.openNewTab', icon: SquareArrowOutUpRight, disabledWhenLocked: false },
 };
 
 export type ViewMoreActionData = SelectedEmojiIconResult | [space: ViewPB, target: ViewPB] | null;
@@ -56,7 +57,7 @@ export function ViewMoreActionPopover({
       controllerRef={controllerRef}
       direction="bottomWithLeftAligned"
       offset={{ x: 0, y: 8 }}
-      constraints={{ minWidth: 260 }}
+      constraints={{ minWidth: 224, maxWidth: 224 }}
       onOpen={() => onEditing(true)}
       onClose={() => onEditing(false)}
       popup={(close) => (
@@ -95,13 +96,14 @@ function ViewMoreActionItem({
   if (type === 'divider') return <MenuDivider />;
   const meta = META[type];
   const item = (tapHandler?: () => void) => (
-    <MenuItem icon={meta.icon} name={tr(meta.key)} danger={type === 'delete'} onTap={tapHandler} />
+    <MenuRow icon={<meta.icon className="size-4" />} label={tr(meta.key)} destructive={type === 'delete'} submenu={type === 'moveTo'} onClick={tapHandler} />
   );
 
   let child: ReactNode;
   if (type === 'changeIcon') {
     child = (
       <AppFlowyPopover
+        plain
         constraints={{ maxWidth: 364, maxHeight: 356 }}
         margin={0}
         popup={() => (
@@ -116,8 +118,8 @@ function ViewMoreActionItem({
     if (sidebarSpace.actions.userProfile?.workspaceType !== WorkspaceTypePB.ServerW) return null;
     child = (
       <AppFlowyPopover
-        constraints={{ maxWidth: 260, maxHeight: 345 }}
-        margin="12px 14px"
+        constraints={{ maxWidth: 288, maxHeight: 400 }}
+        margin={0}
         direction="rightWithTopAligned"
         popup={() => <MovePageMenu sourceView={view} onSelected={(space, target) => onTap([space, target])} />}
       >
@@ -133,7 +135,7 @@ function ViewMoreActionItem({
     return (
       <Tooltip message={tr('lockPage.lockedOperationTooltip')}>
         <div>
-          <div style={{ pointerEvents: 'none' }}>{child}</div>
+          <div className="pointer-events-none">{child}</div>
         </div>
       </Tooltip>
     );

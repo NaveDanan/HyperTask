@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTr } from '@/i18n';
-import { useBrightness } from '@/theme/appearance-store';
-import { FlowyHover, FlowyIconButton, FlowySvg } from '@/ui';
+import { Maximize2, PanelRightOpen, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Tooltip } from '@/ui';
 import { PluginType } from './plugin';
 import { pluginWidgets } from '../plugins/registry';
 import { usePluginScope } from '../plugins/PageStack';
@@ -14,47 +16,28 @@ const MIN_WIDTH = 450;
 function HomeSecondaryTopBar({ rightBarItem }: { rightBarItem: ReactNode }) {
   const { tr } = useTr();
   return (
-    <div
-      style={{
-        height: 56,
-        flexShrink: 0,
-        background: 'var(--cs-surface-container-highest)',
-        padding: 12,
-        boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-      }}
-    >
-      <FlowyIconButton
-        width={24}
-        radius={8}
-        tooltip={tr('sideBar.closeSidebar')}
-        icon={<FlowySvg svg="show_menu_s" size={16} />}
-        onPressed={() => tabsActions.closeSecondaryPlugin()}
-      />
-      <div style={{ width: 8 }} />
-      <FlowyIconButton
-        width={24}
-        radius={8}
-        tooltip={tr('sideBar.expandSidebar')}
-        icon={<FlowySvg svg="full_view_s" size={16} />}
-        onPressed={() => tabsActions.expandSecondaryPlugin()}
-      />
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'flex-end' }}>{rightBarItem}</div>
+    <div className="flex h-12 shrink-0 items-center gap-2 px-3">
+      <Tooltip message={tr('sideBar.closeSidebar')}>
+        <Button variant="ghost" size="icon-sm" aria-label={tr('sideBar.closeSidebar')} onClick={() => tabsActions.closeSecondaryPlugin()}><X className="size-4" /></Button>
+      </Tooltip>
+      <Tooltip message={tr('sideBar.expandSidebar')}>
+        <Button variant="ghost" size="icon-sm" aria-label={tr('sideBar.expandSidebar')} onClick={() => tabsActions.expandSecondaryPlugin()}><Maximize2 className="size-4" /></Button>
+      </Tooltip>
+      <div className="ml-auto flex min-w-0 items-center gap-1">{rightBarItem}</div>
     </div>
   );
 }
 
-/** SecondaryViewResizer: 1px divider, 11px hit area, primary 2px line on hover (after 500 ms) or drag. */
+/** SecondaryViewResizer: 1px divider, 6px hit area, ring line on hover (after 500 ms) or drag. */
 function SecondaryViewResizer({ onWidth }: { onWidth: (width: number) => void }) {
   const [hover, setHover] = useState(false);
   const [dragging, setDragging] = useState(false);
   const timer = useRef<number>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   return (
-    <div style={{ position: 'relative', width: 1, flexShrink: 0, background: 'var(--th-divider)' }}>
+    <div className="relative w-0 shrink-0">
       <div
-        style={{ position: 'absolute', top: 0, bottom: 0, left: -5, width: 11, cursor: 'ew-resize', zIndex: 2, display: 'flex', justifyContent: 'center' }}
+        className="absolute inset-y-0 -left-0.5 z-2 flex w-1.5 cursor-col-resize justify-center"
         onMouseEnter={() => {
           timer.current = window.setTimeout(() => setHover(true), 500);
         }}
@@ -78,7 +61,7 @@ function SecondaryViewResizer({ onWidth }: { onWidth: (width: number) => void })
           window.addEventListener('mouseup', up);
         }}
       >
-        <div style={{ width: 2, height: '100%', background: hover || dragging ? 'var(--cs-primary)' : 'transparent', transition: 'background 100ms' }} />
+        <div className={cn("h-full w-px transition-colors", hover || dragging ? "bg-ring" : "bg-border")} />
       </div>
     </div>
   );
@@ -89,7 +72,6 @@ function SecondaryViewResizer({ onWidth }: { onWidth: (width: number) => void })
  * Width max(450, 3/7 of the tab), 300 ms ease-out open/close, and a re-open handle while hidden.
  */
 export function SecondaryView({ tab, adaptedPercentageWidth }: { tab: Tab; adaptedPercentageWidth: number }) {
-  const light = useBrightness() === 'light';
   const shown = tab.showSecondary;
   const hasSecondary = tab.secondary.type !== PluginType.blank;
   const [width, setWidth] = useState(shown ? Math.max(MIN_WIDTH, adaptedPercentageWidth) : 0);
@@ -110,67 +92,28 @@ export function SecondaryView({ tab, adaptedPercentageWidth }: { tab: Tab; adapt
 
   const builder = pluginWidgets(tab.secondary);
   return (
-    <div style={{ position: 'relative', display: 'flex', flexShrink: 0, background: 'var(--cs-surface)' }}>
-      <div
-        style={{
-          width: open ? width : 0,
-          overflow: 'hidden',
-          transition: 'width 300ms ease-out',
-          display: 'flex',
-        }}
+    <div className="relative flex shrink-0 bg-background">
+      <div className="flex overflow-hidden transition-[width] duration-300 ease-out"
+        style={{ width: open ? width : 0 }}
       >
         {width > 0 && (
-          <div
-            style={{
-              width,
-              flexShrink: 0,
-              display: 'flex',
-              transform: open ? 'translateX(0)' : 'translateX(100%)',
-              transition: 'transform 300ms ease-out',
-            }}
+          <div className="flex shrink-0 border-l transition-transform duration-300 ease-out"
+            style={{ width, transform: open ? 'translateX(0)' : 'translateX(100%)' }}
           >
             <SecondaryViewResizer onWidth={setWidth} />
             <ProvideViewScope scope={scope}>
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              <div className="flex min-w-0 flex-1 flex-col">
                 <HomeSecondaryTopBar rightBarItem={builder.rightBarItem} />
                 {/* No contentPadding and no user profile in the secondary view. */}
-                <div style={{ flex: 1, minHeight: 0 }}>{builder.buildWidget({})}</div>
+                <div className="min-h-0 flex-1">{builder.buildWidget({})}</div>
               </div>
             </ProvideViewScope>
           </div>
         )}
       </div>
       {!shown && hasSecondary && (
-        <div style={{ position: 'absolute', right: '100%', top: 120, zIndex: 3 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '12px 0 0 12px',
-              background: 'var(--cs-surface)',
-              boxShadow: light ? '0 4px 20px #1F23291F' : '0 4px 20px rgba(15,19,28,0.08)',
-              animation: 'flowy-fade-in 150ms',
-            }}
-            onClick={() => tabsActions.showSecondaryPlugin()}
-          >
-            <FlowyHover
-              borderRadius={0}
-              style={{
-                width: 36,
-                height: 36,
-                boxSizing: 'border-box',
-                borderRadius: '12px 0 0 12px',
-                border: `1px solid ${light ? '#1F232914' : 'var(--th-divider)'}`,
-                borderRight: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <FlowySvg svg="rename_s" size={16} />
-            </FlowyHover>
-          </div>
-        </div>
+        <Button variant="outline" size="icon" className="absolute top-30 right-full z-3 rounded-r-none border-r-0 bg-background"
+          onClick={() => tabsActions.showSecondaryPlugin()}><PanelRightOpen className="size-4" /></Button>
       )}
     </div>
   );

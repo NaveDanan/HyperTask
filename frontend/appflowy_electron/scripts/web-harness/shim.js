@@ -70,6 +70,8 @@
       onMaximizedChange: (listener) => on(listeners.maximized, listener),
       setFullScreen() {},
     },
+    // Rejects like the IPC call so callers see network failures.
+    net: { request: (options) => rpc('net.request', options) },
     shell: { openExternal: async () => {}, openPath: async () => '', showItemInFolder() {} },
     dialog: { pickDirectory: async () => null, pickFiles: async () => [], saveFile: async () => null },
   };

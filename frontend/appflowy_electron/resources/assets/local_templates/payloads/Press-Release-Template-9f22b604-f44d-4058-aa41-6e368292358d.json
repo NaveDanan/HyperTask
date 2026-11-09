@@ -1,0 +1,970 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "OuIJU-",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "There is an approach called \"working backwards\" that is widely used at Amazon. We try to work backwards from the customer, rather than starting with an idea for a product and trying to bolt customers onto it. While working backwards can be applied to any specific product decision, using this approach is especially important when developing new products or features."
+        }
+       ],
+       "textId": "CySj4v",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "There is an approach called \"working backwards\" that is widely used at Amazon. We try to work backwards from the customer, rather than starting with an idea for a product and trying to bolt customers onto it. While working backwards can be applied to any specific product decision, using this approach is especially important when developing new products or features."
+       }
+      ]
+     },
+     "relationId": "pjWZkM",
+     "type": "quote"
+    },
+    {
+     "blockId": "DSiYci",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "QhsFOi",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "JldNhJ",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "K-sH87",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Here's an example outline for the press release:"
+        }
+       ],
+       "textId": "yTh6JZ",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Here's an example outline for the press release:"
+       }
+      ]
+     },
+     "relationId": "VuvFFL",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "jttW2I",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Heading -"
+        },
+        {
+         "text": " Name the product in a way the reader (i.e. your target customers) will understand."
+        }
+       ],
+       "textId": "SXPkKt",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Heading -"
+       },
+       {
+        "insert": " Name the product in a way the reader (i.e. your target customers) will understand."
+       }
+      ]
+     },
+     "relationId": "gH5-s5",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "Ck8CVo",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Sub-Heading -"
+        },
+        {
+         "text": " Describe who the market for the product is and what benefit they get. One sentence only underneath the title."
+        }
+       ],
+       "textId": "Hqxbfq",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Sub-Heading -"
+       },
+       {
+        "insert": " Describe who the market for the product is and what benefit they get. One sentence only underneath the title."
+       }
+      ]
+     },
+     "relationId": "SnwbnN",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "jUciQR",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Summary"
+        },
+        {
+         "text": " - Give a summary of the product and the benefit. Assume the reader will not read anything else so make this paragraph good."
+        }
+       ],
+       "textId": "ySG4X-",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Summary"
+       },
+       {
+        "insert": " - Give a summary of the product and the benefit. Assume the reader will not read anything else so make this paragraph good."
+       }
+      ]
+     },
+     "relationId": "PIErPD",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "_-taRp",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Problem"
+        },
+        {
+         "text": " - Describe the problem your product solves."
+        }
+       ],
+       "textId": "v3zWrp",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Problem"
+       },
+       {
+        "insert": " - Describe the problem your product solves."
+       }
+      ]
+     },
+     "relationId": "IXukTF",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "FpR1BU",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Solution"
+        },
+        {
+         "text": " - Describe how your product elegantly solves the problem."
+        }
+       ],
+       "textId": "GJ0zNi",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Solution"
+       },
+       {
+        "insert": " - Describe how your product elegantly solves the problem."
+       }
+      ]
+     },
+     "relationId": "QMhN5Y",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "zLnFfx",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Quote from You"
+        },
+        {
+         "text": " - A quote from a spokesperson in your company."
+        }
+       ],
+       "textId": "wEjm4j",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Quote from You"
+       },
+       {
+        "insert": " - A quote from a spokesperson in your company."
+       }
+      ]
+     },
+     "relationId": "1T48Ny",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "FR6NLV",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "How to Get Started"
+        },
+        {
+         "text": " - Describe how easy it is to get started."
+        }
+       ],
+       "textId": "aJzt3J",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "How to Get Started"
+       },
+       {
+        "insert": " - Describe how easy it is to get started."
+       }
+      ]
+     },
+     "relationId": "esezBE",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "evR7Hn",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Customer Quote"
+        },
+        {
+         "text": " - Provide a quote from a hypothetical customer that describes how they experienced the benefit."
+        }
+       ],
+       "textId": "ISy85v",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Customer Quote"
+       },
+       {
+        "insert": " - Provide a quote from a hypothetical customer that describes how they experienced the benefit."
+       }
+      ]
+     },
+     "relationId": "j_kSuS",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "tu3raa",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Closing and Call to Action"
+        },
+        {
+         "text": " - Wrap it up and give pointers where the reader should go next."
+        }
+       ],
+       "textId": "YswpT1",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Closing and Call to Action"
+       },
+       {
+        "insert": " - Wrap it up and give pointers where the reader should go next."
+       }
+      ]
+     },
+     "relationId": "tVwcMF",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "LGZHeN",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "w5Sg_b",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "Zbmju9",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "VmTVzI",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "🔖 Getting started with "
+        },
+        {
+         "mention": {
+          "page_id": "be4fe5f9-3f4b-458e-b635-61f1a46797d3",
+          "type": "page"
+         },
+         "text": "$"
+        }
+       ],
+       "textId": "S-ECDV",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "🔖 Getting started with "
+       },
+       {
+        "attributes": {
+         "mention": {
+          "page_id": "be4fe5f9-3f4b-458e-b635-61f1a46797d3",
+          "type": "page"
+         }
+        },
+        "insert": "$"
+       }
+      ]
+     },
+     "relationId": "Ogjfr_",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "3L1KUX",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Source: "
+        },
+        {
+         "href": "https://www.workingbackwards.com/resources/working-backwards-pr-faq",
+         "text": "Working Backwards"
+        }
+       ],
+       "textId": "jJr0L5",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Source: "
+       },
+       {
+        "attributes": {
+         "href": "https://www.workingbackwards.com/resources/working-backwards-pr-faq"
+        },
+        "insert": "Working Backwards"
+       }
+      ]
+     },
+     "relationId": "cPmNA7",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "MNUpvO",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "aat8cG",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "YPrIhG",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "zHt_ex",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "bBRX1k",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "IB8EXy",
+     "type": "paragraph"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "3L1KUX": {
+       "children": "cPmNA7",
+       "data": {
+        "delta": [
+         {
+          "insert": "Source: "
+         },
+         {
+          "attributes": {
+           "href": "https://www.workingbackwards.com/resources/working-backwards-pr-faq"
+          },
+          "insert": "Working Backwards"
+         }
+        ]
+       },
+       "external_id": "jJr0L5",
+       "external_type": "text",
+       "id": "3L1KUX",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "paragraph"
+      },
+      "71d7016e-b6cf-5c49-bfee-0967ab92dd8d": {
+       "children": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "data": {
+        "cover_selection": "https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/9f22b604%2Df44d%2D4058%2Daa41%2D6e368292358d/14471525906258681522.jpg",
+        "cover_selection_type": "CoverType.file",
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"culture\",\"iconName\":\"news-paper\",\"color\":\"0xFFA34AFD\"}"
+       },
+       "external_id": "Wcl0Ad",
+       "external_type": "text",
+       "id": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "parent": "",
+       "ty": "page"
+      },
+      "Ck8CVo": {
+       "children": "SnwbnN",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Sub-Heading -"
+         },
+         {
+          "insert": " Describe who the market for the product is and what benefit they get. One sentence only underneath the title."
+         }
+        ]
+       },
+       "external_id": "Hqxbfq",
+       "external_type": "text",
+       "id": "Ck8CVo",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      },
+      "DSiYci": {
+       "children": "JldNhJ",
+       "data": {
+        "delta": []
+       },
+       "external_id": "QhsFOi",
+       "external_type": "text",
+       "id": "DSiYci",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "paragraph"
+      },
+      "FR6NLV": {
+       "children": "esezBE",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "How to Get Started"
+         },
+         {
+          "insert": " - Describe how easy it is to get started."
+         }
+        ]
+       },
+       "external_id": "aJzt3J",
+       "external_type": "text",
+       "id": "FR6NLV",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      },
+      "FpR1BU": {
+       "children": "QMhN5Y",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Solution"
+         },
+         {
+          "insert": " - Describe how your product elegantly solves the problem."
+         }
+        ]
+       },
+       "external_id": "GJ0zNi",
+       "external_type": "text",
+       "id": "FpR1BU",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      },
+      "K-sH87": {
+       "children": "VuvFFL",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Here's an example outline for the press release:"
+         }
+        ]
+       },
+       "external_id": "yTh6JZ",
+       "external_type": "text",
+       "id": "K-sH87",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "paragraph"
+      },
+      "LGZHeN": {
+       "children": "Zbmju9",
+       "data": {
+        "delta": []
+       },
+       "external_id": "w5Sg_b",
+       "external_type": "text",
+       "id": "LGZHeN",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "paragraph"
+      },
+      "MNUpvO": {
+       "children": "YPrIhG",
+       "data": {
+        "delta": []
+       },
+       "external_id": "aat8cG",
+       "external_type": "text",
+       "id": "MNUpvO",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "paragraph"
+      },
+      "OuIJU-": {
+       "children": "pjWZkM",
+       "data": {
+        "delta": [
+         {
+          "insert": "There is an approach called \"working backwards\" that is widely used at Amazon. We try to work backwards from the customer, rather than starting with an idea for a product and trying to bolt customers onto it. While working backwards can be applied to any specific product decision, using this approach is especially important when developing new products or features."
+         }
+        ]
+       },
+       "external_id": "CySj4v",
+       "external_type": "text",
+       "id": "OuIJU-",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "quote"
+      },
+      "VmTVzI": {
+       "children": "Ogjfr_",
+       "data": {
+        "delta": [
+         {
+          "insert": "🔖 Getting started with "
+         },
+         {
+          "attributes": {
+           "mention": {
+            "page_id": "be4fe5f9-3f4b-458e-b635-61f1a46797d3",
+            "type": "page"
+           }
+          },
+          "insert": "$"
+         }
+        ]
+       },
+       "external_id": "S-ECDV",
+       "external_type": "text",
+       "id": "VmTVzI",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "paragraph"
+      },
+      "_-taRp": {
+       "children": "IXukTF",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Problem"
+         },
+         {
+          "insert": " - Describe the problem your product solves."
+         }
+        ]
+       },
+       "external_id": "v3zWrp",
+       "external_type": "text",
+       "id": "_-taRp",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      },
+      "evR7Hn": {
+       "children": "j_kSuS",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Customer Quote"
+         },
+         {
+          "insert": " - Provide a quote from a hypothetical customer that describes how they experienced the benefit."
+         }
+        ]
+       },
+       "external_id": "ISy85v",
+       "external_type": "text",
+       "id": "evR7Hn",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      },
+      "jUciQR": {
+       "children": "PIErPD",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Summary"
+         },
+         {
+          "insert": " - Give a summary of the product and the benefit. Assume the reader will not read anything else so make this paragraph good."
+         }
+        ]
+       },
+       "external_id": "ySG4X-",
+       "external_type": "text",
+       "id": "jUciQR",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      },
+      "jttW2I": {
+       "children": "gH5-s5",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Heading -"
+         },
+         {
+          "insert": " Name the product in a way the reader (i.e. your target customers) will understand."
+         }
+        ]
+       },
+       "external_id": "SXPkKt",
+       "external_type": "text",
+       "id": "jttW2I",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      },
+      "tu3raa": {
+       "children": "tVwcMF",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Closing and Call to Action"
+         },
+         {
+          "insert": " - Wrap it up and give pointers where the reader should go next."
+         }
+        ]
+       },
+       "external_id": "YswpT1",
+       "external_type": "text",
+       "id": "tu3raa",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      },
+      "zHt_ex": {
+       "children": "IB8EXy",
+       "data": {
+        "delta": []
+       },
+       "external_id": "bBRX1k",
+       "external_type": "text",
+       "id": "zHt_ex",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "paragraph"
+      },
+      "zLnFfx": {
+       "children": "1T48Ny",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Quote from You"
+         },
+         {
+          "insert": " - A quote from a spokesperson in your company."
+         }
+        ]
+       },
+       "external_id": "wEjm4j",
+       "external_type": "text",
+       "id": "zLnFfx",
+       "parent": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d",
+       "ty": "bulleted_list"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "1T48Ny": [],
+       "71d7016e-b6cf-5c49-bfee-0967ab92dd8d": [
+        "OuIJU-",
+        "DSiYci",
+        "K-sH87",
+        "jttW2I",
+        "Ck8CVo",
+        "jUciQR",
+        "_-taRp",
+        "FpR1BU",
+        "zLnFfx",
+        "FR6NLV",
+        "evR7Hn",
+        "tu3raa",
+        "LGZHeN",
+        "VmTVzI",
+        "3L1KUX",
+        "MNUpvO",
+        "zHt_ex"
+       ],
+       "IB8EXy": [],
+       "IXukTF": [],
+       "JldNhJ": [],
+       "Ogjfr_": [],
+       "PIErPD": [],
+       "QMhN5Y": [],
+       "SnwbnN": [],
+       "VuvFFL": [],
+       "YPrIhG": [],
+       "Zbmju9": [],
+       "cPmNA7": [],
+       "esezBE": [],
+       "gH5-s5": [],
+       "j_kSuS": [],
+       "pjWZkM": [],
+       "tVwcMF": []
+      },
+      "text_map": {
+       "CySj4v": "[{\"insert\":\"There is an approach called \\\"working backwards\\\" that is widely used at Amazon. We try to work backwards from the customer, rather than starting with an idea for a product and trying to bolt customers onto it. While working backwards can be applied to any specific product decision, using this approach is especially important when developing new products or features.\"}]",
+       "GJ0zNi": "[{\"insert\":\"Solution\",\"attributes\":{\"bold\":true}},{\"insert\":\" - Describe how your product elegantly solves the problem.\"}]",
+       "Hqxbfq": "[{\"insert\":\"Sub-Heading -\",\"attributes\":{\"bold\":true}},{\"insert\":\" Describe who the market for the product is and what benefit they get. One sentence only underneath the title.\"}]",
+       "ISy85v": "[{\"insert\":\"Customer Quote\",\"attributes\":{\"bold\":true}},{\"insert\":\" - Provide a quote from a hypothetical customer that describes how they experienced the benefit.\"}]",
+       "QhsFOi": "[]",
+       "S-ECDV": "[{\"insert\":\"🔖 Getting started with \"},{\"insert\":\"$\",\"attributes\":{\"mention\":{\"type\":\"page\",\"page_id\":\"be4fe5f9-3f4b-458e-b635-61f1a46797d3\"}}}]",
+       "SXPkKt": "[{\"insert\":\"Heading -\",\"attributes\":{\"bold\":true}},{\"insert\":\" Name the product in a way the reader (i.e. your target customers) will understand.\"}]",
+       "YswpT1": "[{\"insert\":\"Closing and Call to Action\",\"attributes\":{\"bold\":true}},{\"insert\":\" - Wrap it up and give pointers where the reader should go next.\"}]",
+       "aJzt3J": "[{\"insert\":\"How to Get Started\",\"attributes\":{\"bold\":true}},{\"insert\":\" - Describe how easy it is to get started.\"}]",
+       "aat8cG": "[]",
+       "bBRX1k": "[]",
+       "jJr0L5": "[{\"insert\":\"Source: \"},{\"insert\":\"Working Backwards\",\"attributes\":{\"href\":\"https://www.workingbackwards.com/resources/working-backwards-pr-faq\"}}]",
+       "v3zWrp": "[{\"insert\":\"Problem\",\"attributes\":{\"bold\":true}},{\"insert\":\" - Describe the problem your product solves.\"}]",
+       "w5Sg_b": "[]",
+       "wEjm4j": "[{\"insert\":\"Quote from You\",\"attributes\":{\"bold\":true}},{\"insert\":\" - A quote from a spokesperson in your company.\"}]",
+       "ySG4X-": "[{\"insert\":\"Summary\",\"attributes\":{\"bold\":true}},{\"insert\":\" - Give a summary of the product and the benefit. Assume the reader will not read anything else so make this paragraph good.\"}]",
+       "yTh6JZ": "[{\"insert\":\"Here's an example outline for the press release:\",\"attributes\":{\"bold\":true}}]"
+      }
+     },
+     "page_id": "71d7016e-b6cf-5c49-bfee-0967ab92dd8d"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Press-Release-Template-9f22b604-f44d-4058-aa41-6e368292358d",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731912012,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"entertainment/pacman\",\"space_icon_color\":\"0xFFA34AFD\",\"space_permission\":0,\"space_created_at\":1724416490474}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1742914907,
+     "layout": 0,
+     "name": "Startups",
+     "view_id": "a159ba4a-2965-408a-913d-a934b8bcd663"
+    },
+    {
+     "child_views": null,
+     "created_at": 1724423548,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"custom\",\"value\":\"https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/9f22b604%2Df44d%2D4058%2Daa41%2D6e368292358d/14471525906258681522.jpg\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"culture\",\"iconName\":\"news-paper\",\"color\":\"0xFFA34AFD\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764764994,
+     "layout": 0,
+     "name": "Press Release Template",
+     "view_id": "9f22b604-f44d-4058-aa41-6e368292358d"
+    }
+   ],
+   "childViews": [
+    {
+     "child_views": null,
+     "created_at": 1724423548,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"none\",\"value\":\"\"}}",
+     "icon": {
+      "ty": 0,
+      "value": "🙋🏼"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1749370284,
+     "layout": 0,
+     "name": "PR & FAQs",
+     "view_id": "be4fe5f9-3f4b-458e-b635-61f1a46797d3"
+    }
+   ],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"custom\",\"value\":\"https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/9f22b604%2Df44d%2D4058%2Daa41%2D6e368292358d/14471525906258681522.jpg\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"culture\",\"iconName\":\"news-paper\",\"color\":\"0xFFA34AFD\"}"
+   },
+   "layout": 0,
+   "name": "Press Release Template",
+   "viewId": "9f22b604-f44d-4058-aa41-6e368292358d",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

@@ -1,0 +1,414 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "Q09TTQ",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Even the most battle-hardened editorial team needs a plan of attack. And that plan is called an editorial calendar. It’s a crucial tool for everything from brainstorming blog topics, to setting deadlines and analyzing content performance. Our template saves you time by acting as a single source of truth for your team—so you can focus on creating stellar content."
+        }
+       ],
+       "textId": "tFqcp3",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "NKdOQZ",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "_zSHQz",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "​"
+        }
+       ],
+       "textId": "hHoxkc",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "pV7QzS",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "hD5Lxe",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Optimize."
+        },
+        {
+         "text": " What’s actually working for your readers? Analyze engagement by tracking feedback and views, so you can tell which topics are a hit."
+        }
+       ],
+       "textId": "KCerps",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "8xGbzF",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "N7lFWZ",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Observe."
+        },
+        {
+         "text": " Missing a deadline is bad, breaking an embargo is worse. With customizable and highly-visible fields, this template ensures everyone can see every story’s dependencies."
+        }
+       ],
+       "textId": "XXEcEB",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "WiGZgY",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "oEo7Ds",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Align."
+        },
+        {
+         "text": " Every piece of content has a writer, a deadline, and a story status. You’ll always know what’s coming down the pike with intuitive filters that showcase whatever information you’re looking for."
+        }
+       ],
+       "textId": "qVNvCr",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "P1Z0Ts",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "efzmc6",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "QEY4Vt",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "_Ean3q",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "A-COcD",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {
+      "parent_id": "03a85afd-38b0-4ff9-8527-cdf57a37f33d",
+      "view_id": "f0aba8c3-1ba9-4e1a-b885-6b3b2930816c"
+     },
+     "relationId": "xch9_y",
+     "type": "calendar"
+    },
+    {
+     "blockId": "Vzz0V4",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "JMWc1n",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "WSP8ce",
+     "type": "paragraph"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "36c9bbd5-298c-5141-9278-422aa5591a08": {
+       "children": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "data": {
+        "cover_selection_type": "CoverType.none",
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"calendar-star\",\"color\":\"0xFFFFBA00\"}"
+       },
+       "external_id": "_BB3Oz",
+       "external_type": "text",
+       "id": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "parent": "",
+       "ty": "page"
+      },
+      "A-COcD": {
+       "children": "xch9_y",
+       "data": {
+        "parent_id": "03a85afd-38b0-4ff9-8527-cdf57a37f33d",
+        "view_id": "f0aba8c3-1ba9-4e1a-b885-6b3b2930816c"
+       },
+       "external_id": null,
+       "external_type": null,
+       "id": "A-COcD",
+       "parent": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "ty": "calendar"
+      },
+      "N7lFWZ": {
+       "children": "WiGZgY",
+       "data": {},
+       "external_id": "XXEcEB",
+       "external_type": "text",
+       "id": "N7lFWZ",
+       "parent": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "ty": "bulleted_list"
+      },
+      "Q09TTQ": {
+       "children": "NKdOQZ",
+       "data": {},
+       "external_id": "tFqcp3",
+       "external_type": "text",
+       "id": "Q09TTQ",
+       "parent": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "ty": "paragraph"
+      },
+      "Vzz0V4": {
+       "children": "WSP8ce",
+       "data": {},
+       "external_id": "JMWc1n",
+       "external_type": "text",
+       "id": "Vzz0V4",
+       "parent": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "ty": "paragraph"
+      },
+      "_zSHQz": {
+       "children": "pV7QzS",
+       "data": {},
+       "external_id": "hHoxkc",
+       "external_type": "text",
+       "id": "_zSHQz",
+       "parent": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "ty": "paragraph"
+      },
+      "efzmc6": {
+       "children": "_Ean3q",
+       "data": {},
+       "external_id": "QEY4Vt",
+       "external_type": "text",
+       "id": "efzmc6",
+       "parent": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "ty": "paragraph"
+      },
+      "hD5Lxe": {
+       "children": "8xGbzF",
+       "data": {},
+       "external_id": "KCerps",
+       "external_type": "text",
+       "id": "hD5Lxe",
+       "parent": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "ty": "bulleted_list"
+      },
+      "oEo7Ds": {
+       "children": "P1Z0Ts",
+       "data": {},
+       "external_id": "qVNvCr",
+       "external_type": "text",
+       "id": "oEo7Ds",
+       "parent": "36c9bbd5-298c-5141-9278-422aa5591a08",
+       "ty": "bulleted_list"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "36c9bbd5-298c-5141-9278-422aa5591a08": [
+        "Q09TTQ",
+        "_zSHQz",
+        "hD5Lxe",
+        "N7lFWZ",
+        "oEo7Ds",
+        "efzmc6",
+        "A-COcD",
+        "Vzz0V4"
+       ],
+       "8xGbzF": [],
+       "NKdOQZ": [],
+       "P1Z0Ts": [],
+       "WSP8ce": [],
+       "WiGZgY": [],
+       "_Ean3q": [],
+       "pV7QzS": [],
+       "xch9_y": []
+      },
+      "text_map": {
+       "JMWc1n": "[]",
+       "KCerps": "[{\"insert\":\"Optimize.\",\"attributes\":{\"bold\":true}},{\"insert\":\" What’s actually working for your readers? Analyze engagement by tracking feedback and views, so you can tell which topics are a hit.\"}]",
+       "QEY4Vt": "[]",
+       "XXEcEB": "[{\"insert\":\"Observe.\",\"attributes\":{\"bold\":true}},{\"insert\":\" Missing a deadline is bad, breaking an embargo is worse. With customizable and highly-visible fields, this template ensures everyone can see every story’s dependencies.\"}]",
+       "hHoxkc": "[{\"insert\":\"​\"}]",
+       "qVNvCr": "[{\"insert\":\"Align.\",\"attributes\":{\"bold\":true}},{\"insert\":\" Every piece of content has a writer, a deadline, and a story status. You’ll always know what’s coming down the pike with intuitive filters that showcase whatever information you’re looking for.\"}]",
+       "tFqcp3": "[{\"insert\":\"Even the most battle-hardened editorial team needs a plan of attack. And that plan is called an editorial calendar. It’s a crucial tool for everything from brainstorming blog topics, to setting deadlines and analyzing content performance. Our template saves you time by acting as a single source of truth for your team—so you can focus on creating stellar content.\"}]"
+      }
+     },
+     "page_id": "36c9bbd5-298c-5141-9278-422aa5591a08"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Blog-Editorial-Calendar-53dab483-f994-439c-9ad3-6a1557003469",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731831229,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"money_shopping/annoncement-megaphone\",\"space_icon_color\":\"0xFFFFBA00\",\"space_permission\":0,\"space_created_at\":1724474252600}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1758001342,
+     "layout": 0,
+     "name": "Marketing",
+     "view_id": "d19c173a-cb17-4a72-92ca-61fd0104d115"
+    },
+    {
+     "child_views": null,
+     "created_at": 1726471550,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"none\",\"value\":\"\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"calendar-star\",\"color\":\"0xFFFFBA00\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764766457,
+     "layout": 0,
+     "name": "Blog Editorial Calendar",
+     "view_id": "53dab483-f994-439c-9ad3-6a1557003469"
+    }
+   ],
+   "childViews": [
+    {
+     "child_views": [
+      {
+       "child_views": [
+        {
+         "child_views": null,
+         "created_at": 1750686525,
+         "created_by": 276057230200016900,
+         "extra": null,
+         "icon": null,
+         "last_edited_by": 276057230200016900,
+         "last_edited_time": 1750686551,
+         "layout": 3,
+         "name": "View of Content Calendar",
+         "view_id": "f0aba8c3-1ba9-4e1a-b885-6b3b2930816c"
+        }
+       ],
+       "created_at": 1726476250,
+       "created_by": 276057230200016900,
+       "extra": "{}",
+       "icon": {
+        "ty": 2,
+        "value": "{\"color\":\"0xFF2AC985\",\"groupName\":\"interface_essential\",\"iconName\":\"blank-calendar\"}"
+       },
+       "last_edited_by": 276057230200016900,
+       "last_edited_time": 1757915851,
+       "layout": 3,
+       "name": "Publish Cal",
+       "view_id": "03a85afd-38b0-4ff9-8527-cdf57a37f33d"
+      },
+      {
+       "child_views": null,
+       "created_at": 1757915949,
+       "created_by": 276057230200016900,
+       "extra": "{}",
+       "icon": {
+        "ty": 2,
+        "value": "{\"color\":\"0xFFA34AFD\",\"groupName\":\"artificial_intelligence\",\"iconName\":\"ai-edit-spark\"}"
+       },
+       "last_edited_by": 276057230200016900,
+       "last_edited_time": 1757916033,
+       "layout": 3,
+       "name": "Content",
+       "view_id": "4977a07d-ba04-45fb-a7f2-4c0d73942f69"
+      }
+     ],
+     "created_at": 1726471505,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"mail\",\"iconName\":\"send-email\",\"color\":\"0xFFFFBA00\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764766504,
+     "layout": 1,
+     "name": "Blog pipeline",
+     "view_id": "2951939a-61c7-4cc0-b5ed-f296742e8b15"
+    },
+    {
+     "child_views": null,
+     "created_at": 1726471550,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"money_shopping\",\"iconName\":\"graph-dot\",\"color\":\"0xFFFFBA00\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764766539,
+     "layout": 1,
+     "name": "Blog Metrics",
+     "view_id": "218c2c04-3ff2-43f4-a09e-2145d136f91d"
+    }
+   ],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"none\",\"value\":\"\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"calendar-star\",\"color\":\"0xFFFFBA00\"}"
+   },
+   "layout": 0,
+   "name": "Blog Editorial Calendar",
+   "viewId": "53dab483-f994-439c-9ad3-6a1557003469",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

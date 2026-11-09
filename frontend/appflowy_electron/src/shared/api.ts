@@ -35,6 +35,8 @@ export interface FileFilter {
 
 export interface HttpResponse {
   status: number;
+  /** Response headers, lower-case names (absent from older harness builds). */
+  headers?: Record<string, string>;
   body: string;
 }
 
@@ -47,6 +49,13 @@ export interface HttpResponse {
 export type IpcResult<T> =
   | { ok: true; value: T }
   | { ok: false; kind: 'format' | 'state' | 'unsupported' | 'other'; message: string };
+
+/** CompanyCertificate JSON (features/company_certificates/company_certificate_store.dart). */
+/** A Jira secret (PAT or password) and the Basic-auth username (lib/features/jira/data/jira_credential_store.dart). */
+export interface JiraCredentials {
+  username: string;
+  secret: string;
+}
 
 /** CompanyCertificate JSON (features/company_certificates/company_certificate_store.dart). */
 export interface CompanyCertificate {
@@ -133,6 +142,8 @@ export interface AppFlowyApi {
     ensureDir(path: string): Promise<void>;
     readText(path: string): Promise<string | null>;
     writeText(path: string, content: string): Promise<void>;
+    /** Writes binary content, creating parent directories. */
+    writeBytes(path: string, data: Uint8Array): Promise<void>;
   };
   window: {
     minimize(): void;
@@ -151,6 +162,18 @@ export interface AppFlowyApi {
     pickDirectory(title?: string): Promise<string | null>;
     pickFiles(options: { title?: string; filters?: FileFilter[]; multiple?: boolean }): Promise<string[]>;
     saveFile(options: { title?: string; defaultPath?: string; filters?: FileFilter[] }): Promise<string | null>;
+  };
+  /**
+   * Jira credentials (lib/features/local_tools/jira_windows_credentials.dart), compatible with the
+   * Flutter build: `<support>/jira_credentials/<uuid v5(URL, accountId)>.json` holding the username
+   * and the DPAPI-protected secret. Off Windows they live in memory for the session.
+   */
+  jira: {
+    readCredentials(accountId: string): Promise<IpcResult<JiraCredentials | null>>;
+    writeCredentials(accountId: string, credentials: JiraCredentials): Promise<IpcResult<void>>;
+    deleteCredentials(accountId: string): Promise<IpcResult<void>>;
+    /** Whether stored secrets survive a restart (false off Windows). */
+    isPersistent(): Promise<boolean>;
   };
   /** Windows DPAPI (CurrentUser, CRYPTPROTECT_UI_FORBIDDEN, no entropy), as openai_endpoint_settings.dart. */
   dpapi: {
@@ -213,6 +236,7 @@ export const IpcChannel = {
   FsEnsureDir: 'fs:ensure-dir',
   FsReadText: 'fs:read-text',
   FsWriteText: 'fs:write-text',
+  FsWriteBytes: 'fs:write-bytes',
   WindowMinimize: 'window:minimize',
   WindowToggleMaximize: 'window:toggle-maximize',
   WindowClose: 'window:close',
@@ -226,6 +250,10 @@ export const IpcChannel = {
   DialogPickFiles: 'dialog:pick-files',
   DialogSaveFile: 'dialog:save-file',
   DpapiProtect: 'dpapi:protect',
+  JiraReadCredentials: 'jira:read-credentials',
+  JiraWriteCredentials: 'jira:write-credentials',
+  JiraDeleteCredentials: 'jira:delete-credentials',
+  JiraCredentialsPersistent: 'jira:credentials-persistent',
   AiEndpointWriteSettings: 'ai-endpoint:write-settings',
   AiEndpointTest: 'ai-endpoint:test',
   CertificatesList: 'certificates:list',
