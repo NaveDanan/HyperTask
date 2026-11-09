@@ -647,3 +647,109 @@ imperative handles). Restyle only:
   kept for callers that pass height/background).
 - `primitives.css`: delete rules that are no longer used; delete the file when empty (and its
   import in `main.tsx`).
+### 6.8 Jira dashboard — tasks JIRA-DATA and JIRA-UI
+
+Port of the Flutter feature `frontend/appflowy_flutter/lib/features/jira/**` and
+`lib/features/local_tools/jira_windows_credentials.dart`, deleted in commit 8e3f9dce7. Read
+them with `git show 5a5db3717:<path>`; behaviour reference: `doc/jira-integration.md`. Opened from
+the sidebar "Jira" item (`localToolPlugin('jira')`), rendered inside the content panel.
+
+Data rules (JIRA-DATA): same Jira REST v2 calls, JQL, paging, field mapping, sync/cache semantics,
+conflict detection and database mirror as the Dart code. HTTP goes through
+`window.appflowy.net.request` (main process, no CORS). Credentials stay compatible with the
+Flutter build: `<support>/jira_credentials/<uuidv5(URL namespace, accountId)>.json` with
+`{ username, protected_secret }` (DPAPI base64), written atomically via a `.tmp` file. Cached
+issues and config use the same storage locations/keys as the Dart code.
+
+Layout (JIRA-UI), page container `mx-auto flex h-full w-full max-w-6xl flex-col gap-6
+overflow-y-auto px-8 py-6`:
+
+- Header `flex items-center gap-3`: icon tile `flex size-9 items-center justify-center rounded-lg
+  bg-muted` with `SquareCheckBig`; title `text-lg font-semibold tracking-tight` ("Jira · KEY" /
+  "Jira"); subtitle `text-xs text-muted-foreground` (server host, last sync time when known).
+  Right `ml-auto flex items-center gap-2`: `Button size="sm"` "New issue" (`Plus`); `Button
+  variant="outline" size="sm"` Sync (`RefreshCw`, `animate-spin` while syncing, label "Syncing
+  12/40…"); `DropdownMenu` on `Button variant="ghost" size="icon-sm"` (`MoreHorizontal`) with Full
+  refresh (`RotateCw`), Update database (`Database`; "Updating database…" while running), Open
+  project in Jira (`SquareArrowOutUpRight`); `Button variant="ghost" size="icon-sm"` settings
+  (`Settings`). Every icon-only button has a tooltip with the Dart tooltip text.
+- Banners: ReUI `Alert` — `variant="destructive"` for "Last sync failed …" with `Button
+  variant="outline" size="sm"` "Open settings"; `variant="info"` for "Connect to sync" with
+  `Button size="sm"` "Enter token"; a dismiss button where Dart had one.
+- No configuration: `Empty` (`EmptyMedia variant="icon"` `SquareCheckBig`), "Connect a Jira
+  project", the Dart description, `Button` "Connect to Jira".
+- Stats: `grid grid-cols-2 gap-3 md:grid-cols-4`; tile `rounded-lg border bg-card p-4`: value
+  `text-2xl font-semibold tabular-nums`, label `flex items-center gap-1.5 text-xs
+  text-muted-foreground` with a `size-2 rounded-full` dot (to do `bg-muted-foreground/50`, in
+  progress `bg-info`, done `bg-success`). Below: progress `flex h-2 overflow-hidden rounded-full
+  bg-muted` with the three segments, and its label `text-xs text-muted-foreground`.
+- Body `grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]`.
+  - Issue list: toolbar `flex items-center gap-2`: `InputGroup` (`Search`) with the Dart hint,
+    active filter chips (ReUI `Badge variant="secondary"` with an `X` button), `Button
+    variant="link" size="sm"` "Clear filters". List `divide-y rounded-lg border`; row `group/issue
+    flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50`: key `w-20 shrink-0 font-mono text-xs
+    text-muted-foreground`, summary `min-w-0 flex-1 truncate text-sm`, assignee (`Avatar size-6`
+    + `text-xs text-muted-foreground` name, hidden below `md`), status badge, hover actions
+    `opacity-0 group-hover/issue:opacity-100` ghost `icon-xs` buttons: change status
+    (`ArrowRightLeft`), edit (`PencilLine`), open in Jira (`SquareArrowOutUpRight`). Loading:
+    five `Skeleton className="h-10"` rows. Empty: centred `text-sm text-muted-foreground` with
+    the Dart message.
+  - Side panel `flex flex-col gap-4 rounded-lg border bg-card p-4`: section titles `text-xs
+    font-medium text-muted-foreground`; assignee rows (avatar `size-6`, name `truncate text-sm`,
+    count `ml-auto text-xs tabular-nums text-muted-foreground`), clickable to filter as in Dart;
+    status rows with status badge + count.
+- Status badge (`JiraStatusBadge`): ReUI `Badge size="sm"`: done `success-light`, in progress
+  `info-light`, to do `secondary`.
+- Dialogs (shadcn `Dialog` visuals, `sm:max-w-lg`): title `text-base font-medium`, form `flex
+  flex-col gap-4` of `Field`s, footer Cancel (outline) + primary.
+  - Settings "Jira connection": Jira URL (`Input` `font-mono text-xs`), Project key,
+    Authentication `ToggleGroup` (Personal access token / Basic), Username (Basic only),
+    Token/Password `InputGroup` with eye toggle and "••••••••" placeholder when stored, Custom JQL
+    (`Textarea` `font-mono text-xs`), Database view id (`Input` `font-mono text-xs`); help via
+    `FieldDescription`, errors via `FieldError`.
+  - Issue create/edit: issue type `ToggleGroup` (JiraChoiceTile), summary `Input`, description
+    `Textarea rows={6}`, other Dart fields as `Select`/`Input`; required marks `text-destructive`
+    "*"; conflict: ReUI `Alert variant="warning"` "Changed in Jira since you opened it" with
+    `Button variant="outline" size="sm"` "Use Jira version" and `Button size="sm"` "Overwrite
+    with mine".
+  - Transition "KEY: change status": `RadioGroup` of transitions in `divide-y rounded-lg border`
+    rows (`px-3 py-2.5`, target status badge on the right); errors in ReUI `Alert
+    variant="destructive"` with Retry / Open in Jira.
+
+### 6.9 Template store — task TEMPLATES
+
+Port of `frontend/appflowy_flutter/lib/features/local_templates/**` and the assets
+`frontend/appflowy_flutter/assets/local_templates/**` (manifest.json, payloads/, media/), deleted in
+8e3f9dce7 (`git show 5a5db3717:<path>`; reference `doc/local-templates.md`). Same converter,
+import service (DocumentEventCreateDocument / FolderEventImportData / DatabaseEventUpdateRowMeta),
+media writing and naming as Dart. Opened from the sidebar "Templates" item.
+
+Layout, container `mx-auto flex h-full w-full max-w-6xl flex-col gap-5 overflow-y-auto px-8 py-6`:
+
+- Header `flex flex-wrap items-center gap-3`: icon tile (`LayoutTemplate`), title "Templates"
+  `text-lg font-semibold tracking-tight`, subtitle `text-xs text-muted-foreground` ("{n}
+  templates · available offline"); right `InputGroup className="ml-auto w-72"` (`Search`, hint
+  "Search templates").
+- Category bar `flex gap-1.5 overflow-x-auto pb-1`: "All" + categories as `Button size="sm"
+  className="rounded-full"`, `variant="default"` when active else `variant="outline"`.
+- Grid `grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4`.
+- Card `group flex flex-col overflow-hidden rounded-xl border bg-card transition-shadow
+  hover:shadow-md`: preview `relative aspect-[16/10] overflow-hidden border-b bg-muted` (cover
+  image `size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]`; no
+  image → the Dart content preview drawn with muted bars / a mini table of
+  `bg-muted-foreground/15` cells); body `flex flex-1 flex-col gap-2 p-4`: title `text-sm
+  font-semibold`, description `line-clamp-2 text-xs text-muted-foreground`, chips row (ReUI
+  `Badge variant="secondary" size="sm"`: kind with `FileText`/`Table2`, primary category; "New" as
+  `Badge variant="info-light" size="sm"` when `isNew`), footer `mt-auto pt-2`: `Button size="sm"
+  className="w-full"` "Use template" (`Plus`), `Spinner` + "Importing…" while running.
+  Unavailable templates: card `opacity-60`, `Badge variant="outline" size="sm"` "Unavailable",
+  button disabled.
+- Loading: 6 card skeletons; error: `Empty` with `TriangleAlert`; no results: `Empty` with
+  `SearchX` "No templates match".
+- Success: `showToast` with the Dart message (`Imported "<name>".`) and open the created page as
+  Dart does.
+
+Assets: restore the directory to `frontend/appflowy_electron/resources/assets/local_templates/`
+and load it through Vite (`@assets` alias): the manifest as a JSON import, payloads and media
+via `import.meta.glob(..., { query: '?url', import: 'default' })` and `fetch` on demand, so the
+22 MB are copied as files and never inlined into the bundle.
