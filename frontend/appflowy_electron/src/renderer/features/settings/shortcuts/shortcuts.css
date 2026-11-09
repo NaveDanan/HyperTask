@@ -1,0 +1,25 @@
+/* ShortcutSettingTile key editor: FlowyTextField (height 32, radius 8, 12px padding, outline → primary). */
+.shortcut-binding-field {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--cs-outline);
+  border-radius: 8px;
+}
+.shortcut-binding-field:focus-within {
+  border-color: var(--cs-primary);
+}
+.shortcut-binding-field input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font-size: calc(14px * var(--text-scale, 1));
+  color: var(--text-color);
+}
+.shortcut-binding-field input::placeholder {
+  color: var(--th-hint);
+}

@@ -1,0 +1,144 @@
+name: appflowy-demo
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16@sha256:a132765ec351c65111b5b675928a3a0515a466a40f97277329db8b8209ad8bc9
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: appflowy
+      POSTGRES_DB: appflowy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run bootstrap.sh first}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    networks: [backend]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U appflowy -d appflowy']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  redis:
+    image: redis:7.4.2-alpine@sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952
+    restart: unless-stopped
+    command: [redis-server, --appendonly, 'yes']
+    volumes: [redis_data:/data]
+    networks: [backend]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  minio:
+    image: chrislusf/seaweedfs:3.85@sha256:49312939c00c01e5ee6afbd7d728b18027821d3764c35a797a72acd4fdf3296a
+    restart: unless-stopped
+    # Local S3-compatible storage; the old public MinIO images are unavailable.
+    command: [server, -dir=/data, -ip=minio, -ip.bind=0.0.0.0, -s3, -s3.port=9000, -s3.config=/etc/seaweedfs/s3.json, -volume.max=8, -volume.fileSizeLimitMB=1024]
+    working_dir: /data
+    volumes:
+      - minio_data:/data
+      - ./.s3.json:/etc/seaweedfs/s3.json:ro
+    networks: [backend]
+  gotrue:
+    image: appflowyinc/gotrue:0.8.0@sha256:c4a12b7adc41b0872604b9aec5af0649d576dd4d914468896048c88192e1ec0c
+    restart: unless-stopped
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      GOTRUE_DB_DRIVER: postgres
+      DATABASE_URL: postgres://appflowy:${POSTGRES_PASSWORD}@postgres:5432/appflowy?search_path=auth
+      PORT: '9999'
+      GOTRUE_API_HOST: 0.0.0.0
+      API_EXTERNAL_URL: ${SERVER_ORIGIN}/gotrue
+      GOTRUE_SITE_URL: appflowy-flutter://
+      GOTRUE_URI_ALLOW_LIST: '${SERVER_ORIGIN}/**,appflowy-flutter://**'
+      GOTRUE_JWT_SECRET: ${JWT_SECRET:?Run bootstrap.sh first}
+      GOTRUE_JWT_EXP: '7200'
+      GOTRUE_JWT_ADMIN_GROUP_NAME: supabase_admin
+      GOTRUE_DISABLE_SIGNUP: 'false'
+      GOTRUE_MAILER_AUTOCONFIRM: 'true'
+      GOTRUE_SMTP_HOST: smtp-disabled
+      GOTRUE_SMTP_PORT: '25'
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: 'false'
+      GOTRUE_EXTERNAL_GITHUB_ENABLED: 'false'
+      GOTRUE_EXTERNAL_DISCORD_ENABLED: 'false'
+      GOTRUE_EXTERNAL_APPLE_ENABLED: 'false'
+      GOTRUE_SAML_ENABLED: 'false'
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ''
+    networks: [backend]
+    # The official image is scratch; HTTP readiness is checked by bootstrap.
+  appflowy_cloud:
+    image: appflowyinc/appflowy_cloud:0.9.51@sha256:8509c1faf1777e339f91bf2f4303e13ec466d23575b1ccd1dbd9fc0055a2d430
+    restart: unless-stopped
+    depends_on:
+      gotrue: {condition: service_started}
+      redis: {condition: service_healthy}
+      minio: {condition: service_started}
+    environment:
+      RUST_LOG: info
+      APPFLOWY_ENVIRONMENT: local
+      APPFLOWY_DATABASE_URL: postgres://appflowy:${POSTGRES_PASSWORD}@postgres:5432/appflowy
+      APPFLOWY_REDIS_URI: redis://redis:6379
+      APPFLOWY_GOTRUE_BASE_URL: http://gotrue:9999
+      APPFLOWY_GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      APPFLOWY_GOTRUE_JWT_EXP: '7200'
+      APPFLOWY_ACCESS_CONTROL: 'true'
+      APPFLOWY_DATABASE_MAX_CONNECTIONS: '30'
+      APPFLOWY_S3_CREATE_BUCKET: 'true'
+      APPFLOWY_S3_USE_MINIO: 'true'
+      APPFLOWY_S3_MINIO_URL: http://minio:9000
+      APPFLOWY_S3_ACCESS_KEY: appflowy_storage
+      APPFLOWY_S3_SECRET_KEY: ${S3_SECRET}
+      APPFLOWY_S3_BUCKET: appflowy
+      APPFLOWY_S3_REGION: us-east-1
+      APPFLOWY_S3_PRESIGNED_URL_ENDPOINT: ${SERVER_ORIGIN}/minio-api
+      APPFLOWY_WEB_URL: ${SERVER_ORIGIN}
+      APPFLOWY_INDEXER_ENABLED: 'false'
+      APPFLOWY_MAILER_SMTP_HOST: smtp-disabled
+      APPFLOWY_MAILER_SMTP_PORT: '25'
+      APPFLOWY_MAILER_SMTP_USERNAME: ''
+      APPFLOWY_MAILER_SMTP_EMAIL: appflowy@localhost.local
+      APPFLOWY_MAILER_SMTP_PASSWORD: ''
+      APPFLOWY_MAILER_SMTP_TLS_KIND: none
+      AI_SERVER_HOST: '127.0.0.1'
+      AI_SERVER_PORT: '5001'
+    networks: [backend]
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://127.0.0.1:8000/health]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+  admin_frontend:
+    image: appflowyinc/admin_frontend:0.9.51@sha256:6ab50d27544f66e381f835a403744f9d4ae913e5c2e4925b72de97c75929d6f6
+    restart: unless-stopped
+    depends_on:
+      gotrue: {condition: service_started}
+      appflowy_cloud: {condition: service_started}
+    environment:
+      RUST_LOG: info
+      ADMIN_FRONTEND_REDIS_URL: redis://redis:6379
+      ADMIN_FRONTEND_GOTRUE_URL: http://gotrue:9999
+      ADMIN_FRONTEND_APPFLOWY_CLOUD_URL: http://appflowy_cloud:8000
+      ADMIN_FRONTEND_PATH_PREFIX: /console
+    networks: [backend]
+  web:
+    profiles: [web]
+    image: appflowy-demo/web:10d88d9ca498
+    build:
+      context: .sources/web
+      dockerfile: ../../Dockerfile.web
+    restart: unless-stopped
+    networks: [backend]
+  nginx:
+    image: nginx:1.26.3-alpine@sha256:1eadbb07820339e8bbfed18c771691970baee292ec4ab2558f1453d26153e22d
+    restart: unless-stopped
+    ports:
+      - '${BIND_ADDRESS:-0.0.0.0}:${HTTP_PORT:-8080}:80'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on: [appflowy_cloud, gotrue, admin_frontend]
+    networks: [backend, ingress]
+networks:
+  backend:
+    internal: true
+  ingress: {}
+volumes:
+  postgres_data: {}
+  redis_data: {}
+  minio_data: {}

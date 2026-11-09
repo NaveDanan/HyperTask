@@ -1,0 +1,9 @@
+.env
+.s3.json
+.sources/
+backups/
+*.log
+compose.images.lock.yaml
+nginx.tls.conf
+.tls/
+.desktop-*.json

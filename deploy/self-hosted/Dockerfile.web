@@ -1,0 +1,14 @@
+FROM node:20.19.0-bookworm AS builder
+WORKDIR /app
+COPY . .
+ENV CYPRESS_INSTALL_BINARY=0
+RUN npm install -g pnpm@10.9.0 && pnpm install --frozen-lockfile
+# Bundle React locally rather than loading it from a public CDN.
+# Resolve all API/WebSocket URLs against this deployment, never SaaS defaults.
+RUN node -e "const f=require('fs');let p='vite.config.ts',s=f.readFileSync(p,'utf8');if(!s.includes(\"const isProd = process.env.NODE_ENV === 'production';\"))throw Error('unexpected vite config');f.writeFileSync(p,s.replace(\"const isProd = process.env.NODE_ENV === 'production';\",'const isProd = false;'));p='src/components/main/app.hooks.ts';s=f.readFileSync(p,'utf8').replace(\"'https://test.appflowy.cloud'\",'window.location.origin').replace(\"'https://test.appflowy.cloud/gotrue'\",\"window.location.origin + '/gotrue'\").replace(\"'wss://test.appflowy.cloud/ws/v1'\",\"window.location.origin.replace(/^http/, 'ws') + '/ws/v1'\");f.writeFileSync(p,s);"
+RUN node -e "const f=require('fs');const p='index.html';let s=f.readFileSync(p,'utf8');s=s.replace(/<link[^>]*href=\"https:\/\/fonts\.googleapis\.com\/[^\"]*\"[^>]*>/g,'').replaceAll('https://appflowy.com','/app');f.writeFileSync(p,s);"
+RUN pnpm run build
+FROM nginx:1.26.3-alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+RUN printf 'server { listen 80; root /usr/share/nginx/html; location / { try_files $uri $uri/ /index.html; } }\n' > /etc/nginx/conf.d/default.conf
+LABEL org.opencontainers.image.source="https://github.com/AppFlowy-IO/AppFlowy-Web" org.opencontainers.image.revision="10d88d9ca498c15a30c20777b709cffb1749b4c0"

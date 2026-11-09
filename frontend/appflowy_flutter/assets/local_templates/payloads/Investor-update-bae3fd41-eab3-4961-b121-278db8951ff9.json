@@ -1,0 +1,1562 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "nPYrqT",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "J1Us4F",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "NvAcU0",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "oNFsFM",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "💬 Asks"
+        }
+       ],
+       "textId": "QV4FSg",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "💬 Asks"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "qC_b6U",
+     "type": "heading"
+    },
+    {
+     "blockId": "tBpPdT",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {},
+     "relationId": "3-jHAU",
+     "type": "divider"
+    },
+    {
+     "blockId": "xqH8aT",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff9e9e9e",
+         "text": "Open the toggle to view more details."
+        }
+       ],
+       "textId": "znWMgp",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "font_color": "0xff9e9e9e"
+        },
+        "insert": "Open the toggle to view more details."
+       }
+      ]
+     },
+     "relationId": "BTf-s9",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "gJUtnd",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Leads for a great Rust developer"
+        }
+       ],
+       "textId": "wvB3fD",
+       "type": "text"
+      },
+      {
+       "blockId": "NhIMeB",
+       "children": [
+        {
+         "children": [
+          {
+           "font_color": "0xff9e9e9e",
+           "text": "Add more details"
+          }
+         ],
+         "textId": "zw6Fy_",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "font_color": "0xff9e9e9e"
+          },
+          "insert": "Add more details"
+         }
+        ]
+       },
+       "relationId": "pEcvdz",
+       "type": "paragraph"
+      },
+      {
+       "blockId": "idVBn6",
+       "children": [
+        {
+         "children": [
+          {
+           "text": ""
+          }
+         ],
+         "textId": "BoJvi3",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [],
+        "number": 1
+       },
+       "relationId": "UNniKm",
+       "type": "numbered_list"
+      },
+      {
+       "blockId": "m3ckTv",
+       "children": [
+        {
+         "children": [
+          {
+           "text": ""
+          }
+         ],
+         "textId": "e7mJ30",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": []
+       },
+       "relationId": "5WB_uj",
+       "type": "paragraph"
+      }
+     ],
+     "data": {
+      "collapsed": true,
+      "delta": [
+       {
+        "insert": "Leads for a great Rust developer"
+       }
+      ]
+     },
+     "relationId": "iV9RMC",
+     "type": "toggle_list"
+    },
+    {
+     "blockId": "d-suRs",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "hjT4WY",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "HfWZVx",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "cWjeuk",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "hcKQVk",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "xuTLE6",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "3Fq0Gc",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "📈 Key metrics for August"
+        }
+       ],
+       "textId": "B4IhWN",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "📈 Key metrics for August"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "axC-3f",
+     "type": "heading"
+    },
+    {
+     "blockId": "ac5GNG",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {},
+     "relationId": "7Dz2Ml",
+     "type": "divider"
+    },
+    {
+     "blockId": "0F5QQg",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff9e9e9e",
+         "text": "Open the toggle to view more details."
+        }
+       ],
+       "textId": "uBj-Rt",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "font_color": "0xff9e9e9e"
+        },
+        "insert": "Open the toggle to view more details."
+       }
+      ]
+     },
+     "relationId": "fkZ9Cc",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "4Efbya",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Total downloads 1M"
+        }
+       ],
+       "textId": "kn1kY3",
+       "type": "text"
+      },
+      {
+       "blockId": "errqhA",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "Windows 50%"
+          }
+         ],
+         "textId": "tmv_Bj",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "insert": "Windows 50%"
+         }
+        ]
+       },
+       "relationId": "46btXz",
+       "type": "paragraph"
+      }
+     ],
+     "data": {
+      "collapsed": true,
+      "delta": [
+       {
+        "insert": "Total downloads 1M"
+       }
+      ]
+     },
+     "relationId": "WtJl1W",
+     "type": "toggle_list"
+    },
+    {
+     "blockId": "kyrUeA",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Retention rate xx%"
+        }
+       ],
+       "textId": "f1LpyD",
+       "type": "text"
+      },
+      {
+       "blockId": "znVKkb",
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "data": {
+        "align": "left",
+        "image_type": 2,
+        "url": "https://images.unsplash.com/photo-1709734110054-3b0db38c959c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ0MjE2NTB8&ixlib=rb-4.0.3&q=80&w=1080",
+        "width": 437.1015625
+       },
+       "relationId": "41VaXs",
+       "type": "image"
+      }
+     ],
+     "data": {
+      "collapsed": true,
+      "delta": [
+       {
+        "insert": "Retention rate xx%"
+       }
+      ]
+     },
+     "relationId": "M1O2bF",
+     "type": "toggle_list"
+    },
+    {
+     "blockId": "Y9luK6",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "8Cuepe",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "of2I-B",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "DFcOR8",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "1MU5Zr",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "-NqLh5",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "s4ea-k",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "👁️ Lows"
+        }
+       ],
+       "textId": "dTkOS1",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "👁️ Lows"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "zu37Hc",
+     "type": "heading"
+    },
+    {
+     "blockId": "0oyIhV",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {},
+     "relationId": "B4mo4R",
+     "type": "divider"
+    },
+    {
+     "blockId": "SnWZf3",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff9e9e9e",
+         "text": "Open the toggle to view more details."
+        }
+       ],
+       "textId": "A_VZmM",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "font_color": "0xff9e9e9e"
+        },
+        "insert": "Open the toggle to view more details."
+       }
+      ]
+     },
+     "relationId": "4eDelf",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "WM8ymD",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Have not been able to hire a designer"
+        }
+       ],
+       "textId": "76Hd-c",
+       "type": "text"
+      },
+      {
+       "blockId": "MPnCrL",
+       "children": [
+        {
+         "children": [
+          {
+           "font_color": "0xff9e9e9e",
+           "text": "add more details here"
+          }
+         ],
+         "textId": "A7l88A",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "font_color": "0xff9e9e9e"
+          },
+          "insert": "add more details here"
+         }
+        ]
+       },
+       "relationId": "HExjzN",
+       "type": "paragraph"
+      },
+      {
+       "blockId": "fpz2yk",
+       "children": [
+        {
+         "children": [
+          {
+           "text": ""
+          }
+         ],
+         "textId": "JFv1Gj",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": []
+       },
+       "relationId": "EBhmlS",
+       "type": "bulleted_list"
+      }
+     ],
+     "data": {
+      "collapsed": true,
+      "delta": [
+       {
+        "insert": "Have not been able to hire a designer"
+       }
+      ]
+     },
+     "relationId": "3rRPlh",
+     "type": "toggle_list"
+    },
+    {
+     "blockId": "Deop6v",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "tdJ8zP",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "Y5J18u",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "QEHv1N",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "f856ZW",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "JD1tj1",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "muxxSo",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "🚀 Highlights"
+        }
+       ],
+       "textId": "WU8jkw",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "🚀 Highlights"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "FOpL-3",
+     "type": "heading"
+    },
+    {
+     "blockId": "cw7xH4",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {},
+     "relationId": "c1uBfe",
+     "type": "divider"
+    },
+    {
+     "blockId": "rtGDcJ",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff9e9e9e",
+         "text": "Open the toggle to view more details."
+        }
+       ],
+       "textId": "tbvslO",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "font_color": "0xff9e9e9e"
+        },
+        "insert": "Open the toggle to view more details."
+       }
+      ]
+     },
+     "relationId": "YAn2eQ",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "gdg2lh",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Mobile app on App Store"
+        }
+       ],
+       "textId": "D3xXCj",
+       "type": "text"
+      },
+      {
+       "blockId": "Wj5OTz",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "xxxxx downloads"
+          }
+         ],
+         "textId": "Vp_-Xp",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "insert": "xxxxx downloads"
+         }
+        ]
+       },
+       "relationId": "aM5uOK",
+       "type": "bulleted_list"
+      },
+      {
+       "blockId": "NPGdz8",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "4.8/5.0 average ratings"
+          }
+         ],
+         "textId": "jIpkk1",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "insert": "4.8/5.0 average ratings"
+         }
+        ]
+       },
+       "relationId": "XzIMKY",
+       "type": "bulleted_list"
+      }
+     ],
+     "data": {
+      "collapsed": true,
+      "delta": [
+       {
+        "insert": "Mobile app on App Store"
+       }
+      ]
+     },
+     "relationId": "5wTWTN",
+     "type": "toggle_list"
+    },
+    {
+     "blockId": "RLhMjw",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "y5D2hO",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "X_MhdF",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "hDFyCF",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "F5oHkt",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "u7-T4d",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "lnG8Vm",
+     "children": [
+      {
+       "children": [
+        {
+         "italic": true,
+         "text": "No longer want this update? Too frequent? Too long? Too short? Any questions or concerns? Please let me know."
+        }
+       ],
+       "textId": "5prPU4",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "italic": true
+        },
+        "insert": "No longer want this update? Too frequent? Too long? Too short? Any questions or concerns? Please let me know."
+       }
+      ]
+     },
+     "relationId": "_DSBgD",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "qmsqlP",
+     "children": [
+      {
+       "children": [
+        {
+         "italic": true,
+         "text": "Cheers,"
+        }
+       ],
+       "textId": "u0hsu4",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "italic": true
+        },
+        "insert": "Cheers,"
+       }
+      ]
+     },
+     "relationId": "3uMHM-",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "XieMHV",
+     "children": [
+      {
+       "children": [
+        {
+         "italic": true,
+         "text": "Founder"
+        }
+       ],
+       "textId": "WtKDLH",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "italic": true
+        },
+        "insert": "Founder"
+       }
+      ]
+     },
+     "relationId": "-SaHlI",
+     "type": "paragraph"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "0F5QQg": {
+       "children": "fkZ9Cc",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "font_color": "0xff9e9e9e"
+          },
+          "insert": "Open the toggle to view more details."
+         }
+        ]
+       },
+       "external_id": "uBj-Rt",
+       "external_type": "text",
+       "id": "0F5QQg",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "0oyIhV": {
+       "children": "B4mo4R",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "0oyIhV",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "divider"
+      },
+      "3Fq0Gc": {
+       "children": "axC-3f",
+       "data": {
+        "delta": [
+         {
+          "insert": "📈 Key metrics for August"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "B4IhWN",
+       "external_type": "text",
+       "id": "3Fq0Gc",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "heading"
+      },
+      "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a": {
+       "children": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "data": {
+        "cover_selection": "https://images.unsplash.com/photo-1458682625221-3a45f8a844c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ0MjE4MzN8&ixlib=rb-4.0.3&q=80&w=1080",
+        "cover_selection_type": "CoverType.file",
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"money_shopping\",\"iconName\":\"graph-bar-increase\",\"color\":\"0xFFA34AFD\"}"
+       },
+       "external_id": "WJFsvP",
+       "external_type": "text",
+       "id": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "parent": "",
+       "ty": "page"
+      },
+      "4Efbya": {
+       "children": "WtJl1W",
+       "data": {
+        "collapsed": true,
+        "delta": [
+         {
+          "insert": "Total downloads 1M"
+         }
+        ]
+       },
+       "external_id": "kn1kY3",
+       "external_type": "text",
+       "id": "4Efbya",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "toggle_list"
+      },
+      "DFcOR8": {
+       "children": "-NqLh5",
+       "data": {
+        "delta": []
+       },
+       "external_id": "1MU5Zr",
+       "external_type": "text",
+       "id": "DFcOR8",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "Deop6v": {
+       "children": "Y5J18u",
+       "data": {
+        "delta": []
+       },
+       "external_id": "tdJ8zP",
+       "external_type": "text",
+       "id": "Deop6v",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "MPnCrL": {
+       "children": "HExjzN",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "font_color": "0xff9e9e9e"
+          },
+          "insert": "add more details here"
+         }
+        ]
+       },
+       "external_id": "A7l88A",
+       "external_type": "text",
+       "id": "MPnCrL",
+       "parent": "WM8ymD",
+       "ty": "paragraph"
+      },
+      "NPGdz8": {
+       "children": "XzIMKY",
+       "data": {
+        "delta": [
+         {
+          "insert": "4.8/5.0 average ratings"
+         }
+        ]
+       },
+       "external_id": "jIpkk1",
+       "external_type": "text",
+       "id": "NPGdz8",
+       "parent": "gdg2lh",
+       "ty": "bulleted_list"
+      },
+      "NhIMeB": {
+       "children": "pEcvdz",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "font_color": "0xff9e9e9e"
+          },
+          "insert": "Add more details"
+         }
+        ]
+       },
+       "external_id": "zw6Fy_",
+       "external_type": "text",
+       "id": "NhIMeB",
+       "parent": "gJUtnd",
+       "ty": "paragraph"
+      },
+      "QEHv1N": {
+       "children": "JD1tj1",
+       "data": {
+        "delta": []
+       },
+       "external_id": "f856ZW",
+       "external_type": "text",
+       "id": "QEHv1N",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "RLhMjw": {
+       "children": "X_MhdF",
+       "data": {
+        "delta": []
+       },
+       "external_id": "y5D2hO",
+       "external_type": "text",
+       "id": "RLhMjw",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "SnWZf3": {
+       "children": "4eDelf",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "font_color": "0xff9e9e9e"
+          },
+          "insert": "Open the toggle to view more details."
+         }
+        ]
+       },
+       "external_id": "A_VZmM",
+       "external_type": "text",
+       "id": "SnWZf3",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "WM8ymD": {
+       "children": "3rRPlh",
+       "data": {
+        "collapsed": true,
+        "delta": [
+         {
+          "insert": "Have not been able to hire a designer"
+         }
+        ]
+       },
+       "external_id": "76Hd-c",
+       "external_type": "text",
+       "id": "WM8ymD",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "toggle_list"
+      },
+      "Wj5OTz": {
+       "children": "aM5uOK",
+       "data": {
+        "delta": [
+         {
+          "insert": "xxxxx downloads"
+         }
+        ]
+       },
+       "external_id": "Vp_-Xp",
+       "external_type": "text",
+       "id": "Wj5OTz",
+       "parent": "gdg2lh",
+       "ty": "bulleted_list"
+      },
+      "XieMHV": {
+       "children": "-SaHlI",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "italic": true
+          },
+          "insert": "Founder"
+         }
+        ]
+       },
+       "external_id": "WtKDLH",
+       "external_type": "text",
+       "id": "XieMHV",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "Y9luK6": {
+       "children": "of2I-B",
+       "data": {
+        "delta": []
+       },
+       "external_id": "8Cuepe",
+       "external_type": "text",
+       "id": "Y9luK6",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "ac5GNG": {
+       "children": "7Dz2Ml",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ac5GNG",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "divider"
+      },
+      "cWjeuk": {
+       "children": "xuTLE6",
+       "data": {
+        "delta": []
+       },
+       "external_id": "hcKQVk",
+       "external_type": "text",
+       "id": "cWjeuk",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "cw7xH4": {
+       "children": "c1uBfe",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "cw7xH4",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "divider"
+      },
+      "d-suRs": {
+       "children": "HfWZVx",
+       "data": {
+        "delta": []
+       },
+       "external_id": "hjT4WY",
+       "external_type": "text",
+       "id": "d-suRs",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "errqhA": {
+       "children": "46btXz",
+       "data": {
+        "delta": [
+         {
+          "insert": "Windows 50%"
+         }
+        ]
+       },
+       "external_id": "tmv_Bj",
+       "external_type": "text",
+       "id": "errqhA",
+       "parent": "4Efbya",
+       "ty": "paragraph"
+      },
+      "fpz2yk": {
+       "children": "EBhmlS",
+       "data": {
+        "delta": []
+       },
+       "external_id": "JFv1Gj",
+       "external_type": "text",
+       "id": "fpz2yk",
+       "parent": "WM8ymD",
+       "ty": "bulleted_list"
+      },
+      "gJUtnd": {
+       "children": "iV9RMC",
+       "data": {
+        "collapsed": true,
+        "delta": [
+         {
+          "insert": "Leads for a great Rust developer"
+         }
+        ]
+       },
+       "external_id": "wvB3fD",
+       "external_type": "text",
+       "id": "gJUtnd",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "toggle_list"
+      },
+      "gdg2lh": {
+       "children": "5wTWTN",
+       "data": {
+        "collapsed": true,
+        "delta": [
+         {
+          "insert": "Mobile app on App Store"
+         }
+        ]
+       },
+       "external_id": "D3xXCj",
+       "external_type": "text",
+       "id": "gdg2lh",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "toggle_list"
+      },
+      "hDFyCF": {
+       "children": "u7-T4d",
+       "data": {
+        "delta": []
+       },
+       "external_id": "F5oHkt",
+       "external_type": "text",
+       "id": "hDFyCF",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "idVBn6": {
+       "children": "UNniKm",
+       "data": {
+        "delta": [],
+        "number": 1
+       },
+       "external_id": "BoJvi3",
+       "external_type": "text",
+       "id": "idVBn6",
+       "parent": "gJUtnd",
+       "ty": "numbered_list"
+      },
+      "kyrUeA": {
+       "children": "M1O2bF",
+       "data": {
+        "collapsed": true,
+        "delta": [
+         {
+          "insert": "Retention rate xx%"
+         }
+        ]
+       },
+       "external_id": "f1LpyD",
+       "external_type": "text",
+       "id": "kyrUeA",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "toggle_list"
+      },
+      "lnG8Vm": {
+       "children": "_DSBgD",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "italic": true
+          },
+          "insert": "No longer want this update? Too frequent? Too long? Too short? Any questions or concerns? Please let me know."
+         }
+        ]
+       },
+       "external_id": "5prPU4",
+       "external_type": "text",
+       "id": "lnG8Vm",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "m3ckTv": {
+       "children": "5WB_uj",
+       "data": {
+        "delta": []
+       },
+       "external_id": "e7mJ30",
+       "external_type": "text",
+       "id": "m3ckTv",
+       "parent": "gJUtnd",
+       "ty": "paragraph"
+      },
+      "muxxSo": {
+       "children": "FOpL-3",
+       "data": {
+        "delta": [
+         {
+          "insert": "🚀 Highlights"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "WU8jkw",
+       "external_type": "text",
+       "id": "muxxSo",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "heading"
+      },
+      "nPYrqT": {
+       "children": "NvAcU0",
+       "data": {
+        "delta": []
+       },
+       "external_id": "J1Us4F",
+       "external_type": "text",
+       "id": "nPYrqT",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "oNFsFM": {
+       "children": "qC_b6U",
+       "data": {
+        "delta": [
+         {
+          "insert": "💬 Asks"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "QV4FSg",
+       "external_type": "text",
+       "id": "oNFsFM",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "heading"
+      },
+      "qmsqlP": {
+       "children": "3uMHM-",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "italic": true
+          },
+          "insert": "Cheers,"
+         }
+        ]
+       },
+       "external_id": "u0hsu4",
+       "external_type": "text",
+       "id": "qmsqlP",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "rtGDcJ": {
+       "children": "YAn2eQ",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "font_color": "0xff9e9e9e"
+          },
+          "insert": "Open the toggle to view more details."
+         }
+        ]
+       },
+       "external_id": "tbvslO",
+       "external_type": "text",
+       "id": "rtGDcJ",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "s4ea-k": {
+       "children": "zu37Hc",
+       "data": {
+        "delta": [
+         {
+          "insert": "👁️ Lows"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "dTkOS1",
+       "external_type": "text",
+       "id": "s4ea-k",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "heading"
+      },
+      "tBpPdT": {
+       "children": "3-jHAU",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "tBpPdT",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "divider"
+      },
+      "xqH8aT": {
+       "children": "BTf-s9",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "font_color": "0xff9e9e9e"
+          },
+          "insert": "Open the toggle to view more details."
+         }
+        ]
+       },
+       "external_id": "znWMgp",
+       "external_type": "text",
+       "id": "xqH8aT",
+       "parent": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a",
+       "ty": "paragraph"
+      },
+      "znVKkb": {
+       "children": "41VaXs",
+       "data": {
+        "align": "left",
+        "image_type": 2,
+        "url": "https://images.unsplash.com/photo-1709734110054-3b0db38c959c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ0MjE2NTB8&ixlib=rb-4.0.3&q=80&w=1080",
+        "width": 437.1015625
+       },
+       "external_id": null,
+       "external_type": null,
+       "id": "znVKkb",
+       "parent": "kyrUeA",
+       "ty": "image"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "-NqLh5": [],
+       "-SaHlI": [],
+       "3-jHAU": [],
+       "3rRPlh": [
+        "MPnCrL",
+        "fpz2yk"
+       ],
+       "3uMHM-": [],
+       "41VaXs": [],
+       "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a": [
+        "nPYrqT",
+        "oNFsFM",
+        "tBpPdT",
+        "xqH8aT",
+        "gJUtnd",
+        "d-suRs",
+        "cWjeuk",
+        "3Fq0Gc",
+        "ac5GNG",
+        "0F5QQg",
+        "4Efbya",
+        "kyrUeA",
+        "Y9luK6",
+        "DFcOR8",
+        "s4ea-k",
+        "0oyIhV",
+        "SnWZf3",
+        "WM8ymD",
+        "Deop6v",
+        "QEHv1N",
+        "muxxSo",
+        "cw7xH4",
+        "rtGDcJ",
+        "gdg2lh",
+        "RLhMjw",
+        "hDFyCF",
+        "lnG8Vm",
+        "qmsqlP",
+        "XieMHV"
+       ],
+       "46btXz": [],
+       "4eDelf": [],
+       "5WB_uj": [],
+       "5wTWTN": [
+        "Wj5OTz",
+        "NPGdz8"
+       ],
+       "7Dz2Ml": [],
+       "B4mo4R": [],
+       "BTf-s9": [],
+       "EBhmlS": [],
+       "FOpL-3": [],
+       "HExjzN": [],
+       "HfWZVx": [],
+       "JD1tj1": [],
+       "M1O2bF": [
+        "znVKkb"
+       ],
+       "NvAcU0": [],
+       "UNniKm": [],
+       "WtJl1W": [
+        "errqhA"
+       ],
+       "X_MhdF": [],
+       "XzIMKY": [],
+       "Y5J18u": [],
+       "YAn2eQ": [],
+       "_DSBgD": [],
+       "aM5uOK": [],
+       "axC-3f": [],
+       "c1uBfe": [],
+       "fkZ9Cc": [],
+       "iV9RMC": [
+        "NhIMeB",
+        "idVBn6",
+        "m3ckTv"
+       ],
+       "of2I-B": [],
+       "pEcvdz": [],
+       "qC_b6U": [],
+       "u7-T4d": [],
+       "xuTLE6": [],
+       "zu37Hc": []
+      },
+      "text_map": {
+       "1MU5Zr": "[]",
+       "5prPU4": "[{\"insert\":\"No longer want this update? Too frequent? Too long? Too short? Any questions or concerns? Please let me know.\",\"attributes\":{\"italic\":true}}]",
+       "76Hd-c": "[{\"insert\":\"Have not been able to hire a designer\"}]",
+       "8Cuepe": "[]",
+       "A7l88A": "[{\"insert\":\"add more details here\",\"attributes\":{\"font_color\":\"0xff9e9e9e\"}}]",
+       "A_VZmM": "[{\"insert\":\"Open the toggle to view more details.\",\"attributes\":{\"font_color\":\"0xff9e9e9e\"}}]",
+       "B4IhWN": "[{\"insert\":\"📈 Key metrics for August\"}]",
+       "BoJvi3": "[]",
+       "D3xXCj": "[{\"insert\":\"Mobile app on App Store\"}]",
+       "F5oHkt": "[]",
+       "J1Us4F": "[]",
+       "JFv1Gj": "[]",
+       "QV4FSg": "[{\"insert\":\"💬 Asks\"}]",
+       "Vp_-Xp": "[{\"insert\":\"xxxxx downloads\"}]",
+       "WU8jkw": "[{\"insert\":\"🚀 Highlights\"}]",
+       "WtKDLH": "[{\"insert\":\"Founder\",\"attributes\":{\"italic\":true}}]",
+       "dTkOS1": "[{\"insert\":\"👁️ Lows\"}]",
+       "e7mJ30": "[]",
+       "f1LpyD": "[{\"insert\":\"Retention rate xx%\"}]",
+       "f856ZW": "[]",
+       "hcKQVk": "[]",
+       "hjT4WY": "[]",
+       "jIpkk1": "[{\"insert\":\"4.8/5.0 average ratings\"}]",
+       "kn1kY3": "[{\"insert\":\"Total downloads 1M\"}]",
+       "tbvslO": "[{\"insert\":\"Open the toggle to view more details.\",\"attributes\":{\"font_color\":\"0xff9e9e9e\"}}]",
+       "tdJ8zP": "[]",
+       "tmv_Bj": "[{\"insert\":\"Windows 50%\"}]",
+       "u0hsu4": "[{\"insert\":\"Cheers,\",\"attributes\":{\"italic\":true}}]",
+       "uBj-Rt": "[{\"insert\":\"Open the toggle to view more details.\",\"attributes\":{\"font_color\":\"0xff9e9e9e\"}}]",
+       "wvB3fD": "[{\"insert\":\"Leads for a great Rust developer\"}]",
+       "y5D2hO": "[]",
+       "znWMgp": "[{\"insert\":\"Open the toggle to view more details.\",\"attributes\":{\"font_color\":\"0xff9e9e9e\"}}]",
+       "zw6Fy_": "[{\"insert\":\"Add more details\",\"attributes\":{\"font_color\":\"0xff9e9e9e\"}}]"
+      }
+     },
+     "page_id": "44471d3b-244b-5bf3-90b3-a8a6f78c9c4a"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Investor-update-bae3fd41-eab3-4961-b121-278db8951ff9",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731912012,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"entertainment/pacman\",\"space_icon_color\":\"0xFFA34AFD\",\"space_permission\":0,\"space_created_at\":1724416490474}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1742914907,
+     "layout": 0,
+     "name": "Startups",
+     "view_id": "a159ba4a-2965-408a-913d-a934b8bcd663"
+    },
+    {
+     "child_views": null,
+     "created_at": 1724421048,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1458682625221-3a45f8a844c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ0MjE4MzN8&ixlib=rb-4.0.3&q=80&w=1080\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"money_shopping\",\"iconName\":\"graph-bar-increase\",\"color\":\"0xFFA34AFD\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764765496,
+     "layout": 0,
+     "name": "Investor update",
+     "view_id": "bae3fd41-eab3-4961-b121-278db8951ff9"
+    }
+   ],
+   "childViews": [],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1458682625221-3a45f8a844c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ0MjE4MzN8&ixlib=rb-4.0.3&q=80&w=1080\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"money_shopping\",\"iconName\":\"graph-bar-increase\",\"color\":\"0xFFA34AFD\"}"
+   },
+   "layout": 0,
+   "name": "Investor update",
+   "viewId": "bae3fd41-eab3-4961-b121-278db8951ff9",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

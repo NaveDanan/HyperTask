@@ -1,0 +1,47 @@
+{
+  "name": "hypertask",
+  "productName": "HyperTask",
+  "version": "0.11.4",
+  "private": true,
+  "author": "NaveDanan",
+  "description": "HyperTask desktop workspace, developed by NaveDanan",
+  "main": "out/main/index.js",
+  "scripts": {
+    "gen:proto": "node scripts/gen-proto.mjs",
+    "gen:events": "node scripts/gen-events.mjs",
+    "gen:icons": "node scripts/gen-icons.mjs",
+    "gen:colors": "node scripts/gen-colorschemes.mjs",
+    "gen": "npm run gen:proto && npm run gen:events && npm run gen:icons && npm run gen:colors",
+    "build:core": "node scripts/build-core.mjs",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "harness:compile": "tsc --ignoreConfig --outDir .cache/harness --rootDir src/main --module node16 --moduleResolution node16 --target es2022 --types node --skipLibCheck --esModuleInterop src/main/core/process.ts src/main/core/protocol.ts src/main/core/binary.ts src/main/prefs.ts src/main/device-id.ts || exit 0",
+    "harness": "node scripts/web-harness/server.cjs",
+    "harness:shot": "node scripts/web-harness/screenshot.mjs"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.17.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1.75.0",
+    "@bufbuild/protoc-gen-es": "^2.17.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "electron": "44.10.2",
+    "electron-vite": "^6.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  },
+  "allowScripts": {
+    "electron@44.10.2": true
+  }
+}

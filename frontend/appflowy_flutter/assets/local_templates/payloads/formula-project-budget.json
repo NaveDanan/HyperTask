@@ -1,0 +1,735 @@
+{
+ "data": {
+  "database": {
+   "activeViewId": "b80742e5-53ed-4aad-830b-d305d94b56d0",
+   "databaseId": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+   "fields": [
+    {
+     "fieldId": "CaQUys",
+     "fieldType": 19,
+     "isPrimary": false,
+     "name": "Remaining"
+    },
+    {
+     "fieldId": "HZEvdM",
+     "fieldType": 19,
+     "isPrimary": false,
+     "name": "Signal"
+    },
+    {
+     "fieldId": "VFt7ap",
+     "fieldType": 19,
+     "isPrimary": false,
+     "name": "Used"
+    },
+    {
+     "fieldId": "budget",
+     "fieldType": 1,
+     "isPrimary": false,
+     "name": "Budget"
+    },
+    {
+     "fieldId": "owner",
+     "fieldType": 0,
+     "isPrimary": false,
+     "name": "Owner"
+    },
+    {
+     "fieldId": "project",
+     "fieldType": 0,
+     "isPrimary": true,
+     "name": "Project"
+    },
+    {
+     "fieldId": "spent",
+     "fieldType": 1,
+     "isPrimary": false,
+     "name": "Spent"
+    }
+   ],
+   "raw": {
+    "database": {
+     "fields": {
+      "CaQUys": {
+       "created_at": "1791889336",
+       "icon": "",
+       "id": "CaQUys",
+       "is_primary": false,
+       "last_modified": "1791889341",
+       "name": "Remaining",
+       "ty": 19,
+       "type_option": {
+        "0": {},
+        "19": {
+         "expression": "if((empty(prop(\"budget\")) or prop(\"budget\") <= 0), empty(), prop(\"budget\") - prop(\"spent\"))",
+         "format": 1
+        }
+       }
+      },
+      "HZEvdM": {
+       "created_at": "1791889346",
+       "icon": "",
+       "id": "HZEvdM",
+       "is_primary": false,
+       "last_modified": "1791889350",
+       "name": "Signal",
+       "ty": 19,
+       "type_option": {
+        "0": {},
+        "19": {
+         "expression": "ifs((empty(prop(\"budget\")) or prop(\"budget\") <= 0), \"Set budget\", prop(\"spent\") > prop(\"budget\"), \"Over budget\", prop(\"spent\") >= prop(\"budget\") * 0.8, \"Watch\", \"On track\")",
+         "format": 0
+        }
+       }
+      },
+      "VFt7ap": {
+       "created_at": "1791889341",
+       "icon": "",
+       "id": "VFt7ap",
+       "is_primary": false,
+       "last_modified": "1791889346",
+       "name": "Used",
+       "ty": 19,
+       "type_option": {
+        "0": {},
+        "19": {
+         "expression": "if((empty(prop(\"budget\")) or prop(\"budget\") <= 0), empty(), prop(\"spent\") / prop(\"budget\"))",
+         "format": 36
+        }
+       }
+      },
+      "budget": {
+       "created_at": "1791889064",
+       "id": "budget",
+       "is_primary": false,
+       "last_modified": "1791889064",
+       "name": "Budget",
+       "ty": 1,
+       "type_option": {
+        "1": {
+         "format": 1
+        }
+       }
+      },
+      "owner": {
+       "created_at": "1791889064",
+       "id": "owner",
+       "is_primary": false,
+       "last_modified": "1791889064",
+       "name": "Owner",
+       "ty": 0,
+       "type_option": {
+        "0": {}
+       }
+      },
+      "project": {
+       "created_at": "1791889064",
+       "id": "project",
+       "is_primary": true,
+       "last_modified": "1791889064",
+       "name": "Project",
+       "ty": 0,
+       "type_option": {
+        "0": {}
+       }
+      },
+      "spent": {
+       "created_at": "1791889064",
+       "id": "spent",
+       "is_primary": false,
+       "last_modified": "1791889064",
+       "name": "Spent",
+       "ty": 1,
+       "type_option": {
+        "1": {
+         "format": 1
+        }
+       }
+      }
+     },
+     "id": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+     "metas": {
+      "iid": "89ab7f42-9f48-5d95-a51e-9b8848344d3b"
+     },
+     "views": {
+      "89ab7f42-9f48-5d95-a51e-9b8848344d3b": {
+       "created_at": 1791888608,
+       "database_id": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+       "embedded": false,
+       "field_orders": [
+        {
+         "id": "project"
+        },
+        {
+         "id": "budget"
+        },
+        {
+         "id": "spent"
+        },
+        {
+         "id": "owner"
+        },
+        {
+         "id": "CaQUys"
+        },
+        {
+         "id": "VFt7ap"
+        },
+        {
+         "id": "HZEvdM"
+        }
+       ],
+       "field_settings": {
+        "CaQUys": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        },
+        "HZEvdM": {
+         "visibility": 0,
+         "width": "160",
+         "wrap": true
+        },
+        "VFt7ap": {
+         "visibility": 0,
+         "width": "110",
+         "wrap": true
+        },
+        "budget": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        },
+        "owner": {
+         "visibility": 0,
+         "width": "115",
+         "wrap": true
+        },
+        "project": {
+         "visibility": 0,
+         "width": "260",
+         "wrap": true
+        },
+        "spent": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        }
+       },
+       "filters": [],
+       "groups": [],
+       "id": "89ab7f42-9f48-5d95-a51e-9b8848344d3b",
+       "is_inline": true,
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1791888608,
+       "name": "",
+       "row_orders": [
+        {
+         "height": 52,
+         "id": "35f6e8fe-7a20-40df-b1f8-ac8f825fe60a"
+        },
+        {
+         "height": 52,
+         "id": "ed796a71-6039-4550-9bd4-374523a43d5f"
+        },
+        {
+         "height": 52,
+         "id": "6cdbf71b-d77b-43a6-8735-584fe1886189"
+        },
+        {
+         "height": 52,
+         "id": "6ed38417-c35c-4d01-9777-e6f0e5507408"
+        },
+        {
+         "height": 52,
+         "id": "269834ab-be2e-4e2e-a3b4-ba38c21f88f6"
+        }
+       ],
+       "sorts": []
+      },
+      "f7eaf041-c799-4e07-afbd-4ade50187214": {
+       "created_at": 1791888608,
+       "database_id": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+       "embedded": true,
+       "field_orders": [
+        {
+         "id": "project"
+        },
+        {
+         "id": "budget"
+        },
+        {
+         "id": "spent"
+        },
+        {
+         "id": "owner"
+        },
+        {
+         "id": "CaQUys"
+        },
+        {
+         "id": "VFt7ap"
+        },
+        {
+         "id": "HZEvdM"
+        }
+       ],
+       "field_settings": {
+        "CaQUys": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        },
+        "HZEvdM": {
+         "visibility": 0,
+         "width": "160",
+         "wrap": true
+        },
+        "VFt7ap": {
+         "visibility": 0,
+         "width": "110",
+         "wrap": true
+        },
+        "budget": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        },
+        "owner": {
+         "visibility": 0,
+         "width": "115",
+         "wrap": true
+        },
+        "project": {
+         "visibility": 0,
+         "width": "260",
+         "wrap": true
+        },
+        "spent": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        }
+       },
+       "filters": [],
+       "groups": [],
+       "id": "f7eaf041-c799-4e07-afbd-4ade50187214",
+       "is_inline": false,
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1791888608,
+       "name": "Grid",
+       "row_orders": [
+        {
+         "height": 52,
+         "id": "35f6e8fe-7a20-40df-b1f8-ac8f825fe60a"
+        },
+        {
+         "height": 52,
+         "id": "ed796a71-6039-4550-9bd4-374523a43d5f"
+        },
+        {
+         "height": 52,
+         "id": "6cdbf71b-d77b-43a6-8735-584fe1886189"
+        },
+        {
+         "height": 52,
+         "id": "6ed38417-c35c-4d01-9777-e6f0e5507408"
+        },
+        {
+         "height": 52,
+         "id": "269834ab-be2e-4e2e-a3b4-ba38c21f88f6"
+        }
+       ],
+       "sorts": []
+      }
+     }
+    },
+    "rows": {
+     "269834ab-be2e-4e2e-a3b4-ba38c21f88f6": {
+      "data": {
+       "cells": {
+        "budget": {
+         "created_at": "1791889064",
+         "data": "2000",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        },
+        "owner": {
+         "created_at": "1791889064",
+         "data": "Casey",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "project": {
+         "created_at": "1791889064",
+         "data": "QA automation",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "spent": {
+         "created_at": "1791889064",
+         "data": "0",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        }
+       },
+       "created_at": "1791889064",
+       "database_id": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+       "height": 52,
+       "id": "269834ab-be2e-4e2e-a3b4-ba38c21f88f6",
+       "last_modified": "1791889064",
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "35f6e8fe-7a20-40df-b1f8-ac8f825fe60a": {
+      "data": {
+       "cells": {
+        "budget": {
+         "created_at": "1791889064",
+         "data": "10000",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        },
+        "owner": {
+         "created_at": "1791889064",
+         "data": "Alex",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "project": {
+         "created_at": "1791889064",
+         "data": "Website relaunch",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "spent": {
+         "created_at": "1791889064",
+         "data": "6500",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        }
+       },
+       "created_at": "1791889064",
+       "database_id": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+       "height": 52,
+       "id": "35f6e8fe-7a20-40df-b1f8-ac8f825fe60a",
+       "last_modified": "1791889064",
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "6cdbf71b-d77b-43a6-8735-584fe1886189": {
+      "data": {
+       "cells": {
+        "budget": {
+         "created_at": "1791889064",
+         "data": "4000",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        },
+        "owner": {
+         "created_at": "1791889064",
+         "data": "Riley",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "project": {
+         "created_at": "1791889064",
+         "data": "Design system",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "spent": {
+         "created_at": "1791889064",
+         "data": "3600",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        }
+       },
+       "created_at": "1791889064",
+       "database_id": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+       "height": 52,
+       "id": "6cdbf71b-d77b-43a6-8735-584fe1886189",
+       "last_modified": "1791889064",
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "6ed38417-c35c-4d01-9777-e6f0e5507408": {
+      "data": {
+       "cells": {
+        "budget": {
+         "created_at": "1791889064",
+         "data": "0",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        },
+        "owner": {
+         "created_at": "1791889064",
+         "data": "Jordan",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "project": {
+         "created_at": "1791889064",
+         "data": "Customer research",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "spent": {
+         "created_at": "1791889064",
+         "data": "400",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        }
+       },
+       "created_at": "1791889064",
+       "database_id": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+       "height": 52,
+       "id": "6ed38417-c35c-4d01-9777-e6f0e5507408",
+       "last_modified": "1791889064",
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "ed796a71-6039-4550-9bd4-374523a43d5f": {
+      "data": {
+       "cells": {
+        "budget": {
+         "created_at": "1791889064",
+         "data": "8000",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        },
+        "owner": {
+         "created_at": "1791889064",
+         "data": "Sam",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "project": {
+         "created_at": "1791889064",
+         "data": "Mobile onboarding",
+         "field_type": 0,
+         "last_modified": "1791889064"
+        },
+        "spent": {
+         "created_at": "1791889064",
+         "data": "9000",
+         "field_type": 1,
+         "last_modified": "1791889064"
+        }
+       },
+       "created_at": "1791889064",
+       "database_id": "1509db3e-c379-413e-bb3a-e7ef6839e5f2",
+       "height": 52,
+       "id": "ed796a71-6039-4550-9bd4-374523a43d5f",
+       "last_modified": "1791889064",
+       "visibility": true
+      },
+      "meta": {}
+     }
+    }
+   },
+   "rows": [
+    {
+     "cells": {
+      "budget": {
+       "created_at": "1791889064",
+       "data": "2000",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      },
+      "owner": {
+       "created_at": "1791889064",
+       "data": "Casey",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "project": {
+       "created_at": "1791889064",
+       "data": "QA automation",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "spent": {
+       "created_at": "1791889064",
+       "data": "0",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      }
+     },
+     "rowId": "269834ab-be2e-4e2e-a3b4-ba38c21f88f6"
+    },
+    {
+     "cells": {
+      "budget": {
+       "created_at": "1791889064",
+       "data": "10000",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      },
+      "owner": {
+       "created_at": "1791889064",
+       "data": "Alex",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "project": {
+       "created_at": "1791889064",
+       "data": "Website relaunch",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "spent": {
+       "created_at": "1791889064",
+       "data": "6500",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      }
+     },
+     "rowId": "35f6e8fe-7a20-40df-b1f8-ac8f825fe60a"
+    },
+    {
+     "cells": {
+      "budget": {
+       "created_at": "1791889064",
+       "data": "8000",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      },
+      "owner": {
+       "created_at": "1791889064",
+       "data": "Sam",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "project": {
+       "created_at": "1791889064",
+       "data": "Mobile onboarding",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "spent": {
+       "created_at": "1791889064",
+       "data": "9000",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      }
+     },
+     "rowId": "ed796a71-6039-4550-9bd4-374523a43d5f"
+    },
+    {
+     "cells": {
+      "budget": {
+       "created_at": "1791889064",
+       "data": "0",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      },
+      "owner": {
+       "created_at": "1791889064",
+       "data": "Jordan",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "project": {
+       "created_at": "1791889064",
+       "data": "Customer research",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "spent": {
+       "created_at": "1791889064",
+       "data": "400",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      }
+     },
+     "rowId": "6ed38417-c35c-4d01-9777-e6f0e5507408"
+    },
+    {
+     "cells": {
+      "budget": {
+       "created_at": "1791889064",
+       "data": "4000",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      },
+      "owner": {
+       "created_at": "1791889064",
+       "data": "Riley",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "project": {
+       "created_at": "1791889064",
+       "data": "Design system",
+       "field_type": 0,
+       "last_modified": "1791889064"
+      },
+      "spent": {
+       "created_at": "1791889064",
+       "data": "3600",
+       "field_type": 1,
+       "last_modified": "1791889064"
+      }
+     },
+     "rowId": "6cdbf71b-d77b-43a6-8735-584fe1886189"
+    }
+   ],
+   "views": [
+    {
+     "fieldIds": [
+      "project",
+      "budget",
+      "spent",
+      "owner",
+      "CaQUys",
+      "VFt7ap",
+      "HZEvdM"
+     ],
+     "layout": 0,
+     "name": "Grid",
+     "rowIds": [
+      "35f6e8fe-7a20-40df-b1f8-ac8f825fe60a",
+      "ed796a71-6039-4550-9bd4-374523a43d5f",
+      "6cdbf71b-d77b-43a6-8735-584fe1886189",
+      "6ed38417-c35c-4d01-9777-e6f0e5507408",
+      "269834ab-be2e-4e2e-a3b4-ba38c21f88f6"
+     ],
+     "viewId": "f7eaf041-c799-4e07-afbd-4ade50187214"
+    }
+   ],
+   "visibleViewIds": [
+    "b80742e5-53ed-4aad-830b-d305d94b56d0",
+    "f7eaf041-c799-4e07-afbd-4ade50187214"
+   ]
+  },
+  "kind": "database",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "formula-project-budget",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [],
+   "childViews": [],
+   "databaseRelations": {
+    "1509db3e-c379-413e-bb3a-e7ef6839e5f2": "b80742e5-53ed-4aad-830b-d305d94b56d0"
+   },
+   "extra": "{\"database_id\":\"1509db3e-c379-413e-bb3a-e7ef6839e5f2\",\"embedded\":true,\"is_database_container\":true}",
+   "icon": null,
+   "layout": 1,
+   "name": "Project Budget with Formulas",
+   "viewId": "b80742e5-53ed-4aad-830b-d305d94b56d0",
+   "visibleViewIds": [
+    "b80742e5-53ed-4aad-830b-d305d94b56d0",
+    "f7eaf041-c799-4e07-afbd-4ade50187214"
+   ]
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

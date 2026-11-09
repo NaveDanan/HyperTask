@@ -1,0 +1,7 @@
+services:
+  nginx:
+    ports: !override
+      - '${BIND_ADDRESS:-0.0.0.0}:${TLS_PORT:-8443}:443'
+    volumes:
+      - ./nginx.tls.conf:/etc/nginx/nginx.conf:ro
+      - ./.tls:/etc/nginx/tls:ro

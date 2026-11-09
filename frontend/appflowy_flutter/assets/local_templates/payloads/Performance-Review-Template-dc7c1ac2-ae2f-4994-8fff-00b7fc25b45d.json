@@ -1,0 +1,4935 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "sZwXAP",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "1. Quality of Deliverables"
+        }
+       ],
+       "textId": "HyCyLQ",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "1. Quality of Deliverables"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "LGPopc",
+     "type": "heading"
+    },
+    {
+     "blockId": "DR_6jm",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Feedback on the period: Duties, workload, tasks, collaboration, quality of work"
+        }
+       ],
+       "textId": "nHSTqS",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Feedback on the period: Duties, workload, tasks, collaboration, quality of work"
+       }
+      ]
+     },
+     "relationId": "jndkK4",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "IqBFhu",
+     "children": [
+      {
+       "blockId": "1DL2Mz",
+       "children": [
+        {
+         "blockId": "f_Ozjo",
+         "children": [
+          {
+           "blockId": "v94zb_",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Descriptions"
+              }
+             ],
+             "textId": "D92sTh",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ZaW1n6",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "IWSgIa",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "UaTKW8",
+         "children": [
+          {
+           "blockId": "YF1DBM",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Self-evaluated Score (out of 10)"
+              }
+             ],
+             "textId": "Mh1nW2",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "oeJySc",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "BsfJ-9",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "qFYLwO",
+         "children": [
+          {
+           "blockId": "RVqGq_",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Your Justifications"
+              }
+             ],
+             "textId": "DIGH1s",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "YkIkb8",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "bnWd4F",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "amt5n0",
+         "children": [
+          {
+           "blockId": "iA7LDk",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Manager Evaluation Score (out of 10)"
+              }
+             ],
+             "textId": "ZMQS-V",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "CvOvzA",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "Wo5V8X",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "k_aSSq",
+         "children": [
+          {
+           "blockId": "vfhPpU",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Comments"
+              }
+             ],
+             "textId": "5ERIVo",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "MU6Mge",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "Lt3MJT",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "N8WhmG",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "Tu5xy_",
+       "children": [
+        {
+         "blockId": "pMwyy7",
+         "children": [
+          {
+           "blockId": "K5ApIE",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Accuracy: quality of your deliverable"
+              }
+             ],
+             "textId": "GxsyOn",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "hgC8NR",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "oCLQac",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Tr0kCB",
+         "children": [
+          {
+           "blockId": "6bFTzb",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "aNoHAS",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "QKkJVG",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "voF4G-",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "5snuQH",
+         "children": [
+          {
+           "blockId": "JJ5h7V",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "Uq1Wbg",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "656r8Q",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "PiCAx9",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "zpF0Xf",
+         "children": [
+          {
+           "blockId": "Rx5lGQ",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "xUrjSH",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "f-6Nrh",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "mRrjxv",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "bGtBic",
+         "children": [
+          {
+           "blockId": "WB8wtd",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "w_KdOm",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "LHBXsU",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "Llk-bd",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "ohkYTD",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "xTH2_C",
+       "children": [
+        {
+         "blockId": "awGHeU",
+         "children": [
+          {
+           "blockId": "Ni-Ikn",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Consistency: constantly deliver high quality work"
+              }
+             ],
+             "textId": "HAOKM4",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "HvyCer",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "DDjZ6p",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "4SmE7u",
+         "children": [
+          {
+           "blockId": "38U7Mc",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "9q38zV",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "m53_2E",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "8l9OVh",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "zd3Yw7",
+         "children": [
+          {
+           "blockId": "y_8bQM",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "FW-DDh",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "gMqEkL",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "P6VFfn",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "rZDJdU",
+         "children": [
+          {
+           "blockId": "vhx4Rr",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "pIh72v",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "cvFdHj",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "e6Gwg_",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "egBY7i",
+         "children": [
+          {
+           "blockId": "CL1Y7M",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "gcImaL",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "uaAGfT",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "v5VcrJ",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "iNdJU0",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "svAIFA",
+       "children": [
+        {
+         "blockId": "6cSgt0",
+         "children": [
+          {
+           "blockId": "amLYDH",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Follow-through: continue your project to its conclusion; get the last-mile done well"
+              }
+             ],
+             "textId": "3yIkLp",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "0ajR1V",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "yD8bk_",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "lkUy3n",
+         "children": [
+          {
+           "blockId": "JnN4Bh",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "vd2qDi",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "bYnWhv",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "X4uJQL",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "B3IIdo",
+         "children": [
+          {
+           "blockId": "mdQwtr",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "qV0dJT",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "UbVUSW",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "0s2oOf",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "z2Vebx",
+         "children": [
+          {
+           "blockId": "HbQyVE",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "2mkrTZ",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "EfWCDg",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "54YtJI",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "RH-wBb",
+         "children": [
+          {
+           "blockId": "dAgrCf",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "-WYUd_",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "dtKUxZ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "u8NW4R",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "nv1tn4",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "3qaHcU",
+       "children": [
+        {
+         "blockId": "genrqM",
+         "children": [
+          {
+           "blockId": "cP6LVc",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Meets deadlines: deliver your work as promised and properly manage your stakeholders’ expectation on the deadlines"
+              }
+             ],
+             "textId": "Tg4DA4",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "koPTAc",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "CwA_Hp",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "AC0TB4",
+         "children": [
+          {
+           "blockId": "oSHjRZ",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "CxYf25",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "F8K0fU",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "NyfCBl",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "iLSFuD",
+         "children": [
+          {
+           "blockId": "Up24gY",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "XxCuXC",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "RDUZuV",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "DoHXq1",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "DyiaCa",
+         "children": [
+          {
+           "blockId": "UpK5fA",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "zwFYM-",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "Tqp73Y",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "-4FDnk",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "F7g5yK",
+         "children": [
+          {
+           "blockId": "IWbglg",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "2FFx9n",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "2HFjB3",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "YS9Sxo",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "z0D6ow",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "WM2YRz",
+       "children": [
+        {
+         "blockId": "_Giujn",
+         "children": [
+          {
+           "blockId": "Cgb0a5",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "[AppFlowy Values] Aim high & iterate "
+              }
+             ],
+             "textId": "CEAkLT",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "YLUEDQ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "SAxHcV",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "DSp7bu",
+         "children": [
+          {
+           "blockId": "tdTn7D",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "mVlnlk",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "NdYg9k",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "SrIHTS",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Earp7c",
+         "children": [
+          {
+           "blockId": "0iWNup",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "ExJc4g",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "GHy_1c",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "WUtefh",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "aVTLmY",
+         "children": [
+          {
+           "blockId": "pFkJ41",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "q0NbV0",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "rMwJ0L",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "nCxiox",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "OX_7TL",
+         "children": [
+          {
+           "blockId": "yiDhmF",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "GVZNpt",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "tAC9Rm",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "E7zMTG",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "V169BQ",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 294.09375
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {}
+     },
+     "relationId": "kdr6cZ",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "hKSNde",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "2. Teamwork"
+        }
+       ],
+       "textId": "he10yk",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "2. Teamwork"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "KDRV1m",
+     "type": "heading"
+    },
+    {
+     "blockId": "pU9rlj",
+     "children": [
+      {
+       "blockId": "nSMgLo",
+       "children": [
+        {
+         "blockId": "qsUe4u",
+         "children": [
+          {
+           "blockId": "9Re8i7",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Descriptions"
+              }
+             ],
+             "textId": "P9l9w5",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "PeGL1Z",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "VIOVFH",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "QcWniP",
+         "children": [
+          {
+           "blockId": "aEfxJu",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Self-evaluated Score (out of 10)"
+              }
+             ],
+             "textId": "74mQ_X",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "CLCjCn",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "xdtUDA",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "tbIOHs",
+         "children": [
+          {
+           "blockId": "jvWiZw",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Your Justifications"
+              }
+             ],
+             "textId": "OvBxuu",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "yNrc8S",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "GBkNhi",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "MMbgYW",
+         "children": [
+          {
+           "blockId": "nIpDjI",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Manager Evaluation Score (out of 10)"
+              }
+             ],
+             "textId": "5fuKHm",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ahbZC1",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "dlJeoQ",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "S-A7di",
+         "children": [
+          {
+           "blockId": "hkM0Bn",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Comments"
+              }
+             ],
+             "textId": "rrTgAb",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "eufQHQ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "4_UJb-",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "DJddZj",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "Ebvvyn",
+       "children": [
+        {
+         "blockId": "LPzei0",
+         "children": [
+          {
+           "blockId": "Xrti11",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Collaborates with internal and external teams across positions including contributors from AppFlowy’s community and third-party vendors & service providers"
+              }
+             ],
+             "textId": "gMJy4q",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "aJtmJB",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "P3eOcA",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "bJAUz6",
+         "children": [
+          {
+           "blockId": "lMDB9b",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "7O-Uo3",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "4ww8Td",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "DePyks",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "SzVhRo",
+         "children": [
+          {
+           "blockId": "D3bapk",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "HiZSfu",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "GBWJKQ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "sEQTjZ",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "AXxE1P",
+         "children": [
+          {
+           "blockId": "2q3gG-",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "diULdG",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "Rr8d5g",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "tkwMS8",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "dTK8I6",
+         "children": [
+          {
+           "blockId": "xuv73n",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "Bm9Ey8",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "zoMWHJ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "UK-ii7",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "68QJJF",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "9OznHD",
+       "children": [
+        {
+         "blockId": "AEXgEi",
+         "children": [
+          {
+           "blockId": "ifFmrq",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Puts team targets higher than personal achievements"
+              }
+             ],
+             "textId": "_JSrXt",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "VyaA61",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "CNCEQA",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "whmlAD",
+         "children": [
+          {
+           "blockId": "vlZ7-c",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "5MXjb6",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "e4Iku-",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "pf3Zv3",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "kNeVV3",
+         "children": [
+          {
+           "blockId": "RhH0vp",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "Naofwg",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "xc7g-_",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "lPiggw",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "W36ah3",
+         "children": [
+          {
+           "blockId": "rzvqzC",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "06v6eB",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "WuSs7N",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "SCl8za",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "PJvxg5",
+         "children": [
+          {
+           "blockId": "qa-kFW",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "uiswUr",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "OsqJ3N",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "24Jt7I",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "KNOQyj",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "OKCfTm",
+       "children": [
+        {
+         "blockId": "ojyFtp",
+         "children": [
+          {
+           "blockId": "BvS1LO",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Contributes and takes initiative to social activities, eg: organizing virtual events to hangout with colleagues"
+              }
+             ],
+             "textId": "xazukJ",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "qf_emE",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "7LmsLI",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "fkZvc9",
+         "children": [
+          {
+           "blockId": "MOJXih",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "onKmdS",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "5vucB_",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "TqSrw5",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "p_xt1C",
+         "children": [
+          {
+           "blockId": "TvteLr",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "Vz1FD4",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "HNwqVU",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "HGdYAQ",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "indChp",
+         "children": [
+          {
+           "blockId": "hbQGIS",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "YDo-pn",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "U3SyoF",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "xkT77p",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "S4HYKS",
+         "children": [
+          {
+           "blockId": "sU3InR",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "HhHM4T",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "7Q1m6T",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "t3r6yx",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "Z-kgHX",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 293.359375
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {}
+     },
+     "relationId": "0uOcbB",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "kZP2hn",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "dkKEk7",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "5ELNho",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "01ROec",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "3. Innovation"
+        }
+       ],
+       "textId": "xkFbco",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "3. Innovation"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "THkOUC",
+     "type": "heading"
+    },
+    {
+     "blockId": "dxbzVQ",
+     "children": [
+      {
+       "blockId": "04enQj",
+       "children": [
+        {
+         "blockId": "TO00CA",
+         "children": [
+          {
+           "blockId": "XAthZ0",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Descriptions"
+              }
+             ],
+             "textId": "5AEpCV",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "plCUcT",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "BodQ37",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "7xeG9x",
+         "children": [
+          {
+           "blockId": "mgA5Pm",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Self-evaluated Score (out of 10)"
+              }
+             ],
+             "textId": "buAZu9",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "DSkB61",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "svYnfK",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "J5_Kb_",
+         "children": [
+          {
+           "blockId": "FDCAh-",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Your Justifications"
+              }
+             ],
+             "textId": "PtoS1T",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "d-HjrS",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "_bjk_A",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "RHeLVS",
+         "children": [
+          {
+           "blockId": "0CpJbf",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Manager Evaluation Score (out of 10)"
+              }
+             ],
+             "textId": "H1CtHK",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "XYMzRn",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "D-2KbT",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "OWKSn0",
+         "children": [
+          {
+           "blockId": "jnMHCL",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Comments"
+              }
+             ],
+             "textId": "59RfZY",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "PKvb91",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "2Ko2JL",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "42CUhB",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "ktVLWQ",
+       "children": [
+        {
+         "blockId": "iDIiHT",
+         "children": [
+          {
+           "blockId": "QQXuvN",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Propose/use digital technologies to change internal processes"
+              }
+             ],
+             "textId": "4jAL8I",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "bd1hfr",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "LW8OgB",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "8tfK--",
+         "children": [
+          {
+           "blockId": "D8gFwM",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "KWiyLC",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "vVMbs8",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "7UDo5c",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "UsYJKq",
+         "children": [
+          {
+           "blockId": "26sSkA",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "d-LgFT",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "wT4cH0",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "yy9ytL",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "SYF_dH",
+         "children": [
+          {
+           "blockId": "7pvZZi",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "3lwScW",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "8bQMii",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "4xmLnH",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "KG9Ff8",
+         "children": [
+          {
+           "blockId": "ldR6bc",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "HZcnRL",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "doZN1y",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "SMvSXC",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "TLBm-m",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "VXTP5s",
+       "children": [
+        {
+         "blockId": "I7mCp9",
+         "children": [
+          {
+           "blockId": "1cQcc1",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Generates ideas and gives input that improves our product / business operations"
+              }
+             ],
+             "textId": "4T8U3a",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "9VwW-7",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "tgzkr5",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Hi39AJ",
+         "children": [
+          {
+           "blockId": "HSUqSF",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "5jk_en",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "bNU42m",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "qpiNYh",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "jVr4FI",
+         "children": [
+          {
+           "blockId": "Rw4jZb",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "7-8OO2",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "4QR8p4",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "nXS4R-",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "W6KDtJ",
+         "children": [
+          {
+           "blockId": "vmKG72",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "bCBizp",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "SfnZhi",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "XbK9as",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "_ESJmq",
+         "children": [
+          {
+           "blockId": "SGsL6z",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "MrHkg9",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "LXwB7V",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "AYL0RA",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "YLhcCS",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 293.28125
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {}
+     },
+     "relationId": "lc4d_O",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "7MgMqR",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "Rm6QkO",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "rvO2x0",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "aAl0pA",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "4. Skills development"
+        }
+       ],
+       "textId": "2dK0tp",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "4. Skills development"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "NCqDaR",
+     "type": "heading"
+    },
+    {
+     "blockId": "PvDzSm",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Q: Professional and personal skills you have developed in this quarter"
+        }
+       ],
+       "textId": "VcCY1h",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Q: Professional and personal skills you have developed in this quarter"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "zxgtSY",
+     "type": "heading"
+    },
+    {
+     "blockId": "VphQrl",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Ex: developed knowledge in software design and think more holistically when writing code"
+        }
+       ],
+       "textId": "rsrmeH",
+       "type": "text"
+      },
+      {
+       "blockId": "tz5z7_",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "Ex: developed knowledge in software design and think more holistically when writing code"
+          }
+         ],
+         "textId": "huNE3S",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: developed knowledge in software design and think more holistically when writing code"
+         }
+        ]
+       },
+       "relationId": "JFFF5D",
+       "type": "paragraph"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Ex: developed knowledge in software design and think more holistically when writing code"
+       }
+      ]
+     },
+     "relationId": "YTYF3X",
+     "type": "quote"
+    },
+    {
+     "blockId": "QO23zo",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "A:"
+        }
+       ],
+       "textId": "wZDt-g",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "A:"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "B6VKBj",
+     "type": "heading"
+    },
+    {
+     "blockId": "11U-hx",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "H_kFmR",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "4n3eET",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "ZM0mil",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Q: Professional and personal skills you want to develop next quarter"
+        }
+       ],
+       "textId": "YpRrUS",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "Q: Professional and personal skills you want to develop next quarter"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "PPa2mb",
+     "type": "heading"
+    },
+    {
+     "blockId": "jetS8R",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Ex: improve project management skills to follow through a project to finish the last mile"
+        }
+       ],
+       "textId": "DwPkag",
+       "type": "text"
+      },
+      {
+       "blockId": "cRhp4g",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "Ex: improve project management skills to follow through a project to finish the last mile"
+          }
+         ],
+         "textId": "c6ju9N",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: improve project management skills to follow through a project to finish the last mile"
+         }
+        ]
+       },
+       "relationId": "5Aq_-i",
+       "type": "paragraph"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Ex: improve project management skills to follow through a project to finish the last mile"
+       }
+      ]
+     },
+     "relationId": "gBKR2E",
+     "type": "quote"
+    },
+    {
+     "blockId": "-b-_v-",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "A:"
+        }
+       ],
+       "textId": "kaxD1i",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "A:"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "9m5KUo",
+     "type": "heading"
+    },
+    {
+     "blockId": "Lhtfmx",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "LvrYcf",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "oPBUAc",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "qP_Boz",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "1Q6mlW",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "zbHf6_",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "rslbuA",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "5. Feedback to your manager"
+        }
+       ],
+       "textId": "D6zxIG",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "5. Feedback to your manager"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "iOGAOF",
+     "type": "heading"
+    },
+    {
+     "blockId": "fKz8ON",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Q: "
+        },
+        {
+         "bold": true,
+         "text": "You and your manager"
+        }
+       ],
+       "textId": "LAehY1",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Q: "
+       },
+       {
+        "attributes": {
+         "bold": true
+        },
+        "insert": "You and your manager"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "l82G6P",
+     "type": "heading"
+    },
+    {
+     "blockId": "JsyK6r",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Feedback to your leader: Eg. the delegation of tasks, responsibilities and competence."
+        }
+       ],
+       "textId": "c5s8kt",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Feedback to your leader: Eg. the delegation of tasks, responsibilities and competence."
+       }
+      ]
+     },
+     "relationId": "Ru0CQu",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "WgrL_s",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Ex: Skillfully manage projects, people, and budget"
+        }
+       ],
+       "textId": "sjeFKs",
+       "type": "text"
+      },
+      {
+       "blockId": "mC9RjO",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "Ex: Skillfully manage projects, people, and budget"
+          }
+         ],
+         "textId": "fMWgdH",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: Skillfully manage projects, people, and budget"
+         }
+        ]
+       },
+       "relationId": "0gzbAc",
+       "type": "paragraph"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Ex: Skillfully manage projects, people, and budget"
+       }
+      ]
+     },
+     "relationId": "rR2PEr",
+     "type": "quote"
+    },
+    {
+     "blockId": "qhM7zr",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "A:"
+        }
+       ],
+       "textId": "swXp0h",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "A:"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "mt9Ltp",
+     "type": "heading"
+    },
+    {
+     "blockId": "7NWz83",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "blEFFb",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "UjE94j",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "81IsiW",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "T4zAsT",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "Dqw4kt",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "zeCpX6",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "6. Career development in the long-term"
+        }
+       ],
+       "textId": "69BXnR",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "6. Career development in the long-term"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "1Q1om2",
+     "type": "heading"
+    },
+    {
+     "blockId": "7SwzfL",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Q: Reflections on job opportunities, other tasks, new disciplines, etc. Do you need support from your manager to achieve your development goals?"
+        }
+       ],
+       "textId": "haEfe_",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Q: Reflections on job opportunities, other tasks, new disciplines, etc. Do you need support from your manager to achieve your development goals?"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "GWr2Ep",
+     "type": "heading"
+    },
+    {
+     "blockId": "5lEGA8",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Ex: Need manager's support in preparation to become a Project Manager"
+        }
+       ],
+       "textId": "Q_suFZ",
+       "type": "text"
+      },
+      {
+       "blockId": "hGuU0-",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "Ex: Need manager's support in preparation to become a Project Manager"
+          }
+         ],
+         "textId": "fyQhVQ",
+         "type": "text"
+        }
+       ],
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: Need manager's support in preparation to become a Project Manager"
+         }
+        ]
+       },
+       "relationId": "loyxLb",
+       "type": "paragraph"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Ex: Need manager's support in preparation to become a Project Manager"
+       }
+      ]
+     },
+     "relationId": "pVeTaE",
+     "type": "quote"
+    },
+    {
+     "blockId": "qb7ZGC",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "A:"
+        }
+       ],
+       "textId": "21YXEX",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "A:"
+       }
+      ],
+      "level": 3
+     },
+     "relationId": "qAkcDJ",
+     "type": "heading"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "-b-_v-": {
+       "children": "9m5KUo",
+       "data": {
+        "delta": [
+         {
+          "insert": "A:"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "kaxD1i",
+       "external_type": "text",
+       "id": "-b-_v-",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "01ROec": {
+       "children": "THkOUC",
+       "data": {
+        "delta": [
+         {
+          "insert": "3. Innovation"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "xkFbco",
+       "external_type": "text",
+       "id": "01ROec",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "04enQj": {
+       "children": "42CUhB",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "04enQj",
+       "parent": "dxbzVQ",
+       "ty": "simple_table_row"
+      },
+      "0CpJbf": {
+       "children": "XYMzRn",
+       "data": {},
+       "external_id": "H1CtHK",
+       "external_type": "text",
+       "id": "0CpJbf",
+       "parent": "RHeLVS",
+       "ty": "paragraph"
+      },
+      "0iWNup": {
+       "children": "GHy_1c",
+       "data": {},
+       "external_id": "ExJc4g",
+       "external_type": "text",
+       "id": "0iWNup",
+       "parent": "Earp7c",
+       "ty": "paragraph"
+      },
+      "11U-hx": {
+       "children": "4n3eET",
+       "data": {
+        "delta": []
+       },
+       "external_id": "H_kFmR",
+       "external_type": "text",
+       "id": "11U-hx",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "1DL2Mz": {
+       "children": "N8WhmG",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "1DL2Mz",
+       "parent": "IqBFhu",
+       "ty": "simple_table_row"
+      },
+      "1cQcc1": {
+       "children": "9VwW-7",
+       "data": {},
+       "external_id": "4T8U3a",
+       "external_type": "text",
+       "id": "1cQcc1",
+       "parent": "I7mCp9",
+       "ty": "paragraph"
+      },
+      "26sSkA": {
+       "children": "wT4cH0",
+       "data": {},
+       "external_id": "d-LgFT",
+       "external_type": "text",
+       "id": "26sSkA",
+       "parent": "UsYJKq",
+       "ty": "paragraph"
+      },
+      "2q3gG-": {
+       "children": "Rr8d5g",
+       "data": {},
+       "external_id": "diULdG",
+       "external_type": "text",
+       "id": "2q3gG-",
+       "parent": "AXxE1P",
+       "ty": "paragraph"
+      },
+      "38U7Mc": {
+       "children": "m53_2E",
+       "data": {},
+       "external_id": "9q38zV",
+       "external_type": "text",
+       "id": "38U7Mc",
+       "parent": "4SmE7u",
+       "ty": "paragraph"
+      },
+      "3qaHcU": {
+       "children": "z0D6ow",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "3qaHcU",
+       "parent": "IqBFhu",
+       "ty": "simple_table_row"
+      },
+      "4SmE7u": {
+       "children": "8l9OVh",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "4SmE7u",
+       "parent": "xTH2_C",
+       "ty": "simple_table_cell"
+      },
+      "5lEGA8": {
+       "children": "pVeTaE",
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: Need manager's support in preparation to become a Project Manager"
+         }
+        ]
+       },
+       "external_id": "Q_suFZ",
+       "external_type": "text",
+       "id": "5lEGA8",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "quote"
+      },
+      "5snuQH": {
+       "children": "PiCAx9",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "5snuQH",
+       "parent": "Tu5xy_",
+       "ty": "simple_table_cell"
+      },
+      "6161788b-c3ee-5d81-be1f-6b774f566362": {
+       "children": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "data": {
+        "cover_selection": "https://images.unsplash.com/photo-1585669806456-bbfb218ee08d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ0MjI1NTh8&ixlib=rb-4.0.3&q=80&w=1080",
+        "cover_selection_type": "CoverType.file",
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"pen-tool\",\"color\":\"0xFFA34AFD\"}"
+       },
+       "external_id": "LiWEC1",
+       "external_type": "text",
+       "id": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "parent": "",
+       "ty": "page"
+      },
+      "6bFTzb": {
+       "children": "QKkJVG",
+       "data": {},
+       "external_id": "aNoHAS",
+       "external_type": "text",
+       "id": "6bFTzb",
+       "parent": "Tr0kCB",
+       "ty": "paragraph"
+      },
+      "6cSgt0": {
+       "children": "yD8bk_",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "6cSgt0",
+       "parent": "svAIFA",
+       "ty": "simple_table_cell"
+      },
+      "7MgMqR": {
+       "children": "rvO2x0",
+       "data": {
+        "delta": []
+       },
+       "external_id": "Rm6QkO",
+       "external_type": "text",
+       "id": "7MgMqR",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "7NWz83": {
+       "children": "UjE94j",
+       "data": {
+        "delta": []
+       },
+       "external_id": "blEFFb",
+       "external_type": "text",
+       "id": "7NWz83",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "7SwzfL": {
+       "children": "GWr2Ep",
+       "data": {
+        "delta": [
+         {
+          "insert": "Q: Reflections on job opportunities, other tasks, new disciplines, etc. Do you need support from your manager to achieve your development goals?"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "haEfe_",
+       "external_type": "text",
+       "id": "7SwzfL",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "7pvZZi": {
+       "children": "8bQMii",
+       "data": {},
+       "external_id": "3lwScW",
+       "external_type": "text",
+       "id": "7pvZZi",
+       "parent": "SYF_dH",
+       "ty": "paragraph"
+      },
+      "7xeG9x": {
+       "children": "svYnfK",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "7xeG9x",
+       "parent": "04enQj",
+       "ty": "simple_table_cell"
+      },
+      "81IsiW": {
+       "children": "Dqw4kt",
+       "data": {
+        "delta": []
+       },
+       "external_id": "T4zAsT",
+       "external_type": "text",
+       "id": "81IsiW",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "8tfK--": {
+       "children": "7UDo5c",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "8tfK--",
+       "parent": "ktVLWQ",
+       "ty": "simple_table_cell"
+      },
+      "9OznHD": {
+       "children": "KNOQyj",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "9OznHD",
+       "parent": "pU9rlj",
+       "ty": "simple_table_row"
+      },
+      "9Re8i7": {
+       "children": "PeGL1Z",
+       "data": {},
+       "external_id": "P9l9w5",
+       "external_type": "text",
+       "id": "9Re8i7",
+       "parent": "qsUe4u",
+       "ty": "paragraph"
+      },
+      "AC0TB4": {
+       "children": "NyfCBl",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "AC0TB4",
+       "parent": "3qaHcU",
+       "ty": "simple_table_cell"
+      },
+      "AEXgEi": {
+       "children": "CNCEQA",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "AEXgEi",
+       "parent": "9OznHD",
+       "ty": "simple_table_cell"
+      },
+      "AXxE1P": {
+       "children": "tkwMS8",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "AXxE1P",
+       "parent": "Ebvvyn",
+       "ty": "simple_table_cell"
+      },
+      "B3IIdo": {
+       "children": "0s2oOf",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "B3IIdo",
+       "parent": "svAIFA",
+       "ty": "simple_table_cell"
+      },
+      "BvS1LO": {
+       "children": "qf_emE",
+       "data": {},
+       "external_id": "xazukJ",
+       "external_type": "text",
+       "id": "BvS1LO",
+       "parent": "ojyFtp",
+       "ty": "paragraph"
+      },
+      "CL1Y7M": {
+       "children": "uaAGfT",
+       "data": {},
+       "external_id": "gcImaL",
+       "external_type": "text",
+       "id": "CL1Y7M",
+       "parent": "egBY7i",
+       "ty": "paragraph"
+      },
+      "Cgb0a5": {
+       "children": "YLUEDQ",
+       "data": {},
+       "external_id": "CEAkLT",
+       "external_type": "text",
+       "id": "Cgb0a5",
+       "parent": "_Giujn",
+       "ty": "paragraph"
+      },
+      "D3bapk": {
+       "children": "GBWJKQ",
+       "data": {},
+       "external_id": "HiZSfu",
+       "external_type": "text",
+       "id": "D3bapk",
+       "parent": "SzVhRo",
+       "ty": "paragraph"
+      },
+      "D8gFwM": {
+       "children": "vVMbs8",
+       "data": {},
+       "external_id": "KWiyLC",
+       "external_type": "text",
+       "id": "D8gFwM",
+       "parent": "8tfK--",
+       "ty": "paragraph"
+      },
+      "DR_6jm": {
+       "children": "jndkK4",
+       "data": {
+        "delta": [
+         {
+          "insert": "Feedback on the period: Duties, workload, tasks, collaboration, quality of work"
+         }
+        ]
+       },
+       "external_id": "nHSTqS",
+       "external_type": "text",
+       "id": "DR_6jm",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "DSp7bu": {
+       "children": "SrIHTS",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "DSp7bu",
+       "parent": "WM2YRz",
+       "ty": "simple_table_cell"
+      },
+      "DyiaCa": {
+       "children": "-4FDnk",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "DyiaCa",
+       "parent": "3qaHcU",
+       "ty": "simple_table_cell"
+      },
+      "Earp7c": {
+       "children": "WUtefh",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Earp7c",
+       "parent": "WM2YRz",
+       "ty": "simple_table_cell"
+      },
+      "Ebvvyn": {
+       "children": "68QJJF",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Ebvvyn",
+       "parent": "pU9rlj",
+       "ty": "simple_table_row"
+      },
+      "F7g5yK": {
+       "children": "YS9Sxo",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "F7g5yK",
+       "parent": "3qaHcU",
+       "ty": "simple_table_cell"
+      },
+      "FDCAh-": {
+       "children": "d-HjrS",
+       "data": {},
+       "external_id": "PtoS1T",
+       "external_type": "text",
+       "id": "FDCAh-",
+       "parent": "J5_Kb_",
+       "ty": "paragraph"
+      },
+      "HSUqSF": {
+       "children": "bNU42m",
+       "data": {},
+       "external_id": "5jk_en",
+       "external_type": "text",
+       "id": "HSUqSF",
+       "parent": "Hi39AJ",
+       "ty": "paragraph"
+      },
+      "HbQyVE": {
+       "children": "EfWCDg",
+       "data": {},
+       "external_id": "2mkrTZ",
+       "external_type": "text",
+       "id": "HbQyVE",
+       "parent": "z2Vebx",
+       "ty": "paragraph"
+      },
+      "Hi39AJ": {
+       "children": "qpiNYh",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Hi39AJ",
+       "parent": "VXTP5s",
+       "ty": "simple_table_cell"
+      },
+      "I7mCp9": {
+       "children": "tgzkr5",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "I7mCp9",
+       "parent": "VXTP5s",
+       "ty": "simple_table_cell"
+      },
+      "IWbglg": {
+       "children": "2HFjB3",
+       "data": {},
+       "external_id": "2FFx9n",
+       "external_type": "text",
+       "id": "IWbglg",
+       "parent": "F7g5yK",
+       "ty": "paragraph"
+      },
+      "IqBFhu": {
+       "children": "kdr6cZ",
+       "data": {
+        "column_widths": {
+         "0": 294.09375
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {}
+       },
+       "external_id": "TmVHoJ",
+       "external_type": "text",
+       "id": "IqBFhu",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "simple_table"
+      },
+      "J5_Kb_": {
+       "children": "_bjk_A",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "J5_Kb_",
+       "parent": "04enQj",
+       "ty": "simple_table_cell"
+      },
+      "JJ5h7V": {
+       "children": "656r8Q",
+       "data": {},
+       "external_id": "Uq1Wbg",
+       "external_type": "text",
+       "id": "JJ5h7V",
+       "parent": "5snuQH",
+       "ty": "paragraph"
+      },
+      "JnN4Bh": {
+       "children": "bYnWhv",
+       "data": {},
+       "external_id": "vd2qDi",
+       "external_type": "text",
+       "id": "JnN4Bh",
+       "parent": "lkUy3n",
+       "ty": "paragraph"
+      },
+      "JsyK6r": {
+       "children": "Ru0CQu",
+       "data": {
+        "delta": [
+         {
+          "insert": "Feedback to your leader: Eg. the delegation of tasks, responsibilities and competence."
+         }
+        ]
+       },
+       "external_id": "c5s8kt",
+       "external_type": "text",
+       "id": "JsyK6r",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "K5ApIE": {
+       "children": "hgC8NR",
+       "data": {},
+       "external_id": "GxsyOn",
+       "external_type": "text",
+       "id": "K5ApIE",
+       "parent": "pMwyy7",
+       "ty": "paragraph"
+      },
+      "KG9Ff8": {
+       "children": "SMvSXC",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "KG9Ff8",
+       "parent": "ktVLWQ",
+       "ty": "simple_table_cell"
+      },
+      "LPzei0": {
+       "children": "P3eOcA",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "LPzei0",
+       "parent": "Ebvvyn",
+       "ty": "simple_table_cell"
+      },
+      "Lhtfmx": {
+       "children": "oPBUAc",
+       "data": {
+        "delta": []
+       },
+       "external_id": "LvrYcf",
+       "external_type": "text",
+       "id": "Lhtfmx",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "MMbgYW": {
+       "children": "dlJeoQ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "MMbgYW",
+       "parent": "nSMgLo",
+       "ty": "simple_table_cell"
+      },
+      "MOJXih": {
+       "children": "5vucB_",
+       "data": {},
+       "external_id": "onKmdS",
+       "external_type": "text",
+       "id": "MOJXih",
+       "parent": "fkZvc9",
+       "ty": "paragraph"
+      },
+      "Ni-Ikn": {
+       "children": "HvyCer",
+       "data": {},
+       "external_id": "HAOKM4",
+       "external_type": "text",
+       "id": "Ni-Ikn",
+       "parent": "awGHeU",
+       "ty": "paragraph"
+      },
+      "OKCfTm": {
+       "children": "Z-kgHX",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "OKCfTm",
+       "parent": "pU9rlj",
+       "ty": "simple_table_row"
+      },
+      "OWKSn0": {
+       "children": "2Ko2JL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "OWKSn0",
+       "parent": "04enQj",
+       "ty": "simple_table_cell"
+      },
+      "OX_7TL": {
+       "children": "E7zMTG",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "OX_7TL",
+       "parent": "WM2YRz",
+       "ty": "simple_table_cell"
+      },
+      "PJvxg5": {
+       "children": "24Jt7I",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "PJvxg5",
+       "parent": "9OznHD",
+       "ty": "simple_table_cell"
+      },
+      "PvDzSm": {
+       "children": "zxgtSY",
+       "data": {
+        "delta": [
+         {
+          "insert": "Q: Professional and personal skills you have developed in this quarter"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "VcCY1h",
+       "external_type": "text",
+       "id": "PvDzSm",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "QO23zo": {
+       "children": "B6VKBj",
+       "data": {
+        "delta": [
+         {
+          "insert": "A:"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "wZDt-g",
+       "external_type": "text",
+       "id": "QO23zo",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "QQXuvN": {
+       "children": "bd1hfr",
+       "data": {},
+       "external_id": "4jAL8I",
+       "external_type": "text",
+       "id": "QQXuvN",
+       "parent": "iDIiHT",
+       "ty": "paragraph"
+      },
+      "QcWniP": {
+       "children": "xdtUDA",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "QcWniP",
+       "parent": "nSMgLo",
+       "ty": "simple_table_cell"
+      },
+      "RH-wBb": {
+       "children": "u8NW4R",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "RH-wBb",
+       "parent": "svAIFA",
+       "ty": "simple_table_cell"
+      },
+      "RHeLVS": {
+       "children": "D-2KbT",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "RHeLVS",
+       "parent": "04enQj",
+       "ty": "simple_table_cell"
+      },
+      "RVqGq_": {
+       "children": "YkIkb8",
+       "data": {},
+       "external_id": "DIGH1s",
+       "external_type": "text",
+       "id": "RVqGq_",
+       "parent": "qFYLwO",
+       "ty": "paragraph"
+      },
+      "RhH0vp": {
+       "children": "xc7g-_",
+       "data": {},
+       "external_id": "Naofwg",
+       "external_type": "text",
+       "id": "RhH0vp",
+       "parent": "kNeVV3",
+       "ty": "paragraph"
+      },
+      "Rw4jZb": {
+       "children": "4QR8p4",
+       "data": {},
+       "external_id": "7-8OO2",
+       "external_type": "text",
+       "id": "Rw4jZb",
+       "parent": "jVr4FI",
+       "ty": "paragraph"
+      },
+      "Rx5lGQ": {
+       "children": "f-6Nrh",
+       "data": {},
+       "external_id": "xUrjSH",
+       "external_type": "text",
+       "id": "Rx5lGQ",
+       "parent": "zpF0Xf",
+       "ty": "paragraph"
+      },
+      "S-A7di": {
+       "children": "4_UJb-",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "S-A7di",
+       "parent": "nSMgLo",
+       "ty": "simple_table_cell"
+      },
+      "S4HYKS": {
+       "children": "t3r6yx",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "S4HYKS",
+       "parent": "OKCfTm",
+       "ty": "simple_table_cell"
+      },
+      "SGsL6z": {
+       "children": "LXwB7V",
+       "data": {},
+       "external_id": "MrHkg9",
+       "external_type": "text",
+       "id": "SGsL6z",
+       "parent": "_ESJmq",
+       "ty": "paragraph"
+      },
+      "SYF_dH": {
+       "children": "4xmLnH",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "SYF_dH",
+       "parent": "ktVLWQ",
+       "ty": "simple_table_cell"
+      },
+      "SzVhRo": {
+       "children": "sEQTjZ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "SzVhRo",
+       "parent": "Ebvvyn",
+       "ty": "simple_table_cell"
+      },
+      "TO00CA": {
+       "children": "BodQ37",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "TO00CA",
+       "parent": "04enQj",
+       "ty": "simple_table_cell"
+      },
+      "Tr0kCB": {
+       "children": "voF4G-",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Tr0kCB",
+       "parent": "Tu5xy_",
+       "ty": "simple_table_cell"
+      },
+      "Tu5xy_": {
+       "children": "ohkYTD",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Tu5xy_",
+       "parent": "IqBFhu",
+       "ty": "simple_table_row"
+      },
+      "TvteLr": {
+       "children": "HNwqVU",
+       "data": {},
+       "external_id": "Vz1FD4",
+       "external_type": "text",
+       "id": "TvteLr",
+       "parent": "p_xt1C",
+       "ty": "paragraph"
+      },
+      "UaTKW8": {
+       "children": "BsfJ-9",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "UaTKW8",
+       "parent": "1DL2Mz",
+       "ty": "simple_table_cell"
+      },
+      "Up24gY": {
+       "children": "RDUZuV",
+       "data": {},
+       "external_id": "XxCuXC",
+       "external_type": "text",
+       "id": "Up24gY",
+       "parent": "iLSFuD",
+       "ty": "paragraph"
+      },
+      "UpK5fA": {
+       "children": "Tqp73Y",
+       "data": {},
+       "external_id": "zwFYM-",
+       "external_type": "text",
+       "id": "UpK5fA",
+       "parent": "DyiaCa",
+       "ty": "paragraph"
+      },
+      "UsYJKq": {
+       "children": "yy9ytL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "UsYJKq",
+       "parent": "ktVLWQ",
+       "ty": "simple_table_cell"
+      },
+      "VXTP5s": {
+       "children": "YLhcCS",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "VXTP5s",
+       "parent": "dxbzVQ",
+       "ty": "simple_table_row"
+      },
+      "VphQrl": {
+       "children": "YTYF3X",
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: developed knowledge in software design and think more holistically when writing code"
+         }
+        ]
+       },
+       "external_id": "rsrmeH",
+       "external_type": "text",
+       "id": "VphQrl",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "quote"
+      },
+      "W36ah3": {
+       "children": "SCl8za",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "W36ah3",
+       "parent": "9OznHD",
+       "ty": "simple_table_cell"
+      },
+      "W6KDtJ": {
+       "children": "XbK9as",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "W6KDtJ",
+       "parent": "VXTP5s",
+       "ty": "simple_table_cell"
+      },
+      "WB8wtd": {
+       "children": "LHBXsU",
+       "data": {},
+       "external_id": "w_KdOm",
+       "external_type": "text",
+       "id": "WB8wtd",
+       "parent": "bGtBic",
+       "ty": "paragraph"
+      },
+      "WM2YRz": {
+       "children": "V169BQ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "WM2YRz",
+       "parent": "IqBFhu",
+       "ty": "simple_table_row"
+      },
+      "WgrL_s": {
+       "children": "rR2PEr",
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: Skillfully manage projects, people, and budget"
+         }
+        ]
+       },
+       "external_id": "sjeFKs",
+       "external_type": "text",
+       "id": "WgrL_s",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "quote"
+      },
+      "XAthZ0": {
+       "children": "plCUcT",
+       "data": {},
+       "external_id": "5AEpCV",
+       "external_type": "text",
+       "id": "XAthZ0",
+       "parent": "TO00CA",
+       "ty": "paragraph"
+      },
+      "Xrti11": {
+       "children": "aJtmJB",
+       "data": {},
+       "external_id": "gMJy4q",
+       "external_type": "text",
+       "id": "Xrti11",
+       "parent": "LPzei0",
+       "ty": "paragraph"
+      },
+      "YF1DBM": {
+       "children": "oeJySc",
+       "data": {},
+       "external_id": "Mh1nW2",
+       "external_type": "text",
+       "id": "YF1DBM",
+       "parent": "UaTKW8",
+       "ty": "paragraph"
+      },
+      "ZM0mil": {
+       "children": "PPa2mb",
+       "data": {
+        "delta": [
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "Q: Professional and personal skills you want to develop next quarter"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "YpRrUS",
+       "external_type": "text",
+       "id": "ZM0mil",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "_ESJmq": {
+       "children": "AYL0RA",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "_ESJmq",
+       "parent": "VXTP5s",
+       "ty": "simple_table_cell"
+      },
+      "_Giujn": {
+       "children": "SAxHcV",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "_Giujn",
+       "parent": "WM2YRz",
+       "ty": "simple_table_cell"
+      },
+      "aAl0pA": {
+       "children": "NCqDaR",
+       "data": {
+        "delta": [
+         {
+          "insert": "4. Skills development"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "2dK0tp",
+       "external_type": "text",
+       "id": "aAl0pA",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "aEfxJu": {
+       "children": "CLCjCn",
+       "data": {},
+       "external_id": "74mQ_X",
+       "external_type": "text",
+       "id": "aEfxJu",
+       "parent": "QcWniP",
+       "ty": "paragraph"
+      },
+      "aVTLmY": {
+       "children": "nCxiox",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "aVTLmY",
+       "parent": "WM2YRz",
+       "ty": "simple_table_cell"
+      },
+      "amLYDH": {
+       "children": "0ajR1V",
+       "data": {},
+       "external_id": "3yIkLp",
+       "external_type": "text",
+       "id": "amLYDH",
+       "parent": "6cSgt0",
+       "ty": "paragraph"
+      },
+      "amt5n0": {
+       "children": "Wo5V8X",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "amt5n0",
+       "parent": "1DL2Mz",
+       "ty": "simple_table_cell"
+      },
+      "awGHeU": {
+       "children": "DDjZ6p",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "awGHeU",
+       "parent": "xTH2_C",
+       "ty": "simple_table_cell"
+      },
+      "bGtBic": {
+       "children": "Llk-bd",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "bGtBic",
+       "parent": "Tu5xy_",
+       "ty": "simple_table_cell"
+      },
+      "bJAUz6": {
+       "children": "DePyks",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "bJAUz6",
+       "parent": "Ebvvyn",
+       "ty": "simple_table_cell"
+      },
+      "cP6LVc": {
+       "children": "koPTAc",
+       "data": {},
+       "external_id": "Tg4DA4",
+       "external_type": "text",
+       "id": "cP6LVc",
+       "parent": "genrqM",
+       "ty": "paragraph"
+      },
+      "cRhp4g": {
+       "children": "5Aq_-i",
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: improve project management skills to follow through a project to finish the last mile"
+         }
+        ]
+       },
+       "external_id": "c6ju9N",
+       "external_type": "text",
+       "id": "cRhp4g",
+       "parent": "jetS8R",
+       "ty": "paragraph"
+      },
+      "dAgrCf": {
+       "children": "dtKUxZ",
+       "data": {},
+       "external_id": "-WYUd_",
+       "external_type": "text",
+       "id": "dAgrCf",
+       "parent": "RH-wBb",
+       "ty": "paragraph"
+      },
+      "dTK8I6": {
+       "children": "UK-ii7",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "dTK8I6",
+       "parent": "Ebvvyn",
+       "ty": "simple_table_cell"
+      },
+      "dxbzVQ": {
+       "children": "lc4d_O",
+       "data": {
+        "column_widths": {
+         "0": 293.28125
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {}
+       },
+       "external_id": "ivSilP",
+       "external_type": "text",
+       "id": "dxbzVQ",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "simple_table"
+      },
+      "egBY7i": {
+       "children": "v5VcrJ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "egBY7i",
+       "parent": "xTH2_C",
+       "ty": "simple_table_cell"
+      },
+      "fKz8ON": {
+       "children": "l82G6P",
+       "data": {
+        "delta": [
+         {
+          "insert": "Q: "
+         },
+         {
+          "attributes": {
+           "bold": true
+          },
+          "insert": "You and your manager"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "LAehY1",
+       "external_type": "text",
+       "id": "fKz8ON",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "f_Ozjo": {
+       "children": "IWSgIa",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "f_Ozjo",
+       "parent": "1DL2Mz",
+       "ty": "simple_table_cell"
+      },
+      "fkZvc9": {
+       "children": "TqSrw5",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "fkZvc9",
+       "parent": "OKCfTm",
+       "ty": "simple_table_cell"
+      },
+      "genrqM": {
+       "children": "CwA_Hp",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "genrqM",
+       "parent": "3qaHcU",
+       "ty": "simple_table_cell"
+      },
+      "hGuU0-": {
+       "children": "loyxLb",
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: Need manager's support in preparation to become a Project Manager"
+         }
+        ]
+       },
+       "external_id": "fyQhVQ",
+       "external_type": "text",
+       "id": "hGuU0-",
+       "parent": "5lEGA8",
+       "ty": "paragraph"
+      },
+      "hKSNde": {
+       "children": "KDRV1m",
+       "data": {
+        "delta": [
+         {
+          "insert": "2. Teamwork"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "he10yk",
+       "external_type": "text",
+       "id": "hKSNde",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "hbQGIS": {
+       "children": "U3SyoF",
+       "data": {},
+       "external_id": "YDo-pn",
+       "external_type": "text",
+       "id": "hbQGIS",
+       "parent": "indChp",
+       "ty": "paragraph"
+      },
+      "hkM0Bn": {
+       "children": "eufQHQ",
+       "data": {},
+       "external_id": "rrTgAb",
+       "external_type": "text",
+       "id": "hkM0Bn",
+       "parent": "S-A7di",
+       "ty": "paragraph"
+      },
+      "iA7LDk": {
+       "children": "CvOvzA",
+       "data": {},
+       "external_id": "ZMQS-V",
+       "external_type": "text",
+       "id": "iA7LDk",
+       "parent": "amt5n0",
+       "ty": "paragraph"
+      },
+      "iDIiHT": {
+       "children": "LW8OgB",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "iDIiHT",
+       "parent": "ktVLWQ",
+       "ty": "simple_table_cell"
+      },
+      "iLSFuD": {
+       "children": "DoHXq1",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "iLSFuD",
+       "parent": "3qaHcU",
+       "ty": "simple_table_cell"
+      },
+      "ifFmrq": {
+       "children": "VyaA61",
+       "data": {},
+       "external_id": "_JSrXt",
+       "external_type": "text",
+       "id": "ifFmrq",
+       "parent": "AEXgEi",
+       "ty": "paragraph"
+      },
+      "indChp": {
+       "children": "xkT77p",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "indChp",
+       "parent": "OKCfTm",
+       "ty": "simple_table_cell"
+      },
+      "jVr4FI": {
+       "children": "nXS4R-",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "jVr4FI",
+       "parent": "VXTP5s",
+       "ty": "simple_table_cell"
+      },
+      "jetS8R": {
+       "children": "gBKR2E",
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: improve project management skills to follow through a project to finish the last mile"
+         }
+        ]
+       },
+       "external_id": "DwPkag",
+       "external_type": "text",
+       "id": "jetS8R",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "quote"
+      },
+      "jnMHCL": {
+       "children": "PKvb91",
+       "data": {},
+       "external_id": "59RfZY",
+       "external_type": "text",
+       "id": "jnMHCL",
+       "parent": "OWKSn0",
+       "ty": "paragraph"
+      },
+      "jvWiZw": {
+       "children": "yNrc8S",
+       "data": {},
+       "external_id": "OvBxuu",
+       "external_type": "text",
+       "id": "jvWiZw",
+       "parent": "tbIOHs",
+       "ty": "paragraph"
+      },
+      "kNeVV3": {
+       "children": "lPiggw",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "kNeVV3",
+       "parent": "9OznHD",
+       "ty": "simple_table_cell"
+      },
+      "kZP2hn": {
+       "children": "5ELNho",
+       "data": {
+        "delta": []
+       },
+       "external_id": "dkKEk7",
+       "external_type": "text",
+       "id": "kZP2hn",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "k_aSSq": {
+       "children": "Lt3MJT",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "k_aSSq",
+       "parent": "1DL2Mz",
+       "ty": "simple_table_cell"
+      },
+      "ktVLWQ": {
+       "children": "TLBm-m",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ktVLWQ",
+       "parent": "dxbzVQ",
+       "ty": "simple_table_row"
+      },
+      "lMDB9b": {
+       "children": "4ww8Td",
+       "data": {},
+       "external_id": "7O-Uo3",
+       "external_type": "text",
+       "id": "lMDB9b",
+       "parent": "bJAUz6",
+       "ty": "paragraph"
+      },
+      "ldR6bc": {
+       "children": "doZN1y",
+       "data": {},
+       "external_id": "HZcnRL",
+       "external_type": "text",
+       "id": "ldR6bc",
+       "parent": "KG9Ff8",
+       "ty": "paragraph"
+      },
+      "lkUy3n": {
+       "children": "X4uJQL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "lkUy3n",
+       "parent": "svAIFA",
+       "ty": "simple_table_cell"
+      },
+      "mC9RjO": {
+       "children": "0gzbAc",
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: Skillfully manage projects, people, and budget"
+         }
+        ]
+       },
+       "external_id": "fMWgdH",
+       "external_type": "text",
+       "id": "mC9RjO",
+       "parent": "WgrL_s",
+       "ty": "paragraph"
+      },
+      "mdQwtr": {
+       "children": "UbVUSW",
+       "data": {},
+       "external_id": "qV0dJT",
+       "external_type": "text",
+       "id": "mdQwtr",
+       "parent": "B3IIdo",
+       "ty": "paragraph"
+      },
+      "mgA5Pm": {
+       "children": "DSkB61",
+       "data": {},
+       "external_id": "buAZu9",
+       "external_type": "text",
+       "id": "mgA5Pm",
+       "parent": "7xeG9x",
+       "ty": "paragraph"
+      },
+      "nIpDjI": {
+       "children": "ahbZC1",
+       "data": {},
+       "external_id": "5fuKHm",
+       "external_type": "text",
+       "id": "nIpDjI",
+       "parent": "MMbgYW",
+       "ty": "paragraph"
+      },
+      "nSMgLo": {
+       "children": "DJddZj",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "nSMgLo",
+       "parent": "pU9rlj",
+       "ty": "simple_table_row"
+      },
+      "oSHjRZ": {
+       "children": "F8K0fU",
+       "data": {},
+       "external_id": "CxYf25",
+       "external_type": "text",
+       "id": "oSHjRZ",
+       "parent": "AC0TB4",
+       "ty": "paragraph"
+      },
+      "ojyFtp": {
+       "children": "7LmsLI",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ojyFtp",
+       "parent": "OKCfTm",
+       "ty": "simple_table_cell"
+      },
+      "pFkJ41": {
+       "children": "rMwJ0L",
+       "data": {},
+       "external_id": "q0NbV0",
+       "external_type": "text",
+       "id": "pFkJ41",
+       "parent": "aVTLmY",
+       "ty": "paragraph"
+      },
+      "pMwyy7": {
+       "children": "oCLQac",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "pMwyy7",
+       "parent": "Tu5xy_",
+       "ty": "simple_table_cell"
+      },
+      "pU9rlj": {
+       "children": "0uOcbB",
+       "data": {
+        "column_widths": {
+         "0": 293.359375
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {}
+       },
+       "external_id": "Smrq1U",
+       "external_type": "text",
+       "id": "pU9rlj",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "simple_table"
+      },
+      "p_xt1C": {
+       "children": "HGdYAQ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "p_xt1C",
+       "parent": "OKCfTm",
+       "ty": "simple_table_cell"
+      },
+      "qFYLwO": {
+       "children": "bnWd4F",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "qFYLwO",
+       "parent": "1DL2Mz",
+       "ty": "simple_table_cell"
+      },
+      "qP_Boz": {
+       "children": "zbHf6_",
+       "data": {
+        "delta": []
+       },
+       "external_id": "1Q6mlW",
+       "external_type": "text",
+       "id": "qP_Boz",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "paragraph"
+      },
+      "qa-kFW": {
+       "children": "OsqJ3N",
+       "data": {},
+       "external_id": "uiswUr",
+       "external_type": "text",
+       "id": "qa-kFW",
+       "parent": "PJvxg5",
+       "ty": "paragraph"
+      },
+      "qb7ZGC": {
+       "children": "qAkcDJ",
+       "data": {
+        "delta": [
+         {
+          "insert": "A:"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "21YXEX",
+       "external_type": "text",
+       "id": "qb7ZGC",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "qhM7zr": {
+       "children": "mt9Ltp",
+       "data": {
+        "delta": [
+         {
+          "insert": "A:"
+         }
+        ],
+        "level": 3
+       },
+       "external_id": "swXp0h",
+       "external_type": "text",
+       "id": "qhM7zr",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "qsUe4u": {
+       "children": "VIOVFH",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "qsUe4u",
+       "parent": "nSMgLo",
+       "ty": "simple_table_cell"
+      },
+      "rZDJdU": {
+       "children": "e6Gwg_",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "rZDJdU",
+       "parent": "xTH2_C",
+       "ty": "simple_table_cell"
+      },
+      "rslbuA": {
+       "children": "iOGAOF",
+       "data": {
+        "delta": [
+         {
+          "insert": "5. Feedback to your manager"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "D6zxIG",
+       "external_type": "text",
+       "id": "rslbuA",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "rzvqzC": {
+       "children": "WuSs7N",
+       "data": {},
+       "external_id": "06v6eB",
+       "external_type": "text",
+       "id": "rzvqzC",
+       "parent": "W36ah3",
+       "ty": "paragraph"
+      },
+      "sU3InR": {
+       "children": "7Q1m6T",
+       "data": {},
+       "external_id": "HhHM4T",
+       "external_type": "text",
+       "id": "sU3InR",
+       "parent": "S4HYKS",
+       "ty": "paragraph"
+      },
+      "sZwXAP": {
+       "children": "LGPopc",
+       "data": {
+        "delta": [
+         {
+          "insert": "1. Quality of Deliverables"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "HyCyLQ",
+       "external_type": "text",
+       "id": "sZwXAP",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "svAIFA": {
+       "children": "nv1tn4",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "svAIFA",
+       "parent": "IqBFhu",
+       "ty": "simple_table_row"
+      },
+      "tbIOHs": {
+       "children": "GBkNhi",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "tbIOHs",
+       "parent": "nSMgLo",
+       "ty": "simple_table_cell"
+      },
+      "tdTn7D": {
+       "children": "NdYg9k",
+       "data": {},
+       "external_id": "mVlnlk",
+       "external_type": "text",
+       "id": "tdTn7D",
+       "parent": "DSp7bu",
+       "ty": "paragraph"
+      },
+      "tz5z7_": {
+       "children": "JFFF5D",
+       "data": {
+        "delta": [
+         {
+          "insert": "Ex: developed knowledge in software design and think more holistically when writing code"
+         }
+        ]
+       },
+       "external_id": "huNE3S",
+       "external_type": "text",
+       "id": "tz5z7_",
+       "parent": "VphQrl",
+       "ty": "paragraph"
+      },
+      "v94zb_": {
+       "children": "ZaW1n6",
+       "data": {},
+       "external_id": "D92sTh",
+       "external_type": "text",
+       "id": "v94zb_",
+       "parent": "f_Ozjo",
+       "ty": "paragraph"
+      },
+      "vfhPpU": {
+       "children": "MU6Mge",
+       "data": {},
+       "external_id": "5ERIVo",
+       "external_type": "text",
+       "id": "vfhPpU",
+       "parent": "k_aSSq",
+       "ty": "paragraph"
+      },
+      "vhx4Rr": {
+       "children": "cvFdHj",
+       "data": {},
+       "external_id": "pIh72v",
+       "external_type": "text",
+       "id": "vhx4Rr",
+       "parent": "rZDJdU",
+       "ty": "paragraph"
+      },
+      "vlZ7-c": {
+       "children": "e4Iku-",
+       "data": {},
+       "external_id": "5MXjb6",
+       "external_type": "text",
+       "id": "vlZ7-c",
+       "parent": "whmlAD",
+       "ty": "paragraph"
+      },
+      "vmKG72": {
+       "children": "SfnZhi",
+       "data": {},
+       "external_id": "bCBizp",
+       "external_type": "text",
+       "id": "vmKG72",
+       "parent": "W6KDtJ",
+       "ty": "paragraph"
+      },
+      "whmlAD": {
+       "children": "pf3Zv3",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "whmlAD",
+       "parent": "9OznHD",
+       "ty": "simple_table_cell"
+      },
+      "xTH2_C": {
+       "children": "iNdJU0",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "xTH2_C",
+       "parent": "IqBFhu",
+       "ty": "simple_table_row"
+      },
+      "xuv73n": {
+       "children": "zoMWHJ",
+       "data": {},
+       "external_id": "Bm9Ey8",
+       "external_type": "text",
+       "id": "xuv73n",
+       "parent": "dTK8I6",
+       "ty": "paragraph"
+      },
+      "y_8bQM": {
+       "children": "gMqEkL",
+       "data": {},
+       "external_id": "FW-DDh",
+       "external_type": "text",
+       "id": "y_8bQM",
+       "parent": "zd3Yw7",
+       "ty": "paragraph"
+      },
+      "yiDhmF": {
+       "children": "tAC9Rm",
+       "data": {},
+       "external_id": "GVZNpt",
+       "external_type": "text",
+       "id": "yiDhmF",
+       "parent": "OX_7TL",
+       "ty": "paragraph"
+      },
+      "z2Vebx": {
+       "children": "54YtJI",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "z2Vebx",
+       "parent": "svAIFA",
+       "ty": "simple_table_cell"
+      },
+      "zd3Yw7": {
+       "children": "P6VFfn",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "zd3Yw7",
+       "parent": "xTH2_C",
+       "ty": "simple_table_cell"
+      },
+      "zeCpX6": {
+       "children": "1Q1om2",
+       "data": {
+        "delta": [
+         {
+          "insert": "6. Career development in the long-term"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "69BXnR",
+       "external_type": "text",
+       "id": "zeCpX6",
+       "parent": "6161788b-c3ee-5d81-be1f-6b774f566362",
+       "ty": "heading"
+      },
+      "zpF0Xf": {
+       "children": "mRrjxv",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "zpF0Xf",
+       "parent": "Tu5xy_",
+       "ty": "simple_table_cell"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "-4FDnk": [
+        "UpK5fA"
+       ],
+       "0ajR1V": [],
+       "0gzbAc": [],
+       "0s2oOf": [
+        "mdQwtr"
+       ],
+       "0uOcbB": [
+        "nSMgLo",
+        "Ebvvyn",
+        "9OznHD",
+        "OKCfTm"
+       ],
+       "1Q1om2": [],
+       "24Jt7I": [
+        "qa-kFW"
+       ],
+       "2HFjB3": [],
+       "2Ko2JL": [
+        "jnMHCL"
+       ],
+       "42CUhB": [
+        "TO00CA",
+        "7xeG9x",
+        "J5_Kb_",
+        "RHeLVS",
+        "OWKSn0"
+       ],
+       "4QR8p4": [],
+       "4_UJb-": [
+        "hkM0Bn"
+       ],
+       "4n3eET": [],
+       "4ww8Td": [],
+       "4xmLnH": [
+        "7pvZZi"
+       ],
+       "54YtJI": [
+        "HbQyVE"
+       ],
+       "5Aq_-i": [],
+       "5ELNho": [],
+       "5vucB_": [],
+       "6161788b-c3ee-5d81-be1f-6b774f566362": [
+        "sZwXAP",
+        "DR_6jm",
+        "IqBFhu",
+        "hKSNde",
+        "pU9rlj",
+        "kZP2hn",
+        "01ROec",
+        "dxbzVQ",
+        "7MgMqR",
+        "aAl0pA",
+        "PvDzSm",
+        "VphQrl",
+        "QO23zo",
+        "11U-hx",
+        "ZM0mil",
+        "jetS8R",
+        "-b-_v-",
+        "Lhtfmx",
+        "qP_Boz",
+        "rslbuA",
+        "fKz8ON",
+        "JsyK6r",
+        "WgrL_s",
+        "qhM7zr",
+        "7NWz83",
+        "81IsiW",
+        "zeCpX6",
+        "7SwzfL",
+        "5lEGA8",
+        "qb7ZGC"
+       ],
+       "656r8Q": [],
+       "68QJJF": [
+        "LPzei0",
+        "bJAUz6",
+        "SzVhRo",
+        "AXxE1P",
+        "dTK8I6"
+       ],
+       "7LmsLI": [
+        "BvS1LO"
+       ],
+       "7Q1m6T": [],
+       "7UDo5c": [
+        "D8gFwM"
+       ],
+       "8bQMii": [],
+       "8l9OVh": [
+        "38U7Mc"
+       ],
+       "9VwW-7": [],
+       "9m5KUo": [],
+       "AYL0RA": [
+        "SGsL6z"
+       ],
+       "B6VKBj": [],
+       "BodQ37": [
+        "XAthZ0"
+       ],
+       "BsfJ-9": [
+        "YF1DBM"
+       ],
+       "CLCjCn": [],
+       "CNCEQA": [
+        "ifFmrq"
+       ],
+       "CvOvzA": [],
+       "CwA_Hp": [
+        "cP6LVc"
+       ],
+       "D-2KbT": [
+        "0CpJbf"
+       ],
+       "DDjZ6p": [
+        "Ni-Ikn"
+       ],
+       "DJddZj": [
+        "qsUe4u",
+        "QcWniP",
+        "tbIOHs",
+        "MMbgYW",
+        "S-A7di"
+       ],
+       "DSkB61": [],
+       "DePyks": [
+        "lMDB9b"
+       ],
+       "DoHXq1": [
+        "Up24gY"
+       ],
+       "Dqw4kt": [],
+       "E7zMTG": [
+        "yiDhmF"
+       ],
+       "EfWCDg": [],
+       "F8K0fU": [],
+       "GBWJKQ": [],
+       "GBkNhi": [
+        "jvWiZw"
+       ],
+       "GHy_1c": [],
+       "GWr2Ep": [],
+       "HGdYAQ": [
+        "TvteLr"
+       ],
+       "HNwqVU": [],
+       "HvyCer": [],
+       "IWSgIa": [
+        "v94zb_"
+       ],
+       "JFFF5D": [],
+       "KDRV1m": [],
+       "KNOQyj": [
+        "AEXgEi",
+        "whmlAD",
+        "kNeVV3",
+        "W36ah3",
+        "PJvxg5"
+       ],
+       "LGPopc": [],
+       "LHBXsU": [],
+       "LW8OgB": [
+        "QQXuvN"
+       ],
+       "LXwB7V": [],
+       "Llk-bd": [
+        "WB8wtd"
+       ],
+       "Lt3MJT": [
+        "vfhPpU"
+       ],
+       "MU6Mge": [],
+       "N8WhmG": [
+        "f_Ozjo",
+        "UaTKW8",
+        "qFYLwO",
+        "amt5n0",
+        "k_aSSq"
+       ],
+       "NCqDaR": [],
+       "NdYg9k": [],
+       "NyfCBl": [
+        "oSHjRZ"
+       ],
+       "OsqJ3N": [],
+       "P3eOcA": [
+        "Xrti11"
+       ],
+       "P6VFfn": [
+        "y_8bQM"
+       ],
+       "PKvb91": [],
+       "PPa2mb": [],
+       "PeGL1Z": [],
+       "PiCAx9": [
+        "JJ5h7V"
+       ],
+       "QKkJVG": [],
+       "RDUZuV": [],
+       "Rr8d5g": [],
+       "Ru0CQu": [],
+       "SAxHcV": [
+        "Cgb0a5"
+       ],
+       "SCl8za": [
+        "rzvqzC"
+       ],
+       "SMvSXC": [
+        "ldR6bc"
+       ],
+       "SfnZhi": [],
+       "SrIHTS": [
+        "tdTn7D"
+       ],
+       "THkOUC": [],
+       "TLBm-m": [
+        "iDIiHT",
+        "8tfK--",
+        "UsYJKq",
+        "SYF_dH",
+        "KG9Ff8"
+       ],
+       "TqSrw5": [
+        "MOJXih"
+       ],
+       "Tqp73Y": [],
+       "U3SyoF": [],
+       "UK-ii7": [
+        "xuv73n"
+       ],
+       "UbVUSW": [],
+       "UjE94j": [],
+       "V169BQ": [
+        "_Giujn",
+        "DSp7bu",
+        "Earp7c",
+        "aVTLmY",
+        "OX_7TL"
+       ],
+       "VIOVFH": [
+        "9Re8i7"
+       ],
+       "VyaA61": [],
+       "WUtefh": [
+        "0iWNup"
+       ],
+       "Wo5V8X": [
+        "iA7LDk"
+       ],
+       "WuSs7N": [],
+       "X4uJQL": [
+        "JnN4Bh"
+       ],
+       "XYMzRn": [],
+       "XbK9as": [
+        "vmKG72"
+       ],
+       "YLUEDQ": [],
+       "YLhcCS": [
+        "I7mCp9",
+        "Hi39AJ",
+        "jVr4FI",
+        "W6KDtJ",
+        "_ESJmq"
+       ],
+       "YS9Sxo": [
+        "IWbglg"
+       ],
+       "YTYF3X": [
+        "tz5z7_"
+       ],
+       "YkIkb8": [],
+       "Z-kgHX": [
+        "ojyFtp",
+        "fkZvc9",
+        "p_xt1C",
+        "indChp",
+        "S4HYKS"
+       ],
+       "ZaW1n6": [],
+       "_bjk_A": [
+        "FDCAh-"
+       ],
+       "aJtmJB": [],
+       "ahbZC1": [],
+       "bNU42m": [],
+       "bYnWhv": [],
+       "bd1hfr": [],
+       "bnWd4F": [
+        "RVqGq_"
+       ],
+       "cvFdHj": [],
+       "d-HjrS": [],
+       "dlJeoQ": [
+        "nIpDjI"
+       ],
+       "doZN1y": [],
+       "dtKUxZ": [],
+       "e4Iku-": [],
+       "e6Gwg_": [
+        "vhx4Rr"
+       ],
+       "eufQHQ": [],
+       "f-6Nrh": [],
+       "gBKR2E": [
+        "cRhp4g"
+       ],
+       "gMqEkL": [],
+       "hgC8NR": [],
+       "iNdJU0": [
+        "awGHeU",
+        "4SmE7u",
+        "zd3Yw7",
+        "rZDJdU",
+        "egBY7i"
+       ],
+       "iOGAOF": [],
+       "jndkK4": [],
+       "kdr6cZ": [
+        "1DL2Mz",
+        "Tu5xy_",
+        "xTH2_C",
+        "svAIFA",
+        "3qaHcU",
+        "WM2YRz"
+       ],
+       "koPTAc": [],
+       "l82G6P": [],
+       "lPiggw": [
+        "RhH0vp"
+       ],
+       "lc4d_O": [
+        "04enQj",
+        "ktVLWQ",
+        "VXTP5s"
+       ],
+       "loyxLb": [],
+       "m53_2E": [],
+       "mRrjxv": [
+        "Rx5lGQ"
+       ],
+       "mt9Ltp": [],
+       "nCxiox": [
+        "pFkJ41"
+       ],
+       "nXS4R-": [
+        "Rw4jZb"
+       ],
+       "nv1tn4": [
+        "6cSgt0",
+        "lkUy3n",
+        "B3IIdo",
+        "z2Vebx",
+        "RH-wBb"
+       ],
+       "oCLQac": [
+        "K5ApIE"
+       ],
+       "oPBUAc": [],
+       "oeJySc": [],
+       "ohkYTD": [
+        "pMwyy7",
+        "Tr0kCB",
+        "5snuQH",
+        "zpF0Xf",
+        "bGtBic"
+       ],
+       "pVeTaE": [
+        "hGuU0-"
+       ],
+       "pf3Zv3": [
+        "vlZ7-c"
+       ],
+       "plCUcT": [],
+       "qAkcDJ": [],
+       "qf_emE": [],
+       "qpiNYh": [
+        "HSUqSF"
+       ],
+       "rMwJ0L": [],
+       "rR2PEr": [
+        "mC9RjO"
+       ],
+       "rvO2x0": [],
+       "sEQTjZ": [
+        "D3bapk"
+       ],
+       "svYnfK": [
+        "mgA5Pm"
+       ],
+       "t3r6yx": [
+        "sU3InR"
+       ],
+       "tAC9Rm": [],
+       "tgzkr5": [
+        "1cQcc1"
+       ],
+       "tkwMS8": [
+        "2q3gG-"
+       ],
+       "u8NW4R": [
+        "dAgrCf"
+       ],
+       "uaAGfT": [],
+       "v5VcrJ": [
+        "CL1Y7M"
+       ],
+       "vVMbs8": [],
+       "voF4G-": [
+        "6bFTzb"
+       ],
+       "wT4cH0": [],
+       "xc7g-_": [],
+       "xdtUDA": [
+        "aEfxJu"
+       ],
+       "xkT77p": [
+        "hbQGIS"
+       ],
+       "yD8bk_": [
+        "amLYDH"
+       ],
+       "yNrc8S": [],
+       "yy9ytL": [
+        "26sSkA"
+       ],
+       "z0D6ow": [
+        "genrqM",
+        "AC0TB4",
+        "iLSFuD",
+        "DyiaCa",
+        "F7g5yK"
+       ],
+       "zbHf6_": [],
+       "zoMWHJ": [],
+       "zxgtSY": []
+      },
+      "text_map": {
+       "-WYUd_": "[]",
+       "06v6eB": "[]",
+       "1Q6mlW": "[]",
+       "21YXEX": "[{\"insert\":\"A:\"}]",
+       "2FFx9n": "[]",
+       "2dK0tp": "[{\"insert\":\"4. Skills development\"}]",
+       "2mkrTZ": "[]",
+       "3lwScW": "[]",
+       "3yIkLp": "[{\"insert\":\"Follow-through: continue your project to its conclusion; get the last-mile done well\"}]",
+       "4T8U3a": "[{\"insert\":\"Generates ideas and gives input that improves our product / business operations\"}]",
+       "4jAL8I": "[{\"insert\":\"Propose/use digital technologies to change internal processes\"}]",
+       "59RfZY": "[{\"insert\":\"Comments\",\"attributes\":{\"bold\":true}}]",
+       "5AEpCV": "[{\"insert\":\"Descriptions\",\"attributes\":{\"bold\":true}}]",
+       "5ERIVo": "[{\"insert\":\"Comments\",\"attributes\":{\"bold\":true}}]",
+       "5MXjb6": "[]",
+       "5fuKHm": "[{\"insert\":\"Manager Evaluation Score (out of 10)\",\"attributes\":{\"bold\":true}}]",
+       "5jk_en": "[]",
+       "69BXnR": "[{\"insert\":\"6. Career development in the long-term\"}]",
+       "7-8OO2": "[]",
+       "74mQ_X": "[{\"insert\":\"Self-evaluated Score (out of 10)\",\"attributes\":{\"bold\":true}}]",
+       "7O-Uo3": "[]",
+       "9q38zV": "[]",
+       "Bm9Ey8": "[]",
+       "CEAkLT": "[{\"insert\":\"[AppFlowy Values] Aim high & iterate \"}]",
+       "CxYf25": "[]",
+       "D6zxIG": "[{\"insert\":\"5. Feedback to your manager\"}]",
+       "D92sTh": "[{\"insert\":\"Descriptions\",\"attributes\":{\"bold\":true}}]",
+       "DIGH1s": "[{\"insert\":\"Your Justifications\",\"attributes\":{\"bold\":true}}]",
+       "DwPkag": "[{\"insert\":\"Ex: improve project management skills to follow through a project to finish the last mile\"}]",
+       "ExJc4g": "[]",
+       "FW-DDh": "[]",
+       "GVZNpt": "[]",
+       "GxsyOn": "[{\"insert\":\"Accuracy: quality of your deliverable\"}]",
+       "H1CtHK": "[{\"insert\":\"Manager Evaluation Score (out of 10)\",\"attributes\":{\"bold\":true}}]",
+       "HAOKM4": "[{\"insert\":\"Consistency: constantly deliver high quality work\"}]",
+       "HZcnRL": "[]",
+       "H_kFmR": "[]",
+       "HhHM4T": "[]",
+       "HiZSfu": "[]",
+       "HyCyLQ": "[{\"insert\":\"1. Quality of Deliverables\"}]",
+       "KWiyLC": "[]",
+       "LAehY1": "[{\"insert\":\"Q: \"},{\"insert\":\"You and your manager\",\"attributes\":{\"bold\":true}}]",
+       "LvrYcf": "[]",
+       "Mh1nW2": "[{\"insert\":\"Self-evaluated Score (out of 10)\",\"attributes\":{\"bold\":true}}]",
+       "MrHkg9": "[]",
+       "Naofwg": "[]",
+       "OvBxuu": "[{\"insert\":\"Your Justifications\",\"attributes\":{\"bold\":true}}]",
+       "P9l9w5": "[{\"insert\":\"Descriptions\",\"attributes\":{\"bold\":true}}]",
+       "PtoS1T": "[{\"insert\":\"Your Justifications\",\"attributes\":{\"bold\":true}}]",
+       "Q_suFZ": "[{\"insert\":\"Ex: Need manager's support in preparation to become a Project Manager\"}]",
+       "Rm6QkO": "[]",
+       "T4zAsT": "[]",
+       "Tg4DA4": "[{\"insert\":\"Meets deadlines: deliver your work as promised and properly manage your stakeholders’ expectation on the deadlines\"}]",
+       "Uq1Wbg": "[]",
+       "VcCY1h": "[{\"insert\":\"Q: Professional and personal skills you have developed in this quarter\"}]",
+       "Vz1FD4": "[]",
+       "XxCuXC": "[]",
+       "YDo-pn": "[]",
+       "YpRrUS": "[{\"insert\":\"Q: Professional and personal skills you want to develop next quarter\",\"attributes\":{\"bold\":true}}]",
+       "ZMQS-V": "[{\"insert\":\"Manager Evaluation Score (out of 10)\",\"attributes\":{\"bold\":true}}]",
+       "_JSrXt": "[{\"insert\":\"Puts team targets higher than personal achievements\"}]",
+       "aNoHAS": "[]",
+       "bCBizp": "[]",
+       "blEFFb": "[]",
+       "buAZu9": "[{\"insert\":\"Self-evaluated Score (out of 10)\",\"attributes\":{\"bold\":true}}]",
+       "c5s8kt": "[{\"insert\":\"Feedback to your leader: Eg. the delegation of tasks, responsibilities and competence.\"}]",
+       "c6ju9N": "[{\"insert\":\"Ex: improve project management skills to follow through a project to finish the last mile\"}]",
+       "d-LgFT": "[]",
+       "diULdG": "[]",
+       "dkKEk7": "[]",
+       "fMWgdH": "[{\"insert\":\"Ex: Skillfully manage projects, people, and budget\"}]",
+       "fyQhVQ": "[{\"insert\":\"Ex: Need manager's support in preparation to become a Project Manager\"}]",
+       "gMJy4q": "[{\"insert\":\"Collaborates with internal and external teams across positions including contributors from AppFlowy’s community and third-party vendors & service providers\"}]",
+       "gcImaL": "[]",
+       "haEfe_": "[{\"insert\":\"Q: Reflections on job opportunities, other tasks, new disciplines, etc. Do you need support from your manager to achieve your development goals?\"}]",
+       "he10yk": "[{\"insert\":\"2. Teamwork\"}]",
+       "huNE3S": "[{\"insert\":\"Ex: developed knowledge in software design and think more holistically when writing code\"}]",
+       "kaxD1i": "[{\"insert\":\"A:\"}]",
+       "mVlnlk": "[]",
+       "nHSTqS": "[{\"insert\":\"Feedback on the period: Duties, workload, tasks, collaboration, quality of work\"}]",
+       "onKmdS": "[]",
+       "pIh72v": "[]",
+       "q0NbV0": "[]",
+       "qV0dJT": "[]",
+       "rrTgAb": "[{\"insert\":\"Comments\",\"attributes\":{\"bold\":true}}]",
+       "rsrmeH": "[{\"insert\":\"Ex: developed knowledge in software design and think more holistically when writing code\"}]",
+       "sjeFKs": "[{\"insert\":\"Ex: Skillfully manage projects, people, and budget\"}]",
+       "swXp0h": "[{\"insert\":\"A:\"}]",
+       "uiswUr": "[]",
+       "vd2qDi": "[]",
+       "wZDt-g": "[{\"insert\":\"A:\"}]",
+       "w_KdOm": "[]",
+       "xUrjSH": "[]",
+       "xazukJ": "[{\"insert\":\"Contributes and takes initiative to social activities, eg: organizing virtual events to hangout with colleagues\"}]",
+       "xkFbco": "[{\"insert\":\"3. Innovation\"}]",
+       "zwFYM-": "[]"
+      }
+     },
+     "page_id": "6161788b-c3ee-5d81-be1f-6b774f566362"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Performance-Review-Template-dc7c1ac2-ae2f-4994-8fff-00b7fc25b45d",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731912012,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"entertainment/pacman\",\"space_icon_color\":\"0xFFA34AFD\",\"space_permission\":0,\"space_created_at\":1724416490474}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1742914907,
+     "layout": 0,
+     "name": "Startups",
+     "view_id": "a159ba4a-2965-408a-913d-a934b8bcd663"
+    },
+    {
+     "child_views": null,
+     "created_at": 1724422133,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1585669806456-bbfb218ee08d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ0MjI1NTh8&ixlib=rb-4.0.3&q=80&w=1080\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"pen-tool\",\"color\":\"0xFFA34AFD\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764765385,
+     "layout": 0,
+     "name": "Performance Review Template",
+     "view_id": "dc7c1ac2-ae2f-4994-8fff-00b7fc25b45d"
+    }
+   ],
+   "childViews": [],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1585669806456-bbfb218ee08d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ0MjI1NTh8&ixlib=rb-4.0.3&q=80&w=1080\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"pen-tool\",\"color\":\"0xFFA34AFD\"}"
+   },
+   "layout": 0,
+   "name": "Performance Review Template",
+   "viewId": "dc7c1ac2-ae2f-4994-8fff-00b7fc25b45d",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

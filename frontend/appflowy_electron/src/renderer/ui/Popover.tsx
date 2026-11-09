@@ -1,0 +1,410 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type Ref,
+} from 'react';
+import { createPortal } from 'react-dom';
+
+export type PopoverDirection =
+  | 'topLeft'
+  | 'topRight'
+  | 'bottomLeft'
+  | 'bottomRight'
+  | 'center'
+  | 'topWithLeftAligned'
+  | 'topWithCenterAligned'
+  | 'topWithRightAligned'
+  | 'rightWithTopAligned'
+  | 'rightWithCenterAligned'
+  | 'rightWithBottomAligned'
+  | 'bottomWithLeftAligned'
+  | 'bottomWithCenterAligned'
+  | 'bottomWithRightAligned'
+  | 'leftWithTopAligned'
+  | 'leftWithCenterAligned'
+  | 'leftWithBottomAligned';
+
+export interface Offset {
+  x: number;
+  y: number;
+}
+
+/** PopoverDirection layout (appflowy_popover/lib/src/layout.dart): no flipping, then clamp. */
+export function layoutPopover(
+  direction: PopoverDirection,
+  anchor: { left: number; top: number; right: number; bottom: number },
+  size: { width: number; height: number },
+  window: { width: number; height: number },
+  padding: number,
+): Offset {
+  const { width: w, height: h } = size;
+  const cx = (anchor.left + anchor.right) / 2;
+  const cy = (anchor.top + anchor.bottom) / 2;
+  const table: Record<PopoverDirection, Offset> = {
+    topLeft: { x: anchor.left - w, y: anchor.top - h },
+    topRight: { x: anchor.right, y: anchor.top - h },
+    bottomLeft: { x: anchor.left - w, y: anchor.bottom },
+    bottomRight: { x: anchor.right, y: anchor.bottom },
+    center: { x: cx, y: cy },
+    topWithLeftAligned: { x: anchor.left, y: anchor.top - h },
+    topWithCenterAligned: { x: cx - w / 2, y: anchor.top - h },
+    topWithRightAligned: { x: anchor.right - w, y: anchor.top - h },
+    bottomWithLeftAligned: { x: anchor.left, y: anchor.bottom },
+    bottomWithCenterAligned: { x: cx - w / 2, y: anchor.bottom },
+    bottomWithRightAligned: { x: anchor.right - w, y: anchor.bottom },
+    rightWithTopAligned: { x: anchor.right, y: anchor.top },
+    rightWithCenterAligned: { x: anchor.right, y: cy - h / 2 },
+    rightWithBottomAligned: { x: anchor.right, y: anchor.bottom - h },
+    leftWithTopAligned: { x: anchor.left - w, y: anchor.top },
+    leftWithCenterAligned: { x: anchor.left - w, y: cy - h / 2 },
+    leftWithBottomAligned: { x: anchor.left - w, y: anchor.bottom - h },
+  };
+  const p = table[direction];
+  return {
+    x: Math.min(Math.max(p.x, padding), Math.max(padding, padding + window.width - 2 * padding - w)),
+    y: Math.min(Math.max(p.y, padding), Math.max(padding, padding + window.height - 2 * padding - h)),
+  };
+}
+
+// The global popover stack (root overlay): an outside click pops entries until a barrier.
+interface Entry {
+  id: number;
+  asBarrier: boolean;
+  close: () => void;
+  canClose?: () => Promise<boolean> | boolean;
+}
+const stack: Entry[] = [];
+const stackListeners = new Set<() => void>();
+const notifyStack = () => stackListeners.forEach((l) => l());
+
+async function popEntries(useCanClose: boolean) {
+  const top = stack[stack.length - 1];
+  if (!top) return;
+  if (useCanClose && top.canClose && !(await top.canClose())) return;
+  while (stack.length) {
+    const entry = stack[stack.length - 1];
+    entry.close();
+    if (entry.asBarrier) break;
+  }
+}
+
+/** PopoverMutex: at most one open popover per mutex. */
+export class PopoverMutex {
+  private current: (() => void) | null = null;
+  claim(close: () => void) {
+    if (this.current && this.current !== close) this.current();
+    this.current = close;
+  }
+  release(close: () => void) {
+    if (this.current === close) this.current = null;
+  }
+  close() {
+    this.current?.();
+    this.current = null;
+  }
+}
+
+export interface PopoverController {
+  show(): void;
+  showAt(position: Offset): void;
+  close(): void;
+  isOpen(): boolean;
+}
+
+const PopoverContext = createContext<{ close: () => void; closeAll: () => void } | null>(null);
+/** PopoverContainer.of(context): closes the popover from inside its content. */
+export const usePopoverContainer = () => useContext(PopoverContext);
+
+export interface PopoverProps {
+  children: ReactNode;
+  popup: (close: () => void) => ReactNode;
+  controllerRef?: Ref<PopoverController>;
+  direction?: PopoverDirection;
+  offset?: Offset;
+  /** 'click' opens on mouse-down (PopoverClickHandler.listener); 'none' = controller only. */
+  trigger?: Array<'click' | 'hover' | 'secondaryClick'> | 'none';
+  mutex?: PopoverMutex;
+  windowPadding?: number;
+  asBarrier?: boolean;
+  showAtCursor?: boolean;
+  onOpen?: () => void;
+  onClose?: () => void;
+  canClose?: () => Promise<boolean> | boolean;
+  /** Content container styling (AppFlowyPopover adds the decoration). */
+  containerStyle?: CSSProperties;
+  /** Lets the trigger element size itself (e.g. flex children). */
+  triggerStyle?: CSSProperties;
+}
+
+let nextId = 1;
+
+/** Popover (packages/appflowy_popover). */
+export function Popover({
+  children,
+  popup,
+  controllerRef,
+  direction = 'rightWithTopAligned',
+  offset = { x: 0, y: 0 },
+  trigger = ['click'],
+  mutex,
+  windowPadding = 0,
+  asBarrier = false,
+  showAtCursor = false,
+  onOpen,
+  onClose,
+  canClose,
+  containerStyle,
+  triggerStyle,
+}: PopoverProps) {
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState<{ cursor: Offset | null } | null>(null);
+  const idRef = useRef(nextId++);
+  const openRef = useRef(false);
+  openRef.current = open !== null;
+
+  const close = useCallback(() => {
+    if (!openRef.current) return;
+    openRef.current = false;
+    setOpen(null);
+  }, []);
+
+  const show = useCallback(
+    (cursor: Offset | null) => {
+      onOpen?.();
+      mutex?.claim(close);
+      openRef.current = true;
+      setOpen({ cursor });
+    },
+    [close, mutex, onOpen],
+  );
+
+  useImperativeHandle(controllerRef, () => ({
+    show: () => show(null),
+    showAt: (position) => show(position),
+    close,
+    isOpen: () => openRef.current,
+  }));
+
+  // Register in the global stack while open.
+  useEffect(() => {
+    if (!open) return;
+    const entry: Entry = { id: idRef.current, asBarrier, close, canClose };
+    stack.push(entry);
+    notifyStack();
+    return () => {
+      const index = stack.indexOf(entry);
+      if (index >= 0) stack.splice(index, 1);
+      mutex?.release(close);
+      notifyStack();
+      onClose?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open !== null]);
+
+  const triggers = trigger === 'none' ? [] : trigger;
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        style={{ display: 'contents', ...triggerStyle }}
+        onMouseDown={(event) => {
+          const primary = event.button === 0 && triggers.includes('click');
+          const secondary = event.button === 2 && triggers.includes('secondaryClick');
+          if (!primary && !secondary) return;
+          if (openRef.current) close();
+          else show(showAtCursor ? { x: event.clientX, y: event.clientY } : null);
+        }}
+        onContextMenu={triggers.includes('secondaryClick') ? (event) => event.preventDefault() : undefined}
+        onMouseEnter={() => {
+          if (triggers.includes('hover') && !openRef.current) show(null);
+        }}
+      >
+        {children}
+      </div>
+      {open && (
+        <PopoverOverlay
+          id={idRef.current}
+          anchorEl={triggerRef.current}
+          cursor={open.cursor}
+          direction={direction}
+          offset={offset}
+          windowPadding={open.cursor ? 0 : windowPadding}
+          containerStyle={containerStyle}
+          close={close}
+        >
+          {popup(close)}
+        </PopoverOverlay>
+      )}
+    </>
+  );
+}
+
+function PopoverOverlay({
+  id,
+  anchorEl,
+  cursor,
+  direction,
+  offset,
+  windowPadding,
+  containerStyle,
+  close,
+  children,
+}: {
+  id: number;
+  anchorEl: HTMLElement | null;
+  cursor: Offset | null;
+  direction: PopoverDirection;
+  offset: Offset;
+  windowPadding: number;
+  containerStyle?: CSSProperties;
+  close: () => void;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<Offset | null>(null);
+  const [isFirst, setIsFirst] = useState(stack[0]?.id === id || stack.length === 0);
+
+  useEffect(() => {
+    const update = () => setIsFirst(stack[0]?.id === id);
+    stackListeners.add(update);
+    update();
+    return () => void stackListeners.delete(update);
+  }, [id]);
+
+  const reposition = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const size = el.getBoundingClientRect();
+    if (cursor) {
+      setPos(
+        layoutPopover(
+          'bottomRight',
+          { left: cursor.x + offset.x, top: cursor.y + offset.y, right: cursor.x + offset.x, bottom: cursor.y + offset.y },
+          size,
+          { width: window.innerWidth, height: window.innerHeight },
+          0,
+        ),
+      );
+      return;
+    }
+    const target = (anchorEl?.firstElementChild as HTMLElement | null) ?? anchorEl;
+    if (!target) return;
+    const a = target.getBoundingClientRect();
+    setPos(
+      layoutPopover(
+        direction,
+        { left: a.left + offset.x, top: a.top + offset.y, right: a.right + offset.x, bottom: a.bottom + offset.y },
+        size,
+        { width: window.innerWidth, height: window.innerHeight },
+        windowPadding,
+      ),
+    );
+  }, [anchorEl, cursor, direction, offset.x, offset.y, windowPadding]);
+
+  useLayoutEffect(() => {
+    reposition();
+    const observer = new ResizeObserver(reposition);
+    if (ref.current) observer.observe(ref.current);
+    window.addEventListener('resize', reposition);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', reposition);
+    };
+  }, [reposition]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && stack[stack.length - 1]?.id === id) {
+        event.stopPropagation();
+        void popEntries(false);
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [id]);
+
+  return createPortal(
+    <PopoverContext.Provider value={{ close, closeAll: () => void popEntries(true) }}>
+      {isFirst && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000 }}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            void popEntries(true);
+          }}
+          onContextMenu={(event) => event.preventDefault()}
+        />
+      )}
+      <div
+        ref={ref}
+        style={{
+          position: 'fixed',
+          left: pos?.x ?? 0,
+          top: pos?.y ?? 0,
+          visibility: pos ? 'visible' : 'hidden',
+          zIndex: 1001,
+          maxWidth: `calc(100vw - ${2 * windowPadding}px)`,
+          maxHeight: `calc(100vh - ${2 * windowPadding}px)`,
+          ...containerStyle,
+        }}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        {children}
+      </div>
+    </PopoverContext.Provider>,
+    document.body,
+  );
+}
+
+export interface AppFlowyPopoverProps extends Omit<PopoverProps, 'containerStyle'> {
+  /** Default maxWidth 240, maxHeight 600 (padding included). */
+  constraints?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; width?: number };
+  /** Inner padding, default 6. */
+  margin?: CSSProperties['padding'];
+  decorationColor?: string;
+  borderRadius?: number;
+  /** Replaces the default decoration entirely. */
+  plain?: boolean;
+}
+
+/** AppFlowyPopover (flowy_infra_ui/lib/src/flowy_overlay/appflowy_popover.dart). */
+export function AppFlowyPopover({
+  constraints = { maxWidth: 240, maxHeight: 600 },
+  margin = 6,
+  decorationColor,
+  borderRadius = 10,
+  windowPadding = 8,
+  plain,
+  ...props
+}: AppFlowyPopoverProps) {
+  const transparent = decorationColor === 'transparent';
+  return (
+    <Popover
+      {...props}
+      windowPadding={windowPadding}
+      containerStyle={
+        plain
+          ? undefined
+          : {
+              ...constraints,
+              padding: margin,
+              background: decorationColor ?? 'var(--th-card)',
+              borderRadius,
+              // strokeAlignOutside: the 1px border sits outside the box.
+              boxShadow: `0 0 0 1px ${transparent ? 'transparent' : 'var(--popover-border)'}, var(--popover-shadow)`,
+              overflow: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+            }
+      }
+    />
+  );
+}

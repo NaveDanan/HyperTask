@@ -1,0 +1,602 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "Kq2ht8",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Organization tip"
+        }
+       ],
+       "textId": "bE2ymI",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint8",
+      "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"help-question-1\"}",
+      "icon_type": "icon",
+      "textColor": "appflowy_them_color_tint8"
+     },
+     "relationId": "jWAmMy",
+     "type": "callout"
+    },
+    {
+     "blockId": "psAxe1",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Use this example as a starting doc for shaping your interviews and keep a nice tidy script."
+        }
+       ],
+       "textId": "e2QU4D",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Use this example as a starting doc for shaping your interviews and keep a nice tidy script."
+       }
+      ]
+     },
+     "relationId": "KqixGC",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "0CPx5L",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "HY85ei",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "TeOH7g",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "pQqAJc",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Main takeaways"
+        }
+       ],
+       "textId": "CLsVPE",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Main takeaways"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "8bK_73",
+     "type": "heading"
+    },
+    {
+     "blockId": "OQZrq1",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "The team is still unaware about some specific features, send them help center"
+        }
+       ],
+       "textId": "2QG8Ie",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "The team is still unaware about some specific features, send them help center"
+       }
+      ]
+     },
+     "relationId": "MW_RUZ",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "uFDdB4",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "The team would like the ability to integrate with more platforms"
+        }
+       ],
+       "textId": "HSHFUa",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "The team would like the ability to integrate with more platforms"
+       }
+      ]
+     },
+     "relationId": "94k7KD",
+     "type": "bulleted_list"
+    },
+    {
+     "blockId": "9a7zZQ",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "ei11HE",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "u2FRph",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "BcPvWz",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Goal"
+        }
+       ],
+       "textId": "uEgoMk",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Goal"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "FpM8Y-",
+     "type": "heading"
+    },
+    {
+     "blockId": "tgZYR8",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Understand how users are using the product, and how we can serve them better. "
+        }
+       ],
+       "textId": "8O_Wxy",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Understand how users are using the product, and how we can serve them better. "
+       }
+      ]
+     },
+     "relationId": "Ejr8Hp",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "LJj_VO",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "ndluyY",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "ax98WA",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "d-rJeX",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Interview notes"
+        }
+       ],
+       "textId": "yMYD9U",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": [
+       {
+        "insert": "Interview notes"
+       }
+      ],
+      "level": 1
+     },
+     "relationId": "Eg5tBm",
+     "type": "heading"
+    },
+    {
+     "blockId": "M7kW8n",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {
+      "parent_id": "9a2501d5-5107-4509-9a56-a8647c48e059",
+      "view_id": "9be375d8-5018-40d8-ab28-1bfc21831dca"
+     },
+     "relationId": "JN0xvH",
+     "type": "grid"
+    },
+    {
+     "blockId": "O420lg",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "ePbnrc",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "delta": []
+     },
+     "relationId": "gqJed5",
+     "type": "paragraph"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "0CPx5L": {
+       "children": "TeOH7g",
+       "data": {
+        "delta": []
+       },
+       "external_id": "HY85ei",
+       "external_type": "text",
+       "id": "0CPx5L",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "paragraph"
+      },
+      "9a7zZQ": {
+       "children": "u2FRph",
+       "data": {
+        "delta": []
+       },
+       "external_id": "ei11HE",
+       "external_type": "text",
+       "id": "9a7zZQ",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "paragraph"
+      },
+      "BcPvWz": {
+       "children": "FpM8Y-",
+       "data": {
+        "delta": [
+         {
+          "insert": "Goal"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "uEgoMk",
+       "external_type": "text",
+       "id": "BcPvWz",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "heading"
+      },
+      "Kq2ht8": {
+       "children": "jWAmMy",
+       "data": {
+        "bgColor": "appflowy_them_color_tint8",
+        "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"help-question-1\"}",
+        "icon_type": "icon",
+        "textColor": "appflowy_them_color_tint8"
+       },
+       "external_id": "bE2ymI",
+       "external_type": "text",
+       "id": "Kq2ht8",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "callout"
+      },
+      "LJj_VO": {
+       "children": "ax98WA",
+       "data": {
+        "delta": []
+       },
+       "external_id": "ndluyY",
+       "external_type": "text",
+       "id": "LJj_VO",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "paragraph"
+      },
+      "M7kW8n": {
+       "children": "JN0xvH",
+       "data": {
+        "parent_id": "9a2501d5-5107-4509-9a56-a8647c48e059",
+        "view_id": "9be375d8-5018-40d8-ab28-1bfc21831dca"
+       },
+       "external_id": null,
+       "external_type": null,
+       "id": "M7kW8n",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "grid"
+      },
+      "O420lg": {
+       "children": "gqJed5",
+       "data": {
+        "delta": []
+       },
+       "external_id": "ePbnrc",
+       "external_type": "text",
+       "id": "O420lg",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "paragraph"
+      },
+      "OQZrq1": {
+       "children": "MW_RUZ",
+       "data": {
+        "delta": [
+         {
+          "insert": "The team is still unaware about some specific features, send them help center"
+         }
+        ]
+       },
+       "external_id": "2QG8Ie",
+       "external_type": "text",
+       "id": "OQZrq1",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "bulleted_list"
+      },
+      "ce9682cd-0005-5a01-ae2b-01589fdcd261": {
+       "children": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "data": {
+        "cover_selection": "https://images.unsplash.com/photo-1710362921917-2e33bb342a23?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ1OTIwNTR8&ixlib=rb-4.0.3&q=80&w=1080",
+        "cover_selection_type": "CoverType.file",
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"user-multiple-group\",\"color\":\"0xFFAAD93D\"}"
+       },
+       "external_id": "mP_sUr",
+       "external_type": "text",
+       "id": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "parent": "",
+       "ty": "page"
+      },
+      "d-rJeX": {
+       "children": "Eg5tBm",
+       "data": {
+        "delta": [
+         {
+          "insert": "Interview notes"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "yMYD9U",
+       "external_type": "text",
+       "id": "d-rJeX",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "heading"
+      },
+      "pQqAJc": {
+       "children": "8bK_73",
+       "data": {
+        "delta": [
+         {
+          "insert": "Main takeaways"
+         }
+        ],
+        "level": 1
+       },
+       "external_id": "CLsVPE",
+       "external_type": "text",
+       "id": "pQqAJc",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "heading"
+      },
+      "psAxe1": {
+       "children": "KqixGC",
+       "data": {
+        "delta": [
+         {
+          "insert": "Use this example as a starting doc for shaping your interviews and keep a nice tidy script."
+         }
+        ]
+       },
+       "external_id": "e2QU4D",
+       "external_type": "text",
+       "id": "psAxe1",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "paragraph"
+      },
+      "tgZYR8": {
+       "children": "Ejr8Hp",
+       "data": {
+        "delta": [
+         {
+          "insert": "Understand how users are using the product, and how we can serve them better. "
+         }
+        ]
+       },
+       "external_id": "8O_Wxy",
+       "external_type": "text",
+       "id": "tgZYR8",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "paragraph"
+      },
+      "uFDdB4": {
+       "children": "94k7KD",
+       "data": {
+        "delta": [
+         {
+          "insert": "The team would like the ability to integrate with more platforms"
+         }
+        ]
+       },
+       "external_id": "HSHFUa",
+       "external_type": "text",
+       "id": "uFDdB4",
+       "parent": "ce9682cd-0005-5a01-ae2b-01589fdcd261",
+       "ty": "bulleted_list"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "8bK_73": [],
+       "94k7KD": [],
+       "Eg5tBm": [],
+       "Ejr8Hp": [],
+       "FpM8Y-": [],
+       "JN0xvH": [],
+       "KqixGC": [],
+       "MW_RUZ": [],
+       "TeOH7g": [],
+       "ax98WA": [],
+       "ce9682cd-0005-5a01-ae2b-01589fdcd261": [
+        "Kq2ht8",
+        "psAxe1",
+        "0CPx5L",
+        "pQqAJc",
+        "OQZrq1",
+        "uFDdB4",
+        "9a7zZQ",
+        "BcPvWz",
+        "tgZYR8",
+        "LJj_VO",
+        "d-rJeX",
+        "M7kW8n",
+        "O420lg"
+       ],
+       "gqJed5": [],
+       "jWAmMy": [],
+       "u2FRph": []
+      },
+      "text_map": {
+       "2QG8Ie": "[{\"insert\":\"The team is still unaware about some specific features, send them help center\"}]",
+       "8O_Wxy": "[{\"insert\":\"Understand how users are using the product, and how we can serve them better. \"}]",
+       "CLsVPE": "[{\"insert\":\"Main takeaways\"}]",
+       "HSHFUa": "[{\"insert\":\"The team would like the ability to integrate with more platforms\"}]",
+       "HY85ei": "[]",
+       "bE2ymI": "[{\"insert\":\"Organization tip\"}]",
+       "e2QU4D": "[{\"insert\":\"Use this example as a starting doc for shaping your interviews and keep a nice tidy script.\"}]",
+       "ePbnrc": "[]",
+       "ei11HE": "[]",
+       "ndluyY": "[]",
+       "uEgoMk": "[{\"insert\":\"Goal\"}]",
+       "yMYD9U": "[{\"insert\":\"Interview notes\"}]"
+      }
+     },
+     "page_id": "ce9682cd-0005-5a01-ae2b-01589fdcd261"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "User-Interview-9a2501d5-5107-4509-9a56-a8647c48e059",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731821345,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"money_shopping/briefcase-dollar\",\"space_icon_color\":\"0xFFAAD93D\",\"space_permission\":0,\"space_created_at\":1724566123107}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1731821345,
+     "layout": 0,
+     "name": "Management",
+     "view_id": "77a0708e-cb82-4dec-93ed-6af793581384"
+    },
+    {
+     "child_views": null,
+     "created_at": 1724567244,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1710362921917-2e33bb342a23?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ1OTIwNTR8&ixlib=rb-4.0.3&q=80&w=1080\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"user-multiple-group\",\"color\":\"0xFFAAD93D\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764767448,
+     "layout": 0,
+     "name": "User Interview",
+     "view_id": "9a2501d5-5107-4509-9a56-a8647c48e059"
+    }
+   ],
+   "childViews": [
+    {
+     "child_views": null,
+     "created_at": 1724567244,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1737601709,
+     "layout": 1,
+     "name": "Notes",
+     "view_id": "9be375d8-5018-40d8-ab28-1bfc21831dca"
+    }
+   ],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1710362921917-2e33bb342a23?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MjQ1OTIwNTR8&ixlib=rb-4.0.3&q=80&w=1080\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"user-multiple-group\",\"color\":\"0xFFAAD93D\"}"
+   },
+   "layout": 0,
+   "name": "User Interview",
+   "viewId": "9a2501d5-5107-4509-9a56-a8647c48e059",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

@@ -1,0 +1,156 @@
+/* Shared primitives. Hover visuals are instant (no transitions), as in Flutter. */
+
+/* FlowyHover: hover fill MS.secondary radius 6; foreground switches to MS.onSurface. */
+.flowy-hover {
+  border-radius: var(--hover-radius, 6px);
+  background: var(--hover-base, transparent);
+  cursor: pointer;
+}
+.flowy-hover:hover,
+.flowy-hover[data-selected='true'] {
+  background: var(--hover-bg, var(--cs-secondary));
+  --text-color: var(--hover-fg, var(--cs-on-surface));
+  --icon-color: var(--hover-fg, var(--cs-on-surface));
+  color: var(--text-color);
+}
+/* The inherited colors stay (no self-reference, which would make them invalid). */
+.flowy-hover[data-keep-fg='true']:hover,
+.flowy-hover[data-keep-fg='true'][data-selected='true'] {
+  --text-color: inherit;
+  --icon-color: inherit;
+}
+.flowy-hover[data-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.flowy-text {
+  color: var(--flowy-text-color, var(--text-color));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  min-width: 0;
+}
+.flowy-text[data-ellipsis='true'] {
+  text-overflow: ellipsis;
+}
+.flowy-text[data-multiline='true'] {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* AFBaseButton */
+.af-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--btn-border, transparent);
+  background: var(--btn-bg, transparent);
+  color: var(--btn-fg, var(--af-text-primary));
+  border-radius: var(--btn-radius, 8px);
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+  font-weight: 500;
+  font-size: calc(14px * var(--text-scale, 1));
+  line-height: 20px;
+}
+.af-button:hover {
+  border-color: var(--btn-border-hover, var(--btn-border, transparent));
+  background: var(--btn-bg-hover, var(--btn-bg, transparent));
+  color: var(--btn-fg-hover, var(--btn-fg, var(--af-text-primary)));
+}
+.af-button:focus-visible {
+  box-shadow: 0 0 0 2px #00b5ff80;
+}
+.af-button[data-disabled='true'] {
+  cursor: default;
+  border-color: var(--btn-border-disabled, var(--btn-border, transparent));
+  background: var(--btn-bg-disabled, var(--btn-bg, transparent));
+  color: var(--btn-fg-disabled, var(--btn-fg));
+}
+
+/* AFTextField */
+.af-textfield {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--af-border-primary);
+  border-radius: 10px;
+  background: transparent;
+}
+.af-textfield[data-size='m'] {
+  border-radius: 8px;
+}
+.af-textfield:focus-within {
+  border-color: var(--af-border-theme-thick);
+}
+.af-textfield[data-readonly='true']:focus-within {
+  border-color: var(--af-border-primary);
+}
+.af-textfield[data-error='true'] {
+  border-color: var(--af-border-error-thick);
+}
+.af-textfield input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--af-text-primary);
+  font-size: calc(14px * var(--text-scale, 1));
+  line-height: 20px;
+  padding: 10px 8px;
+}
+.af-textfield[data-size='m'] input {
+  padding: 6px 8px;
+}
+.af-textfield input::placeholder {
+  color: var(--af-text-tertiary);
+}
+
+/* AFMenuItem / popover action rows */
+.af-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--af-text-primary);
+}
+.af-menu-item:hover {
+  background: var(--af-fill-content-hover);
+}
+.af-menu-item[data-selected='true'] {
+  background: var(--af-fill-theme-select);
+}
+.af-menu-item[data-disabled='true'] {
+  cursor: default;
+  background: transparent;
+}
+
+/* Material CircularProgressIndicator */
+@keyframes flowy-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.flowy-spinner {
+  border-radius: 50%;
+  border-style: solid;
+  border-color: var(--spinner-color, var(--cs-primary));
+  border-right-color: transparent;
+  animation: flowy-spin 0.9s linear infinite;
+}
+
+/* Toasts */
+@keyframes flowy-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes flowy-fade-in {
+  from {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,3285 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "ByFRsG",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "This Standard Operating Procedure (SOP) is a guide for organizing company events, from venue booking to post-event feedback collection."
+        }
+       ],
+       "textId": "Mhm3-2",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "colPosition": 0,
+      "height": 8,
+      "rowPosition": 0,
+      "width": 160
+     },
+     "relationId": "YkPcjq",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "fGzFd_",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "ssfnzG",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "colPosition": 1,
+      "height": 8,
+      "rowPosition": 0,
+      "width": 160
+     },
+     "relationId": "vfXwsW",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "Lb3LHZ",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "1. Event Conceptualization"
+        }
+       ],
+       "textId": "9FsDiv",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "D95VUr",
+     "type": "heading"
+    },
+    {
+     "blockId": "ZfGbKZ",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Remember"
+        },
+        {
+         "text": ": A well-defined event purpose and clear objectives are key to a successful event. They guide the planning process and help ensure the event is successful and meets the company's needs."
+        }
+       ],
+       "textId": "uI9iA6",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint6",
+      "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+      "icon_type": "icon",
+      "textColor": "appflowy_them_color_tint6"
+     },
+     "relationId": "aZdezA",
+     "type": "callout"
+    },
+    {
+     "blockId": "TnqAC5",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "qnJ9uE",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "7Lp7gb",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "AzULrB",
+     "children": [
+      {
+       "blockId": "F-MVZG",
+       "children": [
+        {
+         "blockId": "0L-NuY",
+         "children": [
+          {
+           "blockId": "xeC209",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "jAtraG",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "2kOnT2",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "cB472J",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "ryJw4L",
+         "children": [
+          {
+           "blockId": "LiWbMl",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Questions to Consider"
+              }
+             ],
+             "textId": "dxriU3",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "GK72tT",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "6j1exR",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "xzoe0H",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "RjalsU",
+       "children": [
+        {
+         "blockId": "JXF2NY",
+         "children": [
+          {
+           "blockId": "2vxogE",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Define purpose"
+              }
+             ],
+             "textId": "XKhgAg",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "5PFvDX",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "oUsdit",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "gXZWqG",
+         "children": [
+          {
+           "blockId": "ohtwYZ",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "What are the key messages of the event?"
+              }
+             ],
+             "textId": "NZq9IR",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "O4dbjs",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "d3RjE2",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "i3TNS9",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "FMgfpn",
+       "children": [
+        {
+         "blockId": "ukyBOn",
+         "children": [
+          {
+           "blockId": "fhdLCC",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Define objectives"
+              }
+             ],
+             "textId": "Uq5F2v",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "op6aZy",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "COI4Sn",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "qZgy66",
+         "children": [
+          {
+           "blockId": "jqyyzJ",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "What are the desired outcomes of the event?"
+              }
+             ],
+             "textId": "DUzn96",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "DlDfZd",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "2EyUDk",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "1QyxtX",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "vE9kFF",
+       "children": [
+        {
+         "blockId": "FkwsnL",
+         "children": [
+          {
+           "blockId": "k3xfa_",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Identify target audience"
+              }
+             ],
+             "textId": "2o4wrv",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "2T0eEZ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "1ft54W",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Av1aIj",
+         "children": [
+          {
+           "blockId": "rdUhCv",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Who are the event's stakeholders?"
+              }
+             ],
+             "textId": "9u3tNE",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "0rXrup",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "qw6bVc",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "RrDrg9",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 217.5703125,
+       "1": 525.203125
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {
+       "0": "appflowy_them_color_tint4"
+      }
+     },
+     "relationId": "Zqybjz",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "HbDzwN",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "2. Event Planning"
+        }
+       ],
+       "textId": "eiEFgv",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "1uAeYq",
+     "type": "heading"
+    },
+    {
+     "blockId": "vfCv_g",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Identify the event date, time, and location. Consider the event's purpose, objectives, and target audience when making these decisions."
+        }
+       ],
+       "textId": "SVGyVY",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "2Jf53t",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "unOVln",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Tip"
+        },
+        {
+         "text": ": When planning an event, it's important to consider the company calendar, public holidays, and the target audience's availability. This helps to maximize attendance and ensure the event is successful."
+        }
+       ],
+       "textId": "SlL-Pd",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint6",
+      "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+      "icon_type": "icon",
+      "textColor": "appflowy_them_color_tint6"
+     },
+     "relationId": "ebrr52",
+     "type": "callout"
+    },
+    {
+     "blockId": "Z7pkOG",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "q94POu",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "Ik5JN7",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "8ZM9GQ",
+     "children": [
+      {
+       "blockId": "t_G7xM",
+       "children": [
+        {
+         "blockId": "Vi9QJ6",
+         "children": [
+          {
+           "blockId": "R2CTgE",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Task"
+              }
+             ],
+             "textId": "ygo7dg",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "AgV9sH",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "dh3fLv",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "E9nLbg",
+         "children": [
+          {
+           "blockId": "LmsdsY",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Details"
+              }
+             ],
+             "textId": "es4qax",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ZeCd_1",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "2ZSfGL",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "1zBbzF",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "1CpcPb",
+       "children": [
+        {
+         "blockId": "Di8Nco",
+         "children": [
+          {
+           "blockId": "AdQxsr",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Event date"
+              }
+             ],
+             "textId": "KOYrVg",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "xWc25v",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "9eMHHx",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "t_oqzQ",
+         "children": [
+          {
+           "blockId": "zAOYp6",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Consider company calendar, public holidays, and target audience availability."
+              }
+             ],
+             "textId": "CTQQb2",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "pj9VCD",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "dkhAoK",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "y0kiLM",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "zPQxoq",
+       "children": [
+        {
+         "blockId": "l08sVI",
+         "children": [
+          {
+           "blockId": "SBkvjB",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Event time"
+              }
+             ],
+             "textId": "Y-wzI0",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ENgBvo",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "cLMHJk",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "QsuTvb",
+         "children": [
+          {
+           "blockId": "JyP2L7",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Consider the duration of the event and the target audience's time zone."
+              }
+             ],
+             "textId": "T2PXIF",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "O0eZxN",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "3RSd16",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "Mq4VLo",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "x9bCKF",
+       "children": [
+        {
+         "blockId": "Ke5N4Z",
+         "children": [
+          {
+           "blockId": "zVIiyy",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Event location"
+              }
+             ],
+             "textId": "fyIeGh",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "sONrnW",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "WJRugB",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "DCd0JY",
+         "children": [
+          {
+           "blockId": "zMQGKO",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Consider the target audience's geographic distribution and the event's budget."
+              }
+             ],
+             "textId": "BsgL9T",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "7q6ajO",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "ahFNSf",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "7ppaB5",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 218.8984375,
+       "1": 519.18359375
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {
+       "0": "appflowy_them_color_tint4"
+      }
+     },
+     "relationId": "o-GsLz",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "d9b9NX",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "3. Venue Booking"
+        }
+       ],
+       "textId": "ozepF6",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "x0yoVJ",
+     "type": "heading"
+    },
+    {
+     "blockId": "sDGqD7",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Book a venue that is appropriate for the event's purpose, objectives, target audience, and budget. Confirm the booking and any necessary details with the venue."
+        }
+       ],
+       "textId": "bEdI6T",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "8oZwqt",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "SFP1v6",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Note"
+        },
+        {
+         "text": ": The event venue should align with the event's purpose, objectives, and target audience. It's also important to consider the venue's capacity, location, and available facilities."
+        }
+       ],
+       "textId": "g8zi8L",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint6",
+      "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+      "icon_type": "icon",
+      "textColor": "appflowy_them_color_tint6"
+     },
+     "relationId": "5CpJ7F",
+     "type": "callout"
+    },
+    {
+     "blockId": "6-V9Uz",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "26mYuS",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "0B-0C2",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "Yy1xbm",
+     "children": [
+      {
+       "blockId": "nNvCL7",
+       "children": [
+        {
+         "blockId": "60fQI_",
+         "children": [
+          {
+           "blockId": "_DfImy",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Task"
+              }
+             ],
+             "textId": "ishdAw",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ga1J_x",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "TZsg1m",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "HxMlKE",
+         "children": [
+          {
+           "blockId": "VO-egv",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Details"
+              }
+             ],
+             "textId": "5BxCdF",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "s2WB5j",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "tQVDy7",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "DMWUAM",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "hmOaOI",
+       "children": [
+        {
+         "blockId": "IDZicl",
+         "children": [
+          {
+           "blockId": "uojdq0",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Venue selection"
+              }
+             ],
+             "textId": "wlfmdh",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "RPNrgP",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "sBf1W9",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "ELV8-L",
+         "children": [
+          {
+           "blockId": "wUP7iz",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "The venue should align with the event's purpose, objectives, and target audience."
+              }
+             ],
+             "textId": "aoT7_y",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "DrDRcK",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "8H7byt",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "i3CHld",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "mRSUgF",
+       "children": [
+        {
+         "blockId": "AnWUyX",
+         "children": [
+          {
+           "blockId": "vBpxF_",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Venue booking"
+              }
+             ],
+             "textId": "NXjzgA",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "Ga2UlM",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "52yRxP",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "hJJpxb",
+         "children": [
+          {
+           "blockId": "eZ9Uns",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Confirm the booking and any necessary details with the venue."
+              }
+             ],
+             "textId": "FQGvZN",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ig_DMa",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "A7xS_I",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "5HbrL8",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 223.35546875,
+       "1": 521.453125
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {
+       "0": "appflowy_them_color_tint4"
+      }
+     },
+     "relationId": "5Bhcqh",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "O8QaDm",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "4. Event Promotion"
+        }
+       ],
+       "textId": "I8hO7a",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "KNOGUH",
+     "type": "heading"
+    },
+    {
+     "blockId": "J75pob",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Promote the event to the target audience. Use appropriate promotion channels and provide all necessary information about the event."
+        }
+       ],
+       "textId": "m0NH1W",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "0Rj323",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "ZsnfWe",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "84-9PP",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "timset",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "GwTK4c",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "5. Event Execution"
+        }
+       ],
+       "textId": "hBsuGN",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "Yjk_Q2",
+     "type": "heading"
+    },
+    {
+     "blockId": "absiMS",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Ensure the event runs smoothly and according to plan. This may involve coordinating with the venue, managing event logistics, and addressing any issues that arise."
+        }
+       ],
+       "textId": "TK_3Vz",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "u0Zjj5",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "FPSKDe",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Event Execution"
+        },
+        {
+         "text": ": Ensuring the event runs smoothly and according to plan is crucial. This may involve coordinating with the venue, managing event logistics, and addressing any issues that arise."
+        }
+       ],
+       "textId": "s6GRs5",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint6",
+      "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+      "icon_type": "icon",
+      "textColor": "appflowy_them_color_tint6"
+     },
+     "relationId": "edgnRe",
+     "type": "callout"
+    },
+    {
+     "blockId": "u0CLSm",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "vjfE9b",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "MLNEfc",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "6k2ti_",
+     "children": [
+      {
+       "blockId": "E_Oq1_",
+       "children": [
+        {
+         "blockId": "Ba6GoH",
+         "children": [
+          {
+           "blockId": "oG7Y2w",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Task"
+              }
+             ],
+             "textId": "opO26L",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ly1kXT",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "2-vaDJ",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "CGsbX6",
+         "children": [
+          {
+           "blockId": "k9r80u",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Details"
+              }
+             ],
+             "textId": "ejoQso",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "-oJ2wk",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "RIwm_g",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "JZm0EC",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "35_zI3",
+       "children": [
+        {
+         "blockId": "9REd4H",
+         "children": [
+          {
+           "blockId": "PdS51u",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Event setup"
+              }
+             ],
+             "textId": "5QYPZm",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "u3-86-",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "KwNjgu",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "iRY7t6",
+         "children": [
+          {
+           "blockId": "e1Wjnu",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Ensure the venue is set up according to the event plan."
+              }
+             ],
+             "textId": "c2mOPQ",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "xh8ROa",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "N33phZ",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "7gjg1q",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "2EA31M",
+       "children": [
+        {
+         "blockId": "p-x_IC",
+         "children": [
+          {
+           "blockId": "vUfLG6",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Event management"
+              }
+             ],
+             "textId": "FH5bZ9",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "U8MCgo",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "0SILPB",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "J4KlAT",
+         "children": [
+          {
+           "blockId": "Sk4_PW",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Manage event logistics and address any issues that arise."
+              }
+             ],
+             "textId": "zapbBL",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "C-hYZX",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "IKgBCd",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "_sX4Hk",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "bAujkL",
+       "children": [
+        {
+         "blockId": "duDwJf",
+         "children": [
+          {
+           "blockId": "glhgfl",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Event breakdown"
+              }
+             ],
+             "textId": "HsDWie",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "ogD8SD",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "waZ_Bk",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "vhXsdh",
+         "children": [
+          {
+           "blockId": "RY5Lia",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Ensure the venue is cleaned up and all equipment is returned."
+              }
+             ],
+             "textId": "4ceInP",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "4Ovezl",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "lmuQkZ",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "kqFu6w",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 229.140625,
+       "1": 519.953125
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {
+       "0": "appflowy_them_color_tint4"
+      }
+     },
+     "relationId": "aIxnRO",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "LPQVVI",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "6. Post-Event Feedback Collection"
+        }
+       ],
+       "textId": "dKYVuH",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "mOcWDQ",
+     "type": "heading"
+    },
+    {
+     "blockId": "JgG4Hj",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Collect feedback from event participants. Use this feedback to evaluate the event's success and identify areas for improvement."
+        }
+       ],
+       "textId": "z9ZKJJ",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "ThFu4j",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "Rd3F7y",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Feedback is a Gift"
+        },
+        {
+         "text": ": Collecting and analyzing feedback from event participants is a valuable opportunity to learn and improve. It can provide insights into what worked well and what could be improved for future events."
+        }
+       ],
+       "textId": "qb7UIT",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint6",
+      "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+      "icon_type": "icon",
+      "textColor": "appflowy_them_color_tint6"
+     },
+     "relationId": "uypPtG",
+     "type": "callout"
+    },
+    {
+     "blockId": "fJjAg3",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "r4bPAu",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "BsUQcU",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "LxGcgr",
+     "children": [
+      {
+       "blockId": "-YAaUr",
+       "children": [
+        {
+         "blockId": "K5ZNl8",
+         "children": [
+          {
+           "blockId": "NiPP3n",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Task"
+              }
+             ],
+             "textId": "OcXlfY",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "rj4x4P",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "_le9bb",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "Qs8SCo",
+         "children": [
+          {
+           "blockId": "32Czc1",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "text": "Details"
+              }
+             ],
+             "textId": "yGKl_g",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "mITGzz",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "bfW5TJ",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "etzx9w",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "hAo8E6",
+       "children": [
+        {
+         "blockId": "AHqKUF",
+         "children": [
+          {
+           "blockId": "YqhEUd",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Feedback collection"
+              }
+             ],
+             "textId": "omAsQo",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "pxLUy1",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "3vC75R",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "a7JiJp",
+         "children": [
+          {
+           "blockId": "z7WIwD",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Collect feedback from event participants through surveys or interviews"
+              }
+             ],
+             "textId": "EuGdlR",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "dHjH0-",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "PAD-uO",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "KN0LLZ",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "RVw22s",
+       "children": [
+        {
+         "blockId": "dLw7k1",
+         "children": [
+          {
+           "blockId": "6rSjxW",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Feedback analysis"
+              }
+             ],
+             "textId": "xpgFXO",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "fx3kNS",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "317SjA",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "KGmUB9",
+         "children": [
+          {
+           "blockId": "MvTHtf",
+           "children": [
+            {
+             "children": [
+              {
+               "text": "Analyze the feedback to evaluate the event's success and identify areas for improvement."
+              }
+             ],
+             "textId": "IIxhEz",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "PyTrm1",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "o-lyOl",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "52G0Y8",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 225.87890625,
+       "1": 528.484375
+      },
+      "distribute_column_widths_evenly": false,
+      "enable_header_column": false,
+      "enable_header_row": true,
+      "row_colors": {
+       "0": "appflowy_them_color_tint4"
+      }
+     },
+     "relationId": "Xh3hjS",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "KxP7KH",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "kUoAEY",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "095eSu",
+     "type": "paragraph"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "-YAaUr": {
+       "children": "etzx9w",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "-YAaUr",
+       "parent": "LxGcgr",
+       "ty": "simple_table_row"
+      },
+      "0L-NuY": {
+       "children": "cB472J",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "0L-NuY",
+       "parent": "F-MVZG",
+       "ty": "simple_table_cell"
+      },
+      "1CpcPb": {
+       "children": "y0kiLM",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "1CpcPb",
+       "parent": "8ZM9GQ",
+       "ty": "simple_table_row"
+      },
+      "2EA31M": {
+       "children": "_sX4Hk",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "2EA31M",
+       "parent": "6k2ti_",
+       "ty": "simple_table_row"
+      },
+      "2vxogE": {
+       "children": "5PFvDX",
+       "data": {},
+       "external_id": "XKhgAg",
+       "external_type": "text",
+       "id": "2vxogE",
+       "parent": "JXF2NY",
+       "ty": "paragraph"
+      },
+      "32Czc1": {
+       "children": "mITGzz",
+       "data": {},
+       "external_id": "yGKl_g",
+       "external_type": "text",
+       "id": "32Czc1",
+       "parent": "Qs8SCo",
+       "ty": "paragraph"
+      },
+      "35_zI3": {
+       "children": "7gjg1q",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "35_zI3",
+       "parent": "6k2ti_",
+       "ty": "simple_table_row"
+      },
+      "37947d6c-0bd1-5794-98c2-6241bbe05f7c": {
+       "children": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "data": {
+        "colDefaultWidth": 160,
+        "colMinimumWidth": 40,
+        "colsHeight": 44,
+        "colsLen": 2,
+        "cover_selection": "0xffffefe3",
+        "cover_selection_type": "CoverType.color",
+        "image_type": "1",
+        "rowDefaultHeight": 40,
+        "rowsLen": 1,
+        "selected_icon": "{\"groupName\":\"entertainment\",\"iconName\":\"party-popper\",\"color\":\"0xFFFFBA00\"}"
+       },
+       "external_id": "bfQyQn",
+       "external_type": "text",
+       "id": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "parent": "",
+       "ty": "page"
+      },
+      "6-V9Uz": {
+       "children": "0B-0C2",
+       "data": {},
+       "external_id": "26mYuS",
+       "external_type": "text",
+       "id": "6-V9Uz",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "60fQI_": {
+       "children": "TZsg1m",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "60fQI_",
+       "parent": "nNvCL7",
+       "ty": "simple_table_cell"
+      },
+      "6k2ti_": {
+       "children": "aIxnRO",
+       "data": {
+        "column_widths": {
+         "0": 229.140625,
+         "1": 519.953125
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {
+         "0": "appflowy_them_color_tint4"
+        }
+       },
+       "external_id": "cpIzSk",
+       "external_type": "text",
+       "id": "6k2ti_",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "simple_table"
+      },
+      "6rSjxW": {
+       "children": "fx3kNS",
+       "data": {},
+       "external_id": "xpgFXO",
+       "external_type": "text",
+       "id": "6rSjxW",
+       "parent": "dLw7k1",
+       "ty": "paragraph"
+      },
+      "8ZM9GQ": {
+       "children": "o-GsLz",
+       "data": {
+        "column_widths": {
+         "0": 218.8984375,
+         "1": 519.18359375
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {
+         "0": "appflowy_them_color_tint4"
+        }
+       },
+       "external_id": "8V-NG2",
+       "external_type": "text",
+       "id": "8ZM9GQ",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "simple_table"
+      },
+      "9REd4H": {
+       "children": "KwNjgu",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "9REd4H",
+       "parent": "35_zI3",
+       "ty": "simple_table_cell"
+      },
+      "AHqKUF": {
+       "children": "3vC75R",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "AHqKUF",
+       "parent": "hAo8E6",
+       "ty": "simple_table_cell"
+      },
+      "AdQxsr": {
+       "children": "xWc25v",
+       "data": {},
+       "external_id": "KOYrVg",
+       "external_type": "text",
+       "id": "AdQxsr",
+       "parent": "Di8Nco",
+       "ty": "paragraph"
+      },
+      "AnWUyX": {
+       "children": "52yRxP",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "AnWUyX",
+       "parent": "mRSUgF",
+       "ty": "simple_table_cell"
+      },
+      "Av1aIj": {
+       "children": "qw6bVc",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Av1aIj",
+       "parent": "vE9kFF",
+       "ty": "simple_table_cell"
+      },
+      "AzULrB": {
+       "children": "Zqybjz",
+       "data": {
+        "column_widths": {
+         "0": 217.5703125,
+         "1": 525.203125
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {
+         "0": "appflowy_them_color_tint4"
+        }
+       },
+       "external_id": "89e01B",
+       "external_type": "text",
+       "id": "AzULrB",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "simple_table"
+      },
+      "Ba6GoH": {
+       "children": "2-vaDJ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Ba6GoH",
+       "parent": "E_Oq1_",
+       "ty": "simple_table_cell"
+      },
+      "ByFRsG": {
+       "children": "YkPcjq",
+       "data": {
+        "colPosition": 0,
+        "height": 8,
+        "rowPosition": 0,
+        "width": 160
+       },
+       "external_id": "Mhm3-2",
+       "external_type": "text",
+       "id": "ByFRsG",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "CGsbX6": {
+       "children": "RIwm_g",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "CGsbX6",
+       "parent": "E_Oq1_",
+       "ty": "simple_table_cell"
+      },
+      "DCd0JY": {
+       "children": "ahFNSf",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "DCd0JY",
+       "parent": "x9bCKF",
+       "ty": "simple_table_cell"
+      },
+      "Di8Nco": {
+       "children": "9eMHHx",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Di8Nco",
+       "parent": "1CpcPb",
+       "ty": "simple_table_cell"
+      },
+      "E9nLbg": {
+       "children": "2ZSfGL",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "E9nLbg",
+       "parent": "t_G7xM",
+       "ty": "simple_table_cell"
+      },
+      "ELV8-L": {
+       "children": "8H7byt",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ELV8-L",
+       "parent": "hmOaOI",
+       "ty": "simple_table_cell"
+      },
+      "E_Oq1_": {
+       "children": "JZm0EC",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "E_Oq1_",
+       "parent": "6k2ti_",
+       "ty": "simple_table_row"
+      },
+      "F-MVZG": {
+       "children": "xzoe0H",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "F-MVZG",
+       "parent": "AzULrB",
+       "ty": "simple_table_row"
+      },
+      "FMgfpn": {
+       "children": "1QyxtX",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "FMgfpn",
+       "parent": "AzULrB",
+       "ty": "simple_table_row"
+      },
+      "FPSKDe": {
+       "children": "edgnRe",
+       "data": {
+        "bgColor": "appflowy_them_color_tint6",
+        "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+        "icon_type": "icon",
+        "textColor": "appflowy_them_color_tint6"
+       },
+       "external_id": "s6GRs5",
+       "external_type": "text",
+       "id": "FPSKDe",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "callout"
+      },
+      "FkwsnL": {
+       "children": "1ft54W",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "FkwsnL",
+       "parent": "vE9kFF",
+       "ty": "simple_table_cell"
+      },
+      "GwTK4c": {
+       "children": "Yjk_Q2",
+       "data": {
+        "level": 2
+       },
+       "external_id": "hBsuGN",
+       "external_type": "text",
+       "id": "GwTK4c",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "heading"
+      },
+      "HbDzwN": {
+       "children": "1uAeYq",
+       "data": {
+        "level": 2
+       },
+       "external_id": "eiEFgv",
+       "external_type": "text",
+       "id": "HbDzwN",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "heading"
+      },
+      "HxMlKE": {
+       "children": "tQVDy7",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "HxMlKE",
+       "parent": "nNvCL7",
+       "ty": "simple_table_cell"
+      },
+      "IDZicl": {
+       "children": "sBf1W9",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "IDZicl",
+       "parent": "hmOaOI",
+       "ty": "simple_table_cell"
+      },
+      "J4KlAT": {
+       "children": "IKgBCd",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "J4KlAT",
+       "parent": "2EA31M",
+       "ty": "simple_table_cell"
+      },
+      "J75pob": {
+       "children": "0Rj323",
+       "data": {},
+       "external_id": "m0NH1W",
+       "external_type": "text",
+       "id": "J75pob",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "JXF2NY": {
+       "children": "oUsdit",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "JXF2NY",
+       "parent": "RjalsU",
+       "ty": "simple_table_cell"
+      },
+      "JgG4Hj": {
+       "children": "ThFu4j",
+       "data": {},
+       "external_id": "z9ZKJJ",
+       "external_type": "text",
+       "id": "JgG4Hj",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "JyP2L7": {
+       "children": "O0eZxN",
+       "data": {},
+       "external_id": "T2PXIF",
+       "external_type": "text",
+       "id": "JyP2L7",
+       "parent": "QsuTvb",
+       "ty": "paragraph"
+      },
+      "K5ZNl8": {
+       "children": "_le9bb",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "K5ZNl8",
+       "parent": "-YAaUr",
+       "ty": "simple_table_cell"
+      },
+      "KGmUB9": {
+       "children": "o-lyOl",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "KGmUB9",
+       "parent": "RVw22s",
+       "ty": "simple_table_cell"
+      },
+      "Ke5N4Z": {
+       "children": "WJRugB",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Ke5N4Z",
+       "parent": "x9bCKF",
+       "ty": "simple_table_cell"
+      },
+      "KxP7KH": {
+       "children": "095eSu",
+       "data": {},
+       "external_id": "kUoAEY",
+       "external_type": "text",
+       "id": "KxP7KH",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "LPQVVI": {
+       "children": "mOcWDQ",
+       "data": {
+        "level": 2
+       },
+       "external_id": "dKYVuH",
+       "external_type": "text",
+       "id": "LPQVVI",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "heading"
+      },
+      "Lb3LHZ": {
+       "children": "D95VUr",
+       "data": {
+        "level": 1
+       },
+       "external_id": "9FsDiv",
+       "external_type": "text",
+       "id": "Lb3LHZ",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "heading"
+      },
+      "LiWbMl": {
+       "children": "GK72tT",
+       "data": {},
+       "external_id": "dxriU3",
+       "external_type": "text",
+       "id": "LiWbMl",
+       "parent": "ryJw4L",
+       "ty": "paragraph"
+      },
+      "LmsdsY": {
+       "children": "ZeCd_1",
+       "data": {},
+       "external_id": "es4qax",
+       "external_type": "text",
+       "id": "LmsdsY",
+       "parent": "E9nLbg",
+       "ty": "paragraph"
+      },
+      "LxGcgr": {
+       "children": "Xh3hjS",
+       "data": {
+        "column_widths": {
+         "0": 225.87890625,
+         "1": 528.484375
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {
+         "0": "appflowy_them_color_tint4"
+        }
+       },
+       "external_id": "5I7lvi",
+       "external_type": "text",
+       "id": "LxGcgr",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "simple_table"
+      },
+      "MvTHtf": {
+       "children": "PyTrm1",
+       "data": {},
+       "external_id": "IIxhEz",
+       "external_type": "text",
+       "id": "MvTHtf",
+       "parent": "KGmUB9",
+       "ty": "paragraph"
+      },
+      "NiPP3n": {
+       "children": "rj4x4P",
+       "data": {},
+       "external_id": "OcXlfY",
+       "external_type": "text",
+       "id": "NiPP3n",
+       "parent": "K5ZNl8",
+       "ty": "paragraph"
+      },
+      "O8QaDm": {
+       "children": "KNOGUH",
+       "data": {
+        "level": 2
+       },
+       "external_id": "I8hO7a",
+       "external_type": "text",
+       "id": "O8QaDm",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "heading"
+      },
+      "PdS51u": {
+       "children": "u3-86-",
+       "data": {},
+       "external_id": "5QYPZm",
+       "external_type": "text",
+       "id": "PdS51u",
+       "parent": "9REd4H",
+       "ty": "paragraph"
+      },
+      "Qs8SCo": {
+       "children": "bfW5TJ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Qs8SCo",
+       "parent": "-YAaUr",
+       "ty": "simple_table_cell"
+      },
+      "QsuTvb": {
+       "children": "3RSd16",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "QsuTvb",
+       "parent": "zPQxoq",
+       "ty": "simple_table_cell"
+      },
+      "R2CTgE": {
+       "children": "AgV9sH",
+       "data": {},
+       "external_id": "ygo7dg",
+       "external_type": "text",
+       "id": "R2CTgE",
+       "parent": "Vi9QJ6",
+       "ty": "paragraph"
+      },
+      "RVw22s": {
+       "children": "52G0Y8",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "RVw22s",
+       "parent": "LxGcgr",
+       "ty": "simple_table_row"
+      },
+      "RY5Lia": {
+       "children": "4Ovezl",
+       "data": {},
+       "external_id": "4ceInP",
+       "external_type": "text",
+       "id": "RY5Lia",
+       "parent": "vhXsdh",
+       "ty": "paragraph"
+      },
+      "Rd3F7y": {
+       "children": "uypPtG",
+       "data": {
+        "bgColor": "appflowy_them_color_tint6",
+        "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+        "icon_type": "icon",
+        "textColor": "appflowy_them_color_tint6"
+       },
+       "external_id": "qb7UIT",
+       "external_type": "text",
+       "id": "Rd3F7y",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "callout"
+      },
+      "RjalsU": {
+       "children": "i3TNS9",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "RjalsU",
+       "parent": "AzULrB",
+       "ty": "simple_table_row"
+      },
+      "SBkvjB": {
+       "children": "ENgBvo",
+       "data": {},
+       "external_id": "Y-wzI0",
+       "external_type": "text",
+       "id": "SBkvjB",
+       "parent": "l08sVI",
+       "ty": "paragraph"
+      },
+      "SFP1v6": {
+       "children": "5CpJ7F",
+       "data": {
+        "bgColor": "appflowy_them_color_tint6",
+        "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+        "icon_type": "icon",
+        "textColor": "appflowy_them_color_tint6"
+       },
+       "external_id": "g8zi8L",
+       "external_type": "text",
+       "id": "SFP1v6",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "callout"
+      },
+      "Sk4_PW": {
+       "children": "C-hYZX",
+       "data": {},
+       "external_id": "zapbBL",
+       "external_type": "text",
+       "id": "Sk4_PW",
+       "parent": "J4KlAT",
+       "ty": "paragraph"
+      },
+      "TnqAC5": {
+       "children": "7Lp7gb",
+       "data": {},
+       "external_id": "qnJ9uE",
+       "external_type": "text",
+       "id": "TnqAC5",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "VO-egv": {
+       "children": "s2WB5j",
+       "data": {},
+       "external_id": "5BxCdF",
+       "external_type": "text",
+       "id": "VO-egv",
+       "parent": "HxMlKE",
+       "ty": "paragraph"
+      },
+      "Vi9QJ6": {
+       "children": "dh3fLv",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "Vi9QJ6",
+       "parent": "t_G7xM",
+       "ty": "simple_table_cell"
+      },
+      "YqhEUd": {
+       "children": "pxLUy1",
+       "data": {},
+       "external_id": "omAsQo",
+       "external_type": "text",
+       "id": "YqhEUd",
+       "parent": "AHqKUF",
+       "ty": "paragraph"
+      },
+      "Yy1xbm": {
+       "children": "5Bhcqh",
+       "data": {
+        "column_widths": {
+         "0": 223.35546875,
+         "1": 521.453125
+        },
+        "distribute_column_widths_evenly": false,
+        "enable_header_column": false,
+        "enable_header_row": true,
+        "row_colors": {
+         "0": "appflowy_them_color_tint4"
+        }
+       },
+       "external_id": "lw1LUz",
+       "external_type": "text",
+       "id": "Yy1xbm",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "simple_table"
+      },
+      "Z7pkOG": {
+       "children": "Ik5JN7",
+       "data": {},
+       "external_id": "q94POu",
+       "external_type": "text",
+       "id": "Z7pkOG",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "ZfGbKZ": {
+       "children": "aZdezA",
+       "data": {
+        "bgColor": "appflowy_them_color_tint6",
+        "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+        "icon_type": "icon",
+        "textColor": "appflowy_them_color_tint6"
+       },
+       "external_id": "uI9iA6",
+       "external_type": "text",
+       "id": "ZfGbKZ",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "callout"
+      },
+      "ZsnfWe": {
+       "children": "timset",
+       "data": {},
+       "external_id": "84-9PP",
+       "external_type": "text",
+       "id": "ZsnfWe",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "_DfImy": {
+       "children": "ga1J_x",
+       "data": {},
+       "external_id": "ishdAw",
+       "external_type": "text",
+       "id": "_DfImy",
+       "parent": "60fQI_",
+       "ty": "paragraph"
+      },
+      "a7JiJp": {
+       "children": "PAD-uO",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "a7JiJp",
+       "parent": "hAo8E6",
+       "ty": "simple_table_cell"
+      },
+      "absiMS": {
+       "children": "u0Zjj5",
+       "data": {},
+       "external_id": "TK_3Vz",
+       "external_type": "text",
+       "id": "absiMS",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "bAujkL": {
+       "children": "kqFu6w",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "bAujkL",
+       "parent": "6k2ti_",
+       "ty": "simple_table_row"
+      },
+      "d9b9NX": {
+       "children": "x0yoVJ",
+       "data": {
+        "level": 2
+       },
+       "external_id": "ozepF6",
+       "external_type": "text",
+       "id": "d9b9NX",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "heading"
+      },
+      "dLw7k1": {
+       "children": "317SjA",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "dLw7k1",
+       "parent": "RVw22s",
+       "ty": "simple_table_cell"
+      },
+      "duDwJf": {
+       "children": "waZ_Bk",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "duDwJf",
+       "parent": "bAujkL",
+       "ty": "simple_table_cell"
+      },
+      "e1Wjnu": {
+       "children": "xh8ROa",
+       "data": {},
+       "external_id": "c2mOPQ",
+       "external_type": "text",
+       "id": "e1Wjnu",
+       "parent": "iRY7t6",
+       "ty": "paragraph"
+      },
+      "eZ9Uns": {
+       "children": "ig_DMa",
+       "data": {},
+       "external_id": "FQGvZN",
+       "external_type": "text",
+       "id": "eZ9Uns",
+       "parent": "hJJpxb",
+       "ty": "paragraph"
+      },
+      "fGzFd_": {
+       "children": "vfXwsW",
+       "data": {
+        "colPosition": 1,
+        "height": 8,
+        "rowPosition": 0,
+        "width": 160
+       },
+       "external_id": "ssfnzG",
+       "external_type": "text",
+       "id": "fGzFd_",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "fJjAg3": {
+       "children": "BsUQcU",
+       "data": {},
+       "external_id": "r4bPAu",
+       "external_type": "text",
+       "id": "fJjAg3",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "fhdLCC": {
+       "children": "op6aZy",
+       "data": {},
+       "external_id": "Uq5F2v",
+       "external_type": "text",
+       "id": "fhdLCC",
+       "parent": "ukyBOn",
+       "ty": "paragraph"
+      },
+      "gXZWqG": {
+       "children": "d3RjE2",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "gXZWqG",
+       "parent": "RjalsU",
+       "ty": "simple_table_cell"
+      },
+      "glhgfl": {
+       "children": "ogD8SD",
+       "data": {},
+       "external_id": "HsDWie",
+       "external_type": "text",
+       "id": "glhgfl",
+       "parent": "duDwJf",
+       "ty": "paragraph"
+      },
+      "hAo8E6": {
+       "children": "KN0LLZ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "hAo8E6",
+       "parent": "LxGcgr",
+       "ty": "simple_table_row"
+      },
+      "hJJpxb": {
+       "children": "A7xS_I",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "hJJpxb",
+       "parent": "mRSUgF",
+       "ty": "simple_table_cell"
+      },
+      "hmOaOI": {
+       "children": "i3CHld",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "hmOaOI",
+       "parent": "Yy1xbm",
+       "ty": "simple_table_row"
+      },
+      "iRY7t6": {
+       "children": "N33phZ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "iRY7t6",
+       "parent": "35_zI3",
+       "ty": "simple_table_cell"
+      },
+      "jqyyzJ": {
+       "children": "DlDfZd",
+       "data": {},
+       "external_id": "DUzn96",
+       "external_type": "text",
+       "id": "jqyyzJ",
+       "parent": "qZgy66",
+       "ty": "paragraph"
+      },
+      "k3xfa_": {
+       "children": "2T0eEZ",
+       "data": {},
+       "external_id": "2o4wrv",
+       "external_type": "text",
+       "id": "k3xfa_",
+       "parent": "FkwsnL",
+       "ty": "paragraph"
+      },
+      "k9r80u": {
+       "children": "-oJ2wk",
+       "data": {},
+       "external_id": "ejoQso",
+       "external_type": "text",
+       "id": "k9r80u",
+       "parent": "CGsbX6",
+       "ty": "paragraph"
+      },
+      "l08sVI": {
+       "children": "cLMHJk",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "l08sVI",
+       "parent": "zPQxoq",
+       "ty": "simple_table_cell"
+      },
+      "mRSUgF": {
+       "children": "5HbrL8",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "mRSUgF",
+       "parent": "Yy1xbm",
+       "ty": "simple_table_row"
+      },
+      "nNvCL7": {
+       "children": "DMWUAM",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "nNvCL7",
+       "parent": "Yy1xbm",
+       "ty": "simple_table_row"
+      },
+      "oG7Y2w": {
+       "children": "ly1kXT",
+       "data": {},
+       "external_id": "opO26L",
+       "external_type": "text",
+       "id": "oG7Y2w",
+       "parent": "Ba6GoH",
+       "ty": "paragraph"
+      },
+      "ohtwYZ": {
+       "children": "O4dbjs",
+       "data": {},
+       "external_id": "NZq9IR",
+       "external_type": "text",
+       "id": "ohtwYZ",
+       "parent": "gXZWqG",
+       "ty": "paragraph"
+      },
+      "p-x_IC": {
+       "children": "0SILPB",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "p-x_IC",
+       "parent": "2EA31M",
+       "ty": "simple_table_cell"
+      },
+      "qZgy66": {
+       "children": "2EyUDk",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "qZgy66",
+       "parent": "FMgfpn",
+       "ty": "simple_table_cell"
+      },
+      "rdUhCv": {
+       "children": "0rXrup",
+       "data": {},
+       "external_id": "9u3tNE",
+       "external_type": "text",
+       "id": "rdUhCv",
+       "parent": "Av1aIj",
+       "ty": "paragraph"
+      },
+      "ryJw4L": {
+       "children": "6j1exR",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ryJw4L",
+       "parent": "F-MVZG",
+       "ty": "simple_table_cell"
+      },
+      "sDGqD7": {
+       "children": "8oZwqt",
+       "data": {},
+       "external_id": "bEdI6T",
+       "external_type": "text",
+       "id": "sDGqD7",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "t_G7xM": {
+       "children": "1zBbzF",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "t_G7xM",
+       "parent": "8ZM9GQ",
+       "ty": "simple_table_row"
+      },
+      "t_oqzQ": {
+       "children": "dkhAoK",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "t_oqzQ",
+       "parent": "1CpcPb",
+       "ty": "simple_table_cell"
+      },
+      "u0CLSm": {
+       "children": "MLNEfc",
+       "data": {},
+       "external_id": "vjfE9b",
+       "external_type": "text",
+       "id": "u0CLSm",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "ukyBOn": {
+       "children": "COI4Sn",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "ukyBOn",
+       "parent": "FMgfpn",
+       "ty": "simple_table_cell"
+      },
+      "unOVln": {
+       "children": "ebrr52",
+       "data": {
+        "bgColor": "appflowy_them_color_tint6",
+        "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"text-flow-rows\"}",
+        "icon_type": "icon",
+        "textColor": "appflowy_them_color_tint6"
+       },
+       "external_id": "SlL-Pd",
+       "external_type": "text",
+       "id": "unOVln",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "callout"
+      },
+      "uojdq0": {
+       "children": "RPNrgP",
+       "data": {},
+       "external_id": "wlfmdh",
+       "external_type": "text",
+       "id": "uojdq0",
+       "parent": "IDZicl",
+       "ty": "paragraph"
+      },
+      "vBpxF_": {
+       "children": "Ga2UlM",
+       "data": {},
+       "external_id": "NXjzgA",
+       "external_type": "text",
+       "id": "vBpxF_",
+       "parent": "AnWUyX",
+       "ty": "paragraph"
+      },
+      "vE9kFF": {
+       "children": "RrDrg9",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "vE9kFF",
+       "parent": "AzULrB",
+       "ty": "simple_table_row"
+      },
+      "vUfLG6": {
+       "children": "U8MCgo",
+       "data": {},
+       "external_id": "FH5bZ9",
+       "external_type": "text",
+       "id": "vUfLG6",
+       "parent": "p-x_IC",
+       "ty": "paragraph"
+      },
+      "vfCv_g": {
+       "children": "2Jf53t",
+       "data": {},
+       "external_id": "SVGyVY",
+       "external_type": "text",
+       "id": "vfCv_g",
+       "parent": "37947d6c-0bd1-5794-98c2-6241bbe05f7c",
+       "ty": "paragraph"
+      },
+      "vhXsdh": {
+       "children": "lmuQkZ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "vhXsdh",
+       "parent": "bAujkL",
+       "ty": "simple_table_cell"
+      },
+      "wUP7iz": {
+       "children": "DrDRcK",
+       "data": {},
+       "external_id": "aoT7_y",
+       "external_type": "text",
+       "id": "wUP7iz",
+       "parent": "ELV8-L",
+       "ty": "paragraph"
+      },
+      "x9bCKF": {
+       "children": "7ppaB5",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "x9bCKF",
+       "parent": "8ZM9GQ",
+       "ty": "simple_table_row"
+      },
+      "xeC209": {
+       "children": "2kOnT2",
+       "data": {},
+       "external_id": "jAtraG",
+       "external_type": "text",
+       "id": "xeC209",
+       "parent": "0L-NuY",
+       "ty": "paragraph"
+      },
+      "z7WIwD": {
+       "children": "dHjH0-",
+       "data": {},
+       "external_id": "EuGdlR",
+       "external_type": "text",
+       "id": "z7WIwD",
+       "parent": "a7JiJp",
+       "ty": "paragraph"
+      },
+      "zAOYp6": {
+       "children": "pj9VCD",
+       "data": {},
+       "external_id": "CTQQb2",
+       "external_type": "text",
+       "id": "zAOYp6",
+       "parent": "t_oqzQ",
+       "ty": "paragraph"
+      },
+      "zMQGKO": {
+       "children": "7q6ajO",
+       "data": {},
+       "external_id": "BsgL9T",
+       "external_type": "text",
+       "id": "zMQGKO",
+       "parent": "DCd0JY",
+       "ty": "paragraph"
+      },
+      "zPQxoq": {
+       "children": "Mq4VLo",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "zPQxoq",
+       "parent": "8ZM9GQ",
+       "ty": "simple_table_row"
+      },
+      "zVIiyy": {
+       "children": "sONrnW",
+       "data": {},
+       "external_id": "fyIeGh",
+       "external_type": "text",
+       "id": "zVIiyy",
+       "parent": "Ke5N4Z",
+       "ty": "paragraph"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "-oJ2wk": [],
+       "095eSu": [],
+       "0B-0C2": [],
+       "0Rj323": [],
+       "0SILPB": [
+        "vUfLG6"
+       ],
+       "0rXrup": [],
+       "1QyxtX": [
+        "ukyBOn",
+        "qZgy66"
+       ],
+       "1ft54W": [
+        "k3xfa_"
+       ],
+       "1uAeYq": [],
+       "1zBbzF": [
+        "Vi9QJ6",
+        "E9nLbg"
+       ],
+       "2-vaDJ": [
+        "oG7Y2w"
+       ],
+       "2EyUDk": [
+        "jqyyzJ"
+       ],
+       "2Jf53t": [],
+       "2T0eEZ": [],
+       "2ZSfGL": [
+        "LmsdsY"
+       ],
+       "2kOnT2": [],
+       "317SjA": [
+        "6rSjxW"
+       ],
+       "37947d6c-0bd1-5794-98c2-6241bbe05f7c": [
+        "ByFRsG",
+        "fGzFd_",
+        "Lb3LHZ",
+        "ZfGbKZ",
+        "TnqAC5",
+        "AzULrB",
+        "HbDzwN",
+        "vfCv_g",
+        "unOVln",
+        "Z7pkOG",
+        "8ZM9GQ",
+        "d9b9NX",
+        "sDGqD7",
+        "SFP1v6",
+        "6-V9Uz",
+        "Yy1xbm",
+        "O8QaDm",
+        "J75pob",
+        "ZsnfWe",
+        "GwTK4c",
+        "absiMS",
+        "FPSKDe",
+        "u0CLSm",
+        "6k2ti_",
+        "LPQVVI",
+        "JgG4Hj",
+        "Rd3F7y",
+        "fJjAg3",
+        "LxGcgr",
+        "KxP7KH"
+       ],
+       "3RSd16": [
+        "JyP2L7"
+       ],
+       "3vC75R": [
+        "YqhEUd"
+       ],
+       "4Ovezl": [],
+       "52G0Y8": [
+        "dLw7k1",
+        "KGmUB9"
+       ],
+       "52yRxP": [
+        "vBpxF_"
+       ],
+       "5Bhcqh": [
+        "nNvCL7",
+        "hmOaOI",
+        "mRSUgF"
+       ],
+       "5CpJ7F": [],
+       "5HbrL8": [
+        "AnWUyX",
+        "hJJpxb"
+       ],
+       "5PFvDX": [],
+       "6j1exR": [
+        "LiWbMl"
+       ],
+       "7Lp7gb": [],
+       "7gjg1q": [
+        "9REd4H",
+        "iRY7t6"
+       ],
+       "7ppaB5": [
+        "Ke5N4Z",
+        "DCd0JY"
+       ],
+       "7q6ajO": [],
+       "8H7byt": [
+        "wUP7iz"
+       ],
+       "8oZwqt": [],
+       "9eMHHx": [
+        "AdQxsr"
+       ],
+       "A7xS_I": [
+        "eZ9Uns"
+       ],
+       "AgV9sH": [],
+       "BsUQcU": [],
+       "C-hYZX": [],
+       "COI4Sn": [
+        "fhdLCC"
+       ],
+       "D95VUr": [],
+       "DMWUAM": [
+        "60fQI_",
+        "HxMlKE"
+       ],
+       "DlDfZd": [],
+       "DrDRcK": [],
+       "ENgBvo": [],
+       "GK72tT": [],
+       "Ga2UlM": [],
+       "IKgBCd": [
+        "Sk4_PW"
+       ],
+       "Ik5JN7": [],
+       "JZm0EC": [
+        "Ba6GoH",
+        "CGsbX6"
+       ],
+       "KN0LLZ": [
+        "AHqKUF",
+        "a7JiJp"
+       ],
+       "KNOGUH": [],
+       "KwNjgu": [
+        "PdS51u"
+       ],
+       "MLNEfc": [],
+       "Mq4VLo": [
+        "l08sVI",
+        "QsuTvb"
+       ],
+       "N33phZ": [
+        "e1Wjnu"
+       ],
+       "O0eZxN": [],
+       "O4dbjs": [],
+       "PAD-uO": [
+        "z7WIwD"
+       ],
+       "PyTrm1": [],
+       "RIwm_g": [
+        "k9r80u"
+       ],
+       "RPNrgP": [],
+       "RrDrg9": [
+        "FkwsnL",
+        "Av1aIj"
+       ],
+       "TZsg1m": [
+        "_DfImy"
+       ],
+       "ThFu4j": [],
+       "U8MCgo": [],
+       "WJRugB": [
+        "zVIiyy"
+       ],
+       "Xh3hjS": [
+        "-YAaUr",
+        "hAo8E6",
+        "RVw22s"
+       ],
+       "Yjk_Q2": [],
+       "YkPcjq": [],
+       "ZeCd_1": [],
+       "Zqybjz": [
+        "F-MVZG",
+        "RjalsU",
+        "FMgfpn",
+        "vE9kFF"
+       ],
+       "_le9bb": [
+        "NiPP3n"
+       ],
+       "_sX4Hk": [
+        "p-x_IC",
+        "J4KlAT"
+       ],
+       "aIxnRO": [
+        "E_Oq1_",
+        "35_zI3",
+        "2EA31M",
+        "bAujkL"
+       ],
+       "aZdezA": [],
+       "ahFNSf": [
+        "zMQGKO"
+       ],
+       "bfW5TJ": [
+        "32Czc1"
+       ],
+       "cB472J": [
+        "xeC209"
+       ],
+       "cLMHJk": [
+        "SBkvjB"
+       ],
+       "d3RjE2": [
+        "ohtwYZ"
+       ],
+       "dHjH0-": [],
+       "dh3fLv": [
+        "R2CTgE"
+       ],
+       "dkhAoK": [
+        "zAOYp6"
+       ],
+       "ebrr52": [],
+       "edgnRe": [],
+       "etzx9w": [
+        "K5ZNl8",
+        "Qs8SCo"
+       ],
+       "fx3kNS": [],
+       "ga1J_x": [],
+       "i3CHld": [
+        "IDZicl",
+        "ELV8-L"
+       ],
+       "i3TNS9": [
+        "JXF2NY",
+        "gXZWqG"
+       ],
+       "ig_DMa": [],
+       "kqFu6w": [
+        "duDwJf",
+        "vhXsdh"
+       ],
+       "lmuQkZ": [
+        "RY5Lia"
+       ],
+       "ly1kXT": [],
+       "mITGzz": [],
+       "mOcWDQ": [],
+       "o-GsLz": [
+        "t_G7xM",
+        "1CpcPb",
+        "zPQxoq",
+        "x9bCKF"
+       ],
+       "o-lyOl": [
+        "MvTHtf"
+       ],
+       "oUsdit": [
+        "2vxogE"
+       ],
+       "ogD8SD": [],
+       "op6aZy": [],
+       "pj9VCD": [],
+       "pxLUy1": [],
+       "qw6bVc": [
+        "rdUhCv"
+       ],
+       "rj4x4P": [],
+       "s2WB5j": [],
+       "sBf1W9": [
+        "uojdq0"
+       ],
+       "sONrnW": [],
+       "tQVDy7": [
+        "VO-egv"
+       ],
+       "timset": [],
+       "u0Zjj5": [],
+       "u3-86-": [],
+       "uypPtG": [],
+       "vfXwsW": [],
+       "waZ_Bk": [
+        "glhgfl"
+       ],
+       "x0yoVJ": [],
+       "xWc25v": [],
+       "xh8ROa": [],
+       "xzoe0H": [
+        "0L-NuY",
+        "ryJw4L"
+       ],
+       "y0kiLM": [
+        "Di8Nco",
+        "t_oqzQ"
+       ]
+      },
+      "text_map": {
+       "26mYuS": "[]",
+       "2o4wrv": "[{\"insert\":\"Identify target audience\"}]",
+       "4ceInP": "[{\"insert\":\"Ensure the venue is cleaned up and all equipment is returned.\"}]",
+       "5BxCdF": "[{\"insert\":\"Details\",\"attributes\":{\"bold\":true}}]",
+       "5QYPZm": "[{\"insert\":\"Event setup\"}]",
+       "84-9PP": "[]",
+       "9FsDiv": "[{\"insert\":\"1. Event Conceptualization\"}]",
+       "9u3tNE": "[{\"insert\":\"Who are the event's stakeholders?\"}]",
+       "BsgL9T": "[{\"insert\":\"Consider the target audience's geographic distribution and the event's budget.\"}]",
+       "CTQQb2": "[{\"insert\":\"Consider company calendar, public holidays, and target audience availability.\"}]",
+       "DUzn96": "[{\"insert\":\"What are the desired outcomes of the event?\"}]",
+       "EuGdlR": "[{\"insert\":\"Collect feedback from event participants through surveys or interviews\"}]",
+       "FH5bZ9": "[{\"insert\":\"Event management\"}]",
+       "FQGvZN": "[{\"insert\":\"Confirm the booking and any necessary details with the venue.\"}]",
+       "HsDWie": "[{\"insert\":\"Event breakdown\"}]",
+       "I8hO7a": "[{\"insert\":\"4. Event Promotion\"}]",
+       "IIxhEz": "[{\"insert\":\"Analyze the feedback to evaluate the event's success and identify areas for improvement.\"}]",
+       "KOYrVg": "[{\"insert\":\"Event date\"}]",
+       "Mhm3-2": "[{\"insert\":\"This Standard Operating Procedure (SOP) is a guide for organizing company events, from venue booking to post-event feedback collection.\"}]",
+       "NXjzgA": "[{\"insert\":\"Venue booking\"}]",
+       "NZq9IR": "[{\"insert\":\"What are the key messages of the event?\"}]",
+       "OcXlfY": "[{\"insert\":\"Task\",\"attributes\":{\"bold\":true}}]",
+       "SVGyVY": "[{\"insert\":\"Identify the event date, time, and location. Consider the event's purpose, objectives, and target audience when making these decisions.\"}]",
+       "SlL-Pd": "[{\"insert\":\"Tip\",\"attributes\":{\"bold\":true}},{\"insert\":\": When planning an event, it's important to consider the company calendar, public holidays, and the target audience's availability. This helps to maximize attendance and ensure the event is successful.\"}]",
+       "T2PXIF": "[{\"insert\":\"Consider the duration of the event and the target audience's time zone.\"}]",
+       "TK_3Vz": "[{\"insert\":\"Ensure the event runs smoothly and according to plan. This may involve coordinating with the venue, managing event logistics, and addressing any issues that arise.\"}]",
+       "Uq5F2v": "[{\"insert\":\"Define objectives\"}]",
+       "XKhgAg": "[{\"insert\":\"Define purpose\"}]",
+       "Y-wzI0": "[{\"insert\":\"Event time\"}]",
+       "aoT7_y": "[{\"insert\":\"The venue should align with the event's purpose, objectives, and target audience.\"}]",
+       "bEdI6T": "[{\"insert\":\"Book a venue that is appropriate for the event's purpose, objectives, target audience, and budget. Confirm the booking and any necessary details with the venue.\"}]",
+       "c2mOPQ": "[{\"insert\":\"Ensure the venue is set up according to the event plan.\"}]",
+       "dKYVuH": "[{\"insert\":\"6. Post-Event Feedback Collection\"}]",
+       "dxriU3": "[{\"insert\":\"Questions to Consider\",\"attributes\":{\"bold\":true}}]",
+       "eiEFgv": "[{\"insert\":\"2. Event Planning\"}]",
+       "ejoQso": "[{\"insert\":\"Details\",\"attributes\":{\"bold\":true}}]",
+       "es4qax": "[{\"insert\":\"Details\",\"attributes\":{\"bold\":true}}]",
+       "fyIeGh": "[{\"insert\":\"Event location\"}]",
+       "g8zi8L": "[{\"insert\":\"Note\",\"attributes\":{\"bold\":true}},{\"insert\":\": The event venue should align with the event's purpose, objectives, and target audience. It's also important to consider the venue's capacity, location, and available facilities.\"}]",
+       "hBsuGN": "[{\"insert\":\"5. Event Execution\"}]",
+       "ishdAw": "[{\"insert\":\"Task\",\"attributes\":{\"bold\":true}}]",
+       "jAtraG": "[]",
+       "kUoAEY": "[]",
+       "m0NH1W": "[{\"insert\":\"Promote the event to the target audience. Use appropriate promotion channels and provide all necessary information about the event.\"}]",
+       "omAsQo": "[{\"insert\":\"Feedback collection\"}]",
+       "opO26L": "[{\"insert\":\"Task\",\"attributes\":{\"bold\":true}}]",
+       "ozepF6": "[{\"insert\":\"3. Venue Booking\"}]",
+       "q94POu": "[]",
+       "qb7UIT": "[{\"insert\":\"Feedback is a Gift\",\"attributes\":{\"bold\":true}},{\"insert\":\": Collecting and analyzing feedback from event participants is a valuable opportunity to learn and improve. It can provide insights into what worked well and what could be improved for future events.\"}]",
+       "qnJ9uE": "[]",
+       "r4bPAu": "[]",
+       "s6GRs5": "[{\"insert\":\"Event Execution\",\"attributes\":{\"bold\":true}},{\"insert\":\": Ensuring the event runs smoothly and according to plan is crucial. This may involve coordinating with the venue, managing event logistics, and addressing any issues that arise.\"}]",
+       "ssfnzG": "[]",
+       "uI9iA6": "[{\"insert\":\"Remember\",\"attributes\":{\"bold\":true}},{\"insert\":\": A well-defined event purpose and clear objectives are key to a successful event. They guide the planning process and help ensure the event is successful and meets the company's needs.\"}]",
+       "vjfE9b": "[]",
+       "wlfmdh": "[{\"insert\":\"Venue selection\"}]",
+       "xpgFXO": "[{\"insert\":\"Feedback analysis\"}]",
+       "yGKl_g": "[{\"insert\":\"Details\",\"attributes\":{\"bold\":true}}]",
+       "ygo7dg": "[{\"insert\":\"Task\",\"attributes\":{\"bold\":true}}]",
+       "z9ZKJJ": "[{\"insert\":\"Collect feedback from event participants. Use this feedback to evaluate the event's success and identify areas for improvement.\"}]",
+       "zapbBL": "[{\"insert\":\"Manage event logistics and address any issues that arise.\"}]"
+      }
+     },
+     "page_id": "37947d6c-0bd1-5794-98c2-6241bbe05f7c"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Event-Planning-SOP",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731831229,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"money_shopping/annoncement-megaphone\",\"space_icon_color\":\"0xFFFFBA00\",\"space_permission\":0,\"space_created_at\":1724474252600}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1758001342,
+     "layout": 0,
+     "name": "Marketing",
+     "view_id": "d19c173a-cb17-4a72-92ca-61fd0104d115"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731831229,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"color\",\"value\":\"0xffffefe3\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"entertainment\",\"iconName\":\"party-popper\",\"color\":\"0xFFFFBA00\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764766382,
+     "layout": 0,
+     "name": "Event Planning SOP",
+     "view_id": "ad37dc78-a311-401b-a8ab-a94c8847c853"
+    }
+   ],
+   "childViews": [],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"color\",\"value\":\"0xffffefe3\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"entertainment\",\"iconName\":\"party-popper\",\"color\":\"0xFFFFBA00\"}"
+   },
+   "layout": 0,
+   "name": "Event Planning SOP",
+   "viewId": "ad37dc78-a311-401b-a8ab-a94c8847c853",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

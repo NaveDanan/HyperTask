@@ -1,0 +1,21 @@
+FROM rust:1.85.0-bookworm AS builder
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends protobuf-compiler libclang-dev clang lld pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+COPY . .
+ENV SQLX_OFFLINE=true CARGO_BUILD_JOBS=4 RUSTUP_TOOLCHAIN=1.85.0
+RUN cargo build --locked --release -p appflowy-cloud -p admin_frontend --bin appflowy_cloud --bin admin_frontend
+FROM debian:12.10-slim AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+LABEL org.opencontainers.image.source="https://github.com/AppFlowy-IO/AppFlowy-Cloud" org.opencontainers.image.revision="592f644a24beb159d45f25a4cabc34621ef7382c"
+FROM runtime AS cloud
+COPY --from=builder /app/target/release/appflowy_cloud /usr/local/bin/appflowy_cloud
+ENV PORT=8000
+EXPOSE 8000
+CMD ["appflowy_cloud"]
+FROM runtime AS admin
+COPY --from=builder /app/target/release/admin_frontend /usr/local/bin/admin_frontend
+COPY --from=builder /app/admin_frontend/assets /app/assets
+ENV PORT=3000
+EXPOSE 3000
+CMD ["admin_frontend"]

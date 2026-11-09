@@ -1,0 +1,43 @@
+[package]
+name = "electron-core"
+version = "0.1.0"
+edition = "2021"
+
+# Hosts AppFlowyCore in a child process of the Electron shell
+# (frontend/appflowy_electron). It is the Electron counterpart of dart-ffi:
+# the dependency and feature set mirrors dart-ffi so both share the build cache.
+[[bin]]
+name = "appflowy_core"
+path = "src/main.rs"
+
+[dependencies]
+bytes.workspace = true
+tokio = { workspace = true, features = ["full", "rt-multi-thread", "tracing"] }
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml = "0.9.27"
+semver = "1.0.22"
+tracing.workspace = true
+futures = "0.3.31"
+allo-isolate = { version = "^0.1", features = ["catch-unwind"] }
+
+# workspace
+lib-dispatch = { workspace = true, features = ["local_set"] }
+lib-log.workspace = true
+flowy-core = { workspace = true }
+flowy-notification = { workspace = true, features = ["dart"] }
+flowy-document = { workspace = true, features = ["dart"] }
+flowy-user = { workspace = true, features = ["dart"] }
+flowy-date = { workspace = true, features = ["dart"] }
+flowy-server = { workspace = true }
+flowy-server-pub = { workspace = true }
+collab-integrate = { workspace = true }
+flowy-error = { workspace = true, features = ["impl_from_sqlite", "impl_from_dispatch_error", "impl_from_appflowy_cloud", "impl_from_reqwest", "impl_from_serde", "dart"] }
+
+[features]
+default = ["dart"]
+file_reader = ["flowy-core/file_reader"]
+dart = ["flowy-core/dart"]
+http_sync = ["flowy-core/http_sync"]
+verbose_log = []
+openssl_vendored = ["flowy-core/openssl_vendored"]

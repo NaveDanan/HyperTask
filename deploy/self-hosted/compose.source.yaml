@@ -1,0 +1,18 @@
+services:
+  gotrue:
+    image: appflowy-demo/gotrue:43770901225d
+    build:
+      context: .sources/auth
+      dockerfile: ../../Dockerfile.gotrue
+  appflowy_cloud:
+    image: appflowy-demo/cloud:592f644a24be
+    build:
+      context: .sources/cloud
+      dockerfile: ../../Dockerfile.cloud
+      target: cloud
+  admin_frontend:
+    image: appflowy-demo/admin:592f644a24be
+    build:
+      context: .sources/cloud
+      dockerfile: ../../Dockerfile.cloud
+      target: admin

@@ -1,0 +1,117 @@
+// Generates one typed function per backend event from rust-lib/<crate>/src/event_map.rs,
+// mirroring the Dart wrappers in appflowy_backend/lib/dispatch/dart_event. A function is
+// named <EnumName><Variant> (e.g. FolderEventCreateView) and sends the variant name as the
+// event string, exactly as Dart's `FolderEvent.CreateView.toString()` does.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const rustLib = path.resolve(root, '../rust-lib');
+const protoRoot = path.join(root, 'src/shared/protobuf');
+const outDir = path.join(root, 'src/renderer/backend/events');
+
+// Schema name -> { crate, module } for every generated message.
+const schemas = new Map();
+for (const crate of fs.readdirSync(protoRoot)) {
+  for (const file of fs.readdirSync(path.join(protoRoot, crate))) {
+    if (!file.endsWith('_pb.ts')) continue;
+    const source = fs.readFileSync(path.join(protoRoot, crate, file), 'utf8');
+    for (const match of source.matchAll(/^export const (\w+)Schema: GenMessage</gm)) {
+      const entry = { crate, module: file.replace(/\.ts$/, '') };
+      const list = schemas.get(match[1]) ?? [];
+      list.push(entry);
+      schemas.set(match[1], list);
+    }
+  }
+}
+
+function resolveSchema(type, crate) {
+  const candidates = schemas.get(type);
+  if (!candidates) throw new Error(`No generated schema for ${type} (${crate})`);
+  return candidates.find((c) => c.crate === crate) ?? candidates[0];
+}
+
+function parseEvents(crate) {
+  const file = path.join(rustLib, crate, 'src/event_map.rs');
+  const source = fs.readFileSync(file, 'utf8');
+  const enumMatch = source.match(/#\[derive\([^)]*Flowy_Event[^)]*\)\]\s*(?:#\[[^\]]*\]\s*)*pub enum (\w+)\s*\{([\s\S]*?)\n\}/);
+  if (!enumMatch) throw new Error(`No Flowy_Event enum in ${file}`);
+  const [, enumName, body] = enumMatch;
+  // Every variant is an event; an optional (possibly multi-line) #[event(...)] attribute
+  // names its input and output types.
+  const events = [];
+  let pending = { input: null, output: null };
+  for (const match of body.matchAll(/#\[event\(([^)]*)\)\]|^\s*([A-Z]\w*)\s*=\s*\d+/gm)) {
+    if (match[1] !== undefined) {
+      pending = {
+        input: match[1].match(/input\s*=\s*"(\w+)"/)?.[1] ?? null,
+        output: match[1].match(/output\s*=\s*"(\w+)"/)?.[1] ?? null,
+      };
+    } else {
+      events.push({ name: match[2], ...pending });
+      pending = { input: null, output: null };
+    }
+  }
+  return { enumName, events };
+}
+
+fs.rmSync(outDir, { recursive: true, force: true });
+fs.mkdirSync(outDir, { recursive: true });
+
+const crates = fs
+  .readdirSync(rustLib)
+  .filter((name) => fs.existsSync(path.join(rustLib, name, 'src/event_map.rs')))
+  .filter((name) => /Flowy_Event/.test(fs.readFileSync(path.join(rustLib, name, 'src/event_map.rs'), 'utf8')))
+  .sort();
+
+const index = [];
+let total = 0;
+for (const crate of crates) {
+  const { enumName, events } = parseEvents(crate);
+  const imports = new Map(); // module path -> Set of names
+  const addImport = (type, asType) => {
+    const { crate: c, module } = resolveSchema(type, crate);
+    const key = `@shared/protobuf/${c}/${module}`;
+    const names = imports.get(key) ?? new Set();
+    names.add(`${type}Schema`);
+    if (asType) names.add(`type ${type}`);
+    imports.set(key, names);
+  };
+
+  const functions = events.map(({ name, input, output }) => {
+    if (input) addImport(input, false);
+    if (output) addImport(output, true);
+    const fn = `${enumName}${name}`;
+    const params = input ? `payload: MessageInitShape<typeof ${input}Schema>` : '';
+    const bytes = input ? `toBinary(${input}Schema, create(${input}Schema, payload))` : 'EMPTY';
+    const ret = output ? output : 'void';
+    const outArg = output ? `, ${output}Schema` : '';
+    return `export function ${fn}(${params}): Promise<FlowyResult<${ret}>> {\n  return request('${name}', ${bytes}${outArg});\n}\n`;
+  });
+
+  const importLines = [...imports.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([module, names]) => `import { ${[...names].sort().join(', ')} } from '${module}';`);
+  const usesInput = events.some((e) => e.input);
+  const content = [
+    `// Generated from rust-lib/${crate}/src/event_map.rs by scripts/gen-events.mjs. Do not edit.`,
+    usesInput ? `import { create, toBinary, type MessageInitShape } from '@bufbuild/protobuf';` : '',
+    `import { ${events.some((e) => !e.input) ? 'EMPTY, ' : ''}request, type FlowyResult } from '../dispatch';`,
+    ...importLines,
+    '',
+    ...functions,
+  ]
+    .filter((line, i) => line !== '' || i > 2)
+    .join('\n');
+  fs.writeFileSync(path.join(outDir, `${crate}.ts`), content);
+  index.push(`export * from './${crate}';`);
+  total += events.length;
+  console.log(`${crate}: ${enumName} with ${events.length} events`);
+}
+
+fs.writeFileSync(
+  path.join(outDir, 'index.ts'),
+  `// Generated by scripts/gen-events.mjs. Do not edit.\n${index.join('\n')}\n`,
+);
+console.log(`${total} events`);

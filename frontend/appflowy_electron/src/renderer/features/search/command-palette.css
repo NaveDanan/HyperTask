@@ -1,0 +1,8 @@
+/* SearchField hint: AppFlowyTheme heading4 standard in textColorScheme.tertiary. */
+.command-palette-input::placeholder {
+  color: var(--af-text-tertiary);
+}
+
+.command-palette input {
+  user-select: text;
+}
