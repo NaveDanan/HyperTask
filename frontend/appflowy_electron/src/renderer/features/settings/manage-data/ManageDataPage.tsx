@@ -9,17 +9,18 @@ import {
   UserEventGetUserSetting,
   UserEventImportAppFlowyDataFolder,
 } from '@/backend/events';
-import { FlowySvg } from '@/icons/FlowySvg';
+import { Copy, Folder, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { SettingsPageHeader, SettingsSection, SettingsGroup, SettingsRow } from '@/components/app/settings-layout';
 import { useTr, tr } from '@/i18n';
 import { useAppStore } from '@/startup/app-store';
 import { KVKeys, KeyValueStorage } from '@/startup/kv';
 import { runAppFlowy } from '@/startup/launcher';
-import { AFButton, Spinner, Tooltip, showConfirmDialog, showSimpleAFDialog, showToast } from '@/ui';
+import { Tooltip, showConfirmDialog, showSimpleAFDialog, showToast } from '@/ui';
 import type { SettingsPageProps } from '../page-props';
 import { featureFlags } from '../pages/feature-flags';
 import { isDebugBuild } from '../settings-dialog-store';
-import { SettingsCategory, SettingsBody } from '../shared';
-import { SettingAction, SettingsSubcategory, SingleSettingAction } from '../shared-widgets';
 
 /** appFlowyApplicationDataDirectory(): `<support>/data` (release) or `<support>/data_dev` (develop). */
 export function defaultDataDirectory(): string {
@@ -93,61 +94,19 @@ function CurrentPath({ path }: { path: string }) {
   const timer = useRef<number>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <Tooltip message={tr('settings.manageDataPage.dataStorage.actions.openTooltip')}>
-          <div
-            onClick={() => void window.appflowy.shell.openPath(path)}
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
-            style={{
-              cursor: 'pointer',
-              fontSize: 'calc(14px * var(--text-scale, 1))',
-              lineHeight: '20px',
-              color: 'var(--af-text-action)',
-              textDecoration: hover ? 'underline' : undefined,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              overflowWrap: 'anywhere',
-            }}
-          >
-            {path}
-          </div>
-        </Tooltip>
-      </div>
-      <div style={{ width: 8 }} />
-      {copied ? (
-        <div
-          style={{
-            background: 'var(--afx-tint-7)',
-            borderRadius: 8,
-            padding: '8px 12px',
-            fontSize: 'calc(14px * var(--text-scale, 1))',
-            lineHeight: '20px',
-            color: 'var(--af-text-primary)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {tr('settings.manageDataPage.dataStorage.actions.copiedHint')}
-        </div>
-      ) : (
+    <div className="flex min-w-0 items-center gap-2">
+      <Tooltip message={path}>
+        <button type="button" title={tr('settings.manageDataPage.dataStorage.actions.openTooltip')} onClick={() => void window.appflowy.shell.openPath(path)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} className={`min-w-0 flex-1 truncate rounded-md bg-muted px-2 py-1 text-left font-mono text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring ${hover ? 'underline' : ''}`}>{path}</button>
+      </Tooltip>
+      {copied ? <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-xs">{tr('settings.manageDataPage.dataStorage.actions.copiedHint')}</span> :
         <Tooltip message={tr('settings.manageDataPage.dataStorage.actions.copy')}>
-          <AFButton
-            variant="ghostPrimary"
-            padding={8}
-            onTap={() => {
-              window.appflowy.clipboard.writeText(path);
-              setCopied(true);
-              window.clearTimeout(timer.current);
-              timer.current = window.setTimeout(() => setCopied(false), 300);
-            }}
-          >
-            <FlowySvg svg="copy_s" size={20} color="var(--af-text-primary)" />
-          </AFButton>
-        </Tooltip>
-      )}
+          <Button variant="outline" size="icon-sm" aria-label={tr('settings.manageDataPage.dataStorage.actions.copy')} onClick={() => {
+            window.appflowy.clipboard.writeText(path);
+            setCopied(true);
+            window.clearTimeout(timer.current);
+            timer.current = window.setTimeout(() => setCopied(false), 300);
+          }}><Copy className="size-4" /></Button>
+        </Tooltip>}
     </div>
   );
 }
@@ -201,7 +160,6 @@ export function ManageDataPage({ workspace, closeDialog }: SettingsPageProps) {
       description: tr('settings.manageDataPage.cache.dialog.description'),
       style: 'cancelAndOk',
       confirmLabel: tr('button.ok'),
-      confirmButtonColor: 'var(--cs-primary)',
       onConfirm: async () => {
         await clearAllCache();
         await checkViewHealth(false);
@@ -210,72 +168,23 @@ export function ManageDataPage({ workspace, closeDialog }: SettingsPageProps) {
     });
 
   return (
-    <SettingsBody title={tr('settings.manageDataPage.title')} description={tr('settings.manageDataPage.description')}>
-      <SettingsCategory
-        key="storage"
-        title={tr('settings.manageDataPage.dataStorage.title')}
-        tooltip={tr('settings.manageDataPage.dataStorage.tooltip')}
-        actions={
-          isCloudWorkspace && (
-            <SettingAction
-              tooltip={tr('settings.manageDataPage.dataStorage.actions.resetTooltip')}
-              icon={<FlowySvg svg="restore_s" size={20} />}
-              label={tr('settings.common.reset')}
-              onPressed={resetToDefault}
-            />
-          )
-        }
-      >
-        {path === null ? (
-          <Spinner />
-        ) : (
-          [
-            <CurrentPath key="path" path={path} />,
-            isCloudWorkspace && (
-              // _DataPathActions: "Change path". The Dart guard `path == path` always returns,
-              // so picking a folder has no effect; reproduced.
-              <div key="change" style={{ display: 'flex' }}>
-                <AFButton variant="filledPrimary" text={tr('settings.manageDataPage.dataStorage.actions.change')} onTap={() => void window.appflowy.dialog.pickDirectory()} />
-              </div>
-            ),
-          ]
-        )}
-      </SettingsCategory>
-      <SettingsCategory key="import" title={tr('settings.manageDataPage.importData.title')} tooltip={tr('settings.manageDataPage.importData.tooltip')}>
-        <SingleSettingAction
-          label={tr('settings.manageDataPage.importData.description')}
-          labelMaxLines={2}
-          buttonLabel={tr('settings.manageDataPage.importData.action')}
-          onPressed={() => void importData()}
-        />
-      </SettingsCategory>
-      {isDebugBuild() && (
-        <SettingsCategory key="export" title={tr('settings.files.exportData')}>
-          <SettingsSubcategory title={tr('settings.manageDataPage.data.fixYourData')}>
-            <SingleSettingAction
-              label={tr('settings.manageDataPage.data.fixYourDataDescription')}
-              buttonLabel={tr('settings.manageDataPage.data.fixButton')}
-              onPressed={() => void checkViewHealth(true)}
-            />
-          </SettingsSubcategory>
-        </SettingsCategory>
-      )}
-      <SettingsCategory key="logs" title={tr('workspace.errorActions.exportLogFiles')}>
-        <SingleSettingAction
-          labelMaxLines={4}
-          label={tr('workspace.errorActions.exportLogFiles')}
-          buttonLabel={tr('settings.files.export')}
-          onPressed={() => void shareLogFiles()}
-        />
-      </SettingsCategory>
-      <SettingsCategory key="cache" title={tr('settings.manageDataPage.cache.title')}>
-        <SingleSettingAction
-          labelMaxLines={4}
-          label={tr('settings.manageDataPage.cache.description')}
-          buttonLabel={tr('settings.manageDataPage.cache.title')}
-          onPressed={clearCache}
-        />
-      </SettingsCategory>
-    </SettingsBody>
+    <>
+      <SettingsPageHeader title={tr('settings.manageDataPage.title')} description={tr('settings.manageDataPage.description')} />
+      <SettingsSection title={<Tooltip message={tr('settings.manageDataPage.dataStorage.tooltip')}><span>{tr('settings.manageDataPage.dataStorage.title')}</span></Tooltip>}>
+        <SettingsGroup><SettingsRow label={<span className="flex items-center gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted"><Folder className="size-4 text-muted-foreground" /></span>{tr('settings.manageDataPage.dataStorage.title')}</span>} control={<>
+          {path !== null && <Button variant="outline" size="sm" onClick={() => void window.appflowy.shell.openPath(path)}>{tr('settings.manageDataPage.dataStorage.actions.openTooltip')}</Button>}
+          {isCloudWorkspace && <>
+          <Button variant="outline" size="sm" onClick={() => void window.appflowy.dialog.pickDirectory()}>{tr('settings.manageDataPage.dataStorage.actions.change')}</Button>
+          <Tooltip message={tr('settings.manageDataPage.dataStorage.actions.resetTooltip')}><Button variant="outline" size="sm" onClick={resetToDefault}><RotateCcw className="size-4" />{tr('settings.common.reset')}</Button></Tooltip>
+        </>}
+        </>}>
+          {path === null ? <Spinner /> : <CurrentPath path={path} />}
+        </SettingsRow></SettingsGroup>
+      </SettingsSection>
+      <SettingsSection title={<Tooltip message={tr('settings.manageDataPage.importData.tooltip')}><span>{tr('settings.manageDataPage.importData.title')}</span></Tooltip>}><SettingsGroup><SettingsRow label={tr('settings.manageDataPage.importData.description')} control={<Button variant="outline" size="sm" onClick={() => void importData()}>{tr('settings.manageDataPage.importData.action')}</Button>} /></SettingsGroup></SettingsSection>
+      {isDebugBuild() && <SettingsSection title={tr('settings.files.exportData')}><SettingsGroup><SettingsRow label={tr('settings.manageDataPage.data.fixYourData')} description={tr('settings.manageDataPage.data.fixYourDataDescription')} control={<Button variant="outline" size="sm" onClick={() => void checkViewHealth(true)}>{tr('settings.manageDataPage.data.fixButton')}</Button>} /></SettingsGroup></SettingsSection>}
+      <SettingsSection title={tr('workspace.errorActions.exportLogFiles')}><SettingsGroup><SettingsRow label={tr('workspace.errorActions.exportLogFiles')} control={<Button variant="outline" size="sm" onClick={() => void shareLogFiles()}>{tr('settings.files.export')}</Button>} /></SettingsGroup></SettingsSection>
+      <SettingsSection title={tr('settings.manageDataPage.cache.title')}><SettingsGroup><SettingsRow label={tr('settings.manageDataPage.cache.description')} control={<Button variant="outline" size="sm" onClick={clearCache}>{tr('settings.manageDataPage.cache.title')}</Button>} /></SettingsGroup></SettingsSection>
+    </>
   );
 }

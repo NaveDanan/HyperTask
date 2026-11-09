@@ -1,30 +1,31 @@
 // Local primitives for the sidebar (Flutter widgets the shared @/ui layer does not cover).
 import { useRef, type CSSProperties, type MouseEvent, type ReactNode, type Ref } from 'react';
 import type { FlowySvgName } from '@/icons/flowy-svgs';
+import { CalendarDays, ChevronsDownUp, Copy, FileText, FolderInput, Info, Lock, LockOpen, MessageSquareText, PencilLine, Plus, SlidersHorizontal, SmilePlus, SquareArrowOutUpRight, SquareKanban, Star, Table2, Trash2, type LucideIcon } from 'lucide-react';
+import { NavIconButton } from '@/components/app/nav';
+import { floatingSurfaceClass, MenuRow, MenuSeparator } from '@/components/app/menu-row';
+import { ShortcutKeys } from '@/components/app/shortcut';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import {
   AppFlowyPopover,
-  FlowyDivider,
-  FlowySvg,
-  FlowyText,
-  Spinner,
   Tooltip,
   showDialog,
   type PopoverController,
   type PopoverDirection,
   type PopoverMutex,
 } from '@/ui';
-import './sidebar.css';
 
 export const isMac = navigator.userAgent.includes('Mac');
 
-/** A rich tooltip: the label, then the shortcut in Theme.hintColor (sidebar tooltips). */
+/** The label followed by keyboard caps, matching the app tooltip recipe. */
 export function hintTooltip(label: string, shortcut: string): ReactNode {
   return (
-    <>
+    <span className="flex items-center gap-2">
       {label}
-      {'\n'}
-      <span style={{ color: 'var(--th-hint)' }}>{shortcut}</span>
-    </>
+      <ShortcutKeys keys={shortcut} className="[&_kbd]:bg-background/20 [&_kbd]:text-background" />
+    </span>
   );
 }
 
@@ -44,50 +45,27 @@ export interface SbIconButtonProps {
   style?: CSSProperties;
 }
 
-/** FlowyIconButton (style_widget/icon_button.dart): hover fill, the icon keeps its color. */
+/** Compatibility wrapper for existing sidebar callers, using the shared nav control. */
 export function SbIconButton({
-  icon,
-  onPressed,
-  width = 30,
-  height,
-  iconPadding = 0,
-  tooltip,
-  preferBelow,
-  isSelected,
-  hoverColor,
-  radius = 6,
-  className,
-  style,
+  icon, onPressed, width, height, iconPadding, tooltip, preferBelow, isSelected,
+  hoverColor: _hoverColor, radius: _radius, className, style,
 }: SbIconButtonProps) {
   const button = (
-    <div
-      className={`sb-icon-button${className ? ` ${className}` : ''}`}
+    <NavIconButton
+      className={cn(isSelected && 'bg-sidebar-accent text-sidebar-accent-foreground', className)}
       data-selected={isSelected ? 'true' : undefined}
       onClick={(event) => {
         event.stopPropagation();
         onPressed?.(event);
       }}
-      style={
-        {
-          width,
-          height: height ?? width,
-          padding: iconPadding,
-          borderRadius: radius,
-          '--sb-hover-bg': hoverColor,
-          ...style,
-        } as CSSProperties
-      }
+      style={{ ...(width === undefined ? null : { width, height: height ?? width }),
+        ...(height === undefined ? null : { height }),
+        ...(iconPadding === undefined ? null : { padding: iconPadding }), ...style }}
     >
       {icon}
-    </div>
+    </NavIconButton>
   );
-  return tooltip ? (
-    <Tooltip rich={tooltip} preferBelow={preferBelow}>
-      {button}
-    </Tooltip>
-  ) : (
-    button
-  );
+  return tooltip ? <Tooltip rich={tooltip} preferBelow={preferBelow}>{button}</Tooltip> : button;
 }
 
 export interface MenuItemProps {
@@ -104,44 +82,25 @@ export interface MenuItemProps {
   tooltip?: string;
 }
 
-/**
- * A FlowyIconTextButton row inside `Container(height: 34, padding: vertical 2)`: margin h6,
- * icon 16, gap 10, FlowyText.regular 14 / 18 (ViewMoreActionTypeWrapper, SpaceMoreActionTypeWrapper).
- */
-export function MenuItem({ icon, iconNode, name, onTap, danger, disabled, height = 34, margin = '0 6px', tooltip }: MenuItemProps) {
-  const row = (
-    <div style={{ height, padding: '2px 0', flexShrink: 0, opacity: disabled ? 0.3 : 1 }}>
-      <div
-        className={disabled ? undefined : `flowy-hover${danger ? ' sb-danger' : ''}`}
-        onClick={disabled ? undefined : onTap}
-        style={{
-          height: '100%',
-          padding: margin,
-          display: 'flex',
-          alignItems: 'center',
-          borderRadius: 6,
-          cursor: disabled ? 'not-allowed' : 'pointer',
-        }}
-      >
-        <div style={{ width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          {iconNode ?? (icon && <FlowySvg svg={icon} />)}
-        </div>
-        <div style={{ width: 10, flexShrink: 0 }} />
-        <FlowyText lineHeight={18} style={{ flex: 1 }}>
-          {name}
-        </FlowyText>
-      </div>
-    </div>
-  );
+// Legacy identifiers remain valid at the API boundary; chrome renders with lucide.
+const hyperMenuIcons: Partial<Record<FlowySvgName, LucideIcon>> = {
+  favorite_s: Star, unfavorite_s: Star, view_item_rename_s: PencilLine, rename_s: PencilLine,
+  change_icon_s: SmilePlus, duplicate_s: Copy, copy_s: Copy, move_to_s: FolderInput,
+  trash_s: Trash2, delete_s: Trash2, collapse_all_page_s: ChevronsDownUp,
+  view_item_open_in_new_tab_s: SquareArrowOutUpRight, space_manage_s: SlidersHorizontal,
+  space_add_s: Plus, add_s: Plus, icon_document_s: FileText, icon_grid_s: Table2,
+  icon_board_s: SquareKanban, icon_calendar_s: CalendarDays, chat_ai_page_s: MessageSquareText,
+  lock_page_s: Lock, unlock_page_s: LockOpen,
+};
+
+export function MenuItem({ icon, iconNode, name, onTap, danger, disabled, height: _height, margin: _margin, tooltip }: MenuItemProps) {
+  const Icon = icon ? hyperMenuIcons[icon] ?? Info : undefined;
+  const row = <MenuRow icon={iconNode ?? (Icon && <Icon />)} label={name}
+    onClick={onTap} destructive={danger} disabled={disabled} />;
   return tooltip ? <Tooltip message={tooltip}>{row}</Tooltip> : row;
 }
 
-/** `Padding(all 8) > FlowyDivider` between menu groups. */
-export const MenuDivider = () => (
-  <div style={{ padding: 8, flexShrink: 0 }}>
-    <FlowyDivider />
-  </div>
-);
+export const MenuDivider = () => <MenuSeparator />;
 
 export interface ActionListPopoverProps {
   children: ReactNode;
@@ -186,7 +145,14 @@ export function ActionListPopover({
       onOpen={onOpen}
       onClose={onClose}
       triggerStyle={triggerStyle}
-      popup={popup}
+      plain
+      margin={0}
+      popup={(close) => (
+        <div className={cn(floatingSurfaceClass, 'flex min-h-0 flex-col overflow-y-auto p-1')}
+          style={constraints}>
+          {popup(close)}
+        </div>
+      )}
     >
       {children}
     </AppFlowyPopover>
@@ -200,7 +166,7 @@ export function usePopoverController() {
 
 /** Loading(context): a non-dismissible transparent dialog with a centered spinner. */
 export function showLoading(): () => void {
-  return showDialog(() => <Spinner />, { barrierColor: 'transparent', barrierDismissible: false });
+  return showDialog(() => <Spinner className="size-4" />, { barrierColor: 'transparent', barrierDismissible: false });
 }
 
 /** FlowyTextField: 32px max, padding h12, outline border (primary when focused). */
@@ -233,7 +199,7 @@ export function FlowyTextField({
   style?: CSSProperties;
 }) {
   return (
-    <input
+    <Input
       ref={(el) => {
         if (typeof inputRef === 'function') inputRef(el);
         else if (inputRef) (inputRef as { current: HTMLInputElement | null }).current = el;
@@ -246,7 +212,7 @@ export function FlowyTextField({
           });
         }
       }}
-      className="sb-text-field"
+      className="h-8 text-sm"
       value={value}
       defaultValue={defaultValue}
       placeholder={hintText}
@@ -257,7 +223,7 @@ export function FlowyTextField({
         if (event.key === 'Enter') onSubmitted?.(event.currentTarget.value);
       }}
       onBlur={(event) => onCanceled?.(event.currentTarget.value)}
-      style={{ ...(enableBorderColor ? ({ '--sb-field-border': enableBorderColor } as CSSProperties) : null), ...style }}
+      style={{ ...(enableBorderColor ? { borderColor: enableBorderColor } : null), ...style }}
     />
   );
 }

@@ -4,18 +4,17 @@ import { fromBinary } from '@bufbuild/protobuf';
 import { useEffect, useRef, useState } from 'react';
 import { FolderNotification } from '@shared/protobuf/flowy-folder/notification_pb';
 import { AFAccessLevelPB, RepeatedSharedViewResponsePBSchema, ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
-import type { FlowySvgName } from '@/icons/flowy-svgs';
+import { DoorOpen, MoreHorizontal, PencilLine, SmilePlus, SquareArrowOutUpRight, Star, Trash2, type LucideIcon } from 'lucide-react';
+import { NavIconButton, NavSectionHeader } from '@/components/app/nav';
+import { floatingSurfaceClass, MenuRow, MenuSeparator } from '@/components/app/menu-row';
+import { cn } from '@/lib/utils';
 import { FolderEventGetSharedViews, FolderEventRemoveUserFromSharedPage, UserEventGetUserProfile } from '@/backend/events';
 import { NotificationSource, listen } from '@/backend/notifications';
 import { useTr } from '@/i18n';
 import { KVKeys, KeyValueStorage } from '@/startup/kv';
 import {
-  AFButton,
   AppFlowyPopover,
-  FlowySvg,
-  FlowyText,
   Spinner,
-  VSpace,
   showAFTextFieldDialog,
   showConfirmDialog,
   type PopoverController,
@@ -23,7 +22,6 @@ import {
 import { tabsActions } from '@/features/tabs/tabs-store';
 import { nameOrDefault } from '@/features/view/view-ext';
 import { ViewBackendService } from '@/features/view/view-service';
-import { SbIconButton } from '../components';
 import { openFromSidebar } from '../folder/SidebarFolder';
 import { favoriteActions } from '../stores/favorite-store';
 import type { ViewBloc } from '../stores/view-bloc';
@@ -105,14 +103,14 @@ export function SharedSection({ workspaceId }: { workspaceId: string }) {
   const { state, leave, toggle } = useSharedSection(workspaceId);
   if (state.isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Spinner color="var(--af-icon-primary)" />
+      <div className="flex justify-center">
+        <Spinner />
       </div>
     );
   }
   if (state.errorMessage) {
     return (
-      <div style={{ padding: 16, fontSize: 'calc(14px * var(--text-scale, 1))', lineHeight: '20px', fontWeight: 500, color: 'var(--af-text-warning)' }}>
+      <div className="p-4 text-sm font-medium text-warning">
         {state.errorMessage}
       </div>
     );
@@ -120,41 +118,28 @@ export function SharedSection({ workspaceId }: { workspaceId: string }) {
   if (state.sharedPages.length === 0) return null;
   const firstId = state.sharedPages[0].view.id;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <AFButton
-        variant="ghostPrimary"
-        size="l"
-        fullWidth
-        justify="flex-start"
-        padding="6px 4px"
-        borderRadius={6}
-        icon={<FlowySvg svg="shared_with_me_m" color="#3267D1" />}
-        iconGap={8}
-        text={tr('shareSection.shared')}
-        onTap={toggle}
-      />
-      {state.isExpanded &&
-        state.sharedPages.map((page) => (
-          <ViewItem
-            key={page.view.id}
-            spaceType="public"
-            isFirstChild={page.view.id === firstId}
-            view={page.view}
-            level={0}
-            isDraggable={false}
-            leftPadding={16}
-            isFeedback={false}
-            onSelected={openFromSidebar}
-            onTertiarySelected={(v) => tabsActions.openViewInNewTab(v)}
-            rightIconsBuilder={(view, bloc) => (
-              <>
+    <div className="mt-3 flex flex-col">
+      <NavSectionHeader label={tr('shareSection.shared')} collapsed={!state.isExpanded} onToggle={toggle} />
+      <div className="mt-0.5 flex flex-col gap-px">
+        {state.isExpanded &&
+          state.sharedPages.map((page) => (
+            <ViewItem
+              key={page.view.id}
+              spaceType="public"
+              isFirstChild={page.view.id === firstId}
+              view={page.view}
+              level={0}
+              isDraggable={false}
+              leftPadding={16}
+              isFeedback={false}
+              onSelected={openFromSidebar}
+              onTertiarySelected={(v) => tabsActions.openViewInNewTab(v)}
+              rightIconsBuilder={(view, bloc) => (
                 <SharedPageActionsButton view={view} accessLevel={page.accessLevel} bloc={bloc} onLeave={() => void leave(view.id)} />
-                <div style={{ width: 4 }} />
-              </>
-            )}
-          />
-        ))}
-      <VSpace size={16} />
+              )}
+            />
+          ))}
+      </div>
     </div>
   );
 }
@@ -182,14 +167,14 @@ function SharedPageActionsButton({
     if (accessLevel === AFAccessLevelPB.FullAccess) actions.push('delete');
   }
   actions.push('divider', 'openInNewTab');
-  const meta: Record<Exclude<SharedAction, 'divider'>, [string, FlowySvgName]> = {
-    favorite: [tr('disclosureAction.favorite'), 'favorite_s'],
-    unFavorite: [tr('disclosureAction.unfavorite'), 'unfavorite_s'],
-    leaveSharedPage: ['Leave', 'leave_workspace_s'],
-    rename: [tr('disclosureAction.rename'), 'view_item_rename_s'],
-    changeIcon: [tr('disclosureAction.changeIcon'), 'change_icon_s'],
-    delete: [tr('disclosureAction.delete'), 'trash_s'],
-    openInNewTab: [tr('disclosureAction.openNewTab'), 'view_item_open_in_new_tab_s'],
+  const meta: Record<Exclude<SharedAction, 'divider'>, [string, LucideIcon]> = {
+    favorite: [tr('disclosureAction.favorite'), Star],
+    unFavorite: [tr('disclosureAction.unfavorite'), Star],
+    leaveSharedPage: ['Leave', DoorOpen],
+    rename: [tr('disclosureAction.rename'), PencilLine],
+    changeIcon: [tr('disclosureAction.changeIcon'), SmilePlus],
+    delete: [tr('disclosureAction.delete'), Trash2],
+    openInNewTab: [tr('disclosureAction.openNewTab'), SquareArrowOutUpRight],
   };
   const run = (action: SharedAction) => {
     switch (action) {
@@ -225,50 +210,28 @@ function SharedPageActionsButton({
       onClose={() => bloc.setIsEditing(false)}
       popup={(close) => (
         <div
-          style={{
-            width: 240,
-            padding: 8,
-            borderRadius: 12,
-            background: 'var(--th-card)',
-            boxShadow: 'var(--af-shadow-medium)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+          className={cn(floatingSurfaceClass, 'flex w-56 flex-col p-1')}
         >
           {actions.map((action, index) => {
             if (action === 'divider') {
-              return index === 0 ? null : <div key={index} style={{ height: 1, margin: '4px 0', background: 'var(--af-border-primary)' }} />;
+              return index === 0 ? null : <MenuSeparator key={index} />;
             }
-            const [name, icon] = meta[action];
+            const [name, Icon] = meta[action];
             const danger = action === 'delete';
             return (
-              <div
-                key={action}
-                className="af-menu-item"
-                onClick={() => {
-                  run(action);
-                  close();
-                }}
-              >
-                <FlowySvg svg={icon} size={16} color={danger ? 'var(--cs-error)' : undefined} />
-                <FlowyText color={danger ? 'var(--cs-error)' : 'var(--af-text-primary)'} lineHeight={20} style={{ flex: 1 }}>
-                  {name}
-                </FlowyText>
-              </div>
+              <MenuRow key={action} icon={<Icon className="size-4" />} label={name} destructive={danger}
+                onClick={() => { run(action); close(); }} />
             );
           })}
         </div>
       )}
     >
-      <div style={{ display: 'flex' }}>
-        <SbIconButton
-          width={24}
-          icon={<FlowySvg svg="workspace_three_dots_s" />}
-          onPressed={() => {
-            bloc.setIsEditing(true);
-            controller.current?.show();
-          }}
-        />
+      <div className="flex">
+        <NavIconButton aria-label={tr('menuAppHeader.moreButtonToolTip')} onClick={(event) => {
+          event.stopPropagation();
+          bloc.setIsEditing(true);
+          controller.current?.show();
+        }}><MoreHorizontal className="size-3.5" /></NavIconButton>
       </div>
     </AppFlowyPopover>
   );

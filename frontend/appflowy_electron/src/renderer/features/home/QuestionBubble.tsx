@@ -1,14 +1,14 @@
 import { useRef } from 'react';
-import { FlowySvg } from '@/icons/FlowySvg';
+import { Bug, CircleHelp, FileText, Keyboard, MessageCircle, Star, type LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MenuFootnote, MenuRow, MenuSeparator } from '@/components/app/menu-row';
 import { useTr } from '@/i18n';
 import { useAppStore } from '@/startup/app-store';
-import { useBrightness } from '@/theme/appearance-store';
-import { ActionRow, AppFlowyPopover, FlowyText, Tooltip, showToast, type PopoverController } from '@/ui';
-import type { FlowySvgName } from '@/icons/flowy-svgs';
+import { AppFlowyPopover, Tooltip, showToast, type PopoverController } from '@/ui';
 
 interface BubbleAction {
   label: string;
-  icon: FlowySvgName;
+  icon: LucideIcon;
   run: () => void;
 }
 
@@ -17,19 +17,18 @@ const open = (url: string) => void window.appflowy.shell.openExternal(url).catch
 /** QuestionBubble (workspace/presentation/widgets/float_bubble/question_bubble.dart). */
 export function QuestionBubble() {
   const { tr } = useTr();
-  const light = useBrightness() === 'light';
   const controller = useRef<PopoverController>(null);
   const info = useAppStore((s) => s.info);
   const dataDirectory = useAppStore((s) => s.dataDirectory);
   const deviceId = useAppStore((s) => s.deviceId);
 
   const actions: BubbleAction[] = [
-    { label: tr('questionBubble.whatsNew'), icon: 'star_s', run: () => open('https://github.com/NaveDanan/HyperTask') },
-    { label: tr('questionBubble.helpAndDocumentation'), icon: 'help_and_documentation_s', run: () => open('https://github.com/NaveDanan/HyperTask#readme') },
-    { label: tr('questionBubble.getSupport'), icon: 'message_support_s', run: () => open('https://github.com/NaveDanan/HyperTask/issues') },
+    { label: tr('questionBubble.whatsNew'), icon: Star, run: () => open('https://github.com/NaveDanan/HyperTask') },
+    { label: tr('questionBubble.helpAndDocumentation'), icon: CircleHelp, run: () => open('https://github.com/NaveDanan/HyperTask#readme') },
+    { label: tr('questionBubble.getSupport'), icon: MessageCircle, run: () => open('https://github.com/NaveDanan/HyperTask/issues') },
     {
       label: tr('questionBubble.debug.name'),
-      icon: 'debug_s',
+      icon: Bug,
       run: () => {
         const lines = [
           `Version: ${info?.version ?? ''}`,
@@ -41,59 +40,33 @@ export function QuestionBubble() {
         showToast({ message: tr('questionBubble.debug.success') });
       },
     },
-    { label: tr('questionBubble.shortcuts'), icon: 'keyboard_s', run: () => open('https://github.com/NaveDanan/HyperTask#development') },
-    { label: tr('questionBubble.markdown'), icon: 'number_s', run: () => open('https://github.com/NaveDanan/HyperTask#development') },
-    { label: tr('questionBubble.feedback'), icon: 'share_feedback_s', run: () => open('https://github.com/NaveDanan/HyperTask/issues') },
+    { label: tr('questionBubble.shortcuts'), icon: Keyboard, run: () => open('https://github.com/NaveDanan/HyperTask#development') },
+    { label: tr('questionBubble.markdown'), icon: FileText, run: () => open('https://github.com/NaveDanan/HyperTask#development') },
+    { label: tr('questionBubble.feedback'), icon: MessageCircle, run: () => open('https://github.com/NaveDanan/HyperTask/issues') },
   ];
 
   return (
-    <div style={{ position: 'absolute', right: 20, bottom: 16, zIndex: 1 }}>
+    <div className="absolute right-6 bottom-6 z-1">
       <AppFlowyPopover
         controllerRef={controller}
         direction="topWithRightAligned"
         offset={{ x: 0, y: -8 }}
-        constraints={{ minWidth: 200, maxWidth: 460, maxHeight: 400 }}
+        constraints={{ minWidth: 224, maxWidth: 224, maxHeight: 400 }}
         popup={(close) => (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {actions.map((action) => (
-              <ActionRow
-                key={action.icon}
-                name={action.label}
-                leftIcon={<FlowySvg svg={action.icon} />}
-                onTap={() => {
-                  action.run();
-                  close();
-                }}
-              />
+          <div className="flex flex-col">
+            {actions.map((action, index) => (
+              <MenuRow key={index} label={action.label} icon={<action.icon className="size-4" />}
+                onClick={() => { action.run(); close(); }} />
             ))}
-            <div style={{ height: 30 }}>
-              <div style={{ height: 1, background: 'var(--th-divider)' }} />
-              <div style={{ height: 6 }} />
-              <FlowyText fontSize={12} color="var(--th-hint)" style={{ padding: '0 10px' }}>
-                {`HyperTask ${info?.version ?? ''}`}
-              </FlowyText>
-            </div>
+            <MenuSeparator />
+            <MenuFootnote>{`HyperTask ${info?.version ?? ''}`}</MenuFootnote>
           </div>
         )}
       >
         <Tooltip message={tr('questionBubble.getSupport')}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              padding: 8,
-              borderRadius: 18,
-              cursor: 'pointer',
-              background: light ? '#FFFFFF' : '#242B37',
-              border: `0.5px solid ${light ? '#4548492D' : '#FFFFFF2D'}`,
-              boxShadow: light ? '0 8px 20px #00000014' : undefined,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <FlowySvg svg="help_center_s" color={light ? '#000000' : '#FFFFFF'} />
-          </div>
+          <Button variant="outline" size="icon-sm" className="rounded-full bg-background shadow-sm" aria-label={tr('questionBubble.getSupport')}>
+            <CircleHelp className="size-4" />
+          </Button>
         </Tooltip>
       </AppFlowyPopover>
     </div>

@@ -4,7 +4,9 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import type { UserProfilePB } from '@shared/protobuf/flowy-user/user_profile_pb';
 import { tr, useTr } from '@/i18n';
-import { FlowySvg, FlowyText } from '@/ui';
+import { FileText, LayoutTemplate, SquareCheckBig, Trash2 } from 'lucide-react';
+import { MenuSeparator } from '@/components/app/menu-row';
+import { cn } from '@/lib/utils';
 import { PluginType, type Plugin } from '../tabs/plugin';
 import { nameOrDefault } from '../view/view-ext';
 import { ViewFavoriteButton } from '../view-header/FavoriteButton';
@@ -14,7 +16,7 @@ import { RawEmojiIcon, viewIcon } from '../view-header/ViewIcon';
 import { ViewTitleBar } from '../view-header/ViewTitleBar';
 import { ViewTitleBarWithRow } from '../view-header/ViewTitleBarWithRow';
 import { listenView } from '../view-header/view-listener';
-import { BlankPage, LocalToolPlaceholder, PlaceholderMessage, ViewPlaceholderPage } from './PlaceholderPage';
+import { BlankPage, HyperLayoutIcon, LocalToolPlaceholder, PlaceholderMessage, ViewPlaceholderPage } from './PlaceholderPage';
 import { TrashPage } from './trash/TrashPage';
 
 /** PluginContext: onDeleted(view, index) and the user (null in the secondary view). */
@@ -60,27 +62,21 @@ export function ViewTabBarItem({ view, shortForm }: { view: ViewPB; shortForm: b
   const [initialIcon] = useState(() => viewIcon(view));
   const [current, setCurrent] = useState(view);
   useEffect(() => listenView(view.id, { onViewUpdated: setCurrent }), [view.id]);
-  const hasIcon = viewIcon(current) !== undefined;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: shortForm ? 'center' : 'flex-start', minWidth: 0 }}>
-      {initialIcon && <RawEmojiIcon icon={initialIcon} size={16} />}
-      {!shortForm && hasIcon && <div style={{ width: 6, flexShrink: 0 }} />}
-      {(!shortForm || !hasIcon) && (
-        <FlowyText.medium ellipsis style={{ minWidth: 0 }}>
-          {nameOrDefault(current)}
-        </FlowyText.medium>
-      )}
+    <div className={cn('flex min-w-0 items-center gap-1.5', shortForm && 'justify-center')}>
+      {initialIcon ? <RawEmojiIcon icon={initialIcon} size={16} /> : <HyperLayoutIcon layout={view.layout} />}
+      {!shortForm && <span className="min-w-0 truncate">{nameOrDefault(current)}</span>}
     </div>
   );
 }
 
 function MediumLabel({ text }: { text: string }) {
-  return <FlowyText.medium ellipsis>{text}</FlowyText.medium>;
+  return <span className="truncate text-sm font-medium">{text}</span>;
 }
 
 function TrashLabel() {
   const { tr } = useTr();
-  return <MediumLabel text={tr('trash.text')} />;
+  return <span className="flex min-w-0 items-center gap-1.5"><Trash2 className="size-4 text-muted-foreground" /><MediumLabel text={tr('trash.text')} /></span>;
 }
 
 function BlankLabel() {
@@ -88,17 +84,12 @@ function BlankLabel() {
   return <MediumLabel text={tr('blankPageTitle')} />;
 }
 
-const Gap = ({ w }: { w: number }) => <div style={{ width: w, flexShrink: 0 }} />;
-
 /** DocumentPluginWidgetBuilder.rightBarItem: collaborators (empty) + 16, Share, Favorite, More. */
 function DocumentRightBar({ view }: { view: ViewPB }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-      <Gap w={16} />
+    <div className="ml-auto flex shrink-0 items-center gap-1">
       <ShareButton view={view} />
-      <Gap w={10} />
       <ViewFavoriteButton view={view} />
-      <Gap w={4} />
       <MoreViewActions view={view} />
     </div>
   );
@@ -107,11 +98,9 @@ function DocumentRightBar({ view }: { view: ViewPB }) {
 /** DatabasePluginWidgetBuilder.rightBarItem: Share, Favorite, More. */
 function DatabaseRightBar({ view }: { view: ViewPB }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+    <div className="ml-auto flex shrink-0 items-center gap-1">
       <ShareButton view={view} />
-      <Gap w={10} />
       <ViewFavoriteButton view={view} />
-      <Gap w={4} />
       <MoreViewActions view={view} />
     </div>
   );
@@ -121,9 +110,8 @@ function DatabaseRightBar({ view }: { view: ViewPB }) {
 function ChatRightBar({ view }: { view: ViewPB }) {
   const { tr } = useTr();
   return (
-    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+    <div className="ml-auto flex shrink-0 items-center gap-1">
       <ViewFavoriteButton view={view} />
-      <Gap w={4} />
       <MoreViewActions
         view={view}
         customActions={
@@ -135,9 +123,7 @@ function ChatRightBar({ view }: { view: ViewPB }) {
               tooltipMessage={tr('moreAction.saveAsNewPageDisabled')}
               disabled
             />
-            <div style={{ padding: 8 }}>
-              <div style={{ height: 1, background: 'var(--afx-border)' }} />
-            </div>
+            <MenuSeparator />
           </>
         }
       />
@@ -153,7 +139,7 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
     case 'blank':
       return {
         viewName: tr('blankPageTitle'),
-        tabBarItem: () => <BlankLabel />,
+        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs"><FileText className="size-4 text-muted-foreground" />{!shortForm && <span className="truncate">{tr('blankPageTitle')}</span>}</span>,
         leftBarItem: <BlankLabel />,
         rightBarItem: null,
         contentPadding: DEFAULT_PADDING,
@@ -162,16 +148,16 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
     case 'trash':
       return {
         viewName: tr('trash.text'),
-        tabBarItem: () => <TrashLabel />,
+        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs"><Trash2 className="size-4 text-muted-foreground" />{!shortForm && <span className="truncate">{tr('trash.text')}</span>}</span>,
         leftBarItem: <TrashLabel />,
         rightBarItem: null,
-        contentPadding: DEFAULT_PADDING,
+        contentPadding: 0,
         buildWidget: () => <TrashPage />,
       };
     case 'localTool':
       return {
         viewName: plugin.title,
-        tabBarItem: () => <MediumLabel text={plugin.title} />,
+        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs">{plugin.toolId === 'jira' ? <SquareCheckBig className="size-4 text-muted-foreground" /> : <LayoutTemplate className="size-4 text-muted-foreground" />}{!shortForm && <span className="truncate">{plugin.title}</span>}</span>,
         leftBarItem: <MediumLabel text={plugin.title} />,
         rightBarItem: null,
         contentPadding: 0,
@@ -185,7 +171,7 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
         leftBarItem: <ViewTitleBarWithRow view={plugin.view} />,
         rightBarItem: null,
         contentPadding: 0,
-        buildWidget: () => <PlaceholderMessage icon={<FlowySvg svg="icon_document_s" size={24} />} name={nameOrDefault(plugin.view)} />,
+        buildWidget: () => <PlaceholderMessage icon={<HyperLayoutIcon layout={ViewLayoutPB.Document} className="size-5" />} name={nameOrDefault(plugin.view)} />,
       };
     case 'view': {
       const view = plugin.view;

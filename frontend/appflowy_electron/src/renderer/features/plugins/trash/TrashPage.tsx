@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import type { TrashPB } from '@shared/protobuf/flowy-folder/trash_pb';
 import { tr, useTr } from '@/i18n';
-import { FlowyButton, FlowyIconButton, FlowySvg, FlowyText, showConfirmDeletionDialog, showConfirmDialog } from '@/ui';
+import { FileText, RotateCcw, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, showConfirmDeletionDialog, showConfirmDialog } from '@/ui';
 import { formatTrashDate } from '../../view-header/date-format';
 import { createTrashStore, type TrashStore } from './trash-store';
 
@@ -27,7 +31,6 @@ function showCancelAndConfirmDialog(options: { title: string; description: strin
     description: options.description,
     style: 'cancelAndOk',
     confirmLabel: options.confirmLabel,
-    confirmButtonColor: 'var(--cs-primary)',
     onConfirm: () => options.onConfirm(),
   });
 }
@@ -35,99 +38,47 @@ function showCancelAndConfirmDialog(options: { title: string; description: strin
 function TopBar({ store }: { store: TrashStore }) {
   const { tr } = useTr();
   return (
-    <div style={{ height: 36, display: 'flex', alignItems: 'stretch', flexShrink: 0 }}>
-      <FlowyText.semibold fontSize={16} color="var(--cs-tertiary)" style={{ display: 'flex', alignItems: 'center' }}>
-        {tr('trash.text')}
-      </FlowyText.semibold>
-      <div style={{ flex: 1 }} />
-      <FlowyButton
-        useIntrinsicWidth
-        leftIcon={<FlowySvg svg="restore_s" />}
-        text={<FlowyText.medium lineHeight={14}>{tr('trash.restoreAll')}</FlowyText.medium>}
-        onTap={() =>
-          showCancelAndConfirmDialog({
-            confirmLabel: tr('trash.restore'),
-            title: tr('trash.confirmRestoreAll.title'),
-            description: tr('trash.confirmRestoreAll.caption'),
-            onConfirm: () => void store.restoreAll(),
-          })
-        }
-      />
-      <div style={{ width: 6 }} />
-      <FlowyButton
-        useIntrinsicWidth
-        leftIcon={<FlowySvg svg="delete_s" />}
-        text={<FlowyText.medium lineHeight={14}>{tr('trash.deleteAll')}</FlowyText.medium>}
-        onTap={() =>
-          showConfirmDeletionDialog({
-            name: tr('trash.confirmDeleteAll.title'),
-            description: tr('trash.confirmDeleteAll.caption'),
-            onConfirm: () => void store.deleteAll(),
-          })
-        }
-      />
+    <div className="flex h-10 shrink-0 items-center gap-2">
+      <h1 className="text-lg font-semibold tracking-tight">{tr('trash.text')}</h1>
+      <div className="ml-auto flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => showCancelAndConfirmDialog({
+          confirmLabel: tr('trash.restore'), title: tr('trash.confirmRestoreAll.title'), description: tr('trash.confirmRestoreAll.caption'), onConfirm: () => void store.restoreAll(),
+        })}><RotateCcw className="size-4" />{tr('trash.restoreAll')}</Button>
+        <Button variant="destructive" size="sm" onClick={() => showConfirmDeletionDialog({
+          name: tr('trash.confirmDeleteAll.title'), description: tr('trash.confirmDeleteAll.caption'), onConfirm: () => void store.deleteAll(),
+        })}><Trash2 className="size-4" />{tr('trash.deleteAll')}</Button>
+      </div>
     </div>
   );
 }
 
 function TrashHeader() {
   const { tr } = useTr();
-  const items: Array<[string, number]> = [
-    [tr('trash.pageHeader.fileName'), TrashSizes.fileNameWidth],
-    [tr('trash.pageHeader.lastModified'), TrashSizes.lastModifiedWidth],
-    [tr('trash.pageHeader.created'), TrashSizes.createTimeWidth],
-  ];
   return (
-    <div
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 1,
-        height: TrashSizes.headerHeight,
-        background: 'var(--cs-surface)',
-        display: 'flex',
-        alignItems: 'center',
-      }}
-    >
-      {items.map(([title, width]) => (
-        <div key={title} style={{ width, flexShrink: 0 }}>
-          <FlowyText color="var(--th-disabled)">{title}</FlowyText>
-        </div>
-      ))}
-    </div>
+    <TableHeader className="sticky top-0 z-1 bg-background">
+      <TableRow>
+        <TableHead className="text-xs font-medium text-muted-foreground">{tr('trash.pageHeader.fileName')}</TableHead>
+        <TableHead className="text-xs font-medium text-muted-foreground">{tr('trash.pageHeader.lastModified')}</TableHead>
+        <TableHead className="text-xs font-medium text-muted-foreground">{tr('trash.pageHeader.created')}</TableHead>
+        <TableHead><span className="sr-only">Actions</span></TableHead>
+      </TableRow>
+    </TableHeader>
   );
 }
 
-/** TrashCell (plugins/trash/src/trash_cell.dart). */
 function TrashCell({ object, onRestore, onDelete }: { object: TrashPB; onRestore: () => void; onDelete: () => void }) {
   return (
-    <div style={{ height: 42, display: 'flex', alignItems: 'center' }}>
-      <div style={{ width: TrashSizes.fileNameWidth, flexShrink: 0 }}>
-        <FlowyText>{object.name || tr('menuAppHeader.defaultNewPageName')}</FlowyText>
-      </div>
-      <div style={{ width: TrashSizes.lastModifiedWidth, flexShrink: 0 }}>
-        <FlowyText>{formatTrashDate(object.modifiedTime)}</FlowyText>
-      </div>
-      <div style={{ width: TrashSizes.createTimeWidth, flexShrink: 0 }}>
-        <FlowyText>{formatTrashDate(object.createTime)}</FlowyText>
-      </div>
-      <div style={{ flex: 1 }} />
-      <FlowyIconButton
-        width={TrashSizes.actionIconWidth}
-        iconPadding={5}
-        iconColorOnHover="var(--cs-on-surface)"
-        onPressed={onRestore}
-        icon={<FlowySvg svg="restore_s" />}
-      />
-      <div style={{ width: 20, flexShrink: 0 }} />
-      <FlowyIconButton
-        width={TrashSizes.actionIconWidth}
-        iconPadding={5}
-        iconColorOnHover="var(--cs-on-surface)"
-        onPressed={onDelete}
-        icon={<FlowySvg svg="delete_s" />}
-      />
-    </div>
+    <TableRow className="group/row">
+      <TableCell><span className="flex max-w-64 items-center gap-2"><FileText className="size-4 shrink-0 text-muted-foreground" /><span className="truncate">{object.name || tr('menuAppHeader.defaultNewPageName')}</span></span></TableCell>
+      <TableCell className="text-muted-foreground tabular-nums">{formatTrashDate(object.modifiedTime)}</TableCell>
+      <TableCell className="text-muted-foreground tabular-nums">{formatTrashDate(object.createTime)}</TableCell>
+      <TableCell>
+        <div className="flex justify-end gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100">
+          <Tooltip message={tr('trash.restore')}><Button variant="ghost" size="icon-sm" aria-label={tr('trash.restore')} onClick={onRestore}><RotateCcw className="size-4" /></Button></Tooltip>
+          <Tooltip message={tr('deletePagePrompt.deletePermanent')}><Button variant="ghost" size="icon-sm" className="hover:bg-destructive/10 hover:text-destructive" aria-label={tr('deletePagePrompt.deletePermanent')} onClick={onDelete}><Trash2 className="size-4" /></Button></Tooltip>
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -139,20 +90,15 @@ export function TrashPage() {
   const { tr } = useTr();
 
   return (
-    <div
-      style={{
-        height: '100%',
-        boxSizing: 'border-box',
-        padding: '48px 80px',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-8 py-6">
       <TopBar store={store} />
-      <div style={{ height: 32, flexShrink: 0 }} />
-      <div className="trash-list" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-        <div style={{ width: TrashSizes.totalWidth }}>
-          <TrashHeader />
+      <div className="trash-list min-h-0 flex-1 overflow-auto pt-6">
+        {objects.length === 0 ? (
+          <Empty className="h-full"><EmptyHeader><EmptyMedia variant="icon"><Trash2 className="size-5" /></EmptyMedia><EmptyTitle>{tr('trash.mobile.empty')}</EmptyTitle><EmptyDescription>{tr('trash.mobile.emptyDescription')}</EmptyDescription></EmptyHeader></Empty>
+        ) : (
+          <Table>
+            <TrashHeader />
+            <TableBody>
           {objects.map((object) => (
             <TrashCell
               key={object.id}
@@ -174,7 +120,9 @@ export function TrashPage() {
               }
             />
           ))}
-        </div>
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );

@@ -4,13 +4,15 @@ import { AFRolePB, WorkspaceTypePB } from '@shared/protobuf/flowy-user/workspace
 import type { UserWorkspacePB } from '@shared/protobuf/flowy-user/user_profile_pb';
 import { UserEventChangeWorkspaceIcon, UserEventRenameWorkspace } from '@/backend/events';
 import { useTr } from '@/i18n';
-import { AppFlowyPopover, FlowyText, Spinner, VSpace, showConfirmDialog, showToast } from '@/ui';
+import { AppFlowyPopover, Spinner, showConfirmDialog, showToast } from '@/ui';
+import { Button } from '@/components/ui/button';
+import { SettingsGroup, SettingsRow, SettingsSection } from '@/components/app/settings-layout';
 import { EmojiPicker } from '../emoji/EmojiPicker';
 import { LanguageDropdown } from '../LanguageDropdown';
 import type { SettingsPageProps } from '../page-props';
 import { deleteWorkspace, fetchWorkspaces, leaveWorkspace } from '../settings-workspace-store';
-import { SettingsBody, SettingsCategory, SettingsCategorySpacer } from '../shared';
-import { SettingsDashedDivider, SettingsInputField, SingleSettingAction } from '../shared-widgets';
+import { SettingsBody } from '../shared';
+import { SettingsInputField } from '../shared-widgets';
 import {
   AppearanceSelector,
   DateTimeSettings,
@@ -63,9 +65,7 @@ function WorkspaceNameSetting({ role }: { role: AFRolePB | null }) {
 
   if (role !== AFRolePB.Owner) {
     return (
-      <div style={{ padding: '2.5px 0' }}>
-        <FlowyText>{text}</FlowyText>
-      </div>
+      <span className="text-sm">{text}</span>
     );
   }
   const save = (value: string) => {
@@ -93,42 +93,24 @@ function WorkspaceNameSetting({ role }: { role: AFRolePB | null }) {
 /** WorkspaceIcon (sidebar/workspace/_sidebar_workspace_icon.dart) at 64px, radius 18. */
 function WorkspaceIcon({ workspace }: { workspace: UserWorkspacePB }) {
   const [text, background] = workspaceIconColors(workspace.name);
-  return (
-    <div
-      style={{
-        width: 64,
-        height: 64,
-        borderRadius: 18,
-        background: workspace.icon ? undefined : background,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {workspace.icon ? (
-        <span style={{ fontSize: 24, lineHeight: 1 }}>{workspace.icon}</span>
-      ) : (
-        <FlowyText fontSize={24} fontWeight={600} lineHeight={26} color={text}>
-          {workspace.name.substring(0, 1)}
-        </FlowyText>
-      )}
-    </div>
-  );
+  return <div className="flex size-12 items-center justify-center rounded-md" style={{ background: workspace.icon ? undefined : background }}>
+    {workspace.icon ? <span className="text-2xl leading-none">{workspace.icon}</span> : <span className="text-2xl font-semibold" style={{ color: text }}>{workspace.name.substring(0, 1)}</span>}
+  </div>;
 }
 
 /** _WorkspaceIconSetting: only owners can open the emoji picker. */
 function WorkspaceIconSetting({ enableEdit }: { enableEdit: boolean }) {
   const workspace = useWorkspaceSettingsStore((s) => s.workspace);
-  if (!workspace) return <Spinner size={64} />;
+  if (!workspace) return <Spinner size={20} />;
   if (!enableEdit) {
     return (
-      <div style={{ pointerEvents: 'none', display: 'inline-flex' }}>
+      <div className="pointer-events-none inline-flex">
         <WorkspaceIcon workspace={workspace} />
       </div>
     );
   }
   return (
-    <div style={{ display: 'inline-flex' }}>
+    <div className="inline-flex">
       <AppFlowyPopover
         direction="bottomWithLeftAligned"
         constraints={{ maxWidth: 364, maxHeight: 356 }}
@@ -144,9 +126,9 @@ function WorkspaceIconSetting({ enableEdit }: { enableEdit: boolean }) {
           />
         )}
       >
-        <div style={{ cursor: 'pointer', display: 'inline-flex' }}>
+        <button type="button" className="inline-flex rounded-md focus-visible:ring-2 focus-visible:ring-ring" aria-label="Change icon">
           <WorkspaceIcon workspace={workspace} />
-        </div>
+        </button>
       </AppFlowyPopover>
     </div>
   );
@@ -178,64 +160,26 @@ export function WorkspacePage({ user, role, closeDialog, restartApp }: SettingsP
       },
     });
 
-  return (
-    <SettingsBody title={tr('settings.workspacePage.title')} description={tr('settings.workspacePage.description')} autoSeparate={false}>
-      {showWorkspace && [
-        <SettingsCategory key="name" title={tr('settings.workspacePage.workspaceName.title')}>
-          <WorkspaceNameSetting role={role} />
-        </SettingsCategory>,
-        <SettingsCategorySpacer key="s1" />,
-        <SettingsCategory key="icon" title={tr('settings.workspacePage.workspaceIcon.title')} description={tr('settings.workspacePage.workspaceIcon.description')}>
-          <WorkspaceIconSetting enableEdit={isOwner} />
-        </SettingsCategory>,
-        <SettingsCategorySpacer key="s2" />,
-      ]}
-      <SettingsCategory key="appearance" title={tr('settings.workspacePage.appearance.title')}>
-        <AppearanceSelector />
-      </SettingsCategory>
-      <VSpace key="v1" size={16} />
-      <SettingsCategory key="theme" title={tr('settings.workspacePage.theme.title')} description={tr('settings.workspacePage.theme.description')}>
-        <ThemeDropdown
-          onUploaded={() => {
-            showToast({ message: tr('settings.appearance.themeUpload.uploadSuccess') });
-            rebuild((n) => n + 1);
-          }}
-        />
-        <DocumentColorSetting kind="cursor" />
-        <DocumentColorSetting kind="selection" />
-        <DocumentWidthSetting />
-      </SettingsCategory>
-      <SettingsCategorySpacer key="s3" />
-      <SettingsCategory key="font" title={tr('settings.workspacePage.workspaceFont.title')}>
-        <FontSelectorDropdown />
-        <SettingsDashedDivider color="var(--cs-outline)" />
-        <SettingsCategory title={tr('settings.workspacePage.textDirection.title')}>
-          <TextDirectionSelect />
-          <EnableRTLItemsSwitcher />
-        </SettingsCategory>
-      </SettingsCategory>
-      <VSpace key="v2" size={16} />
-      <SettingsCategory key="layout" title={tr('settings.workspacePage.layoutDirection.title')}>
-        <LayoutDirectionSelect />
-      </SettingsCategory>
-      <SettingsCategorySpacer key="s4" />
-      <DateTimeSettings key="datetime" />
-      <SettingsCategorySpacer key="s5" />
-      <SettingsCategory key="language" title={tr('settings.workspacePage.language.title')}>
-        <LanguageDropdown />
-      </SettingsCategory>
-      <SettingsCategorySpacer key="s6" />
-      {showWorkspace && (
-        <SingleSettingAction
-          key="manage"
-          label={tr('settings.workspacePage.manageWorkspace.title')}
-          fontSize={16}
-          fontWeight={600}
-          buttonType="danger"
-          buttonLabel={tr(isOwner ? 'settings.workspacePage.manageWorkspace.deleteWorkspace' : 'settings.workspacePage.manageWorkspace.leaveWorkspace')}
-          onPressed={manageWorkspace}
-        />
-      )}
-    </SettingsBody>
-  );
+  return <SettingsBody title={tr('settings.workspacePage.title')} description={tr('settings.workspacePage.description')} autoSeparate={false}>
+    {showWorkspace && <SettingsSection key="workspace"><SettingsGroup>
+      <SettingsRow label={tr('settings.workspacePage.workspaceName.title')}><WorkspaceNameSetting role={role} /></SettingsRow>
+      <SettingsRow label={tr('settings.workspacePage.workspaceIcon.title')} description={tr('settings.workspacePage.workspaceIcon.description')} control={<WorkspaceIconSetting enableEdit={isOwner} />} />
+    </SettingsGroup></SettingsSection>}
+    <SettingsSection key="appearance" title={tr('settings.workspacePage.appearance.title')} description={tr('settings.workspacePage.theme.description')}>
+      <SettingsGroup><div className="p-4"><AppearanceSelector /></div></SettingsGroup>
+      <SettingsGroup>
+        <ThemeDropdown onUploaded={() => { showToast({ message: tr('settings.appearance.themeUpload.uploadSuccess') }); rebuild((n) => n + 1); }} />
+        <DocumentColorSetting kind="cursor" /><DocumentColorSetting kind="selection" /><DocumentWidthSetting />
+      </SettingsGroup>
+    </SettingsSection>
+    <SettingsSection key="text"><SettingsGroup>
+      <FontSelectorDropdown /><TextDirectionSelect /><EnableRTLItemsSwitcher /><LayoutDirectionSelect />
+      <SettingsRow label={tr('settings.workspacePage.language.title')} control={<LanguageDropdown />} />
+    </SettingsGroup></SettingsSection>
+    <DateTimeSettings key="datetime" />
+    {showWorkspace && <SettingsSection key="manage" title={tr('settings.workspacePage.manageWorkspace.title')}><SettingsGroup className="border-destructive/30"><SettingsRow
+      label={tr(isOwner ? 'settings.workspacePage.deleteWorkspacePrompt.title' : 'settings.workspacePage.leaveWorkspacePrompt.title')}
+      description={tr(isOwner ? 'settings.workspacePage.deleteWorkspacePrompt.content' : 'settings.workspacePage.leaveWorkspacePrompt.content')}
+      destructive control={<Button variant="destructive" size="sm" onClick={manageWorkspace}>{tr(isOwner ? 'settings.workspacePage.manageWorkspace.deleteWorkspace' : 'settings.workspacePage.manageWorkspace.leaveWorkspace')}</Button>} /></SettingsGroup></SettingsSection>}
+  </SettingsBody>;
 }

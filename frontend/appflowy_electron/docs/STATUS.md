@@ -4,6 +4,9 @@ Milestone 1 (foundation and app shell) is in place. The document editor, databas
 
 ## Done
 
+**Interface**
+- Redesigned on Tailwind v4, shadcn/ui (base-nova, Base UI primitives) and ReUI: inset content panel, zinc tokens with colour-scheme accents, Geist fonts, lucide icons. The rules and per-screen specs are in [design/HYPERTASK_UI.md](design/HYPERTASK_UI.md).
+
 **Platform**
 - Rust core as a child process (`rust-lib/electron-core`): same `init_sdk` configuration, all 229 events, notifications, and stream ports (search results, AI streaming, upload progress) via the native Rust stream bridge.
 - Generated TypeScript protobuf bindings and event wrappers, the Flutter icon set, translations (easy_localization semantics), fonts and all four built-in color schemes plus the appflowy_ui tokens.

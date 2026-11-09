@@ -1,6 +1,11 @@
 import type { CSSProperties, MouseEvent, ReactNode } from 'react';
-import { FlowyText } from './FlowyText';
+import { Button } from '@/components/ui/button';
+import { MenuRow, menuRowClass } from '@/components/app/menu-row';
+import { cn } from '@/lib/utils';
 import { Tooltip } from './Tooltip';
+
+// Legacy theme overrides yield to the new tokens; caller-provided colours still work.
+const customColor = (color?: string) => color?.includes('var(') ? undefined : color;
 
 export interface FlowyHoverProps {
   children: ReactNode;
@@ -21,40 +26,36 @@ export interface FlowyHoverProps {
   onMouseLeave?: () => void;
 }
 
-/** FlowyHover (style_widget/hover.dart). */
-export function FlowyHover({
-  children,
-  isSelected,
-  hoverColor,
-  foregroundColorOnHover,
-  keepForegroundOnHover,
-  backgroundColor,
-  borderRadius = 6,
-  border,
-  cursor,
-  className,
-  style,
-  ...handlers
-}: FlowyHoverProps) {
+/** Compatibility wrapper for hoverable layout and drag-and-drop content. */
+export function FlowyHover(props: FlowyHoverProps) {
+  const hoverColor = customColor(props.hoverColor);
+  const foreground = customColor(props.foregroundColorOnHover);
   return (
     <div
-      className={`flowy-hover${className ? ` ${className}` : ''}`}
-      data-selected={isSelected ? 'true' : undefined}
-      data-keep-fg={keepForegroundOnHover ? 'true' : undefined}
-      style={
-        {
-          '--hover-bg': hoverColor,
-          '--hover-fg': foregroundColorOnHover,
-          '--hover-base': backgroundColor,
-          '--hover-radius': `${borderRadius}px`,
-          border,
-          cursor,
-          ...style,
-        } as CSSProperties
-      }
-      {...handlers}
+      className={cn(
+        'rounded-md cursor-pointer transition-colors hover:bg-accent',
+        props.isSelected && 'bg-accent',
+        hoverColor && 'hover:bg-(--hyper-hover-bg) data-[selected=true]:bg-(--hyper-hover-bg)',
+        !props.keepForegroundOnHover && foreground && 'hover:text-(--hyper-hover-fg) data-[selected=true]:text-(--hyper-hover-fg)',
+        props.className,
+      )}
+      data-selected={props.isSelected ? 'true' : undefined}
+      data-keep-fg={props.keepForegroundOnHover ? 'true' : undefined}
+      style={{
+        '--hyper-hover-bg': hoverColor,
+        '--hyper-hover-fg': foreground,
+        backgroundColor: customColor(props.backgroundColor),
+        borderRadius: props.borderRadius,
+        border: customColor(props.border),
+        cursor: props.cursor,
+        ...props.style,
+      } as CSSProperties}
+      onClick={props.onClick}
+      onContextMenu={props.onContextMenu}
+      onMouseEnter={props.onMouseEnter}
+      onMouseLeave={props.onMouseLeave}
     >
-      {children}
+      {props.children}
     </div>
   );
 }
@@ -84,76 +85,37 @@ export interface FlowyButtonProps {
   style?: CSSProperties;
 }
 
-/** FlowyButton (style_widget/button.dart): leftIcon 16×16, gap 6, padding 6/4, radius 6. */
 export function FlowyButton({
-  text,
-  onTap,
-  onSecondaryTap,
-  leftIcon,
-  leftIconSize = 16,
-  rightIcon,
-  margin = '4px 6px',
-  iconPadding = 6,
-  hoverColor,
-  backgroundColor,
-  borderColor,
-  radius = 6,
-  isSelected,
-  disable,
-  useIntrinsicWidth,
-  expandText = true,
-  height,
-  tooltip,
-  className,
-  style,
+  text, onTap, onSecondaryTap, leftIcon, leftIconSize = 16, rightIcon,
+  margin, iconPadding, hoverColor, backgroundColor, borderColor, radius,
+  isSelected, disable, useIntrinsicWidth, expandText = true, height, tooltip, className, style,
 }: FlowyButtonProps) {
+  const hover = customColor(hoverColor);
+  const border = customColor(borderColor);
   const content = (
-    <FlowyHover
-      className={className}
-      isSelected={isSelected}
-      hoverColor={hoverColor}
-      backgroundColor={backgroundColor}
-      borderRadius={radius}
-      border={borderColor ? `1px solid ${borderColor}` : undefined}
-      cursor={disable ? 'not-allowed' : undefined}
+    <button
+      type="button"
+      className={cn(menuRowClass, 'transition-colors', useIntrinsicWidth && 'inline-flex w-auto', hover && 'hover:bg-(--hyper-hover-bg)', className)}
+      data-highlighted={isSelected ? 'true' : undefined}
+      data-selected={isSelected ? 'true' : undefined}
+      data-disabled={disable ? 'true' : undefined}
+      disabled={disable}
       onClick={disable ? undefined : onTap}
-      onContextMenu={
-        onSecondaryTap && !disable
-          ? (event) => {
-              event.preventDefault();
-              onSecondaryTap(event);
-            }
-          : undefined
-      }
+      onContextMenu={onSecondaryTap && !disable ? (event) => { event.preventDefault(); onSecondaryTap(event); } : undefined}
       style={{
-        display: useIntrinsicWidth ? 'inline-flex' : 'flex',
-        alignItems: 'center',
-        padding: margin,
-        height,
-        minWidth: 0,
+        '--hyper-hover-bg': hover,
+        backgroundColor: customColor(backgroundColor),
+        border: border ? '1px solid ' + border : undefined,
+        borderRadius: radius, padding: margin, height, gap: iconPadding,
         ...style,
-      }}
+      } as CSSProperties}
     >
-      {leftIcon && (
-        <div
-          style={{
-            width: leftIconSize,
-            height: leftIconSize,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: iconPadding,
-            flexShrink: 0,
-          }}
-        >
-          {leftIcon}
-        </div>
-      )}
-      <div style={{ flex: expandText && !useIntrinsicWidth ? 1 : undefined, minWidth: 0, display: 'flex' }}>
-        {typeof text === 'string' ? <FlowyText>{text}</FlowyText> : text}
-      </div>
-      {rightIcon && <div style={{ marginLeft: iconPadding, display: 'flex', flexShrink: 0 }}>{rightIcon}</div>}
-    </FlowyHover>
+      {leftIcon && <span className="flex shrink-0 items-center justify-center text-muted-foreground" style={{ width: leftIconSize, height: leftIconSize }}>{leftIcon}</span>}
+      <span className={cn('flex min-w-0', expandText && !useIntrinsicWidth && 'flex-1')}>
+        {typeof text === 'string' ? <span className="truncate">{text}</span> : text}
+      </span>
+      {rightIcon && <span className="flex shrink-0">{rightIcon}</span>}
+    </button>
   );
   return tooltip ? <Tooltip rich={tooltip}>{content}</Tooltip> : content;
 }
@@ -175,53 +137,36 @@ export interface FlowyIconButtonProps {
   style?: CSSProperties;
 }
 
-/** FlowyIconButton (style_widget/icon_button.dart). The icon keeps its color on hover by default. */
 export function FlowyIconButton({
-  icon,
-  onPressed,
-  width = 30,
-  height,
-  fillColor = 'transparent',
-  hoverColor,
-  iconColorOnHover,
-  iconPadding = 0,
-  radius = 6,
-  tooltip,
-  preferBelow,
-  isSelected,
-  style,
+  icon, onPressed, width = 30, height, fillColor, hoverColor, iconColorOnHover,
+  iconPadding, radius, tooltip, preferBelow, isSelected, style,
 }: FlowyIconButtonProps) {
+  const hover = customColor(hoverColor);
+  const foreground = customColor(iconColorOnHover);
   const button = (
-    <FlowyHover
-      isSelected={isSelected}
-      hoverColor={hoverColor}
-      foregroundColorOnHover={iconColorOnHover}
-      keepForegroundOnHover={iconColorOnHover === undefined}
-      backgroundColor={fillColor}
-      borderRadius={radius}
-      cursor={onPressed ? 'pointer' : 'default'}
+    <button
+      type="button"
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&_svg:not([class*=size-])]:size-4',
+        isSelected && 'bg-accent text-foreground',
+        hover && 'hover:bg-(--hyper-hover-bg)',
+        foreground && 'hover:text-(--hyper-hover-fg)',
+      )}
+      data-selected={isSelected ? 'true' : undefined}
+      data-keep-fg={iconColorOnHover === undefined ? 'true' : undefined}
       onClick={onPressed}
       style={{
-        width,
-        height: height ?? width,
-        padding: iconPadding,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
+        '--hyper-hover-bg': hover,
+        '--hyper-hover-fg': foreground,
+        backgroundColor: customColor(fillColor),
+        width, height: height ?? width, padding: iconPadding, borderRadius: radius,
         ...style,
-      }}
+      } as CSSProperties}
     >
       {icon}
-    </FlowyHover>
+    </button>
   );
-  return tooltip ? (
-    <Tooltip rich={tooltip} preferBelow={preferBelow}>
-      {button}
-    </Tooltip>
-  ) : (
-    button
-  );
+  return tooltip ? <Tooltip rich={tooltip} preferBelow={preferBelow}>{button}</Tooltip> : button;
 }
 
 export interface FlowyTextButtonProps {
@@ -243,119 +188,37 @@ export interface FlowyTextButtonProps {
   style?: CSSProperties;
 }
 
-/** FlowyTextButton (Material TextButton). */
 export function FlowyTextButton({
-  text,
-  onPressed,
-  fontSize = 14,
-  fontWeight = 500,
-  fontColor,
-  fontHoverColor,
-  fillColor,
-  hoverColor,
-  borderColor,
-  padding = '6px 8px',
-  radius = 6,
-  minHeight,
-  isDangerous,
-  heading,
-  tooltip,
-  style,
+  text, onPressed, fontSize, fontWeight, fontColor, fontHoverColor, fillColor,
+  hoverColor, borderColor, padding, radius, minHeight, isDangerous, heading, tooltip, style,
 }: FlowyTextButtonProps) {
+  const hover = customColor(hoverColor);
+  const foreground = customColor(fontHoverColor);
+  const border = customColor(borderColor);
   const button = (
-    <button
-      className="af-button"
+    <Button
+      type="button"
+      variant="ghost"
+      className={cn('justify-start gap-2 transition-colors', isDangerous && 'text-destructive hover:bg-destructive/10 hover:text-destructive', hover && 'hover:bg-(--hyper-hover-bg)', foreground && 'hover:text-(--hyper-hover-fg)')}
       onClick={onPressed}
-      style={
-        {
-          '--btn-bg': fillColor ?? (isDangerous ? 'transparent' : 'var(--cs-secondary-container)'),
-          '--btn-bg-hover': hoverColor ?? (isDangerous ? 'var(--cs-error)' : 'var(--cs-secondary)'),
-          '--btn-border': borderColor ?? (isDangerous ? 'var(--cs-error)' : 'transparent'),
-          '--btn-fg': fontColor ?? 'var(--cs-on-surface)',
-          '--btn-fg-hover': fontHoverColor ?? fontColor ?? 'var(--cs-on-surface)',
-          '--btn-radius': `${radius}px`,
-          padding,
-          minHeight,
-          fontSize: `calc(${fontSize}px * var(--text-scale, 1))`,
-          fontWeight,
-          lineHeight: 1.1,
-          justifyContent: 'flex-start',
-          cursor: onPressed ? 'pointer' : 'default',
-          ...style,
-        } as CSSProperties
-      }
+      style={{
+        '--hyper-hover-bg': hover,
+        '--hyper-hover-fg': foreground,
+        color: customColor(fontColor), backgroundColor: customColor(fillColor),
+        border: border ? '1px solid ' + border : undefined,
+        padding, borderRadius: radius, minHeight, fontSize, fontWeight,
+        ...style,
+      } as CSSProperties}
     >
-      {heading && <span style={{ marginRight: 8, display: 'flex' }}>{heading}</span>}
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{text}</span>
-    </button>
+      {heading && <span className="flex">{heading}</span>}
+      <span className="truncate text-center">{text}</span>
+    </Button>
   );
   return tooltip ? <Tooltip message={tooltip}>{button}</Tooltip> : button;
 }
 
-// ---- appflowy_ui buttons -------------------------------------------------------------
-
 export type AFButtonSize = 's' | 'm' | 'l' | 'xl';
-
-const SIZE: Record<AFButtonSize, { padding: string; radius: number; fontSize: number; lineHeight: number }> = {
-  s: { padding: '4px 12px', radius: 8, fontSize: 14, lineHeight: 20 },
-  m: { padding: '6px 16px', radius: 8, fontSize: 14, lineHeight: 20 },
-  l: { padding: '10px 16px', radius: 10, fontSize: 14, lineHeight: 20 },
-  xl: { padding: '14px 16px', radius: 16, fontSize: 20, lineHeight: 28 },
-};
-
-type Palette = {
-  border?: string;
-  borderHover?: string;
-  borderDisabled?: string;
-  bg?: string;
-  bgHover?: string;
-  bgDisabled?: string;
-  fg?: string;
-  fgHover?: string;
-  fgDisabled?: string;
-};
-
-const PALETTES = {
-  filledPrimary: {
-    bg: 'var(--af-fill-theme-thick)',
-    bgHover: 'var(--af-fill-theme-thick-hover)',
-    bgDisabled: 'var(--af-fill-content-hover)',
-    fg: 'var(--af-text-on-fill)',
-    fgDisabled: 'var(--af-text-tertiary)',
-  },
-  filledDestructive: {
-    bg: 'var(--af-fill-error-thick)',
-    bgHover: 'var(--af-text-error-hover)',
-    bgDisabled: 'var(--af-fill-content-hover)',
-    fg: 'var(--af-text-on-fill)',
-    fgDisabled: 'var(--af-text-tertiary)',
-  },
-  outlinedNormal: {
-    border: 'var(--af-border-primary)',
-    borderHover: 'var(--af-border-primary-hover)',
-    borderDisabled: 'var(--af-border-primary)',
-    bg: 'transparent',
-    bgHover: 'var(--af-fill-content-hover)',
-    bgDisabled: 'transparent',
-    fg: 'var(--af-text-primary)',
-    fgDisabled: 'var(--af-text-tertiary)',
-  },
-  outlinedDestructive: {
-    border: 'var(--af-fill-error-thick)',
-    borderHover: 'var(--af-text-error-hover)',
-    bg: 'transparent',
-    bgHover: 'var(--af-fill-error-select)',
-    fg: 'var(--af-text-error)',
-  },
-  ghostPrimary: {
-    bg: 'transparent',
-    bgHover: 'var(--af-fill-content-hover)',
-    fg: 'var(--af-text-primary)',
-    fgDisabled: 'var(--af-text-tertiary)',
-  },
-} satisfies Record<string, Palette>;
-
-export type AFButtonVariant = keyof typeof PALETTES;
+export type AFButtonVariant = 'filledPrimary' | 'filledDestructive' | 'outlinedNormal' | 'outlinedDestructive' | 'ghostPrimary';
 
 export interface AFButtonProps {
   variant: AFButtonVariant;
@@ -378,63 +241,36 @@ export interface AFButtonProps {
   type?: 'button' | 'submit';
 }
 
-/** AFFilledTextButton / AFOutlinedTextButton / AFGhostTextButton and their icon variants. */
 export function AFButton({
-  variant,
-  text,
-  children,
-  onTap,
-  size = 'm',
-  padding,
-  borderRadius,
-  disabled,
-  minWidth,
-  fullWidth,
-  icon,
-  iconGap,
-  textColor,
-  justify = 'center',
-  style,
-  type = 'button',
+  variant, text, children, onTap, size = 'm', padding, borderRadius, disabled,
+  minWidth, fullWidth, icon, iconGap, textColor, justify, style, type = 'button',
 }: AFButtonProps) {
-  const s = SIZE[size];
-  const p: Palette = PALETTES[variant];
+  const destructive = variant.endsWith('Destructive');
+  const mappedVariant = destructive ? 'destructive' : variant.startsWith('outlined') ? 'outline' : variant.startsWith('ghost') ? 'ghost' : 'default';
   return (
-    <button
+    <Button
       type={type}
-      className="af-button"
+      variant={mappedVariant}
+      size={size === 's' ? 'sm' : size === 'l' || size === 'xl' ? 'lg' : 'default'}
+      className={cn(
+        'transition-colors', size === 's' && 'rounded-lg text-sm', (size === 'l' || size === 'xl') && 'h-10',
+        fullWidth && 'w-full', icon && variant.startsWith('ghost') && 'gap-2',
+        destructive && 'bg-destructive text-white hover:bg-destructive/90 dark:bg-destructive dark:hover:bg-destructive/90',
+      )}
       data-disabled={disabled ? 'true' : undefined}
+      disabled={disabled}
       onClick={disabled ? undefined : onTap}
-      style={
-        {
-          '--btn-border': p.border ?? 'transparent',
-          '--btn-border-hover': p.borderHover,
-          '--btn-border-disabled': p.borderDisabled,
-          '--btn-bg': p.bg,
-          '--btn-bg-hover': p.bgHover,
-          '--btn-bg-disabled': p.bgDisabled,
-          '--btn-fg': textColor ?? p.fg,
-          '--btn-fg-hover': textColor ?? p.fgHover,
-          '--btn-fg-disabled': p.fgDisabled,
-          '--btn-radius': `${borderRadius ?? s.radius}px`,
-          padding: padding ?? s.padding,
-          fontSize: `calc(${s.fontSize}px * var(--text-scale, 1))`,
-          lineHeight: `${s.lineHeight}px`,
-          minWidth: minWidth ?? (text && !icon ? 76 : undefined),
-          width: fullWidth ? '100%' : undefined,
-          justifyContent: justify,
-          gap: icon ? (iconGap ?? (variant.startsWith('ghost') ? 8 : 6)) : undefined,
-          ...style,
-        } as CSSProperties
-      }
+      style={{
+        padding, borderRadius, minWidth: minWidth ?? (text && !icon ? 76 : undefined),
+        color: customColor(textColor), justifyContent: justify, gap: iconGap,
+        ...style,
+      }}
     >
       {icon}
-      {text !== undefined ? <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{text}</span> : children}
-    </button>
+      {text !== undefined ? <span className="truncate">{text}</span> : children}
+    </Button>
   );
 }
-
-// ---- PopoverActionList rows ------------------------------------------------------------
 
 export interface ActionRowProps {
   name: string;
@@ -444,19 +280,6 @@ export interface ActionRowProps {
   onTap?: (event: MouseEvent) => void;
 }
 
-/** HoverButton (pop_up_action.dart): 32px rows, padding 6/10, gaps 10. */
 export function ActionRow({ name, leftIcon, rightIcon, textColor, onTap }: ActionRowProps) {
-  return (
-    <FlowyHover
-      onClick={onTap}
-      foregroundColorOnHover="var(--cs-on-surface)"
-      style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', height: 32 }}
-    >
-      {leftIcon && <div style={{ display: 'flex', marginRight: 10, ['--icon-color' as string]: 'var(--cs-on-surface)' }}>{leftIcon}</div>}
-      <FlowyText color={textColor} lineHeight={16} style={{ overflow: 'visible', flex: 1 }}>
-        {name}
-      </FlowyText>
-      {rightIcon && <div style={{ display: 'flex', marginLeft: 10 }}>{rightIcon}</div>}
-    </FlowyHover>
-  );
+  return <MenuRow label={name} icon={leftIcon} trailing={rightIcon} onClick={onTap} style={{ color: customColor(textColor) }} />;
 }

@@ -1,11 +1,15 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { FlowySvg } from '@/icons/FlowySvg';
+import { forwardRef, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ArrowLeft, Eye, EyeOff, Mail, Settings, VenetianMask } from 'lucide-react';
+import { TitleBar } from '@/components/app/window-controls';
+import { Button } from '@/components/ui/button';
+import { Field, FieldTitle } from '@/components/ui/field';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import { HyperLogo } from '@/ui/HyperLogo';
 import { useTr } from '@/i18n';
 import { isAuthEnabled, isLocalType } from '@/startup/cloud-env';
 import { useAppStore } from '@/startup/app-store';
-import { AFButton, AFTextField, Spinner, VSpace, showToast, type AFTextFieldHandle } from '@/ui';
-import { WindowTitleBar } from '@/ui/WindowTitleBar';
+import { AFTextField, showToast, type AFTextFieldHandle, type AFTextFieldProps } from '@/ui';
 import { SimpleSettingsDialog } from './SimpleSettingsDialog';
 import { showDialog } from '@/ui/Dialog';
 import { signInActions, useSignInStore } from './sign-in-store';
@@ -19,98 +23,59 @@ type Page =
   | { name: 'forgotPassword'; email: string }
   | { name: 'resetPassword'; email: string };
 
-/** heading3.enhanced: 20/28 w600, text.primary. */
-const Title = ({ children }: { children: ReactNode }) => (
-  <div style={{ fontSize: 'calc(20px * var(--text-scale, 1))', lineHeight: '28px', fontWeight: 600, color: 'var(--af-text-primary)', textAlign: 'center' }}>
-    {children}
-  </div>
-);
+const hyperAuthScreenClass =
+  'flex h-full flex-col bg-background bg-[radial-gradient(60rem_30rem_at_50%_-10%,color-mix(in_oklch,var(--muted)_100%,transparent),transparent)]';
 
-const Body = ({ children, enhanced, center }: { children: ReactNode; enhanced?: boolean; center?: boolean }) => (
-  <div
-    style={{
-      fontSize: 'calc(14px * var(--text-scale, 1))',
-      lineHeight: '20px',
-      fontWeight: enhanced ? 500 : 400,
-      color: 'var(--af-text-primary)',
-      textAlign: center ? 'center' : undefined,
-      whiteSpace: 'pre-line',
-    }}
-  >
-    {children}
-  </div>
-);
-
-/** FlowyLogoTitle / TitleLogo: 36×36 logo, 20, title, then optional description and info. */
-function TitleLogo({ title, description, info }: { title: string; description?: string; info?: ReactNode }) {
+function HyperTitleLogo({ title, description, info, mail = false }: { title: string; description?: string; info?: ReactNode; mail?: boolean }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <HyperLogo size={36} />
-      <VSpace size={20} />
-      <Title>{title}</Title>
-      {(description || info) && <VSpace size={20} />}
-      {description && <Body center>{description}</Body>}
-      {info}
-      {(description || info) && <VSpace size={20} />}
+    <div className="flex flex-col items-center gap-3">
+      <HyperLogo size={40} />
+      {mail && <div className="flex size-12 items-center justify-center rounded-xl bg-muted"><Mail className="size-5 text-muted-foreground" /></div>}
+      <h1 className="text-center text-2xl font-semibold tracking-tight">{title}</h1>
+      {description && <p className="text-center text-sm text-muted-foreground">{description}</p>}
+      {info && <div className="text-center text-sm text-muted-foreground">{info}</div>}
     </div>
   );
 }
 
-/** ContinueWithButton / VerifyingButton: filled primary size l, full width. */
-function SubmitButton({ text, submitting, onTap }: { text: string; submitting: boolean; onTap: () => void }) {
+// Keep AFTextField's imperative validation, focus, obscuring and keyboard behavior.
+const HyperAuthField = forwardRef<AFTextFieldHandle, AFTextFieldProps & { passcode?: boolean; label?: string }>(function HyperAuthField(
+  { passcode, label, ...props },
+  ref,
+) {
+  return (
+    <Field className={cn('[&_input]:h-10', passcode && '[&_input]:text-center [&_input]:font-mono [&_input]:tracking-[0.5em]')}>
+      {label && <FieldTitle className="text-xs text-muted-foreground">{label}</FieldTitle>}
+      <AFTextField ref={ref} {...props} />
+    </Field>
+  );
+});
+
+function HyperSubmitButton({ text, submitting, onTap }: { text: string; submitting: boolean; onTap: () => void }) {
   const { tr } = useTr();
-  if (submitting) {
-    return (
-      <div
-        style={{
-          opacity: 0.7,
-          height: 40,
-          borderRadius: 10,
-          background: 'var(--af-fill-theme-thick)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 12,
-          color: 'var(--af-text-on-fill)',
-          fontWeight: 500,
-        }}
-      >
-        <Spinner size={15} stroke={3} color="var(--af-text-on-fill)" />
-        {tr('signIn.verifying')}
-      </div>
-    );
-  }
-  return <AFButton variant="filledPrimary" size="l" text={text} fullWidth onTap={onTap} />;
+  return (
+    <Button size="lg" className="h-10 w-full" disabled={submitting} onClick={onTap}>
+      {submitting && <Spinner className="size-4" />}
+      {submitting ? tr('signIn.verifying') : text}
+    </Button>
+  );
 }
 
-/** BackToLoginButton: ghost text in text.action. */
-function LinkButton({ text, onTap, align = 'center' }: { text: string; onTap: () => void; align?: 'center' | 'flex-start' }) {
-  const [hover, setHover] = useState(false);
+function HyperLinkButton({ text, onTap, align = 'center' }: { text: string; onTap: () => void; align?: 'center' | 'flex-start' }) {
   return (
-    <div style={{ display: 'flex', justifyContent: align }}>
-      <span
-        onClick={onTap}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        style={{
-          cursor: 'pointer',
-          fontSize: 'calc(14px * var(--text-scale, 1))',
-          lineHeight: '20px',
-          color: hover ? 'var(--af-text-action-hover)' : 'var(--af-text-action)',
-        }}
-      >
-        {text}
-      </span>
+    <div className={cn('flex', align === 'center' ? 'justify-center' : 'justify-start')}>
+      <Button variant="link" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground" onClick={onTap}>{text}</Button>
     </div>
   );
 }
 
-function FormColumn({ children }: { children: ReactNode }) {
-  return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
-      <div style={{ width: 320, display: 'flex', flexDirection: 'column' }}>{children}</div>
-    </div>
-  );
+function HyperBackButton({ onTap }: { onTap: () => void }) {
+  const { tr } = useTr();
+  return <Button variant="ghost" size="sm" className="self-start text-muted-foreground" onClick={onTap}><ArrowLeft className="size-4" />{tr('signIn.backToLogin')}</Button>;
+}
+
+function HyperFormColumn({ children }: { children: ReactNode }) {
+  return <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 overflow-y-auto px-6 py-6">{children}</div>;
 }
 
 /** SignInScreen (desktop_sign_in_screen.dart, modified): email/password sign-in to the user's server. */
@@ -126,8 +91,8 @@ export function SignInScreen() {
   const page = stack[stack.length - 1];
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--cs-surface)' }}>
-      <WindowTitleBar />
+    <div className={hyperAuthScreenClass}>
+      <TitleBar />
       {page.name === 'main' && <MainPage push={push} />}
       {page.name === 'magicLink' && <MagicLinkPage email={page.email} pop={pop} />}
       {page.name === 'password' && <PasswordPage email={page.email} pop={pop} push={push} />}
@@ -166,41 +131,21 @@ function MainPage({ push }: { push: (page: Page) => void }) {
     });
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ flex: 1 }} />
-      <div style={{ width: 320, display: 'flex', flexDirection: 'column' }}>
-        <TitleLogo title={tr('welcomeText')} />
-        <VSpace size={20} />
-        <AFTextField ref={emailRef} hintText={tr('signIn.pleaseInputYourEmail')} type="email" autoComplete="email" onSubmitted={continueWithEmail} />
-        <VSpace size={12} />
-        <AFButton variant="filledPrimary" size="l" fullWidth text={tr('signIn.continueWithEmail')} onTap={continueWithEmail} />
-        <VSpace size={12} />
-        <AFButton
-          variant="outlinedNormal"
-          size="l"
-          fullWidth
-          text={tr('signIn.continueWithPassword')}
-          onTap={() => withValidEmail((email) => push({ name: 'password', email }))}
-        />
-        <VSpace size={20} />
-        {env && isAuthEnabled(env) && <Body>Sign in to your collaboration server</Body>}
-      </div>
-      <div style={{ flex: 1 }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-        <AFButton
-          variant="ghostPrimary"
-          size="s"
-          padding="4px 8px"
-          textColor="var(--af-text-secondary)"
-          icon={<FlowySvg svg="settings_s" size={20} color="var(--af-text-secondary)" />}
-          onTap={() => showDialog((close) => <SimpleSettingsDialog close={close} />)}
-          style={{ ['--btn-bg-hover' as string]: 'transparent' }}
-        >
-          {tr('signIn.settings')}
-        </AFButton>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <HyperFormColumn>
+        <HyperTitleLogo title={tr('welcomeText')} description={env && isAuthEnabled(env) ? 'Sign in to your collaboration server' : undefined} />
+        <div className="flex flex-col gap-3">
+          <HyperAuthField ref={emailRef} hintText={tr('signIn.pleaseInputYourEmail')} type="email" autoComplete="email" onSubmitted={continueWithEmail} />
+          <Button size="lg" className="h-10 w-full" onClick={continueWithEmail}>{tr('signIn.continueWithEmail')}</Button>
+          <Button variant="outline" size="lg" className="h-10 w-full" onClick={() => withValidEmail((email) => push({ name: 'password', email }))}>{tr('signIn.continueWithPassword')}</Button>
+        </div>
+      </HyperFormColumn>
+      <div className="flex h-14 shrink-0 items-center justify-center gap-2">
+        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => showDialog((close) => <SimpleSettingsDialog close={close} />)}>
+          <Settings className="size-4" />{tr('signIn.settings')}
+        </Button>
         {env && !isLocalType(env.authenticatorType) && <AnonymousModeButton />}
       </div>
-      <VSpace size={20} />
     </div>
   );
 }
@@ -209,14 +154,8 @@ function MainPage({ push }: { push: (page: Page) => void }) {
 function AnonymousModeButton() {
   const { tr } = useTr();
   return (
-    <AFButton
-      variant="ghostPrimary"
-      size="s"
-      padding="4px 8px"
-      textColor="var(--af-text-secondary)"
-      icon={<FlowySvg svg="anonymous_mode_m" size={20} color="var(--af-text-secondary)" />}
-      style={{ ['--btn-bg-hover' as string]: 'transparent' }}
-      onTap={async () => {
+    <Button variant="ghost" size="sm" className="text-muted-foreground"
+      onClick={async () => {
         const { UserEventGetAnonUser, UserEventOpenAnonUser } = await import('@/backend/events');
         const anon = await UserEventGetAnonUser();
         if (anon.ok) {
@@ -230,8 +169,8 @@ function AnonymousModeButton() {
         }
       }}
     >
-      {tr('signIn.anonymousMode')}
-    </AFButton>
+      <VenetianMask className="size-4" />{tr('signIn.anonymousMode')}
+    </Button>
   );
 }
 
@@ -260,27 +199,23 @@ function MagicLinkPage({ email, pop }: { email: string; pop: () => void }) {
   };
 
   return (
-    <FormColumn>
+    <HyperFormColumn>
+      <HyperBackButton onTap={back} />
       {!enteringPasscode ? (
         <>
-          <TitleLogo
-            title={tr('signIn.checkYourEmail')}
-            description={tr('signIn.temporaryVerificationLinkSent')}
-            info={<Body enhanced center>{email}</Body>}
-          />
-          <AFButton variant="filledPrimary" size="l" fullWidth text={tr('signIn.enterCodeManually')} onTap={() => setEnteringPasscode(true)} />
+          <HyperTitleLogo mail title={tr('signIn.checkYourEmail')} description={tr('signIn.temporaryVerificationLinkSent')} info={<span className="font-medium text-foreground">{email}</span>} />
+          <Button size="lg" className="h-10 w-full" onClick={() => setEnteringPasscode(true)}>{tr('signIn.enterCodeManually')}</Button>
         </>
       ) : (
         <>
-          <TitleLogo title={tr('signIn.enterCode')} description={tr('signIn.temporaryVerificationCodeSent')} info={<Body center>{email}</Body>} />
-          <AFTextField ref={codeRef} hintText={tr('signIn.enterCode')} type="number" autoFocus onSubmitted={submit} />
-          <VSpace size={12} />
-          <SubmitButton text={tr('signIn.continueWithLoginCode')} submitting={isSubmitting} onTap={submit} />
+          <HyperTitleLogo mail title={tr('signIn.enterCode')} description={tr('signIn.temporaryVerificationCodeSent')} info={<span className="font-medium text-foreground">{email}</span>} />
+          <div className="flex flex-col gap-3">
+            <HyperAuthField passcode ref={codeRef} hintText={tr('signIn.enterCode')} type="number" autoFocus onSubmitted={submit} />
+            <HyperSubmitButton text={tr('signIn.continueWithLoginCode')} submitting={isSubmitting} onTap={submit} />
+          </div>
         </>
       )}
-      <VSpace size={20} />
-      <LinkButton text={tr('signIn.backToLogin')} onTap={back} />
-    </FormColumn>
+    </HyperFormColumn>
   );
 }
 
@@ -299,42 +234,27 @@ function PasswordPage({ email, pop, push }: { email: string; pop: () => void; pu
   const submit = () => void signInActions.signInWithEmailAndPassword(email, passwordRef.current?.value() ?? '');
 
   return (
-    <FormColumn>
-      <TitleLogo
-        title={tr('signIn.enterPassword')}
-        info={
-          <Body center>
-            {tr('signIn.loginAs')}
-            <span style={{ fontWeight: 500 }}> {email}</span>
-          </Body>
-        }
-      />
-      <AFTextField
-        ref={passwordRef}
-        hintText={tr('signIn.enterPassword')}
-        autoFocus
-        obscureText
-        autoComplete="current-password"
-        onSubmitted={submit}
-        suffixIcon={(obscured) => (
-          <span style={{ cursor: 'pointer', display: 'flex' }} onClick={() => passwordRef.current?.syncObscured(!obscured)}>
-            <FlowySvg svg={obscured ? 'show_s' : 'hide_s'} size={20} color="var(--af-icon-secondary)" />
-          </span>
-        )}
-      />
-      <VSpace size={8} />
-      <LinkButton align="flex-start" text={tr('signIn.forgotPassword')} onTap={() => push({ name: 'forgotPassword', email })} />
-      <VSpace size={20} />
-      <SubmitButton text={tr('web.continue')} submitting={isSubmitting} onTap={submit} />
-      <VSpace size={20} />
-      <LinkButton
-        text={tr('signIn.backToLogin')}
-        onTap={() => {
-          signInActions.clearErrors();
-          pop();
-        }}
-      />
-    </FormColumn>
+    <HyperFormColumn>
+      <HyperBackButton onTap={() => { signInActions.clearErrors(); pop(); }} />
+      <HyperTitleLogo title={tr('signIn.enterPassword')} info={<>{tr('signIn.loginAs')}<span className="font-medium text-foreground"> {email}</span></>} />
+      <div className="flex flex-col gap-3">
+        <HyperAuthField
+          ref={passwordRef}
+          hintText={tr('signIn.enterPassword')}
+          autoFocus
+          obscureText
+          autoComplete="current-password"
+          onSubmitted={submit}
+          suffixIcon={(obscured) => (
+            <Button variant="ghost" size="icon-sm" aria-label={tr('signIn.enterPassword')} onClick={() => passwordRef.current?.syncObscured(!obscured)}>
+              {obscured ? <Eye className="size-4 text-muted-foreground" /> : <EyeOff className="size-4 text-muted-foreground" />}
+            </Button>
+          )}
+        />
+        <HyperLinkButton align="flex-start" text={tr('signIn.forgotPassword')} onTap={() => push({ name: 'forgotPassword', email })} />
+        <HyperSubmitButton text={tr('web.continue')} submitting={isSubmitting} onTap={submit} />
+      </div>
+    </HyperFormColumn>
   );
 }
 
@@ -357,14 +277,14 @@ function ForgotPasswordPage({ email, pop, push }: { email: string; pop: () => vo
   };
 
   return (
-    <FormColumn>
-      <TitleLogo title={tr('signIn.resetPassword')} description={tr('signIn.resetPasswordDescription')} />
-      <AFTextField ref={fieldRef} initialText={email} hintText={tr('signIn.pleaseInputYourEmail')} autoFocus onSubmitted={() => void submit()} />
-      <VSpace size={20} />
-      <SubmitButton text={tr('button.submit')} submitting={submitting} onTap={() => void submit()} />
-      <VSpace size={20} />
-      <LinkButton text={tr('signIn.backToLogin')} onTap={pop} />
-    </FormColumn>
+    <HyperFormColumn>
+      <HyperBackButton onTap={pop} />
+      <HyperTitleLogo title={tr('signIn.resetPassword')} description={tr('signIn.resetPasswordDescription')} />
+      <div className="flex flex-col gap-3">
+        <HyperAuthField ref={fieldRef} initialText={email} hintText={tr('signIn.pleaseInputYourEmail')} autoFocus onSubmitted={() => void submit()} />
+        <HyperSubmitButton text={tr('button.submit')} submitting={submitting} onTap={() => void submit()} />
+      </div>
+    </HyperFormColumn>
   );
 }
 
@@ -401,51 +321,36 @@ function ResetPasswordPage({ email, pop, done }: { email: string; pop: () => voi
     }
   };
 
-  const label = (text: string) => (
-    <div style={{ fontSize: 'calc(12px * var(--text-scale, 1))', lineHeight: '18px', fontWeight: 500, color: 'var(--af-text-secondary)', marginBottom: 8 }}>
-      {text}
-    </div>
-  );
-
   return (
-    <FormColumn>
+    <HyperFormColumn>
+      <HyperBackButton onTap={pop} />
       {stage === 'enterPasscode' ? (
         <>
-          <TitleLogo title={tr('signIn.checkYourEmail')} description={tr('signIn.temporaryVerificationLinkSent')} info={<Body enhanced center>{email}</Body>} />
-          <AFTextField
-            ref={codeRef}
-            hintText={tr('signIn.enterCode')}
-            type="number"
-            autoFocus
-            onSubmitted={(value) => {
-              if (!value.trim()) codeRef.current?.syncError(tr('signIn.invalidVerificationCode'));
-            }}
-          />
-          <VSpace size={12} />
-          <SubmitButton text={tr('signIn.continueToResetPassword')} submitting={isSubmitting} onTap={() => void validate()} />
+          <HyperTitleLogo mail title={tr('signIn.checkYourEmail')} description={tr('signIn.temporaryVerificationLinkSent')} info={<span className="font-medium text-foreground">{email}</span>} />
+          <div className="flex flex-col gap-3">
+            <HyperAuthField
+              passcode
+              ref={codeRef}
+              hintText={tr('signIn.enterCode')}
+              type="number"
+              autoFocus
+              onSubmitted={(value) => {
+                if (!value.trim()) codeRef.current?.syncError(tr('signIn.invalidVerificationCode'));
+              }}
+            />
+            <HyperSubmitButton text={tr('signIn.continueToResetPassword')} submitting={isSubmitting} onTap={() => void validate()} />
+          </div>
         </>
       ) : (
         <>
-          <TitleLogo
-            title={tr('signIn.resetPassword')}
-            info={
-              <Body center>
-                {tr('signIn.enterNewPasswordFor')}
-                <span style={{ fontWeight: 500 }}>{email}</span>
-              </Body>
-            }
-          />
-          {label(tr('signIn.newPassword'))}
-          <AFTextField ref={newRef} hintText={tr('signIn.enterNewPassword')} obscureText autoComplete="new-password" />
-          <VSpace size={16} />
-          {label(tr('signIn.confirmPassword'))}
-          <AFTextField ref={confirmRef} hintText={tr('signIn.confirmNewPassword')} obscureText autoComplete="new-password" onSubmitted={() => void reset()} />
-          <VSpace size={20} />
-          <SubmitButton text={tr('signIn.resetPassword')} submitting={isSubmitting} onTap={() => void reset()} />
+          <HyperTitleLogo title={tr('signIn.resetPassword')} info={<>{tr('signIn.enterNewPasswordFor')}<span className="font-medium text-foreground">{email}</span></>} />
+          <div className="flex flex-col gap-3">
+            <HyperAuthField label={tr('signIn.newPassword')} ref={newRef} hintText={tr('signIn.enterNewPassword')} obscureText autoComplete="new-password" />
+            <HyperAuthField label={tr('signIn.confirmPassword')} ref={confirmRef} hintText={tr('signIn.confirmNewPassword')} obscureText autoComplete="new-password" onSubmitted={() => void reset()} />
+            <HyperSubmitButton text={tr('signIn.resetPassword')} submitting={isSubmitting} onTap={() => void reset()} />
+          </div>
         </>
       )}
-      <VSpace size={20} />
-      <LinkButton text={tr('signIn.backToLogin')} onTap={pop} />
-    </FormColumn>
+    </HyperFormColumn>
   );
 }

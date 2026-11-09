@@ -12,6 +12,8 @@ import {
   type Ref,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { floatingSurfaceClass } from '@/components/app/menu-row';
+import { cn } from '@/lib/utils';
 
 export type PopoverDirection =
   | 'topLeft'
@@ -89,11 +91,17 @@ async function popEntries(useCanClose: boolean) {
   const top = stack[stack.length - 1];
   if (!top) return;
   if (useCanClose && top.canClose && !(await top.canClose())) return;
+  // canClose may await while another action replaces the topmost popover.
+  if (stack[stack.length - 1] !== top) return;
   while (stack.length) {
-    const entry = stack[stack.length - 1];
+    // React removes effect registrations asynchronously. Detach before calling close,
+    // otherwise the same entry is closed forever in this synchronous loop.
+    const entry = stack.pop();
+    if (!entry) break;
     entry.close();
     if (entry.asBarrier) break;
   }
+  notifyStack();
 }
 
 /** PopoverMutex: at most one open popover per mutex. */
@@ -140,6 +148,7 @@ export interface PopoverProps {
   canClose?: () => Promise<boolean> | boolean;
   /** Content container styling (AppFlowyPopover adds the decoration). */
   containerStyle?: CSSProperties;
+  containerClassName?: string;
   /** Lets the trigger element size itself (e.g. flex children). */
   triggerStyle?: CSSProperties;
 }
@@ -162,6 +171,7 @@ export function Popover({
   onClose,
   canClose,
   containerStyle,
+  containerClassName,
   triggerStyle,
 }: PopoverProps) {
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -214,7 +224,8 @@ export function Popover({
     <>
       <div
         ref={triggerRef}
-        style={{ display: 'contents', ...triggerStyle }}
+        className="contents"
+        style={triggerStyle}
         onMouseDown={(event) => {
           const primary = event.button === 0 && triggers.includes('click');
           const secondary = event.button === 2 && triggers.includes('secondaryClick');
@@ -238,6 +249,7 @@ export function Popover({
           offset={offset}
           windowPadding={open.cursor ? 0 : windowPadding}
           containerStyle={containerStyle}
+          containerClassName={containerClassName}
           close={close}
         >
           {popup(close)}
@@ -255,6 +267,7 @@ function PopoverOverlay({
   offset,
   windowPadding,
   containerStyle,
+  containerClassName,
   close,
   children,
 }: {
@@ -265,6 +278,7 @@ function PopoverOverlay({
   offset: Offset;
   windowPadding: number;
   containerStyle?: CSSProperties;
+  containerClassName?: string;
   close: () => void;
   children: ReactNode;
 }) {
@@ -295,7 +309,11 @@ function PopoverOverlay({
       );
       return;
     }
-    const target = (anchorEl?.firstElementChild as HTMLElement | null) ?? anchorEl;
+    let target = (anchorEl?.firstElementChild as HTMLElement | null) ?? anchorEl;
+    // Wrappers such as Tooltip render `display: contents` and have no box; anchor to their content.
+    while (target?.firstElementChild && getComputedStyle(target).display === 'contents') {
+      target = target.firstElementChild as HTMLElement;
+    }
     if (!target) return;
     const a = target.getBoundingClientRect();
     setPos(
@@ -335,7 +353,7 @@ function PopoverOverlay({
     <PopoverContext.Provider value={{ close, closeAll: () => void popEntries(true) }}>
       {isFirst && (
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 1000 }}
+          className="fixed inset-0 z-50"
           onMouseDown={(event) => {
             event.preventDefault();
             void popEntries(true);
@@ -345,12 +363,11 @@ function PopoverOverlay({
       )}
       <div
         ref={ref}
+        className={cn(floatingSurfaceClass, 'fixed z-50 animate-in fade-in-0 zoom-in-95 duration-100', containerClassName)}
         style={{
-          position: 'fixed',
           left: pos?.x ?? 0,
           top: pos?.y ?? 0,
           visibility: pos ? 'visible' : 'hidden',
-          zIndex: 1001,
           maxWidth: `calc(100vw - ${2 * windowPadding}px)`,
           maxHeight: `calc(100vh - ${2 * windowPadding}px)`,
           ...containerStyle,
@@ -367,7 +384,7 @@ function PopoverOverlay({
 export interface AppFlowyPopoverProps extends Omit<PopoverProps, 'containerStyle'> {
   /** Default maxWidth 240, maxHeight 600 (padding included). */
   constraints?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; width?: number };
-  /** Inner padding, default 6. */
+  /** Inner padding; the old default 6 maps to the menu padding (p-1). */
   margin?: CSSProperties['padding'];
   decorationColor?: string;
   borderRadius?: number;
@@ -378,31 +395,28 @@ export interface AppFlowyPopoverProps extends Omit<PopoverProps, 'containerStyle
 /** AppFlowyPopover (flowy_infra_ui/lib/src/flowy_overlay/appflowy_popover.dart). */
 export function AppFlowyPopover({
   constraints = { maxWidth: 240, maxHeight: 600 },
-  margin = 6,
+  margin,
   decorationColor,
-  borderRadius = 10,
+  borderRadius,
   windowPadding = 8,
   plain,
   ...props
 }: AppFlowyPopoverProps) {
-  const transparent = decorationColor === 'transparent';
+  const defaultPadding = margin === undefined || margin === 6 || margin === '6px';
+  const color = decorationColor?.includes('var(') ? undefined : decorationColor;
   return (
     <Popover
       {...props}
       windowPadding={windowPadding}
+      containerClassName={cn(plain ? 'rounded-none bg-transparent shadow-none ring-0' : 'flex flex-col overflow-auto', !plain && defaultPadding && 'p-1', props.containerClassName)}
       containerStyle={
         plain
           ? undefined
           : {
               ...constraints,
-              padding: margin,
-              background: decorationColor ?? 'var(--th-card)',
+              padding: defaultPadding ? undefined : margin,
+              backgroundColor: color,
               borderRadius,
-              // strokeAlignOutside: the 1px border sits outside the box.
-              boxShadow: `0 0 0 1px ${transparent ? 'transparent' : 'var(--popover-border)'}, var(--popover-shadow)`,
-              overflow: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
             }
       }
     />

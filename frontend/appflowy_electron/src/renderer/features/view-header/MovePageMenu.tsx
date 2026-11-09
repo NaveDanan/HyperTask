@@ -10,10 +10,14 @@ import {
   FolderEventUnpublishViews,
 } from '@/backend/events';
 import { useTr } from '@/i18n';
-import { FlowyButton, FlowySvg, FlowyText, Tooltip } from '@/ui';
+import { Search, CalendarDays, FileText, MessageSquareText, SquareKanban, Table2 } from 'lucide-react';
+import { floatingSurfaceClass } from '@/components/app/menu-row';
+import { TreeDisclosure, treeIndent, treeRowClass } from '@/components/app/nav';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { useHomeStore } from '../home/home-store';
 import { useSwitchToSpace } from '../home/notifiers';
-import { layoutIcon } from '../tabs/plugin';
 import { isSpace, nameOrDefault } from '../view/view-ext';
 import { RawEmojiIcon, viewIcon } from './ViewIcon';
 import { containPublishedPage } from './view-service';
@@ -54,33 +58,16 @@ function ViewRow({
   onSelected: () => void;
 }) {
   const icon = viewIcon(view);
+  const Icon = view.layout === ViewLayoutPB.Board ? SquareKanban : view.layout === ViewLayoutPB.Calendar ? CalendarDays : view.layout === ViewLayoutPB.Chat ? MessageSquareText : view.layout === ViewLayoutPB.Document ? FileText : Table2;
   return (
-    <div style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : undefined }}>
-      <FlowyButton
-        height={30}
-        margin={`0 6px 0 ${6 + level * 16}px`}
-        onTap={onSelected}
-        leftIcon={
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div
-              style={{ width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', visibility: expandable ? 'visible' : 'hidden' }}
-              onClick={(event) => {
-                event.stopPropagation();
-                onToggle?.();
-              }}
-            >
-              <FlowySvg svg={expanded ? 'view_item_expand_s' : 'view_item_unexpand_s'} size={16} />
-            </div>
-          </div>
-        }
-        text={
-          <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-            {icon ? <RawEmojiIcon icon={icon} size={16} /> : <FlowySvg svg={layoutIcon(view.layout)} size={16} />}
-            <div style={{ width: 6, flexShrink: 0 }} />
-            <FlowyText.regular ellipsis>{nameOrDefault(view)}</FlowyText.regular>
-          </div>
-        }
-      />
+    <div className={cn(treeRowClass, disabled && 'pointer-events-none opacity-50')} style={{ paddingLeft: treeIndent(level) }}>
+      <TreeDisclosure expanded={!!expanded} hasChildren={!!expandable} onToggle={() => onToggle?.()} />
+      <button type="button" disabled={disabled} onClick={onSelected} className="flex h-full min-w-0 flex-1 items-center gap-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <span className="flex size-5 shrink-0 items-center justify-center text-base">
+          {icon ? <RawEmojiIcon icon={icon} size={16} /> : <Icon className="size-4 text-muted-foreground" />}
+        </span>
+        <span className="min-w-0 flex-1 truncate">{nameOrDefault(view)}</span>
+      </button>
     </div>
   );
 }
@@ -150,43 +137,28 @@ export function MovePageMenu({ sourceView, onSelected }: { sourceView: ViewPB; o
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 321, minHeight: 0 }}>
-      <div
-        style={{
-          height: 30,
-          display: 'flex',
-          alignItems: 'center',
-          border: '1px solid var(--cs-outline)',
-          borderRadius: 8,
-          padding: '0 8px',
-          flexShrink: 0,
-        }}
-      >
-        <FlowySvg svg="search_s" size={16} color="var(--th-hint)" />
-        <input
-          autoFocus
-          value={query}
-          placeholder={tr('search.label')}
-          onChange={(e) => setQuery(e.target.value)}
-          style={{ flex: 1, marginLeft: 6, border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-color)', fontSize: 14 }}
-        />
-      </div>
-      <div style={{ height: 10, flexShrink: 0 }} />
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+    <div className={`${floatingSurfaceClass} flex w-72 min-h-0 flex-col p-0`}>
+      <InputGroup className="h-9 shrink-0 rounded-none border-0 border-b bg-transparent dark:bg-transparent">
+        <InputGroupAddon><Search className="size-4" /></InputGroupAddon>
+        <InputGroupInput autoFocus value={query} placeholder={tr('search.label')} onChange={(e) => setQuery(e.target.value)} className="h-9" />
+      </InputGroup>
+      <div className="max-h-80 min-h-0 overflow-y-auto p-1">
         {results ? (
           results.map((v) => <ViewRow key={v.id} view={v} level={0} onSelected={() => select(v, space)} />)
         ) : (
           <>
             {spaces.map((s) => (
-              <Tooltip key={s.id} message={s.id === space?.id ? '' : tr('space.switchSpace')}>
-                <div onMouseDown={() => s.id !== space?.id && setSpace(s)}>
-                  <FlowyButton
-                    height={30}
-                    isSelected={s.id === space?.id}
-                    onTap={() => s.id === space?.id && select(s, s)}
-                    text={<FlowyText.medium ellipsis>{s.name}</FlowyText.medium>}
-                  />
-                </div>
+              <Tooltip key={s.id}>
+                <TooltipTrigger render={<div />}>
+                  <div onMouseDown={() => s.id !== space?.id && setSpace(s)}>
+                    <button type="button" data-selected={s.id === space?.id ? 'true' : undefined}
+                      className={cn(treeRowClass, 'px-1.5 font-medium')}
+                      onClick={() => s.id === space?.id && select(s, s)}>
+                      <span className="truncate">{s.name}</span>
+                    </button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{s.id === space?.id ? '' : tr('space.switchSpace')}</TooltipContent>
               </Tooltip>
             ))}
             {space && <PageTree key={space.id} parentId={space.id} level={0} sourceId={sourceView.id} onSelected={(v) => select(v, space)} />}

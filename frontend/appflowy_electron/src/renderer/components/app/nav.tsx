@@ -21,7 +21,7 @@ export const navItemClass =
 export interface NavItemProps extends Omit<ComponentProps<'button'>, 'children'> {
   icon?: ReactNode;
   label: ReactNode;
-  /** Right-aligned content: a <Kbd>, <NavCount> or an icon. */
+  /** Right-aligned content: a <NavCount>, an icon, or shortcut keys (shown on hover only). */
   trailing?: ReactNode;
   active?: boolean;
 }
@@ -34,7 +34,11 @@ export const NavItem = forwardRef<HTMLButtonElement, NavItemProps>(function NavI
     <button ref={ref} type="button" data-active={active ? 'true' : undefined} className={cn(navItemClass, className)} {...props}>
       {icon && <span className="flex size-4 items-center justify-center text-sidebar-foreground/70 group-hover/nav:text-sidebar-accent-foreground">{icon}</span>}
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      {trailing && <span className="ml-auto flex shrink-0 items-center gap-1 text-sidebar-foreground/60">{trailing}</span>}
+      {trailing && (
+        <span className="ml-auto flex shrink-0 items-center gap-1 text-sidebar-foreground/60 transition-opacity has-data-[slot=kbd]:opacity-0 group-hover/nav:has-data-[slot=kbd]:opacity-100 group-focus-visible/nav:has-data-[slot=kbd]:opacity-100">
+          {trailing}
+        </span>
+      )}
     </button>
   );
 });

@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { AFRolePB } from '@shared/protobuf/flowy-user/workspace_pb';
-import type { FlowySvgName } from '@/icons/flowy-svgs';
+import { ChevronsDownUp, Copy, MoreHorizontal, PencilLine, Plus, SlidersHorizontal, SmilePlus, Trash2, type LucideIcon } from 'lucide-react';
+import { NavIconButton } from '@/components/app/nav';
+import { cn } from '@/lib/utils';
 import { useTr } from '@/i18n';
 import {
   AppFlowyPopover,
-  FlowySvg,
   Tooltip,
-  VSpace,
   showAFTextFieldDialog,
   showConfirmDeletionDialog,
   type PopoverController,
@@ -17,7 +17,7 @@ import {
 import { switchToNextSpace, useSwitchToSpace } from '@/features/home/notifiers';
 import { tabsActions } from '@/features/tabs/tabs-store';
 import { viewCreatedBy } from '@/features/view/view-ext';
-import { ActionListPopover, MenuDivider, MenuItem, SbIconButton, hintTooltip, isMac } from '../components';
+import { ActionListPopover, MenuDivider, MenuItem, hintTooltip, isMac } from '../components';
 import { FavoriteFolder } from '../favorites/FavoriteFolder';
 import { openFromSidebar } from '../folder/SidebarFolder';
 import { IconEmojiPicker, type SelectedEmojiIconResult } from '../icon-picker/IconEmojiPicker';
@@ -37,16 +37,14 @@ export function SidebarSpace() {
   // Guests see no spaces.
   const shouldShowSpaces = role === AFRolePB.Member || role === AFRolePB.Owner;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <VSpace size={4} />
+    <div className="flex flex-col">
       {favorites.length > 0 && (
-        <div style={{ paddingBottom: 16 }}>
+        <div>
           <FavoriteFolder views={favorites.map((f) => f.item)} />
         </div>
       )}
       {isSharedSectionOn() && <SharedSection key={currentWorkspace?.workspaceId ?? ''} workspaceId={currentWorkspace?.workspaceId ?? ''} />}
       {shouldShowSpaces && <Space />}
-      <VSpace size={200} />
     </div>
   );
 }
@@ -72,7 +70,7 @@ function Space() {
   if (spaces.length === 0) return null;
   const currentSpace = stateSpace ?? spaces[0];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="mt-3 flex flex-col">
       <SidebarSpaceHeader
         isExpanded={isExpanded}
         space={currentSpace}
@@ -84,7 +82,7 @@ function Space() {
         onCollapseAllPages={() => setCollapseAllSignal((n) => n + 1)}
       />
       {isExpanded && (
-        <div className="sb-hover-scope">
+        <div>
           <SpacePages
             key={`${workspaceId} ${currentSpace.id}`}
             space={currentSpace}
@@ -167,29 +165,22 @@ function SidebarSpaceHeader({
       onClick={(event) => {
         if (event.currentTarget.contains(event.target as Node)) void sidebarSpace.actions.expand(space, !isExpanded);
       }}
-      style={{
-        height: 32,
-        borderRadius: 6,
-        background: hovered ? 'var(--cs-secondary)' : undefined,
-        position: 'relative',
-        flexShrink: 0,
-      }}
+      className="group/space relative flex h-8 shrink-0 items-center gap-2 rounded-md px-1.5 transition-colors hover:bg-sidebar-accent"
     >
-      <div style={{ position: 'absolute', left: 3, top: 3, bottom: 3, right: reveal ? 88 : 0, display: 'flex' }}>
-        <SpacePopup showCreateButton height={26} style={{ maxWidth: '100%' }}>
+      <div className="flex min-w-0 flex-1">
+        <SpacePopup showCreateButton height={32}>
           <Tooltip rich={hintTooltip(tr('space.quicklySwitch'), isMac ? '⌘+O' : 'Ctrl+O')}>
-            <div style={{ display: 'flex', minWidth: 0 }}>
+            <div className="flex min-w-0">
               <CurrentSpace space={space} isHovered={hovered} />
             </div>
           </Tooltip>
         </SpacePopup>
       </div>
       <div
-        style={{ position: 'absolute', right: 4, top: 0, bottom: 0, display: 'flex', alignItems: 'center', opacity: reveal ? 1 : 0 }}
+        className={cn('flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/space:opacity-100 has-aria-expanded:opacity-100', reveal && 'opacity-100')}
         onClick={(event) => event.stopPropagation()}
       >
         <SpaceMorePopup isHovered={hovered} onEditing={setEditing} onAction={onAction} />
-        <div style={{ width: 8 }} />
         <ViewAddButton
           parentViewId={space.id}
           isHovered={hovered}
@@ -218,18 +209,18 @@ const SPACE_ACTIONS: SpaceMoreActionType[] = [
   'delete',
 ];
 
-const SPACE_ACTION_META: Record<Exclude<SpaceMoreActionType, 'divider'>, { key: string; icon: FlowySvgName }> = {
-  rename: { key: 'space.rename', icon: 'view_item_rename_s' },
-  changeIcon: { key: 'space.changeIcon', icon: 'change_icon_s' },
-  manage: { key: 'space.manage', icon: 'space_manage_s' },
-  duplicate: { key: 'space.duplicate', icon: 'duplicate_s' },
-  addNewSpace: { key: 'space.addNewSpace', icon: 'space_add_s' },
-  collapseAllPages: { key: 'space.collapseAllSubPages', icon: 'collapse_all_page_s' },
-  delete: { key: 'space.delete', icon: 'trash_s' },
+const SPACE_ACTION_META: Record<Exclude<SpaceMoreActionType, 'divider'>, { key: string; icon: LucideIcon }> = {
+  rename: { key: 'space.rename', icon: PencilLine },
+  changeIcon: { key: 'space.changeIcon', icon: SmilePlus },
+  manage: { key: 'space.manage', icon: SlidersHorizontal },
+  duplicate: { key: 'space.duplicate', icon: Copy },
+  addNewSpace: { key: 'space.addNewSpace', icon: Plus },
+  collapseAllPages: { key: 'space.collapseAllSubPages', icon: ChevronsDownUp },
+  delete: { key: 'space.delete', icon: Trash2 },
 };
 
 function SpaceMorePopup({
-  isHovered,
+  isHovered: _isHovered,
   onEditing,
   onAction,
 }: {
@@ -254,7 +245,7 @@ function SpaceMorePopup({
       controllerRef={controller}
       direction="bottomWithLeftAligned"
       offset={{ x: 0, y: 8 }}
-      constraints={{ minWidth: 260 }}
+      constraints={{ minWidth: 224, maxWidth: 224 }}
       onClose={() => onEditing(false)}
       popup={(close) => (
         <>
@@ -265,6 +256,7 @@ function SpaceMorePopup({
               return (
                 <AppFlowyPopover
                   key={type}
+                  plain
                   constraints={{ maxWidth: 360, maxHeight: 432 }}
                   margin={0}
                   offset={{ x: 0, y: -40 }}
@@ -280,7 +272,7 @@ function SpaceMorePopup({
                     />
                   )}
                 >
-                  <MenuItem icon={meta.icon} name={tr(meta.key)} />
+                  <MenuItem iconNode={<meta.icon className="size-4" />} name={tr(meta.key)} />
                 </AppFlowyPopover>
               );
             }
@@ -294,7 +286,7 @@ function SpaceMorePopup({
               return (
                 <MenuItem
                   key={type}
-                  icon={meta.icon}
+                  iconNode={<meta.icon className="size-4" />}
                   name={tr(meta.key)}
                   danger
                   disabled={reason !== null}
@@ -309,7 +301,7 @@ function SpaceMorePopup({
             return (
               <MenuItem
                 key={type}
-                icon={meta.icon}
+                iconNode={<meta.icon className="size-4" />}
                 name={tr(meta.key)}
                 onTap={() => {
                   onAction(type, null);
@@ -321,16 +313,12 @@ function SpaceMorePopup({
         </>
       )}
     >
-      <div style={{ display: 'flex' }}>
-        <SbIconButton
-          width={24}
-          tooltip={tr('space.manage')}
-          icon={<FlowySvg svg="workspace_three_dots_s" color={isHovered ? 'var(--cs-on-surface)' : undefined} />}
-          onPressed={() => {
-            onEditing(true);
-            controller.current?.show();
-          }}
-        />
+      <div className="flex">
+        <Tooltip message={tr('space.manage')}><NavIconButton aria-label={tr('space.manage')} onClick={(event) => {
+          event.stopPropagation();
+          onEditing(true);
+          controller.current?.show();
+        }}><MoreHorizontal className="size-3.5" /></NavIconButton></Tooltip>
       </div>
     </ActionListPopover>
   );

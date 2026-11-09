@@ -11,9 +11,14 @@ import {
   useSelfHostedServer,
 } from '@/startup/cloud-env';
 import { validateServerUrl } from '@shared/self-hosted-policy';
-import { Spinner } from '@/ui';
-import { MaterialIcon, MdButton, MdText, MdTextField } from './material';
-import { SettingsBody } from './shared';
+import { SettingsPageHeader, SettingsSection, SettingsGroup, SettingsRow } from '@/components/app/settings-layout';
+import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/reui/alert';
+
 
 /**
  * SelfHostedSettingsView (features/self_hosting/self_hosted_settings_view.dart): choose a
@@ -60,67 +65,31 @@ export function SelfHostedSettingsView({ restartApp }: { restartApp: () => void 
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
-        <Spinner />
-      </div>
-    );
-  }
-
   return (
-    <SettingsBody title={'Storage & server'}>
-      <MdText key="intro">
-        Your data stays on this PC or your own collaboration server. Hosted vendor services and automatic vendor updates are disabled.
-      </MdText>
-      {/* DropdownButtonFormField<bool>(labelText: 'Workspace storage'): the label is always floating. */}
-      <div key="storage" className="md-textfield" data-float="true" data-disabled={saving ? 'true' : undefined}>
-        <label>Workspace storage</label>
-        <div style={{ position: 'relative', display: 'flex' }}>
-          <select
-            value={shared ? 'server' : 'local'}
-            disabled={saving}
-            onChange={(event) => setShared(event.target.value === 'server')}
-            style={{
-              flex: 1,
-              appearance: 'none',
-              border: 'none',
-              borderBottom: '1px solid color-mix(in srgb, var(--cs-on-surface) 38%, transparent)',
-              background: 'transparent',
-              padding: '8px 24px 8px 0',
-              fontSize: 'calc(16px * var(--text-scale, 1))',
-              color: 'var(--text-color)',
-              outline: 'none',
-              cursor: saving ? 'default' : 'pointer',
-            }}
-          >
-            <option value="local">Local workspace on this PC</option>
-            <option value="server">My collaboration server</option>
-          </select>
-          <span style={{ position: 'absolute', right: 0, top: 6, pointerEvents: 'none', display: 'flex' }}>{MaterialIcon.arrowDropDown()}</span>
-        </div>
-      </div>
-      {shared && (
-        <MdTextField key="server" label="Server URL" hint="https://appflowy.internal" value={server} disabled={saving} onChange={setServer} />
+    <>
+      <SettingsPageHeader title="Storage & server" />
+      {loading ? <div className="flex justify-center py-6"><Spinner /></div> : (
+        <SettingsSection>
+          <Alert variant="info"><AlertDescription>Your data stays on this PC or your own collaboration server. Hosted vendor services and automatic vendor updates are disabled.</AlertDescription></Alert>
+          <SettingsGroup>
+            <div data-float="true" data-disabled={saving ? 'true' : undefined}>
+              <SettingsRow label="Workspace storage" control={
+                <Select value={shared ? 'server' : 'local'} disabled={saving} onValueChange={(value) => setShared(value === 'server')}>
+                  <SelectTrigger size="sm" className="min-w-40" aria-label="Workspace storage"><SelectValue>{shared ? 'My collaboration server' : 'Local workspace on this PC'}</SelectValue></SelectTrigger>
+                  <SelectContent><SelectItem value="local">Local workspace on this PC</SelectItem><SelectItem value="server">My collaboration server</SelectItem></SelectContent>
+                </Select>
+              } />
+            </div>
+            {shared && <div className="flex flex-col gap-4 p-4">
+              <Field><FieldLabel htmlFor="hyper-server-url">Server URL</FieldLabel><Input spellCheck={false} autoComplete="off" id="hyper-server-url" className="font-mono text-xs" placeholder="https://appflowy.internal" value={server} disabled={saving} onChange={(event) => setServer(event.target.value)} /></Field>
+              <Field><FieldLabel htmlFor="hyper-web-url">Web and shared-page URL</FieldLabel><Input spellCheck={false} autoComplete="off" id="hyper-web-url" className="font-mono text-xs" placeholder="Same as server if left blank" value={web} disabled={saving} onChange={(event) => setWeb(event.target.value)} /></Field>
+              <Alert variant="info"><AlertDescription>Sign in to your own server to collaborate. Local workspaces remain separate; export/import them to move existing content.</AlertDescription></Alert>
+            </div>}
+          </SettingsGroup>
+          {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+          <div><Button disabled={saving} onClick={() => void save()}>{saving ? 'Applying…' : 'Apply and restart'}</Button></div>
+        </SettingsSection>
       )}
-      {shared && (
-        <MdTextField key="web" label="Web and shared-page URL" hint="Same as server if left blank" value={web} disabled={saving} onChange={setWeb} />
-      )}
-      {shared && (
-        <MdText key="hint">
-          Sign in to your own server to collaborate. Local workspaces remain separate; export/import them to move existing content.
-        </MdText>
-      )}
-      {error && (
-        <MdText key="error" color="var(--cs-error)">
-          {error}
-        </MdText>
-      )}
-      <div key="apply">
-        <MdButton variant="filled" disabled={saving} onPressed={() => void save()}>
-          {saving ? 'Applying…' : 'Apply and restart'}
-        </MdButton>
-      </div>
-    </SettingsBody>
+    </>
   );
 }

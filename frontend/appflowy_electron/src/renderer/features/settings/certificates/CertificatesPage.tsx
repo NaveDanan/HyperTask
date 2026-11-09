@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CompanyCertificate, IpcResult } from '@shared/api';
-import { showDialog, MaterialDialog } from '@/ui';
+import { showDialog } from '@/ui';
+import { ShieldCheck, Trash2, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/reui/alert';
+import { SettingsPageHeader, SettingsSection, SettingsGroup, SettingsRow } from '@/components/app/settings-layout';
 import { useAppStore } from '@/startup/app-store';
 import type { SettingsPageProps } from '../page-props';
-import { SettingsBody } from '../shared';
-import { LinearProgress, MaterialIcon, MdButton, MdText } from '../material';
 import { localIsoDate } from '../workspace/appearance-utils';
 
 class CertificateError extends Error {
@@ -44,25 +48,16 @@ function confirmRemove(certificate: CompanyCertificate): Promise<boolean> {
           close();
         };
         return (
-          <MaterialDialog width={560} style={{ padding: '24px 24px 8px' }}>
-            <MdText size={20} weight={500}>
-              Remove company certificate?
-            </MdText>
-            <div style={{ height: 20 }} />
-            <MdText size={16} color="var(--afx-secondary-text)">
-              {certificate.installedByApp
-                ? `This removes ${certificate.subject} from your Windows account’s trusted certificates. Restart HyperTask afterward.`
-                : `This removes ${certificate.subject} from AppFlowy’s imported list. The certificate was already trusted in Windows and will remain there.`}
-            </MdText>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '16px 0 0' }}>
-              <MdButton variant="text" onPressed={() => answer(false)}>
-                Cancel
-              </MdButton>
-              <MdButton variant="text" onPressed={() => answer(true)}>
-                Remove
-              </MdButton>
+          <div className="flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-4 rounded-xl bg-popover p-4 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
+            <h2 className="text-base font-medium">Remove company certificate?</h2>
+            <p className="text-sm text-muted-foreground">{certificate.installedByApp
+              ? `This removes ${certificate.subject} from your Windows account’s trusted certificates. Restart HyperTask afterward.`
+              : `This removes ${certificate.subject} from AppFlowy’s imported list. The certificate was already trusted in Windows and will remain there.`}</p>
+            <div className="-mx-4 -mb-4 flex justify-end gap-2 rounded-b-xl border-t bg-muted/50 p-4">
+              <Button variant="outline" onClick={() => answer(false)}>Cancel</Button>
+              <Button className="bg-destructive text-white hover:bg-destructive/90" onClick={() => answer(true)}>Remove</Button>
             </div>
-          </MaterialDialog>
+          </div>
         );
       },
       { onClosed: () => !answered && resolve(false) },
@@ -72,20 +67,19 @@ function confirmRemove(certificate: CompanyCertificate): Promise<boolean> {
 
 /** _CertificateDetails */
 function CertificateDetails({ certificate }: { certificate: CompanyCertificate }) {
+  return <CollapsibleContent className="px-4 pb-3"><dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 font-mono text-xs">
+    <dt>SHA-256 fingerprint</dt><dd className="break-all select-text">{certificate.sha256}</dd>
+  </dl></CollapsibleContent>;
+}
+
+function HyperCertificateRow({ certificate, busy, onRemove }: { certificate: CompanyCertificate; busy: boolean; onRemove?: () => void }) {
   const expired = new Date(certificate.notAfter).getTime() < Date.now();
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <MdText weight={500}>{certificate.subject}</MdText>
-      <div style={{ height: 6 }} />
-      <MdText>{`Issued by: ${certificate.issuer}`}</MdText>
-      <MdText color={expired ? 'var(--cs-error)' : undefined}>{`${expired ? 'Expired' : 'Expires'}: ${localIsoDate(certificate.notAfter)}`}</MdText>
-      <div style={{ height: 6 }} />
-      <MdText>SHA-256 fingerprint</MdText>
-      <MdText size={12} selectable>
-        {certificate.sha256}
-      </MdText>
-    </div>
-  );
+  return <Collapsible>
+    <SettingsRow label={<span className="flex min-w-0 items-center gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted"><ShieldCheck className="size-4 text-muted-foreground" /></span><span className="min-w-0 break-words">{certificate.subject}</span></span>}
+      description={<><div>{`Issued by: ${certificate.issuer}`}</div><div className={expired ? 'text-destructive' : undefined}>{`${expired ? 'Expired' : 'Expires'}: ${localIsoDate(certificate.notAfter)}`}</div></>}
+      control={<><CollapsibleTrigger render={<Button variant="ghost" size="sm" />}>Details</CollapsibleTrigger>{onRemove && <Button variant="ghost" size="icon-sm" aria-label="Remove" className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" disabled={busy} onClick={onRemove}><Trash2 className="size-4" /></Button>}</>} />
+    <CertificateDetails certificate={certificate} />
+  </Collapsible>;
 }
 
 /**
@@ -179,55 +173,21 @@ export function CertificatesPage(_: SettingsPageProps) {
   };
 
   return (
-    <SettingsBody title="Company certificates">
-      <MdText key="intro1">
-        Import the root or intermediate CA certificate provided by your IT team for Jira, your collaboration server, and AI endpoints.
-      </MdText>
-      <MdText key="intro2">
-        Certificates are trusted for your Windows account and other apps using that account. No administrator permission is needed.
-      </MdText>
-      {!isWindows ? (
-        <MdText key="notice">Certificate import is available in the Windows desktop app.</MdText>
-      ) : (
-        <div key="choose">
-          <MdButton variant="outlined" icon={MaterialIcon.folderOpen()} disabled={busy} onPressed={() => void choose()}>
-            Choose certificate file
-          </MdButton>
-        </div>
-      )}
-      {busy && <LinearProgress key="busy" />}
-      {error !== null && (
-        <MdText key="error" color="var(--cs-error)">
-          {error}
-        </MdText>
-      )}
-      {message !== null && <MdText key="result">{message}</MdText>}
-      {selected.length > 0 && [
-        <MdText key="review" size={16} weight={500}>
-          Review before importing
-        </MdText>,
-        ...selected.map((certificate) => <CertificateDetails key={`sel-${certificate.thumbprint}`} certificate={certificate} />),
-        <div key="trust">
-          <MdButton variant="filled" icon={MaterialIcon.verifiedUserOutlined(18, 'currentColor')} disabled={busy} onPressed={() => void importSelected()}>
-            {selected.length === 1 ? 'Trust certificate' : 'Trust certificates'}
-          </MdButton>
-        </div>,
-      ]}
-      <MdText key="imported" size={16} weight={500}>
-        Imported certificates
-      </MdText>
-      {!busy && certificates.length === 0 && <MdText key="empty">No company certificates imported yet.</MdText>}
-      {certificates.map((certificate) => (
-        <div key={certificate.thumbprint} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <CertificateDetails certificate={certificate} />
-          <MdButton variant="text" disabled={busy} onPressed={() => void remove(certificate)}>
-            Remove
-          </MdButton>
-          <div style={{ alignSelf: 'stretch', height: 16, display: 'flex', alignItems: 'center' }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--th-divider)' }} />
-          </div>
-        </div>
-      ))}
-    </SettingsBody>
+    <>
+      <SettingsPageHeader title="Company certificates" description="Import the root or intermediate CA certificate provided by your IT team for Jira, your collaboration server, and AI endpoints." />
+      <SettingsSection title="Imported certificates" actions={isWindows && <Button variant="outline" size="sm" disabled={busy} onClick={() => void choose()}><Plus className="size-4" />Choose certificate file</Button>}>
+        <p className="text-sm text-muted-foreground">Certificates are trusted for your Windows account and other apps using that account. No administrator permission is needed.</p>
+        {!isWindows && <p className="text-sm text-muted-foreground">Certificate import is available in the Windows desktop app.</p>}
+        {busy && <Spinner />}
+        {error !== null && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+        {message !== null && <Alert variant="success"><AlertDescription>{message}</AlertDescription></Alert>}
+        <SettingsGroup>{!busy && certificates.length === 0 && <SettingsRow label="No company certificates imported yet." />}
+          {certificates.map((certificate) => <HyperCertificateRow key={certificate.thumbprint} certificate={certificate} busy={busy} onRemove={() => void remove(certificate)} />)}
+        </SettingsGroup>
+      </SettingsSection>
+      {selected.length > 0 && <SettingsSection title="Review before importing"><SettingsGroup>
+        {selected.map((certificate) => <HyperCertificateRow key={`sel-${certificate.thumbprint}`} certificate={certificate} busy={busy} />)}
+      </SettingsGroup><div><Button disabled={busy} onClick={() => void importSelected()}><ShieldCheck className="size-4" />{selected.length === 1 ? 'Trust certificate' : 'Trust certificates'}</Button></div></SettingsSection>}
+    </>
   );
 }

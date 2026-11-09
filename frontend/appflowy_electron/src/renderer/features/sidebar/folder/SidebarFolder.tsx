@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { create as createMessage } from '@bufbuild/protobuf';
 import { ViewPBSchema, type ViewPB, type ViewSectionPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { useTr } from '@/i18n';
-import { FlowyButton, FlowySvg, FlowyText, VSpace } from '@/ui';
+import { Plus } from 'lucide-react';
+import { Tooltip } from '@/ui';
+import { NavIconButton, NavSectionHeader } from '@/components/app/nav';
 import { tabsActions } from '@/features/tabs/tabs-store';
-import { SbIconButton } from '../components';
 import { FavoriteFolder } from '../favorites/FavoriteFolder';
 import { getFolderIsExpanded, setExpanded } from '../stores/expand-storage';
 import { useFavoriteStore } from '../stores/favorite-store';
@@ -39,24 +40,19 @@ export function SidebarFolder() {
   const isCollab = useWorkspaceStore((s) => s.isCollabWorkspaceOn);
   const { tr } = useTr();
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <VSpace size={4} />
+    <div className="flex flex-col">
       {favorites.length > 0 && <FavoriteFolder views={favorites.map((f) => f.item)} />}
       {isCollab ? (
         <>
-          <VSpace size={16} />
           <SectionFolder title={tr('sideBar.workspace')} spaceType="public" views={section.publicViews} addButtonTooltip={tr('sideBar.addAPageToWorkspace')} />
-          <VSpace size={16} />
           <SectionFolder title={tr('sideBar.private')} spaceType="private" views={section.privateViews} addButtonTooltip={tr('sideBar.addAPageToPrivate')} />
         </>
       ) : (
         <>
-          <VSpace size={16} />
           {/* Personal = the public section; private views are not shown in local mode. */}
           <SectionFolder title={tr('sideBar.personal')} spaceType="public" views={section.publicViews} addButtonTooltip={tr('sideBar.addAPage')} />
         </>
       )}
-      <VSpace size={200} />
     </div>
   );
 }
@@ -75,7 +71,7 @@ function SectionFolder({
   const [isExpanded, expand] = useFolderExpanded(spaceType);
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspace?.workspaceId ?? '');
   return (
-    <div className="sb-hover-scope" style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="mt-3 flex flex-col">
       <FolderHeader
         title={title}
         isExpanded={isExpanded}
@@ -86,36 +82,37 @@ function SectionFolder({
           expand(true);
         }}
       />
-      <VSpace size={4} />
-      {isExpanded &&
-        views.map((view) => (
+      <div className="mt-0.5 flex flex-col gap-px">
+        {isExpanded &&
+          views.map((view) => (
+            <ViewItem
+              key={`${spaceType} ${view.id}`}
+              spaceType={spaceType}
+              engagedInExpanding
+              isFirstChild={view.id === views[0].id}
+              view={view}
+              level={0}
+              leftPadding={16}
+              isFeedback={false}
+              hoverGated
+              enableRightClickContext
+              onSelected={openFromSidebar}
+              onTertiarySelected={(v) => tabsActions.openViewInNewTab(v)}
+            />
+          ))}
+        {views.length === 0 && (
+          // The empty section's drop target (move a page into this section).
           <ViewItem
-            key={`${spaceType} ${view.id}`}
             spaceType={spaceType}
-            engagedInExpanding
-            isFirstChild={view.id === views[0].id}
-            view={view}
+            view={createMessage(ViewPBSchema, { parentViewId: workspaceId })}
             level={0}
             leftPadding={16}
             isFeedback={false}
-            hoverGated
-            enableRightClickContext
-            onSelected={openFromSidebar}
-            onTertiarySelected={(v) => tabsActions.openViewInNewTab(v)}
+            onSelected={() => {}}
+            isPlaceholder
           />
-        ))}
-      {views.length === 0 && (
-        // The empty section's drop target (move a page into this section).
-        <ViewItem
-          spaceType={spaceType}
-          view={createMessage(ViewPBSchema, { parentViewId: workspaceId })}
-          level={0}
-          leftPadding={16}
-          isFeedback={false}
-          onSelected={() => {}}
-          isPlaceholder
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -134,31 +131,7 @@ function FolderHeader({
   onAdded: () => void;
 }) {
   return (
-    <div className="sb-folder-header" style={{ height: 32, display: 'flex', flexShrink: 0 }}>
-      <FlowyButton
-        style={{ flex: 1 }}
-        margin="0 4px 0 6px"
-        iconPadding={10}
-        onTap={onPressed}
-        text={
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <FlowyText style={{ lineHeight: 1.15 }}>{title}</FlowyText>
-            <div style={{ width: 4 }} />
-            <FlowySvg svg={isExpanded ? 'workspace_drop_down_menu_show_s' : 'workspace_drop_down_menu_hide_s'} />
-          </div>
-        }
-        rightIcon={
-          <div className="sb-folder-header-reveal" style={{ display: 'flex' }}>
-            <SbIconButton
-              width={24}
-              iconPadding={4}
-              tooltip={addButtonTooltip}
-              icon={<FlowySvg svg="view_item_add_s" />}
-              onPressed={onAdded}
-            />
-          </div>
-        }
-      />
-    </div>
+    <NavSectionHeader label={title} collapsed={!isExpanded} onToggle={onPressed}
+      actions={<Tooltip rich={addButtonTooltip}><NavIconButton aria-label={addButtonTooltip} onClick={onAdded}><Plus className="size-3.5" /></NavIconButton></Tooltip>} />
   );
 }

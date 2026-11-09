@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { ShortcutKeys } from '@/components/app/shortcut';
 
 export interface TooltipProps {
   message?: string;
@@ -16,7 +17,7 @@ const listeners = new Set<() => void>();
 window.addEventListener('wheel', () => listeners.forEach((hide) => hide()), { passive: true, capture: true });
 
 /** FlowyTooltip (packages/flowy_infra_ui/lib/widget/flowy_tooltip.dart). */
-export function Tooltip({ message, rich, preferBelow = true, verticalOffset = 16, children }: TooltipProps) {
+export function Tooltip({ message, rich, preferBelow = true, verticalOffset = 6, children }: TooltipProps) {
   const anchorRef = useRef<HTMLSpanElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const timer = useRef<number>(undefined);
@@ -84,9 +85,8 @@ function TooltipBubble({
     const el = ref.current;
     if (!el) return;
     const { width, height } = el.getBoundingClientRect();
-    const centerY = anchor.top + anchor.height / 2;
-    const below = centerY + verticalOffset;
-    const above = centerY - verticalOffset - height;
+    const below = anchor.bottom + verticalOffset;
+    const above = anchor.top - verticalOffset - height;
     const fitsBelow = below + height <= window.innerHeight;
     const fitsAbove = above >= 0;
     const top = preferBelow ? (fitsBelow || !fitsAbove ? below : above) : fitsAbove || !fitsBelow ? above : below;
@@ -97,23 +97,8 @@ function TooltipBubble({
   return createPortal(
     <div
       ref={ref}
-      style={{
-        position: 'fixed',
-        left: pos?.left ?? -9999,
-        top: pos?.top ?? -9999,
-        zIndex: 10000,
-        pointerEvents: 'none',
-        background: 'var(--tooltip-bg)',
-        color: 'var(--tooltip-fg)',
-        borderRadius: 10,
-        padding: '8px 12px',
-        minHeight: 24,
-        fontSize: 'calc(14px * var(--text-scale, 1))',
-        lineHeight: '20px',
-        fontWeight: 400,
-        whiteSpace: 'pre-line',
-        maxWidth: 'calc(100vw - 16px)',
-      }}
+      className="pointer-events-none fixed z-[100] max-w-xs whitespace-pre-line rounded-md bg-foreground px-3 py-1.5 text-xs text-background animate-in fade-in-0 zoom-in-95 duration-100"
+      style={{ left: pos?.left ?? -9999, top: pos?.top ?? -9999 }}
     >
       {children}
     </div>,
@@ -121,13 +106,12 @@ function TooltipBubble({
   );
 }
 
-/** A rich tooltip of a label and a shortcut hint line (hint at 70% alpha, as tooltipHintTextStyle). */
+/** A tooltip label with keyboard shortcut caps. */
 export function shortcutTooltip(label: string, shortcut: string): ReactNode {
   return (
-    <>
+    <span className="flex items-center gap-2">
       {label}
-      {'\n'}
-      <span style={{ opacity: 0.7 }}>{shortcut}</span>
-    </>
+      <ShortcutKeys keys={shortcut} className="[&_kbd]:bg-background/20 [&_kbd]:text-background" />
+    </span>
   );
 }

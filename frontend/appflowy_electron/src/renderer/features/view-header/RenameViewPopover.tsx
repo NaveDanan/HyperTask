@@ -1,11 +1,12 @@
 import { create } from '@bufbuild/protobuf';
 import { useEffect, useRef } from 'react';
 import { ViewIconPBSchema, ViewIconTypePB } from '@shared/protobuf/flowy-folder/icon_pb';
-import type { ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
+import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { FolderEventUpdateView, FolderEventUpdateViewIcon } from '@/backend/events';
-import { AppFlowyPopover, FlowyButton, FlowySvg, usePopoverContainer } from '@/ui';
-import { layoutIcon } from '../tabs/plugin';
-import { FlowyTextField } from './FlowyTextField';
+import { CalendarDays, FileText, MessageSquareText, SquareKanban, Table2 } from 'lucide-react';
+import { floatingSurfaceClass } from '@/components/app/menu-row';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
+import { AppFlowyPopover, usePopoverContainer } from '@/ui';
 import { IconEmojiPicker, type SelectedIcon } from './IconPicker';
 import { RawEmojiIcon } from './ViewIcon';
 
@@ -17,7 +18,7 @@ export function updateViewIcon(viewId: string, icon: SelectedIcon) {
   });
 }
 
-/** EmojiPickerButton (desktop): 30×30 bordered button opening the icon picker. */
+/** EmojiPickerButton (desktop): input addon opening the icon picker. */
 function EmojiPickerButton({
   icon,
   layout,
@@ -28,12 +29,12 @@ function EmojiPickerButton({
   onSubmitted: (icon: SelectedIcon, close: () => void) => void;
 }) {
   const showDefault = !icon || icon.value === '';
+  const Icon = layout === ViewLayoutPB.Board ? SquareKanban : layout === ViewLayoutPB.Calendar ? CalendarDays : layout === ViewLayoutPB.Chat ? MessageSquareText : layout === ViewLayoutPB.Document ? FileText : Table2;
   return (
     <AppFlowyPopover
       direction="bottomWithCenterAligned"
       offset={{ x: 0, y: 18 }}
-      margin={0}
-      constraints={{ width: 360, maxWidth: 360, maxHeight: 380 }}
+      plain
       popup={(close) => (
         <IconEmojiPicker
           initialTab={icon?.ty === ViewIconTypePB.Icon ? 'icon' : 'emoji'}
@@ -41,14 +42,9 @@ function EmojiPickerButton({
         />
       )}
     >
-      <div style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--th-divider)', boxSizing: 'border-box' }}>
-        <FlowyButton
-          margin={showDefault ? 0 : '0 0 0 2px'}
-          expandText={false}
-          style={{ height: '100%', justifyContent: 'center' }}
-          text={showDefault ? <FlowySvg svg={layoutIcon(layout)} /> : <RawEmojiIcon icon={icon!} size={18} />}
-        />
-      </div>
+      <InputGroupButton size="icon-xs">
+        {showDefault ? <Icon className="size-4 text-muted-foreground" /> : <RawEmojiIcon icon={icon!} size={18} />}
+      </InputGroupButton>
     </AppFlowyPopover>
   );
 }
@@ -86,31 +82,25 @@ export function RenameViewPopover({
   useEffect(() => () => void save(textRef.current), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <div style={{ width: 30 }}>
-        <EmojiPickerButton
-          icon={icon}
-          layout={view.layout}
-          onSubmitted={(selected, closePicker) => {
+    <div className={`${floatingSurfaceClass} w-72 p-1.5`}>
+      <InputGroup>
+        <InputGroupAddon>
+          <EmojiPickerButton icon={icon} layout={view.layout} onSubmitted={(selected, closePicker) => {
             void updateViewIcon(view.id, selected);
             closePicker();
             popover?.close();
-          }}
-        />
-      </div>
-      <div style={{ width: 6 }} />
-      <FlowyTextField
-        ref={inputRef}
-        defaultValue={name}
-        maxLength={256}
-        style={{ width: 220 }}
-        onChange={(text) => (textRef.current = text)}
-        onSubmit={(text) => {
-          textRef.current = text;
-          // Empty or unchanged names are ignored and the popover stays open.
-          if (save(text)) popover?.close();
-        }}
-      />
+          }} />
+        </InputGroupAddon>
+        <InputGroupInput ref={inputRef} defaultValue={name} maxLength={256} spellCheck={false}
+          onChange={(event) => (textRef.current = event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return;
+            const text = event.currentTarget.value;
+            textRef.current = text;
+            // Empty or unchanged names are ignored and the popover stays open.
+            if (save(text)) popover?.close();
+          }} />
+      </InputGroup>
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { useTr } from '@/i18n';
-import { FlowyIconButton, FlowySvg, Tooltip, shortcutTooltip } from '@/ui';
+import { PanelLeftOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ShortcutKeys } from '@/components/app/shortcut';
+import { Tooltip } from '@/ui';
 import { MenuStatus, homeSettingActions, useHomeSettingStore } from '../home/home-setting-store';
 
 const isWindows = navigator.userAgent.includes('Windows');
@@ -17,23 +20,15 @@ export function FlowyNavigation({ leftBarItem }: { leftBarItem: ReactNode }) {
   const { tr } = useTr();
   const hidden = useHomeSettingStore((s) => s.menuStatus === MenuStatus.hidden);
   return (
-    <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-      {/* _renderCollapse: non-Windows only; Windows has the toggle in its title bar. */}
+    <div className="flex min-w-0 flex-1 items-center gap-2">
       {!isWindows && hidden && (
-        <div style={{ paddingRight: 8, display: 'flex' }}>
-          <div style={{ width: 24, height: 24, position: 'relative' }}>
-            <Tooltip rich={shortcutTooltip(tr('sideBar.openSidebar'), isMac ? '⌘+.' : 'Ctrl+\\')}>
-              <div style={{ transform: 'rotate(180deg)', display: 'flex' }} onMouseDown={() => homeSettingActions.collapseMenu()}>
-                <FlowyIconButton width={24} icon={<FlowySvg svg="double_back_arrow_m" color="var(--af-icon-secondary)" />} />
-              </div>
-            </Tooltip>
-          </div>
-        </div>
+        <Tooltip rich={<span className="flex items-center gap-2">{tr('sideBar.openSidebar')}<ShortcutKeys keys={isMac ? '⌘+.' : 'Ctrl+\\'} /></span>}>
+          <Button variant="ghost" size="icon-sm" aria-label={tr('sideBar.openSidebar')} onMouseDown={() => homeSettingActions.collapseMenu()}>
+            <PanelLeftOpen className="size-4" />
+          </Button>
+        </Tooltip>
       )}
-      {/* navigationItems => [this]: one NaviItemWidget, the leftBarItem padded h2 v2. */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: 0, padding: '2px 2px', display: 'flex', alignItems: 'center' }}>{leftBarItem}</div>
-      </div>
+      <div className="flex min-w-0 flex-1 items-center">{leftBarItem}</div>
     </div>
   );
 }
@@ -42,21 +37,10 @@ export function FlowyNavigation({ leftBarItem }: { leftBarItem: ReactNode }) {
 export function HomeTopBar({ leftBarItem, rightBarItem }: { leftBarItem: ReactNode; rightBarItem?: ReactNode }) {
   const menuSpacing = useMenuSpacing();
   return (
-    <div
-      style={{
-        height: 56,
-        flexShrink: 0,
-        background: 'var(--cs-surface)',
-        padding: '12px 12px',
-        boxSizing: 'border-box',
-        display: 'flex',
-        alignItems: 'center',
-      }}
-    >
-      <div style={{ width: menuSpacing, flexShrink: 0 }} />
+    <div className="flex h-12 shrink-0 items-center gap-2 px-3">
+      <div className="shrink-0" style={{ width: menuSpacing }} />
       <FlowyNavigation leftBarItem={leftBarItem} />
-      <div style={{ width: 16, flexShrink: 0 }} />
-      {rightBarItem}
+      <div className="ml-auto flex items-center gap-1">{rightBarItem}</div>
     </div>
   );
 }

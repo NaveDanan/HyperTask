@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { homeSettingActions } from './home-setting-store';
 
-/** SidebarResizer (workspace/presentation/widgets/sidebar_resizer.dart): a 4px strip, 2px blue line on hover/drag. */
+/** SidebarResizer (workspace/presentation/widgets/sidebar_resizer.dart): an 8px hit area with a 2px ring line on hover/drag. */
 export function SidebarResizer({ left }: { left: number }) {
   const [active, setActive] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -25,9 +26,10 @@ export function SidebarResizer({ left }: { left: number }) {
         window.addEventListener('mousemove', move);
         window.addEventListener('mouseup', up);
       }}
-      style={{ position: 'absolute', top: 0, bottom: 0, left, width: 4, cursor: 'col-resize', zIndex: 3 }}
+      className="absolute inset-y-0 z-3 flex w-2 -translate-x-1/2 cursor-col-resize justify-center"
+      style={{ left }}
     >
-      <div style={{ width: 2, height: '100%', background: active || dragging ? '#00B5FF' : 'transparent' }} />
+      <div className={cn("h-full w-0.5 rounded-full transition-colors", active || dragging ? "bg-ring/60" : "bg-transparent")} />
     </div>
   );
 }

@@ -6,13 +6,15 @@ import { useStore } from 'zustand';
 import type { ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { ViewLayoutPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { useTr } from '@/i18n';
-import { Tooltip, VSpace } from '@/ui';
+import { Tooltip } from '@/ui';
 import { isSpace } from '@/features/view/view-ext';
 import { ViewBackendService } from '@/features/view/view-service';
 import { createSpaceStore, sidebarSpace } from '../stores/space-store';
 import { SpaceStoreContext } from '../space/space-context';
 import { CurrentSpace, SpacePages, SpacePopup, SpaceSearchField } from '../space/SpaceWidgets';
 import { ViewItem } from './ViewItem';
+import { floatingSurfaceClass } from '@/components/app/menu-row';
+import { cn } from '@/lib/utils';
 
 export function MovePageMenu({ sourceView, onSelected }: { sourceView: ViewPB; onSelected: (space: ViewPB, view: ViewPB) => void }) {
   const { tr } = useTr();
@@ -37,19 +39,18 @@ export function MovePageMenu({ sourceView, onSelected }: { sourceView: ViewPB; o
   if (!space) return null;
   return (
     <SpaceStoreContext.Provider value={bloc}>
-      <div style={{ height: 321, display: 'flex', flexDirection: 'column' }}>
-        <SpaceSearchField width={240} onSearch={setQuery} />
-        <VSpace size={10} />
+      <div className={cn(floatingSurfaceClass, 'flex w-72 flex-col p-0')}>
+        <div className="border-b"><SpaceSearchField width={288} onSearch={setQuery} /></div>
         {queryResults === null ? (
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-            <SpacePopup useIntrinsicWidth={false} height={30} showCreateButton={false}>
+          <div className="flex max-h-80 min-h-0 flex-col">
+            <SpacePopup useIntrinsicWidth={false} height={32} showCreateButton={false}>
               <Tooltip message={tr('space.switchSpace')}>
-                <div style={{ display: 'flex', width: '100%' }}>
+                <div className="flex w-full">
                   <CurrentSpace space={space} onTapBlankArea={() => onSelected(space, space)} />
                 </div>
               </Tooltip>
             </SpacePopup>
-            <div className="sb-scroll" style={{ flex: 1, minHeight: 0 }}>
+            <div className="mt-0.5 flex max-h-80 min-h-0 flex-1 flex-col gap-px overflow-y-auto p-1">
               <SpacePages
                 key={space.id}
                 space={space}
@@ -66,7 +67,7 @@ export function MovePageMenu({ sourceView, onSelected }: { sourceView: ViewPB; o
             </div>
           </div>
         ) : (
-          <div className="sb-scroll" style={{ flex: 1, minHeight: 0 }}>
+          <div className="mt-0.5 flex max-h-80 min-h-0 flex-1 flex-col gap-px overflow-y-auto p-1">
             {queryResults
               .filter((v) => v.id !== sourceView.id && !isSpace(v))
               .map((view) => (

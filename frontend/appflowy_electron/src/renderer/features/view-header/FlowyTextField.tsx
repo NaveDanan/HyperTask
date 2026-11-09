@@ -1,4 +1,5 @@
-import { forwardRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { forwardRef, type CSSProperties, type ReactNode } from 'react';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 
 export interface FlowyTextFieldProps {
   defaultValue?: string;
@@ -28,12 +29,8 @@ export const FlowyTextField = forwardRef<HTMLInputElement, FlowyTextFieldProps>(
     maxLength,
     readOnly,
     autoFocus,
-    borderRadius = 8,
-    enableBorderColor = 'var(--cs-outline)',
     prefix,
     suffix,
-    height = 32,
-    fontSize = 14,
     onChange,
     onSubmit,
     onFocusChange,
@@ -41,56 +38,17 @@ export const FlowyTextField = forwardRef<HTMLInputElement, FlowyTextFieldProps>(
   },
   ref,
 ) {
-  const [focused, setFocused] = useState(false);
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        height,
-        borderRadius,
-        border: `1px solid ${focused && !readOnly ? 'var(--cs-primary)' : enableBorderColor}`,
-        boxSizing: 'border-box',
-        minWidth: 0,
-        ...style,
-      }}
-    >
-      {prefix}
-      <input
-        ref={ref}
-        defaultValue={value === undefined ? defaultValue : undefined}
-        value={value}
-        placeholder={hintText}
-        maxLength={maxLength}
-        readOnly={readOnly}
-        autoFocus={autoFocus}
-        spellCheck={false}
+    <InputGroup style={style}>
+      {prefix && <InputGroupAddon>{prefix}</InputGroupAddon>}
+      <InputGroupInput ref={ref} defaultValue={value === undefined ? defaultValue : undefined} value={value}
+        placeholder={hintText} maxLength={maxLength} readOnly={readOnly} autoFocus={autoFocus} spellCheck={false}
         onChange={(event) => onChange?.(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter') onSubmit?.(event.currentTarget.value);
         }}
-        onFocus={() => {
-          setFocused(true);
-          onFocusChange?.(true);
-        }}
-        onBlur={() => {
-          setFocused(false);
-          onFocusChange?.(false);
-        }}
-        style={{
-          flex: 1,
-          minWidth: 0,
-          height: '100%',
-          border: 'none',
-          outline: 'none',
-          background: 'transparent',
-          padding: prefix ? '0 12px 0 0' : '0 12px',
-          color: 'var(--text-color)',
-          fontSize: `calc(${fontSize}px * var(--text-scale, 1))`,
-          fontFamily: 'inherit',
-        }}
-      />
-      {suffix}
-    </div>
+        onFocus={() => onFocusChange?.(true)} onBlur={() => onFocusChange?.(false)} />
+      {suffix && <InputGroupAddon align="inline-end">{suffix}</InputGroupAddon>}
+    </InputGroup>
   );
 });

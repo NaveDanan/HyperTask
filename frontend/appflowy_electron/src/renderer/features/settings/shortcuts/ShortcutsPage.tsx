@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { FlowySvg } from '@/icons/FlowySvg';
-import type { FlowySvgName } from '@/icons/flowy-svgs';
+import { Search, RotateCcw, PencilLine, X } from 'lucide-react';
+import { SettingsPageHeader, SettingsSection, SettingsGroup, SettingsRow } from '@/components/app/settings-layout';
+import { ShortcutKeys } from '@/components/app/shortcut';
+import { Kbd } from '@/components/ui/kbd';
+import { Button } from '@/components/ui/button';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
+import { platformCommand } from './shortcut-defaults';
 import { useTr } from '@/i18n';
-import { AFTextField, FlowyHover, FlowyText, HSpace, Spinner, Tooltip, VSpace, showConfirmDialog, showDialog } from '@/ui';
+import { Tooltip, showConfirmDialog, showDialog } from '@/ui';
 import type { SettingsPageProps } from '../page-props';
-import { SettingsBody } from '../shared';
-import { FlowyErrorMessage, SettingsAlertDialog } from '../shared-widgets';
+import { SettingsAlertDialog } from '../shared-widgets';
 import {
   isShortcutsLoading,
   keyEventToCommand,
@@ -15,7 +21,6 @@ import {
   useShortcutsStore,
   type CommandShortcutEvent,
 } from './shortcuts-store';
-import './shortcuts.css';
 
 /** SettingsShortcutsView (workspace/presentation/settings/pages/settings_shortcuts_view.dart). */
 export function ShortcutsPage(_: SettingsPageProps) {
@@ -37,64 +42,31 @@ export function ShortcutsPage(_: SettingsPageProps) {
     .filter(({ label }) => label.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <SettingsBody title={tr('settings.shortcutsPage.title')} autoSeparate={false}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <AFTextField hintText={tr('settings.shortcutsPage.searchHint')} onChanged={setQuery} />
+    <>
+      <SettingsPageHeader title={tr('settings.shortcutsPage.title')} />
+      <SettingsSection>
+        <div className="flex items-center gap-3">
+          <InputGroup><InputGroupAddon><Search className="size-4" /></InputGroupAddon><InputGroupInput spellCheck={false} placeholder={tr('settings.shortcutsPage.searchHint')} aria-label={tr('settings.shortcutsPage.searchHint')} onChange={(event) => setQuery(event.target.value)} /></InputGroup>
+          <ResetButton onReset={() => showConfirmDialog({
+            title: tr('settings.shortcutsPage.resetDialog.title'),
+            description: tr('settings.shortcutsPage.resetDialog.description'),
+            confirmLabel: tr('settings.shortcutsPage.resetDialog.buttonLabel'),
+            style: 'cancelAndOk',
+            onConfirm: () => void shortcutsActions.resetToDefault(),
+          })} />
         </div>
-        <HSpace size={10} />
-        <ResetButton
-          onReset={() =>
-            showConfirmDialog({
-              title: tr('settings.shortcutsPage.resetDialog.title'),
-              description: tr('settings.shortcutsPage.resetDialog.description'),
-              confirmLabel: tr('settings.shortcutsPage.resetDialog.buttonLabel'),
-              style: 'cancelAndOk',
-              onConfirm: () => void shortcutsActions.resetToDefault(),
-            })
-          }
-        />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <VSpace size={16} />
-        {isShortcutsLoading(status) ? (
-          <Spinner />
-        ) : status === 'failure' ? (
-          <FlowyErrorMessage
-            message={tr('settings.shortcutsPage.errorPage.message', { args: [error] })}
-            howToFix={tr('settings.shortcutsPage.errorPage.howToFix')}
-          />
-        ) : (
-          <div style={{ alignSelf: 'stretch' }}>
-            {filtered.map(({ command, label }) => (
-              <ShortcutSettingTile
-                key={command.key}
-                command={command}
-                label={label}
-                canStartEditing={() => !editingRef.current}
-                onStartEditing={() => (editingRef.current = true)}
-                onFinishEditing={() => (editingRef.current = false)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </SettingsBody>
+        {isShortcutsLoading(status) ? <div className="flex justify-center py-4"><Spinner /></div> : status === 'failure' ? (
+          <Empty><EmptyHeader><EmptyTitle>{tr('settings.shortcutsPage.errorPage.message', { args: [error] })}</EmptyTitle><EmptyDescription>{tr('settings.shortcutsPage.errorPage.howToFix')}</EmptyDescription></EmptyHeader></Empty>
+        ) : <SettingsGroup>{filtered.map(({ command, label }) => <ShortcutSettingTile key={command.key} command={command} label={label} canStartEditing={() => !editingRef.current} onStartEditing={() => (editingRef.current = true)} onFinishEditing={() => (editingRef.current = false)} />)}</SettingsGroup>}
+      </SettingsSection>
+    </>
   );
 }
 
-/** _ResetButton: FlowyHover, padding 4/6, restore_s 20 + "Reset default" in strongText. */
+/** Reset every shortcut to its default binding after confirmation. */
 function ResetButton({ onReset }: { onReset: () => void }) {
   const { tr } = useTr();
-  return (
-    <FlowyHover onClick={onReset} style={{ padding: '4px 6px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-      <FlowySvg svg="restore_s" size={20} />
-      <HSpace size={6} />
-      <div style={{ height: 16, display: 'flex', alignItems: 'center' }}>
-        <FlowyText color="var(--afx-strong-text)">{tr('settings.shortcutsPage.actions.resetDefault')}</FlowyText>
-      </div>
-    </FlowyHover>
-  );
+  return <Button variant="outline" size="sm" onClick={onReset}><RotateCcw className="size-4" />{tr('settings.shortcutsPage.actions.resetDefault')}</Button>;
 }
 
 /** ShortcutSettingTile: label | first keybinding as badges, or the key-capture editor. */
@@ -177,17 +149,9 @@ function ShortcutSettingTile({
           }}
           close={close}
         >
-          <div
-            style={{
-              textAlign: 'center',
-              fontSize: 'calc(16px * var(--text-scale, 1))',
-              fontWeight: 400,
-              color: 'var(--text-color)',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
+          <div className="whitespace-pre-wrap text-sm text-muted-foreground">
             {tr('settings.shortcutsPage.conflictDialog.descriptionPrefix')}
-            <span style={{ fontWeight: 700 }}>{shortcutLabel(conflict)}</span>
+            <span className="font-semibold text-foreground">{shortcutLabel(conflict)}</span>
             {tr('settings.shortcutsPage.conflictDialog.descriptionSuffix', { args: [binding] })}
           </div>
         </SettingsAlertDialog>
@@ -202,119 +166,44 @@ function ShortcutSettingTile({
   };
 
   const first = command.keybindings[0];
+  const conflict = isEditing && text !== '' ? shortcutsActions.getConflict(command, text) : null;
   return (
-    <div style={{ padding: '4px 0', borderTop: '1px solid var(--th-divider)' }}>
-      <FlowyHover
-        hoverColor="var(--cs-secondary-container)"
-        borderRadius={0}
-        cursor="default"
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
-        style={{ padding: '4px 0', display: 'flex', alignItems: 'center' }}
-      >
-        <HSpace size={8} />
-        <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-          <FlowyText lineHeight={14} maxLines={2} color="var(--afx-strong-text)">
-            {label}
-          </FlowyText>
+    <div onMouseEnter={() => setHovering(true)} onMouseLeave={() => setHovering(false)} className="transition-colors hover:bg-muted/50">
+      <SettingsRow label={<span className="font-normal">{label}</span>} control={
+        <div className="flex items-center gap-2">
+          {isEditing ? <div ref={editorRef} className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-muted-foreground ring-2 ring-ring">
+            <input ref={inputRef} autoFocus value={text} placeholder={tr('settings.shortcutsPage.editBindingHint')} spellCheck={false} className="min-w-0 bg-transparent text-xs outline-none placeholder:text-muted-foreground" onChange={() => {}} onKeyDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              if (event.code === 'Enter' && !event.shiftKey) commit();
+              else if (event.key === 'Escape') finishEditing();
+              else setText(keyEventToCommand(event.nativeEvent));
+            }} />
+            {text !== '' && <Button variant="ghost" size="icon-xs" aria-label={tr('button.clear')} onMouseDown={(event) => event.preventDefault()} onClick={() => setText('')}><X className="size-3" /></Button>}
+          </div> : <>
+            <span className="flex min-h-6 items-center">{first && <ShortcutKeys keys={keybindingParts(first).join('+')} />}</span>
+            <Tooltip message={tr('settings.shortcutsPage.editTooltip')}><Button variant="ghost" size="icon-xs" aria-label={tr('settings.shortcutsPage.editTooltip')} className={isHovering ? '' : 'opacity-0 focus-visible:opacity-100'} onClick={() => {
+              if (canStartEditing()) {
+                onStartEditing();
+                setEditing(true);
+              }
+            }}><PencilLine className="size-4" /></Button></Tooltip>
+            <Button variant="ghost" size="icon-xs" aria-label={tr('settings.shortcutsPage.actions.resetDefault')} onClick={() => {
+              command.clearCommand();
+              command.updateCommand(platformCommand(command.definition));
+              void shortcutsActions.updateAllShortcuts();
+            }}><RotateCcw className="size-3" /></Button>
+          </>}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {isEditing ? (
-            <div ref={editorRef} className="shortcut-binding-field">
-              <input
-                ref={inputRef}
-                autoFocus
-                value={text}
-                placeholder={tr('settings.shortcutsPage.editBindingHint')}
-                spellCheck={false}
-                onChange={() => {}}
-                onKeyDown={(event) => {
-                  // Every key is consumed (KeyEventResult.handled): nothing is typed.
-                  event.preventDefault();
-                  event.stopPropagation();
-                  if (event.code === 'Enter' && !event.shiftKey) commit();
-                  else if (event.key === 'Escape') finishEditing();
-                  else setText(keyEventToCommand(event.nativeEvent));
-                }}
-              />
-              {text !== '' && (
-                <span
-                  style={{ display: 'flex', cursor: 'pointer', marginLeft: 8 }}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => setText('')}
-                >
-                  <FlowySvg svg="close_s" size={10} />
-                </span>
-              )}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {first ? keybindingParts(first).map((key, index) => <KeyBadge key={index} keyLabel={key} />) : <div style={{ height: 24 }} />}
-              <div style={{ flex: 1 }} />
-              {isHovering && (
-                <Tooltip message={tr('settings.shortcutsPage.editTooltip')}>
-                  <span
-                    style={{ display: 'flex', cursor: 'pointer' }}
-                    onClick={() => {
-                      if (canStartEditing()) {
-                        onStartEditing();
-                        setEditing(true);
-                      }
-                    }}
-                  >
-                    <FlowySvg svg="edit_s" size={16} />
-                  </span>
-                </Tooltip>
-              )}
-              <HSpace size={8} />
-            </div>
-          )}
-        </div>
-      </FlowyHover>
+      }>
+        {conflict && <p className="text-xs text-destructive">{tr('settings.shortcutsPage.conflictDialog.title', { args: [text] })}</p>}
+      </SettingsRow>
     </div>
   );
 }
 
-const BADGE_ICONS: Record<string, FlowySvgName> = {
-  meta: 'keyboard_meta_s',
-  'arrow left': 'keyboard_arrow_left_s',
-  'arrow right': 'keyboard_arrow_right_s',
-  'arrow up': 'keyboard_arrow_up_s',
-  'arrow down': 'keyboard_arrow_down_s',
-  shift: 'keyboard_shift_s',
-  tab: 'keyboard_tab_s',
-  enter: 'keyboard_return_s',
-  return: 'keyboard_return_s',
-  opt: 'keyboard_option_s',
-  option: 'keyboard_option_s',
-};
-
-/** KeyBadge: 24 high, greySelect, radius 4, black text (medium 12, lower case) or icon. */
+/** Kept for callers of the original key badge. */
 export function KeyBadge({ keyLabel }: { keyLabel: string }) {
-  const icon = BADGE_ICONS[keyLabel];
-  if (!icon && keyLabel === '') return null;
-  return (
-    <div
-      style={{
-        height: 24,
-        marginRight: 4,
-        padding: '0 8px',
-        background: 'var(--afx-grey-select)',
-        borderRadius: 4,
-        boxShadow: '0 1px 1px #00000040',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}
-    >
-      {icon ? (
-        <FlowySvg svg={icon} color="#000000" />
-      ) : (
-        <FlowyText fontSize={12} fontWeight={500} color="#000000">
-          {keyLabel.toLowerCase()}
-        </FlowyText>
-      )}
-    </div>
-  );
+  if (keyLabel === '') return null;
+  return <Kbd className="capitalize">{keyLabel.toLowerCase()}</Kbd>;
 }

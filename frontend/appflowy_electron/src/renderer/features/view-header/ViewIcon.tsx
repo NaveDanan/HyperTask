@@ -15,15 +15,12 @@ export function SvgString({ svg, size, color, style }: { svg: string; size: numb
   return (
     <span
       aria-hidden
+      className="inline-block shrink-0 bg-current [mask-size:100%_100%] [mask-repeat:no-repeat]"
       style={{
-        display: 'inline-block',
-        flexShrink: 0,
         width: size,
         height: size,
-        backgroundColor: color ?? 'var(--icon-color)',
+        backgroundColor: color,
         WebkitMaskImage: url,
-        WebkitMaskSize: '100% 100%',
-        WebkitMaskRepeat: 'no-repeat',
         ...style,
       }}
     />
@@ -35,14 +32,10 @@ export function EmojiText({ emoji, size, lineHeight }: { emoji: string; size: nu
   const fontSize = isWindows ? size * 0.9 : size;
   return (
     <span
+      className="inline-flex shrink-0 items-center whitespace-nowrap font-['Segoe_UI_Emoji','Apple_Color_Emoji','Noto_Color_Emoji',sans-serif]"
       style={{
         fontSize: `calc(${fontSize}px * var(--text-scale, 1))`,
         lineHeight: lineHeight ? `${lineHeight * size}px` : 1,
-        fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif',
-        whiteSpace: 'nowrap',
-        flexShrink: 0,
-        display: 'inline-flex',
-        alignItems: 'center',
       }}
     >
       {emoji}
@@ -58,7 +51,7 @@ function IconsDataIcon({ json, size, enableColor }: { json: string; size: number
   } catch {
     return <EmojiText emoji="❓" size={size} />;
   }
-  if (!groups) return <span style={{ width: size, height: size, display: 'inline-block', flexShrink: 0 }} />;
+  if (!groups) return <span className="inline-block shrink-0" style={{ width: size, height: size }} />;
   const svg = findSvgContent(groups, data.groupName ?? '', data.iconName ?? '');
   if (!svg) return <EmojiText emoji="❓" size={size} />;
   return <SvgString svg={svg} size={size} color={(enableColor && argbToCss(data.color)) || undefined} />;
@@ -68,7 +61,7 @@ function CustomImageIcon({ url, size }: { url: string; size: number }) {
   const [failed, setFailed] = useState(false);
   const isUrl = /^https?:\/\//i.test(url);
   // A network image that fails renders nothing; a missing local file shows the ❓ fallback.
-  if (failed) return isUrl ? <span style={{ width: size, height: size, flexShrink: 0 }} /> : <EmojiText emoji="❓" size={size} />;
+  if (failed) return isUrl ? <span className="shrink-0" style={{ width: size, height: size }} /> : <EmojiText emoji="❓" size={size} />;
   const src = isUrl ? url : `file:///${url.replace(/\\/g, '/').replace(/^\/+/, '')}`;
   return (
     <img
@@ -78,7 +71,7 @@ function CustomImageIcon({ url, size }: { url: string; size: number }) {
       alt=""
       draggable={false}
       onError={() => setFailed(true)}
-      style={{ objectFit: 'cover', flexShrink: 0 }}
+      className="shrink-0 object-cover"
     />
   );
 }

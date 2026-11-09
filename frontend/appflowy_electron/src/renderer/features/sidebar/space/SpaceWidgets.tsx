@@ -6,17 +6,16 @@ import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useStore } from 'zustand';
 import type { ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { useTr } from '@/i18n';
-import { useBrightness } from '@/theme/appearance-store';
+import { Check, ChevronDown, Globe, Lock, PencilLine, Plus, Search, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { floatingSurfaceClass, MenuRow, MenuSeparator } from '@/components/app/menu-row';
+import { cn } from '@/lib/utils';
 import {
-  AFButton,
   AppFlowyPopover,
-  FlowyButton,
-  FlowyDivider,
   FlowySvg,
-  FlowyText,
   MaterialDialog,
   Tooltip,
-  VSpace,
   showDialog,
   usePopoverContainer,
   type PopoverController,
@@ -34,18 +33,14 @@ import type { ViewBloc } from '../stores/view-bloc';
 import { SpaceStoreContext, useSpaceBloc, useSpaceState } from './space-context';
 
 /** A monochrome SVG string tinted like FlowySvg.string(color:). */
-function SvgGlyph({ content, size, color }: { content: string; size: number; color: string }) {
+function SvgGlyph({ content, size, color: _color }: { content: string; size: number; color: string }) {
   return (
     <span
+      className="inline-block shrink-0 bg-current [mask-size:100%_100%] [mask-repeat:no-repeat]"
       style={{
-        display: 'inline-block',
-        flexShrink: 0,
         width: size,
         height: size,
-        background: color,
         WebkitMaskImage: `url("${svgDataUrl(content)}")`,
-        WebkitMaskSize: '100% 100%',
-        WebkitMaskRepeat: 'no-repeat',
       }}
     />
   );
@@ -54,8 +49,8 @@ function SvgGlyph({ content, size, color }: { content: string; size: number; col
 /** SpaceIcon: the space's icon on its color, or its initial on the first built-in color. */
 export function SpaceIcon({
   dimension,
-  textDimension,
-  cornerRadius = 0,
+  textDimension: _textDimension,
+  cornerRadius: _cornerRadius = 0,
   space,
   svgSize,
 }: {
@@ -72,9 +67,7 @@ export function SpaceIcon({
   if (!icon) {
     const initial = space.name ? space.name.charAt(0).toUpperCase() : '';
     glyph = (
-      <FlowyText fontWeight={500} color="var(--cs-surface)" fontSize={svgSize} lineHeight={textDimension ?? dimension}>
-        {initial}
-      </FlowyText>
+      <span className="text-xs font-medium text-white">{initial}</span>
     );
     background = dartColorToCss(builtInSpaceColors[0]);
   } else {
@@ -83,10 +76,10 @@ export function SpaceIcon({
     const hasColor = extra?.[ViewExtKeys.spaceIconColor] != null;
     if (hasColor) {
       if (icon.includes('space_icon')) {
-        glyph = <FlowySvg svg={`${icon}_s` as FlowySvgName} color="var(--cs-surface)" />;
+        glyph = <FlowySvg svg={`${icon}_s` as FlowySvgName} color="currentColor" />;
       } else {
         const content = findSvgContent(icon, groups);
-        if (content) glyph = <SvgGlyph content={content} size={svgSize ?? 16} color="var(--cs-surface)" />;
+        if (content) glyph = <SvgGlyph content={content} size={svgSize ?? 16} color="currentColor" />;
       }
     }
     const color = spaceIconColor(space);
@@ -94,17 +87,8 @@ export function SpaceIcon({
   }
   return (
     <div
-      style={{
-        width: dimension,
-        height: dimension,
-        borderRadius: cornerRadius,
-        overflow: 'hidden',
-        background: background ?? 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded-md text-white"
+      style={{ width: dimension, height: dimension, background: background ?? 'transparent' }}
     >
       {glyph}
     </div>
@@ -112,56 +96,44 @@ export function SpaceIcon({
 }
 
 /** DefaultSpaceIcon: kDefaultSpaceIconId on #A34AFD. */
-export function DefaultSpaceIcon({ dimension, iconDimension, cornerRadius = 0 }: { dimension: number; iconDimension: number; cornerRadius?: number }) {
+export function DefaultSpaceIcon({ dimension, iconDimension, cornerRadius: _cornerRadius = 0 }: { dimension: number; iconDimension: number; cornerRadius?: number }) {
   const groups = useIconGroups();
   const content = findSvgContent(kDefaultSpaceIconId, groups);
   return (
     <div
-      style={{
-        width: dimension,
-        height: dimension,
-        borderRadius: cornerRadius,
-        background: dartColorToCss(builtInSpaceColors[0]) ?? undefined,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-      }}
+      className="flex items-center justify-center overflow-hidden rounded-md text-white"
+      style={{ width: dimension, height: dimension, background: dartColorToCss(builtInSpaceColors[0]) ?? undefined }}
     >
       {content ? (
-        <SvgGlyph content={content} size={iconDimension} color="var(--cs-surface)" />
+        <SvgGlyph content={content} size={iconDimension} color="currentColor" />
       ) : (
-        <FlowySvg svg="space_icon_1_s" size={iconDimension} color="var(--cs-surface)" />
+        <FlowySvg svg="space_icon_1_s" size={iconDimension} color="currentColor" />
       )}
     </div>
   );
 }
 
 /** CurrentSpace: icon, name and the expand arrow; `onTapBlankArea` adds the move-to-space target. */
-export function CurrentSpace({ space, isHovered = false, onTapBlankArea }: { space: ViewPB; isHovered?: boolean; onTapBlankArea?: () => void }) {
+export function CurrentSpace({ space, isHovered: _isHovered = false, onTapBlankArea }: { space: ViewPB; isHovered?: boolean; onTapBlankArea?: () => void }) {
   const { tr } = useTr();
-  const isExpanded = useSpaceState((s) => s.isExpanded);
-  const color = isHovered ? 'var(--cs-on-surface)' : undefined;
   const child = (
-    <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-      <SpaceIcon dimension={22} space={space} svgSize={12} cornerRadius={8} />
-      <div style={{ width: 10, flexShrink: 0 }} />
-      <FlowyText fontWeight={500} lineHeight={18} ellipsis color={color} style={{ flexShrink: 1 }}>
-        {space.name}
-      </FlowyText>
-      <div style={{ width: 4, flexShrink: 0 }} />
-      <FlowySvg svg={isExpanded ? 'workspace_drop_down_menu_show_s' : 'workspace_drop_down_menu_hide_s'} color={color} />
+    <div className="flex min-w-0 items-center gap-2">
+      <SpaceIcon dimension={20} space={space} svgSize={12} cornerRadius={6} />
+      <span className="truncate text-sm font-medium">{space.name}</span>
+      <ChevronDown className="size-3.5 shrink-0 text-sidebar-foreground/50" />
     </div>
   );
   if (!onTapBlankArea) return child;
   return (
-    <div style={{ display: 'flex', width: '100%', alignItems: 'stretch' }}>
-      <div className="flowy-hover" style={{ flex: 2, minWidth: 0, padding: 2, display: 'flex' }}>
+    <div className="flex w-full items-stretch">
+      <div className="flex min-w-0 flex-[2] rounded-md p-0.5 transition-colors hover:bg-sidebar-accent">
         {child}
       </div>
       <Tooltip message={tr('space.movePageToSpace')}>
-        <div
-          style={{ flex: 1 }}
+        <button
+          type="button"
+          aria-label={tr('space.movePageToSpace')}
+          className="flex-1 rounded-md transition-colors hover:bg-sidebar-accent"
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation();
@@ -189,9 +161,11 @@ export function SpacePopup({
 }) {
   const bloc = useSpaceBloc();
   return (
-    <div style={{ height, display: 'flex', minWidth: 0, ...style }} onClick={(event) => event.stopPropagation()}>
+    <div className="flex min-w-0 flex-1" style={{ height, ...style }} onClick={(event) => event.stopPropagation()}>
       <AppFlowyPopover
-        constraints={{ width: 260, maxWidth: 260 }}
+        plain
+        margin={0}
+        constraints={{ width: 256, maxWidth: 256 }}
         direction="bottomWithLeftAligned"
         offset={{ x: 0, y: 4 }}
         popup={() => (
@@ -200,13 +174,11 @@ export function SpacePopup({
           </SpaceStoreContext.Provider>
         )}
       >
-        <FlowyButton
-          useIntrinsicWidth={useIntrinsicWidth}
-          margin="0 4px 0 3px"
-          iconPadding={10}
-          text={children}
-          style={{ height: '100%', maxWidth: '100%', width: useIntrinsicWidth ? undefined : '100%' }}
-        />
+        {useIntrinsicWidth ? (
+          <button type="button" className="flex h-full max-w-full items-center rounded-md text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring">{children}</button>
+        ) : (
+          <div className="flex h-full w-full max-w-full items-center rounded-md transition-colors hover:bg-sidebar-accent">{children}</div>
+        )}
       </AppFlowyPopover>
     </div>
   );
@@ -220,57 +192,15 @@ export function SidebarSpaceMenu({ showCreateButton }: { showCreateButton: boole
   const currentId = useSpaceState((s) => s.currentSpace?.id);
   const popover = usePopoverContainer();
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <VSpace size={4} />
+    <div className={cn(floatingSurfaceClass, 'flex w-64 flex-col p-1')}>
       {spaces.map((space) => (
-        <div key={space.id} style={{ height: 30, flexShrink: 0 }}>
-          <FlowyButton
-            height={30}
-            iconPadding={10}
-            leftIcon={<SpaceIcon dimension={20} space={space} svgSize={12} cornerRadius={6} />}
-            leftIconSize={20}
-            rightIcon={currentId === space.id ? <FlowySvg svg="workspace_selected_s" blendMode={null} /> : undefined}
-            text={
-              <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-                <FlowyText ellipsis style={{ flexShrink: 1 }}>
-                  {space.name}
-                </FlowyText>
-                <div style={{ width: 6, flexShrink: 0 }} />
-                {spacePermission(space) === SpacePermission.private && (
-                  <Tooltip message={tr('space.privatePermissionDescription')}>
-                    <div style={{ display: 'flex' }}>
-                      <FlowySvg svg="space_lock_s" />
-                    </div>
-                  </Tooltip>
-                )}
-              </div>
-            }
-            onTap={() => {
-              void bloc.actions.open(space);
-              popover?.close();
-            }}
-          />
-        </div>
+        <MenuRow key={space.id} icon={<SpaceIcon dimension={20} space={space} svgSize={12} cornerRadius={6} />}
+          label={<span className="flex min-w-0 items-center gap-1.5"><span className="truncate">{space.name}</span>{spacePermission(space) === SpacePermission.private && <Tooltip message={tr('space.privatePermissionDescription')}><Lock className="size-3.5 shrink-0 text-muted-foreground" /></Tooltip>}</span>}
+          trailing={currentId === space.id ? <Check className="size-4" /> : undefined}
+          onClick={() => { void bloc.actions.open(space); popover?.close(); }} />
       ))}
-      {showCreateButton && (
-        <>
-          <div style={{ padding: '8px 0' }}>
-            <FlowyDivider />
-          </div>
-          <div style={{ height: 30 }}>
-            <FlowyButton
-              height={30}
-              iconPadding={10}
-              leftIcon={<FlowySvg svg="space_add_s" />}
-              text={<FlowyText>{tr('space.createNewSpace')}</FlowyText>}
-              onTap={() => {
-                popover?.close();
-                showCreateSpaceDialog(bloc);
-              }}
-            />
-          </div>
-        </>
-      )}
+      {showCreateButton && <><MenuSeparator /><MenuRow icon={<Plus className="size-4" />} label={tr('space.createNewSpace')}
+        onClick={() => { popover?.close(); showCreateSpaceDialog(bloc); }} /></>}
     </div>
   );
 }
@@ -301,7 +231,7 @@ export function SpacePages({
   if (shouldIgnoreView) childViews = childViews.filter((v) => shouldIgnoreView(v) !== 'hide');
   const spaceType = spacePermission(space) === SpacePermission.publicToAll ? 'public' : 'private';
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="mt-0.5 flex flex-col gap-px">
       {childViews.map((child) => (
         <ViewItem
           key={`${space.id} ${child.id}`}
@@ -325,36 +255,15 @@ export function SpacePages({
   );
 }
 
-/** context.enableBorderColor (space/_extension.dart). */
-export function useEnableBorderColor() {
-  return useBrightness() === 'light' ? '#1717171E' : '#3A3F49';
-}
-
 /** SpacePermissionButton: a 20px icon, title and description; a dropdown arrow in the switch. */
 function SpacePermissionButton({ permission, onTap, showArrow = false }: { permission: SpacePermission; onTap?: () => void; showArrow?: boolean }) {
   const { tr } = useTr();
-  const border = useEnableBorderColor();
   const isPublic = permission === SpacePermission.publicToAll;
   return (
-    <FlowyButton
-      margin="12px 14px"
-      radius={showArrow ? 10 : 0}
-      iconPadding={16}
-      leftIcon={<FlowySvg svg={isPublic ? 'space_permission_public_s' : 'space_permission_private_s'} />}
-      leftIconSize={20}
-      rightIcon={showArrow ? <FlowySvg svg="space_permission_dropdown_s" /> : undefined}
-      borderColor={border}
-      onTap={onTap}
-      text={
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <FlowyText>{tr(isPublic ? 'space.publicPermission' : 'space.privatePermission')}</FlowyText>
-          <VSpace size={4} />
-          <FlowyText fontSize={12} color="var(--th-hint)">
-            {tr(isPublic ? 'space.publicPermissionDescription' : 'space.privatePermissionDescription')}
-          </FlowyText>
-        </div>
-      }
-    />
+    <MenuRow icon={isPublic ? <Globe className="size-5" /> : <Lock className="size-5" />}
+      label={tr(isPublic ? 'space.publicPermission' : 'space.privatePermission')}
+      description={tr(isPublic ? 'space.publicPermissionDescription' : 'space.privatePermissionDescription')}
+      trailing={showArrow ? <ChevronDown className="size-4 text-muted-foreground" /> : undefined} onClick={onTap} />
   );
 }
 
@@ -368,32 +277,31 @@ export function SpacePermissionSwitch({
   const { tr } = useTr();
   const [permission, setPermission] = useState(initial ?? SpacePermission.publicToAll);
   const controller = useRef<PopoverController>(null);
-  const border = useEnableBorderColor();
   const change = (value: SpacePermission) => {
     onPermissionChanged(value);
     setPermission(value);
     controller.current?.close();
   };
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <FlowyText lineHeight={18} color="var(--th-hint)">
+    <div className="flex w-full flex-col gap-1.5">
+      <span className="text-sm text-muted-foreground">
         {tr('space.permission')}
-      </FlowyText>
-      <VSpace size={6} />
+      </span>
       <AppFlowyPopover
         controllerRef={controller}
+        plain
         direction="bottomWithCenterAligned"
         constraints={{ maxWidth: 500 }}
         offset={{ x: 0, y: 4 }}
         margin={0}
         popup={() => (
-          <div style={{ width: 452, display: 'flex', flexDirection: 'column' }}>
+          <div className={cn(floatingSurfaceClass, 'flex w-[28rem] max-w-full flex-col p-1')}>
             <SpacePermissionButton permission={SpacePermission.publicToAll} onTap={() => change(SpacePermission.publicToAll)} />
             <SpacePermissionButton permission={SpacePermission.private} onTap={() => change(SpacePermission.private)} />
           </div>
         )}
       >
-        <div style={{ borderRadius: 10, boxShadow: `inset 0 0 0 1px ${border}` }}>
+        <div className="rounded-lg border border-input p-1">
           <SpacePermissionButton showArrow permission={permission} />
         </div>
       </AppFlowyPopover>
@@ -415,56 +323,25 @@ export function SpaceCancelOrConfirmButton({
 }) {
   const { tr } = useTr();
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', width: '100%' }}>
-      <AFButton variant="outlinedNormal" size="m" text={tr('button.cancel')} onTap={onCancel} style={{ fontWeight: 400 }} />
-      <div style={{ width: 12 }} />
-      <div style={{ borderRadius: 8, background: confirmButtonColor ?? 'var(--cs-primary)' }}>
-        <FlowyButton
-          useIntrinsicWidth
-          margin="9px 16px"
-          radius={8}
-          onTap={onConfirm}
-          text={
-            <FlowyText style={{ lineHeight: 1 }} color="var(--cs-on-primary)">
-              {confirmButtonName}
-            </FlowyText>
-          }
-        />
-      </div>
+    <div className="flex w-full items-center justify-end gap-2">
+      <Button variant="outline" onClick={onCancel}>{tr('button.cancel')}</Button>
+      <Button className={confirmButtonColor ? 'bg-destructive text-white hover:bg-destructive/90' : undefined} onClick={onConfirm}>{confirmButtonName}</Button>
     </div>
   );
 }
 
-/** SpaceSearchField: a 30px CupertinoSearchTextField with a 1.2px #00BCF0 outline, autofocused. */
-export function SpaceSearchField({ width, onSearch }: { width: number; onSearch: (text: string) => void }) {
+/** Autofocused menu search, retaining query and clear callbacks. */
+export function SpaceSearchField({ width: _width, onSearch }: { width: number; onSearch: (text: string) => void }) {
   const { tr } = useTr();
   const [value, setValue] = useState('');
   return (
-    <div className="sb-search-field" style={{ width }}>
-      <div style={{ padding: '0 8px 0 12px', display: 'flex' }}>
-        <FlowySvg svg="magnifier_s" size={16} />
-      </div>
-      <input
-        autoFocus
-        value={value}
-        placeholder={tr('search.label')}
-        onChange={(event) => {
-          setValue(event.target.value);
-          onSearch(event.target.value);
-        }}
-      />
-      {value && (
-        <div
-          style={{ paddingRight: 8, display: 'flex', cursor: 'pointer', color: 'var(--th-hint)', fontSize: 16 }}
-          onClick={() => {
-            setValue('');
-            onSearch('');
-          }}
-        >
-          ✕
-        </div>
-      )}
-    </div>
+    <InputGroup className="h-9 rounded-none border-0 bg-transparent focus-within:ring-0">
+      <InputGroupAddon><Search className="size-4" /></InputGroupAddon>
+      <InputGroupInput autoFocus value={value} placeholder={tr('search.label')} className="h-9"
+        onChange={(event) => { setValue(event.target.value); onSearch(event.target.value); }} />
+      {value && <InputGroupAddon align="inline-end"><Button variant="ghost" size="icon-xs" aria-label={tr('button.remove')}
+        onClick={() => { setValue(''); onSearch(''); }}><X className="size-4" /></Button></InputGroupAddon>}
+    </InputGroup>
   );
 }
 
@@ -482,6 +359,7 @@ export function SpaceIconPopup({
   space?: ViewPB | null;
   onIconChanged: (icon: string | null, color: string | null) => void;
 }) {
+  const { tr } = useTr();
   const groups = useIconGroups();
   const [selectedIcon, setSelectedIcon] = useState<string | null>(icon ?? null);
   const [selectedColor, setSelectedColor] = useState<string>(iconColor ?? builtInSpaceColors[0]);
@@ -496,21 +374,22 @@ export function SpaceIconPopup({
     );
   } else if (selectedIcon.includes('space_icon')) {
     preview = (
-      <div style={{ width: '100%', height: '100%', borderRadius: cornerRadius, background: dartColorToCss(selectedColor) ?? undefined, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <FlowySvg svg={`${selectedIcon}_s` as FlowySvgName} size={42} color="var(--cs-surface)" />
+      <div className="flex size-full items-center justify-center rounded-md text-white" style={{ background: dartColorToCss(selectedColor) ?? undefined }}>
+        <FlowySvg svg={`${selectedIcon}_s` as FlowySvgName} size={42} color="currentColor" />
       </div>
     );
   } else {
     const content = findSvgContent(selectedIcon, groups);
     preview = content ? (
-      <div style={{ width: '100%', height: '100%', borderRadius: cornerRadius, background: dartColorToCss(selectedColor) ?? undefined, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <SvgGlyph content={content} size={24} color="var(--cs-surface)" />
+      <div className="flex size-full items-center justify-center rounded-md text-white" style={{ background: dartColorToCss(selectedColor) ?? undefined }}>
+        <SvgGlyph content={content} size={24} color="currentColor" />
       </div>
     ) : null;
   }
 
   return (
     <AppFlowyPopover
+      plain
       offset={{ x: 0, y: 4 }}
       constraints={{ maxWidth: 360, maxHeight: 432 }}
       margin={0}
@@ -539,20 +418,22 @@ export function SpaceIconPopup({
         />
       )}
     >
-      <div
-        style={{ width: '100%', height: '100%', position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      <button
+        type="button"
+        aria-label={tr('space.changeIcon')}
+        className="relative flex size-full cursor-pointer items-center justify-center rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: hover ? 0.2 : 1 }}>
+        <div className={cn('absolute inset-0 flex items-center justify-center', hover && 'opacity-20')}>
           {preview}
         </div>
         {hover && (
-          <div style={{ position: 'relative', display: 'flex' }}>
-            <FlowySvg svg="view_item_rename_s" size={20} />
+          <div className="relative flex">
+            <PencilLine className="size-5" />
           </div>
         )}
-      </div>
+      </button>
     </AppFlowyPopover>
   );
 }
@@ -578,7 +459,6 @@ export function showManageSpaceDialog(bloc: SpaceStore) {
 function CreateSpacePopup({ close }: { close: () => void }) {
   const { tr } = useTr();
   const bloc = useSpaceBloc();
-  const border = useEnableBorderColor();
   const values = useRef({
     name: tr('space.defaultSpaceName'),
     icon: kDefaultSpaceIconId as string | null,
@@ -598,16 +478,10 @@ function CreateSpacePopup({ close }: { close: () => void }) {
     close();
   };
   return (
-    <div style={{ padding: '16px 24px', width: 524, maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <FlowyText fontSize={18} lineHeight={24}>
-        {tr('space.createNewSpace')}
-      </FlowyText>
-      <VSpace size={2} />
-      <FlowyText fontWeight={400} lineHeight={18} maxLines={2} color="var(--th-hint)" style={{ fontWeight: 300 }}>
-        {tr('space.createSpaceDescription')}
-      </FlowyText>
-      <VSpace size={16} />
-      <div style={{ width: 56, height: 56 }}>
+    <div className="flex w-[32rem] max-w-full flex-col items-center gap-4 p-6">
+      <h2 className="text-lg font-semibold">{tr('space.createNewSpace')}</h2>
+      <p className="text-sm text-muted-foreground">{tr('space.createSpaceDescription')}</p>
+      <div className="size-14">
         <SpaceIconPopup
           onIconChanged={(icon, color) => {
             values.current.icon = icon;
@@ -615,17 +489,12 @@ function CreateSpacePopup({ close }: { close: () => void }) {
           }}
         />
       </div>
-      <VSpace size={8} />
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <FlowyText lineHeight={18} color="var(--th-hint)">
+      <div className="flex w-full flex-col gap-1.5">
+        <span className="text-sm text-muted-foreground">
           {tr('space.spaceName')}
-        </FlowyText>
-        <VSpace size={6} />
-        <div style={{ height: 40 }}>
-          <FlowyTextField
-            hintText={tr('space.spaceNamePlaceholder')}
-            enableBorderColor={border}
-            onChanged={(value) => (values.current.name = value)}
+        </span>
+        <div className="h-10">
+          <FlowyTextField hintText={tr('space.spaceNamePlaceholder')} onChanged={(value) => (values.current.name = value)}
             onSubmitted={(value) => {
               values.current.name = value;
               create();
@@ -633,9 +502,7 @@ function CreateSpacePopup({ close }: { close: () => void }) {
           />
         </div>
       </div>
-      <VSpace size={20} />
       <SpacePermissionSwitch onPermissionChanged={(value) => (values.current.permission = value)} />
-      <VSpace size={20} />
       <SpaceCancelOrConfirmButton confirmButtonName={tr('button.create')} onCancel={close} onConfirm={create} />
     </div>
   );
@@ -648,14 +515,12 @@ function ManageSpacePopup({ close }: { close: () => void }) {
   const space = useStore(bloc.store, (s) => s.currentSpace);
   const values = useRef<{ name?: string; icon?: string | null; iconColor?: string | null; permission?: SpacePermission }>({});
   return (
-    <div style={{ padding: '16px 24px', width: 500, maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <FlowyText fontSize={18}>{tr('space.manage')}</FlowyText>
-      <VSpace size={16} />
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <FlowyText color="var(--th-hint)">{tr('space.spaceName')}</FlowyText>
-        <VSpace size={8} />
-        <div style={{ height: 40, display: 'flex', alignItems: 'center' }}>
-          <div style={{ width: 40, height: 40, flexShrink: 0 }}>
+    <div className="flex w-[32rem] max-w-full flex-col items-center gap-4 p-6">
+      <h2 className="text-lg font-semibold">{tr('space.manage')}</h2>
+      <div className="flex w-full flex-col gap-1.5">
+        <span className="text-sm text-muted-foreground">{tr('space.spaceName')}</span>
+        <div className="flex h-10 items-center gap-3">
+          <div className="size-10 shrink-0">
             <SpaceIconPopup
               space={space}
               cornerRadius={12}
@@ -667,18 +532,15 @@ function ManageSpacePopup({ close }: { close: () => void }) {
               }}
             />
           </div>
-          <div style={{ width: 12, flexShrink: 0 }} />
-          <div style={{ flex: 1, height: 40 }}>
+          <div className="h-10 min-w-0 flex-1">
             <FlowyTextField defaultValue={space?.name} onChanged={(value) => (values.current.name = value)} />
           </div>
         </div>
       </div>
-      <VSpace size={16} />
       <SpacePermissionSwitch
         spacePermission={space ? spacePermission(space) : undefined}
         onPermissionChanged={(value) => (values.current.permission = value)}
       />
-      <VSpace size={16} />
       <SpaceCancelOrConfirmButton
         confirmButtonName={tr('button.save')}
         onCancel={close}

@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
-import { FlowySvg, FlowyText } from '@/ui';
-import { layoutIcon } from '../tabs/plugin';
+import { CalendarDays, FileText, LayoutTemplate, MessageSquareText, SquareCheckBig, SquareKanban, Table2 } from 'lucide-react';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { cn } from '@/lib/utils';
 import { nameOrDefault } from '../view/view-ext';
 import { RawEmojiIcon, viewIcon } from '../view-header/ViewIcon';
 import { useViewPluginNotifier, useViewScope } from '../view-header/view-scope';
@@ -13,20 +14,20 @@ export const PLACEHOLDER_LINE = 'This page type opens in a later milestone of th
 /** A centered "later milestone" message with the page's icon and name. */
 export function PlaceholderMessage({ icon, name }: { icon: ReactNode; name: string }) {
   return (
-    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, maxWidth: 480 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: '100%' }}>
-          {icon}
-          <FlowyText.semibold fontSize={18} ellipsis>
-            {name}
-          </FlowyText.semibold>
-        </div>
-        <FlowyText.regular color="var(--th-hint)" maxLines={null} textAlign="center">
-          {PLACEHOLDER_LINE}
-        </FlowyText.regular>
-      </div>
-    </div>
+    <Empty className="h-full">
+      <EmptyHeader className="max-w-md">
+        {icon && <EmptyMedia variant="icon">{icon}</EmptyMedia>}
+        <EmptyTitle>{name}</EmptyTitle>
+        <EmptyDescription>{PLACEHOLDER_LINE}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
+}
+
+/** Default page chrome; user-content icons retain their existing renderer. */
+export function HyperLayoutIcon({ layout, className }: { layout: ViewLayoutPB; className?: string }) {
+  const Icon = layout === ViewLayoutPB.Grid ? Table2 : layout === ViewLayoutPB.Board ? SquareKanban : layout === ViewLayoutPB.Calendar ? CalendarDays : layout === ViewLayoutPB.Chat ? MessageSquareText : FileText;
+  return <Icon className={cn('size-4 text-muted-foreground', className)} />;
 }
 
 /**
@@ -58,7 +59,7 @@ export function ViewPlaceholderPage({ view, context }: { view: ViewPB; context: 
   const showBanner = view.layout === ViewLayoutPB.Document && deleted !== null && !bannerHidden;
   const deletedIndex = deleted?.oneOfIndex.case === 'index' ? deleted.oneOfIndex.value : undefined;
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="flex h-full flex-col">
       {showBanner && (
         <DocumentBanner
           viewName={nameOrDefault(view)}
@@ -77,9 +78,9 @@ export function ViewPlaceholderPage({ view, context }: { view: ViewPB; context: 
           }
         />
       )}
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div className="min-h-0 flex-1">
         <PlaceholderMessage
-          icon={icon ? <RawEmojiIcon icon={icon} size={24} /> : <FlowySvg svg={layoutIcon(current.layout)} size={24} />}
+          icon={icon ? <span className="text-2xl"><RawEmojiIcon icon={icon} size={24} /></span> : <HyperLayoutIcon layout={current.layout} className="size-5" />}
           name={nameOrDefault(current)}
         />
       </div>
@@ -89,10 +90,10 @@ export function ViewPlaceholderPage({ view, context }: { view: ViewPB; context: 
 
 /** BlankPage (plugins/blank/blank.dart): an empty surface. */
 export function BlankPage() {
-  return <div style={{ height: '100%', background: 'var(--cs-surface)', padding: 10, boxSizing: 'border-box' }} />;
+  return <div className="h-full bg-background" />;
 }
 
 /** The Jira / Templates local tools until their pages land. */
 export function LocalToolPlaceholder({ title }: { title: string }) {
-  return <PlaceholderMessage icon={null} name={title} />;
+  return <PlaceholderMessage icon={title === 'Jira' ? <SquareCheckBig className="size-5 text-muted-foreground" /> : <LayoutTemplate className="size-5 text-muted-foreground" />} name={title} />;
 }

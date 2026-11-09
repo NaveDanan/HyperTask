@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import { pluginView, type Plugin } from '../tabs/plugin';
 import { ProvideViewScope, createViewScope, type ViewScope } from '../view-header/view-scope';
 import { BlankPage } from './PlaceholderPage';
@@ -34,7 +35,7 @@ function FadingStack({ typeKey, children }: { typeKey: string; children: ReactNo
     ref.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250 });
   }, [typeKey]);
   return (
-    <div ref={ref} style={{ height: '100%' }}>
+    <div ref={ref} className="h-full">
       {children}
     </div>
   );
@@ -47,13 +48,13 @@ function FadingStack({ typeKey, children }: { typeKey: string; children: ReactNo
 export function PageStack({ plugin, scope, context }: { plugin: Plugin; scope: ViewScope | null; context: PluginContext }) {
   const builder = pluginWidgets(plugin);
   return (
-    <div style={{ height: '100%', background: 'var(--cs-surface)', overflow: 'hidden' }}>
+    <div className="h-full overflow-hidden bg-background">
       {plugin.kind === 'blank' ? (
         <BlankPage />
       ) : (
         <FadingStack typeKey={plugin.type}>
           <ProvideViewScope scope={scope}>
-            <div key={pluginInstanceKey(plugin)} style={{ height: '100%', boxSizing: 'border-box', padding: builder.contentPadding }}>
+            <div key={pluginInstanceKey(plugin)} className={cn('h-full', builder.contentPadding === '28px 0 0 0' && 'pt-7', builder.contentPadding === '28px 40px' && 'px-10 py-7')}>
               {builder.buildWidget(context)}
             </div>
           </ProvideViewScope>
