@@ -51,7 +51,7 @@ function confirmRemove(certificate: CompanyCertificate): Promise<boolean> {
             <div style={{ height: 20 }} />
             <MdText size={16} color="var(--afx-secondary-text)">
               {certificate.installedByApp
-                ? `This removes ${certificate.subject} from your Windows account’s trusted certificates. Restart AppFlowy afterward.`
+                ? `This removes ${certificate.subject} from your Windows account’s trusted certificates. Restart HyperTask afterward.`
                 : `This removes ${certificate.subject} from AppFlowy’s imported list. The certificate was already trusted in Windows and will remain there.`}
             </MdText>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '16px 0 0' }}>

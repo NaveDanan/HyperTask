@@ -71,7 +71,7 @@ export function SelfHostedSettingsView({ restartApp }: { restartApp: () => void 
   return (
     <SettingsBody title={'Storage & server'}>
       <MdText key="intro">
-        Your data stays on this PC or your own collaboration server. AppFlowy hosted services and automatic vendor updates are disabled.
+        Your data stays on this PC or your own collaboration server. Hosted vendor services and automatic vendor updates are disabled.
       </MdText>
       {/* DropdownButtonFormField<bool>(labelText: 'Workspace storage'): the label is always floating. */}
       <div key="storage" className="md-textfield" data-float="true" data-disabled={saving ? 'true' : undefined}>

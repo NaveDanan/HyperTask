@@ -24,9 +24,9 @@ export function QuestionBubble() {
   const deviceId = useAppStore((s) => s.deviceId);
 
   const actions: BubbleAction[] = [
-    { label: tr('questionBubble.whatsNew'), icon: 'star_s', run: () => open('https://www.appflowy.io/what-is-new') },
-    { label: tr('questionBubble.helpAndDocumentation'), icon: 'help_and_documentation_s', run: () => open('https://appflowy.com/guide') },
-    { label: tr('questionBubble.getSupport'), icon: 'message_support_s', run: () => open('https://discord.gg/9Q2xaN37tV') },
+    { label: tr('questionBubble.whatsNew'), icon: 'star_s', run: () => open('https://github.com/NaveDanan/HyperTask') },
+    { label: tr('questionBubble.helpAndDocumentation'), icon: 'help_and_documentation_s', run: () => open('https://github.com/NaveDanan/HyperTask#readme') },
+    { label: tr('questionBubble.getSupport'), icon: 'message_support_s', run: () => open('https://github.com/NaveDanan/HyperTask/issues') },
     {
       label: tr('questionBubble.debug.name'),
       icon: 'debug_s',
@@ -41,8 +41,8 @@ export function QuestionBubble() {
         showToast({ message: tr('questionBubble.debug.success') });
       },
     },
-    { label: tr('questionBubble.shortcuts'), icon: 'keyboard_s', run: () => open('https://docs.appflowy.io/docs/appflowy/product/shortcuts') },
-    { label: tr('questionBubble.markdown'), icon: 'number_s', run: () => open('https://docs.appflowy.io/docs/appflowy/product/markdown') },
+    { label: tr('questionBubble.shortcuts'), icon: 'keyboard_s', run: () => open('https://github.com/NaveDanan/HyperTask#development') },
+    { label: tr('questionBubble.markdown'), icon: 'number_s', run: () => open('https://github.com/NaveDanan/HyperTask#development') },
     { label: tr('questionBubble.feedback'), icon: 'share_feedback_s', run: () => open('https://github.com/NaveDanan/HyperTask/issues') },
   ];
 
@@ -66,26 +66,6 @@ export function QuestionBubble() {
                 }}
               />
             ))}
-            <div style={{ padding: '6px 0' }}>
-              <div style={{ height: 1, background: 'var(--th-divider)' }} />
-              {(
-                [
-                  ['Community Forum', 'https://forum.appflowy.com/'],
-                  ['Twitter – @appflowy', 'https://x.com/appflowy'],
-                  ['Reddit – r/appflowy', 'https://www.reddit.com/r/AppFlowy/'],
-                ] as const
-              ).map(([name, url]) => (
-                <ActionRow
-                  key={url}
-                  name={name}
-                  textColor="var(--th-hint)"
-                  onTap={() => {
-                    open(url);
-                    close();
-                  }}
-                />
-              ))}
-            </div>
             <div style={{ height: 30 }}>
               <div style={{ height: 1, background: 'var(--th-divider)' }} />
               <div style={{ height: 6 }} />

@@ -161,9 +161,7 @@ function SkipLoginFooter() {
       <div style={{ width: 180 }} />
       <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 4 }}>
         <span style={small}>{tr('youCanAlso')}</span>
-        {link(tr('githubStarText'), 'https://github.com/AppFlowy-IO/appflowy')}
-        <span style={small}>{tr('and')}</span>
-        {link(tr('subscribeNewsletterText'), 'https://www.appflowy.io/blog')}
+        {link(tr('githubStarText'), 'https://github.com/NaveDanan/HyperTask')}
       </div>
       <div style={{ width: 180, display: 'flex', justifyContent: 'flex-end' }}>
         <AppFlowyPopover
@@ -267,7 +265,7 @@ export function WorkspaceFailedScreen() {
           <div style={{ display: 'flex', gap: 20, width: '100%' }}>
             {button(
               tr('workspace.errorActions.reportIssue'),
-              `https://github.com/AppFlowy-IO/AppFlowy/issues/new?assignees=&labels=&projects=&template=bug_report.yaml&title=[Bug]%20Workspace%20failed%20to%20load&version=${version}&os=windows`,
+              `https://github.com/NaveDanan/HyperTask/issues/new?title=[Bug]%20Workspace%20failed%20to%20load&version=${version}&os=windows`,
             )}
             {button(tr('workspace.errorActions.reachOut'), 'https://discord.gg/JucBXeU2FE')}
           </div>
