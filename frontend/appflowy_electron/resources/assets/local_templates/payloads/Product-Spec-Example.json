@@ -1,0 +1,3582 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "zotsSq",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "This is an example product spec, written as part of "
+        },
+        {
+         "bold": true,
+         "href": "https://goberoi.com/on-writing-product-specs-5ca697b992fd",
+         "text": "this blog post"
+        },
+        {
+         "bold": true,
+         "text": ". Some notes:\n"
+        },
+        {
+         "text": "- "
+        },
+        {
+         "bold": true,
+         "text": "Commentary will appear with this light blue background throughout the doc. \n"
+        },
+        {
+         "text": "- "
+        },
+        {
+         "bold": true,
+         "text": "Read the doc once through while ignoring the blue bits, then go back and reread.\n"
+        },
+        {
+         "text": "- "
+        },
+        {
+         "bold": true,
+         "text": "Links don’t go anywhere. They exist to illustrate the need to do and show related work."
+        }
+       ],
+       "textId": "6crz4f",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint9",
+      "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"information-circle\"}",
+      "icon_type": "icon",
+      "textColor": "appflowy_them_color_tint9"
+     },
+     "relationId": "-fXOME",
+     "type": "callout"
+    },
+    {
+     "blockId": "bm_ljY",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {},
+     "relationId": "Uc9lf2",
+     "type": "divider"
+    },
+    {
+     "blockId": "iYNEUy",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Live chat on checkout"
+        }
+       ],
+       "textId": "95a05B",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "BVsqvQ",
+     "type": "heading"
+    },
+    {
+     "blockId": "R_gDNl",
+     "children": [
+      {
+       "children": [
+        {
+         "italic": true,
+         "text": "Authored by Gaurav Oberoi. Last updated on Sep 28, 2016."
+        }
+       ],
+       "textId": "0v0ild",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "n3AaLl",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "H2D0K4",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "This project aims to increase conversion by introducing live chat on our checkout page. It is a 30-day experiment, after which we’ll keep it alive or kill it (Schrödinger's chat? har har)."
+        }
+       ],
+       "textId": "Vud_ja",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "6w7TcE",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "EjArkA",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "Fhk_RH",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "XULU_m",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "hSR5ev",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Describe the project in 2 lines or less. By “line” I mean the default reading width of your medium (e.g., Google Docs, wiki, text file) on a desktop client. Sticking to limits is critical for readability."
+        }
+       ],
+       "textId": "6Alpn0",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "textDirection": null
+     },
+     "relationId": "aZa_DC",
+     "type": "quote"
+    },
+    {
+     "blockId": "oCtf57",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "dzOo_R",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "hNMtiJ",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "R4HJSh",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Overview"
+        }
+       ],
+       "textId": "n2Hti5",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "xV9Qzg",
+     "type": "heading"
+    },
+    {
+     "blockId": "Fq1wFs",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Problem"
+        }
+       ],
+       "textId": "HLSaEN",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "WAfUvE",
+     "type": "heading"
+    },
+    {
+     "blockId": "Sl1SGt",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Checkout conversion is too low:"
+        },
+        {
+         "text": " only 18% of users who click on “Book” checkout. Comparable funnels for hotel booking sites achieve ~30% ("
+        },
+        {
+         "href": "https://skift.com/2014/03/18/online-booking-abandonment-is-huge-in-travel-as-consumers-comparison-shop/",
+         "text": "source"
+        },
+        {
+         "text": "). We are missing out!"
+        }
+       ],
+       "textId": "cNXmxA",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "k5Liqs",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "VGDOTL",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "No clear dropout reason:"
+        },
+        {
+         "text": " prior support tickets and survey results show a long tail of possible issues (questions on amenities, fees, checkout time), no clear categories. "
+        }
+       ],
+       "textId": "T-JqpQ",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "cAeCbZ",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "rLRoQT",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Adding help content didn’t do much: "
+        },
+        {
+         "text": "last quarter we A/B tested content and UI to better point to help content and booking info. This nudged conversion by 1.5% points."
+        }
+       ],
+       "textId": "TzDbUt",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "sHIUNv",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "UOsopF",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "kmBlvo",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "FSchUk",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "MO_axp",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "I highly recommend bullets for readability. Use bold words to quickly convey the gist of each point, and limit bullets to 2-3 lines. I prefer numbered lists so one can refer to a point verbally."
+        }
+       ],
+       "textId": "Dh-cIO",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "H9cQEd",
+     "type": "quote"
+    },
+    {
+     "blockId": "tbPQoy",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "66oIro",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "Jti4JK",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "qa0ZqP",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Goals"
+        }
+       ],
+       "textId": "345kmt",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "iXDcWV",
+     "type": "heading"
+    },
+    {
+     "blockId": "YsxmpG",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Test if live chat can profitably increase conversion: "
+        },
+        {
+         "text": "we need to add 90+ orders/day just to break even on our live chat support cost. Unclear if we can do it. This is a test!"
+        }
+       ],
+       "textId": "aycnsk",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "TcpqVk",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "NtvT8S",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Keep the test cheap: "
+        },
+        {
+         "text": "avoid all gold-plating, this will come in Q1 if our test succeeds."
+        }
+       ],
+       "textId": "r3rVJw",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "cjHcbS",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "jD6GXY",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Get final answer by Dec 1: "
+        },
+        {
+         "text": "we have 8 weeks before Q1 resource planning starts."
+        }
+       ],
+       "textId": "rYVbR2",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "oG7-sW",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "KsngF1",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "9zhR5P",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "_sHvOg",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "e9wOFq",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Make sure one can point to a goal and easily answer “did we hit it?”. Make clear promises."
+        }
+       ],
+       "textId": "6smabU",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "Tqxq0v",
+     "type": "quote"
+    },
+    {
+     "blockId": "q4YNzs",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "A3q1Fb",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "l_8xCD",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "Lf74FP",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Out of Scope"
+        }
+       ],
+       "textId": "ylEM_j",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "3JdBAa",
+     "type": "heading"
+    },
+    {
+     "blockId": "ngPCEu",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Major UX changes: "
+        },
+        {
+         "text": "we will only add a visible chat button, no other UX changes."
+        }
+       ],
+       "textId": "DTWBxn",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "qL4DLZ",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "6zO2dP",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Finalizing a chat vendor: "
+        },
+        {
+         "text": "we’ll use SnapEngage for now, and review if the test works."
+        }
+       ],
+       "textId": "WeizD6",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "XJCUqD",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "Yxlz_T",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "International and non-English: "
+        },
+        {
+         "text": "only US/English users to keep our test simple."
+        }
+       ],
+       "textId": "OsvBR_",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "uPUqL4",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "ohHzbM",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "o6Tl8M",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "lRBMZR",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "N9Baub",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "This is your chance to eliminate bad assumptions and correctly set expectations."
+        }
+       ],
+       "textId": "huaMF8",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "ILvuil",
+     "type": "quote"
+    },
+    {
+     "blockId": "-H-b3S",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "a1yw27",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "1mRrGJ",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "Kmohas",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "People and Roles"
+        }
+       ],
+       "textId": "pY3jN0",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "x_aHmV",
+     "type": "heading"
+    },
+    {
+     "blockId": "CHx9AH",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Heather (cust ops manager): "
+        },
+        {
+         "text": "sign off on our support resourcing assumptions."
+        }
+       ],
+       "textId": "Ge7WB9",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "PPyQ8l",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "nspH9z",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Randy (cust ops rep): "
+        },
+        {
+         "text": "man the queue, and summarize learnings once a week."
+        }
+       ],
+       "textId": "JCGaHw",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "NwttLD",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "Uw9L1Z",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Colin (dev): "
+        },
+        {
+         "text": "build and qa. Also configure SnapEngage, and show us all how you did it."
+        }
+       ],
+       "textId": "GDgkpT",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "CSeoCe",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "M4twah",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Kalpana (finance): "
+        },
+        {
+         "text": "review my profitability assumptions for our test, and down the road."
+        }
+       ],
+       "textId": "InmT6G",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "YzS7gq",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "nFBzwd",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Joha (design): "
+        },
+        {
+         "text": "very light review of the changes we’ll make, no major design requests."
+        }
+       ],
+       "textId": "7TcPEw",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "yYMn_T",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "F0mo6V",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Vikram (BI): "
+        },
+        {
+         "text": "make sure we can get the reporting we need in time for the test."
+        }
+       ],
+       "textId": "TLjlDZ",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "GYlN0m",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "g_TPcf",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "Sftzhy",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "MBRdnh",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "Ejo4iV",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Help everyone know who is involved, and what is expected of them. Only include people who have authority to veto/approve decisions, or people who will execute on the plan."
+        }
+       ],
+       "textId": "LCX6Mw",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "x49nr3",
+     "type": "quote"
+    },
+    {
+     "blockId": "Fhv0Hf",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "r3IpMC",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "gVPonP",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "nyB4ym",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Context"
+        }
+       ],
+       "textId": "62_VG8",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "I8WQZD",
+     "type": "heading"
+    },
+    {
+     "blockId": "9JplAU",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Use this section to provide supporting evidence for your problem and proposal. Add whatever you need here, e.g.: use-cases, personas, metrics, competitors’ solutions, survey results, etc."
+        }
+       ],
+       "textId": "yLHzfN",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "vycGME",
+     "type": "quote"
+    },
+    {
+     "blockId": "Mu-CGj",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "pqVPCm",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "hxFBSa",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "I0o2H-",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Use Cases"
+        }
+       ],
+       "textId": "H76ETw",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "GpkA79",
+     "type": "heading"
+    },
+    {
+     "blockId": "z2IHw0",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Users want to:"
+        }
+       ],
+       "textId": "tApbs_",
+       "type": "text"
+      },
+      {
+       "blockId": "SNoBL2",
+       "children": [
+        {
+         "children": [
+          {
+           "bold": true,
+           "text": "Get help within 2 mins: "
+          },
+          {
+           "text": "unsure if this is achievable, but let’s aim here for now."
+          }
+         ],
+         "textId": "NNnsaV",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "mYRmLf",
+       "type": "numbered_list"
+      },
+      {
+       "blockId": "9omEbD",
+       "children": [
+        {
+         "children": [
+          {
+           "bold": true,
+           "text": "On mobile or desktop: "
+          },
+          {
+           "text": "28% of checkouts are on the phone, so this is critical.Customer "
+          }
+         ],
+         "textId": "IsBVk8",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "RcErcU",
+       "type": "numbered_list"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "u9ZzUe",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "KG1bAm",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Ops wants to: "
+        }
+       ],
+       "textId": "KEz3O0",
+       "type": "text"
+      },
+      {
+       "blockId": "En1drJ",
+       "children": [
+        {
+         "children": [
+          {
+           "bold": true,
+           "text": "Be in the queue: "
+          },
+          {
+           "text": "via a desktop/web client, mobile is not needed."
+          }
+         ],
+         "textId": "u1FPIg",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "fpy-Bl",
+       "type": "numbered_list"
+      },
+      {
+       "blockId": "IbgYes",
+       "children": [
+        {
+         "children": [
+          {
+           "bold": true,
+           "text": "Add/reduce agents: "
+          },
+          {
+           "text": "on their own without having to consult the dev team. "
+          }
+         ],
+         "textId": "kGJMK6",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "XQxyHs",
+       "type": "numbered_list"
+      },
+      {
+       "blockId": "RDqyxZ",
+       "children": [
+        {
+         "children": [
+          {
+           "bold": true,
+           "text": "Set working hours: "
+          },
+          {
+           "text": "control when the live chat button is visible on the site."
+          }
+         ],
+         "textId": "aZNMj9",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "u5GlIz",
+       "type": "numbered_list"
+      },
+      {
+       "blockId": "YHexpd",
+       "children": [
+        {
+         "children": [
+          {
+           "bold": true,
+           "text": "View user info: "
+          },
+          {
+           "text": "we must pass in the user-id so they can look up the current user."
+          }
+         ],
+         "textId": "ZKqQMB",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "yc3BtI",
+       "type": "numbered_list"
+      },
+      {
+       "blockId": "aqAV1e",
+       "children": [
+        {
+         "children": [
+          {
+           "bold": true,
+           "text": "Tag chats: "
+          },
+          {
+           "text": "after a chat is done, put unstructured text into a comments field."
+          }
+         ],
+         "textId": "-W8mO9",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "BVjqef",
+       "type": "numbered_list"
+      }
+     ],
+     "data": {},
+     "relationId": "PRcMQ-",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "ECBFAv",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "a69NSN",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "WuU_Aw",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "ZmURxg",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Assumptions"
+        }
+       ],
+       "textId": "vx59wj",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "LeKGDs",
+     "type": "heading"
+    },
+    {
+     "blockId": "7LNwlv",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Need +90 orders/day to break even with 1 support head:"
+        },
+        {
+         "text": " based on cost per head, and lifetime value of a checkout. See spreadsheet for details."
+        }
+       ],
+       "textId": "v2YmBx",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "quqRyQ",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "R_q_x5",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Send 20% of checkout traffic per support head: "
+        },
+        {
+         "text": "based on some assumptions on wait times, chat lengths, and number of simultaneous chats. We don’t have any data to make a good guess, so let’s pick this and allow our system to ramp traffic up/down quickly."
+        }
+       ],
+       "textId": "uspwDo",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "mda7C3",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "o43XNh",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Checkout conversion should go from 18% to 20%:"
+        },
+        {
+         "text": " total conversion won’t increase much for us to be successful. See our funnel report here."
+        }
+       ],
+       "textId": "X-6Pa3",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "i7DsU5",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "sOTdsR",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "vIVkWF",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "Vfqiim",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "tGrXTA",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Proposal"
+        }
+       ],
+       "textId": "HTDvRB",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "UrebPb",
+     "type": "heading"
+    },
+    {
+     "blockId": "9YIEsJ",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Describe your proposal in the most natural way you can. Break it up into sections, and give it a clear narrative flow. Depending on the project, you may also add: wireframes, user flow diagrams, form inputs/validations, data models… all the specifics needed to execute the plan."
+        }
+       ],
+       "textId": "SRoGc7",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "8b16si",
+     "type": "quote"
+    },
+    {
+     "blockId": "YbVhqS",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "epMRpU",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "1YCgIO",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "3bm_mq",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Live Chat Vendor"
+        }
+       ],
+       "textId": "wwD3sU",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "YhWM7O",
+     "type": "heading"
+    },
+    {
+     "blockId": "6Vc4CP",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "I picked XXX, they meet our stated use-cases and are cheap ($60/month). Note: we’ll do a proper vendor selection if this works. I created a paid account, credentials in our pw tool."
+        }
+       ],
+       "textId": "7LypDD",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "MSFFmC",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "_3XGDF",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "hlECET",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "u8S6w6",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "SfdrQV",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "User Experience"
+        }
+       ],
+       "textId": "Vva0XM",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "F8v2EO",
+     "type": "heading"
+    },
+    {
+     "blockId": "hhkTdX",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "View the XXX docs to get an idea of how their chat pops up. Based on that:"
+        }
+       ],
+       "textId": "dqQ97M",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "3zrCdk",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "iEF27T",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Button:"
+        },
+        {
+         "text": " label it “Chat Now” and put it near our primary CTA “Book” on the detail page."
+        }
+       ],
+       "textId": "68BU9p",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "zbhRdp",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "cVlVEw",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Behavior:"
+        },
+        {
+         "text": " on click, show the agent’s name, and “How can we help you today?”."
+        }
+       ],
+       "textId": "flCjR2",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "iH6wtJ",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "HFSzF_",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "All checkout pages:"
+        },
+        {
+         "text": " it should persist across all 3 steps of checkout."
+        }
+       ],
+       "textId": "z7Bntz",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "jWrgT1",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "qcccml",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "No auto-popup:"
+        },
+        {
+         "text": " we may try this later, but let’s keep it low key for now."
+        }
+       ],
+       "textId": "7MRieb",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "cBwXm9",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "nDtayB",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "s1021U",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "D2CaWm",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "W4I_h6",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Chat Variables"
+        }
+       ],
+       "textId": "S4nb_8",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "hSdHHq",
+     "type": "heading"
+    },
+    {
+     "blockId": "zZlxfL",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "What is it: "
+        },
+        {
+         "text": "when we embed the vendor’s javascript, we can pass on additional variables that the support person can see, and will also get logged in reporting. "
+        }
+       ],
+       "textId": "C6xlfJ",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "SCuAan",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "q5HQ9g",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Let’s send: "
+        },
+        {
+         "text": "user_id, user_email, user_agent, booking_id, booking_order_value."
+        }
+       ],
+       "textId": "0U1S42",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "SJxf5y",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "jKoy0O",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "fZnPXm",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "h85JQ6",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "_8o9r6",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Knobs for Running the Test"
+        }
+       ],
+       "textId": "ghksz3",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "vRoETz",
+     "type": "heading"
+    },
+    {
+     "blockId": "vzy0Y7",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "We will only show this to some checkout page traffic. Here’s what we need to make that work:"
+        }
+       ],
+       "textId": "_-ndn3",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "F_jEOK",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "-2QqVu",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Only show to X% users: "
+        },
+        {
+         "text": "we must be able to control X without a redeploy, but it’s ok if CS has to file a ticket to dev to do this manually (e.g. if it’s in our DB/Redis)."
+        }
+       ],
+       "textId": "JRnU8Z",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "Ue829a",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "yc26dW",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Persist which users see it: "
+        },
+        {
+         "text": "if a user sees live chat once, they should continue to see it on any given day that we’re running the test. Either cookie them, or base it on their user_id (e.g., show it if user id modulo 100 <= X)."
+        }
+       ],
+       "textId": "89Qh0s",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "JT9A39",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "1V_5JO",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Ramp up plan: "
+        },
+        {
+         "text": "on day 1, we’ll only have this be at 5%, but will go to 10% on day 2 and then 20% by day 3 if all is going well per customer ops."
+        }
+       ],
+       "textId": "6owxoT",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "bJWwdP",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "F8O9Zw",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "l36FGv",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "u1gv-d",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "lcfNkm",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Metrics and Reports"
+        }
+       ],
+       "textId": "oNNdSW",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "hxIOdZ",
+     "type": "heading"
+    },
+    {
+     "blockId": "wEJs08",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Logging: add: "
+        },
+        {
+         "text": "“live_checkout=true/false” to our existing metrics logging during checkout."
+        }
+       ],
+       "textId": "Eg-Cix",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "tsz8rH",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "fUXxHR",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "New reports: "
+        }
+       ],
+       "textId": "CSkytA",
+       "type": "text"
+      },
+      {
+       "blockId": "rIh-j9",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "Conversion rate for users in live chat (test) vs. without it (control)."
+          }
+         ],
+         "textId": "V8J8Ru",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "Yc7jBR",
+       "type": "numbered_list"
+      },
+      {
+       "blockId": "0aNV8g",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "Total num orders and revenue attributed to live chat."
+          }
+         ],
+         "textId": "II5V_s",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "FVM3xM",
+       "type": "numbered_list"
+      },
+      {
+       "blockId": "qLdrrt",
+       "children": [
+        {
+         "children": [
+          {
+           "text": "Of users in the test, how many actually click on live chat."
+          }
+         ],
+         "textId": "MfnrM_",
+         "type": "text"
+        }
+       ],
+       "data": {},
+       "relationId": "AHElI-",
+       "type": "numbered_list"
+      }
+     ],
+     "data": {},
+     "relationId": "NzEFgL",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "-H9GvY",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "XXX reporting: "
+        },
+        {
+         "text": "can tell us time spent per chat, simultaneous chats, etc."
+        }
+       ],
+       "textId": "csTNfr",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "so5ryr",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "uiKRIu",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "xSASLe",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "vdMH1y",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "D9ltYj",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "My example above may seem obtuse, but it won’t be for my engineering and BI teams -- and that’s the audience it is for. Remember: write what is necessary for human brains to execute."
+        }
+       ],
+       "textId": "VLM6jn",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "lypu6e",
+     "type": "quote"
+    },
+    {
+     "blockId": "a2T2np",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "sA2pZ9",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "9xZsyO",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "FdNIi2",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Future Work"
+        }
+       ],
+       "textId": "SITDM5",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 3
+     },
+     "relationId": "Kh_oI1",
+     "type": "heading"
+    },
+    {
+     "blockId": "hnJHn_",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "If we see very little live chat usage: we’ll need to try a few things like: (a) auto pop-up chat, (b) change CTA copy/UI, (c) photo of agent next to chat CTA."
+        }
+       ],
+       "textId": "ZyUEZ2",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "dv45IJ",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "lsJu7r",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "If the test succeeds: we’ll ask for more heads, and do a bigger roll out in Q1 with vendor selection, better reporting for wider consumption, and formal chat training."
+        }
+       ],
+       "textId": "nNRHja",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "N8Vfsd",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "8PtLjo",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "vmjCtd",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "NNbn2V",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "AmOKgI",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "It’s always a good idea to signal where this is headed so people can think longer-term."
+        }
+       ],
+       "textId": "yh49Ef",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "I4sFvw",
+     "type": "quote"
+    },
+    {
+     "blockId": "7sNn73",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "cJJsZ3",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "T9ERnX",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "dScxbX",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Tasks and Timeline"
+        }
+       ],
+       "textId": "Tp4fPJ",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 2
+     },
+     "relationId": "6BMjGO",
+     "type": "heading"
+    },
+    {
+     "blockId": "x6xAB9",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "This timeline may slip by 1-2 weeks due to the kinds of issues mentioned in “future work”. That’s ok as long as we have results by Dec 1, so we can ask for heads during Q1 resource planning."
+        }
+       ],
+       "textId": "CMvTOP",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "uU61yw",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "hDb3iI",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Oct 4: "
+        },
+        {
+         "text": "spec review."
+        }
+       ],
+       "textId": "FsgvWr",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "number": 1
+     },
+     "relationId": "f5HcvM",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "Fd2UUG",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Oct 8: "
+        },
+        {
+         "text": "test on dev env with customer support’s help in setting up agents/times."
+        }
+       ],
+       "textId": "4yVKld",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "tByxX9",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "6nur1B",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Oct 11: "
+        },
+        {
+         "text": "launch. We will need to increase traffic over the next few days."
+        }
+       ],
+       "textId": "h9n6Sr",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "SYVhkZ",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "pu4dkd",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Oct 17: "
+        },
+        {
+         "text": "sync after 1 week. We may have additional tasks then."
+        }
+       ],
+       "textId": "QJ41Xq",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "xN78Y2",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "LmoLXg",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Nov 12: "
+        },
+        {
+         "text": "final sync to review stats and decide if we want to do more or kill it."
+        }
+       ],
+       "textId": "vXAlfa",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "UC8fhs",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "pa5CVW",
+     "children": [
+      {
+       "children": [
+        {
+         "bold": true,
+         "text": "Dec 1: "
+        },
+        {
+         "text": "this is the hard date for having the project wrapped up and results on hand."
+        }
+       ],
+       "textId": "zinspt",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "iCWZSV",
+     "type": "numbered_list"
+    },
+    {
+     "blockId": "m9IdCl",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "W3N8VJ",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "PjY-yX",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "P8yBKf",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "It’s ok if you only have a rough estimate, and need more analysis to refine it (such as a tech spec). But it’s still important to try and put time bounds down as early as possible to signal roughly the size and scope. Estimates must come from the builders (dev, design, etc.)."
+        }
+       ],
+       "textId": "ZWyfNH",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "MXIP5U",
+     "type": "quote"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "-2QqVu": {
+       "children": "Ue829a",
+       "data": {
+        "number": 1
+       },
+       "external_id": "JRnU8Z",
+       "external_type": "text",
+       "id": "-2QqVu",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "-H-b3S": {
+       "children": "1mRrGJ",
+       "data": {},
+       "external_id": "a1yw27",
+       "external_type": "text",
+       "id": "-H-b3S",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "-H9GvY": {
+       "children": "so5ryr",
+       "data": {},
+       "external_id": "csTNfr",
+       "external_type": "text",
+       "id": "-H9GvY",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "0aNV8g": {
+       "children": "FVM3xM",
+       "data": {},
+       "external_id": "II5V_s",
+       "external_type": "text",
+       "id": "0aNV8g",
+       "parent": "fUXxHR",
+       "ty": "numbered_list"
+      },
+      "1V_5JO": {
+       "children": "bJWwdP",
+       "data": {},
+       "external_id": "6owxoT",
+       "external_type": "text",
+       "id": "1V_5JO",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "3bm_mq": {
+       "children": "YhWM7O",
+       "data": {
+        "level": 3
+       },
+       "external_id": "wwD3sU",
+       "external_type": "text",
+       "id": "3bm_mq",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "6Vc4CP": {
+       "children": "MSFFmC",
+       "data": {},
+       "external_id": "7LypDD",
+       "external_type": "text",
+       "id": "6Vc4CP",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "6nur1B": {
+       "children": "SYVhkZ",
+       "data": {},
+       "external_id": "h9n6Sr",
+       "external_type": "text",
+       "id": "6nur1B",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "6zO2dP": {
+       "children": "XJCUqD",
+       "data": {},
+       "external_id": "WeizD6",
+       "external_type": "text",
+       "id": "6zO2dP",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "7LNwlv": {
+       "children": "quqRyQ",
+       "data": {
+        "number": 1
+       },
+       "external_id": "v2YmBx",
+       "external_type": "text",
+       "id": "7LNwlv",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "7sNn73": {
+       "children": "T9ERnX",
+       "data": {},
+       "external_id": "cJJsZ3",
+       "external_type": "text",
+       "id": "7sNn73",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "8PtLjo": {
+       "children": "NNbn2V",
+       "data": {},
+       "external_id": "vmjCtd",
+       "external_type": "text",
+       "id": "8PtLjo",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "9JplAU": {
+       "children": "vycGME",
+       "data": {},
+       "external_id": "yLHzfN",
+       "external_type": "text",
+       "id": "9JplAU",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "9YIEsJ": {
+       "children": "8b16si",
+       "data": {},
+       "external_id": "SRoGc7",
+       "external_type": "text",
+       "id": "9YIEsJ",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "9omEbD": {
+       "children": "RcErcU",
+       "data": {},
+       "external_id": "IsBVk8",
+       "external_type": "text",
+       "id": "9omEbD",
+       "parent": "z2IHw0",
+       "ty": "numbered_list"
+      },
+      "AmOKgI": {
+       "children": "I4sFvw",
+       "data": {},
+       "external_id": "yh49Ef",
+       "external_type": "text",
+       "id": "AmOKgI",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "CHx9AH": {
+       "children": "PPyQ8l",
+       "data": {
+        "number": 1
+       },
+       "external_id": "Ge7WB9",
+       "external_type": "text",
+       "id": "CHx9AH",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "D9ltYj": {
+       "children": "lypu6e",
+       "data": {},
+       "external_id": "VLM6jn",
+       "external_type": "text",
+       "id": "D9ltYj",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "ECBFAv": {
+       "children": "WuU_Aw",
+       "data": {},
+       "external_id": "a69NSN",
+       "external_type": "text",
+       "id": "ECBFAv",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "EjArkA": {
+       "children": "XULU_m",
+       "data": {},
+       "external_id": "Fhk_RH",
+       "external_type": "text",
+       "id": "EjArkA",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "Ejo4iV": {
+       "children": "x49nr3",
+       "data": {},
+       "external_id": "LCX6Mw",
+       "external_type": "text",
+       "id": "Ejo4iV",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "En1drJ": {
+       "children": "fpy-Bl",
+       "data": {},
+       "external_id": "u1FPIg",
+       "external_type": "text",
+       "id": "En1drJ",
+       "parent": "KG1bAm",
+       "ty": "numbered_list"
+      },
+      "F0mo6V": {
+       "children": "GYlN0m",
+       "data": {},
+       "external_id": "TLjlDZ",
+       "external_type": "text",
+       "id": "F0mo6V",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "F8O9Zw": {
+       "children": "u1gv-d",
+       "data": {},
+       "external_id": "l36FGv",
+       "external_type": "text",
+       "id": "F8O9Zw",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "Fd2UUG": {
+       "children": "tByxX9",
+       "data": {},
+       "external_id": "4yVKld",
+       "external_type": "text",
+       "id": "Fd2UUG",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "FdNIi2": {
+       "children": "Kh_oI1",
+       "data": {
+        "level": 3
+       },
+       "external_id": "SITDM5",
+       "external_type": "text",
+       "id": "FdNIi2",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "Fhv0Hf": {
+       "children": "gVPonP",
+       "data": {},
+       "external_id": "r3IpMC",
+       "external_type": "text",
+       "id": "Fhv0Hf",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "Fq1wFs": {
+       "children": "WAfUvE",
+       "data": {
+        "level": 3
+       },
+       "external_id": "HLSaEN",
+       "external_type": "text",
+       "id": "Fq1wFs",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "H2D0K4": {
+       "children": "6w7TcE",
+       "data": {},
+       "external_id": "Vud_ja",
+       "external_type": "text",
+       "id": "H2D0K4",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "HFSzF_": {
+       "children": "jWrgT1",
+       "data": {},
+       "external_id": "z7Bntz",
+       "external_type": "text",
+       "id": "HFSzF_",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "I0o2H-": {
+       "children": "GpkA79",
+       "data": {
+        "level": 3
+       },
+       "external_id": "H76ETw",
+       "external_type": "text",
+       "id": "I0o2H-",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "IbgYes": {
+       "children": "XQxyHs",
+       "data": {},
+       "external_id": "kGJMK6",
+       "external_type": "text",
+       "id": "IbgYes",
+       "parent": "KG1bAm",
+       "ty": "numbered_list"
+      },
+      "KG1bAm": {
+       "children": "PRcMQ-",
+       "data": {},
+       "external_id": "KEz3O0",
+       "external_type": "text",
+       "id": "KG1bAm",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "Kmohas": {
+       "children": "x_aHmV",
+       "data": {
+        "level": 3
+       },
+       "external_id": "pY3jN0",
+       "external_type": "text",
+       "id": "Kmohas",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "KsngF1": {
+       "children": "_sHvOg",
+       "data": {},
+       "external_id": "9zhR5P",
+       "external_type": "text",
+       "id": "KsngF1",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "Lf74FP": {
+       "children": "3JdBAa",
+       "data": {
+        "level": 3
+       },
+       "external_id": "ylEM_j",
+       "external_type": "text",
+       "id": "Lf74FP",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "LmoLXg": {
+       "children": "UC8fhs",
+       "data": {},
+       "external_id": "vXAlfa",
+       "external_type": "text",
+       "id": "LmoLXg",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "M4twah": {
+       "children": "YzS7gq",
+       "data": {},
+       "external_id": "InmT6G",
+       "external_type": "text",
+       "id": "M4twah",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "MO_axp": {
+       "children": "H9cQEd",
+       "data": {},
+       "external_id": "Dh-cIO",
+       "external_type": "text",
+       "id": "MO_axp",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "Mu-CGj": {
+       "children": "hxFBSa",
+       "data": {},
+       "external_id": "pqVPCm",
+       "external_type": "text",
+       "id": "Mu-CGj",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "N9Baub": {
+       "children": "ILvuil",
+       "data": {},
+       "external_id": "huaMF8",
+       "external_type": "text",
+       "id": "N9Baub",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "NtvT8S": {
+       "children": "cjHcbS",
+       "data": {},
+       "external_id": "r3rVJw",
+       "external_type": "text",
+       "id": "NtvT8S",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "P8yBKf": {
+       "children": "MXIP5U",
+       "data": {},
+       "external_id": "ZWyfNH",
+       "external_type": "text",
+       "id": "P8yBKf",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "R4HJSh": {
+       "children": "xV9Qzg",
+       "data": {
+        "level": 2
+       },
+       "external_id": "n2Hti5",
+       "external_type": "text",
+       "id": "R4HJSh",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "RDqyxZ": {
+       "children": "u5GlIz",
+       "data": {},
+       "external_id": "aZNMj9",
+       "external_type": "text",
+       "id": "RDqyxZ",
+       "parent": "KG1bAm",
+       "ty": "numbered_list"
+      },
+      "R_gDNl": {
+       "children": "n3AaLl",
+       "data": {},
+       "external_id": "0v0ild",
+       "external_type": "text",
+       "id": "R_gDNl",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "R_q_x5": {
+       "children": "mda7C3",
+       "data": {},
+       "external_id": "uspwDo",
+       "external_type": "text",
+       "id": "R_q_x5",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "SNoBL2": {
+       "children": "mYRmLf",
+       "data": {},
+       "external_id": "NNnsaV",
+       "external_type": "text",
+       "id": "SNoBL2",
+       "parent": "z2IHw0",
+       "ty": "numbered_list"
+      },
+      "SfdrQV": {
+       "children": "F8v2EO",
+       "data": {
+        "level": 3
+       },
+       "external_id": "Vva0XM",
+       "external_type": "text",
+       "id": "SfdrQV",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "Sl1SGt": {
+       "children": "k5Liqs",
+       "data": {
+        "number": 1
+       },
+       "external_id": "cNXmxA",
+       "external_type": "text",
+       "id": "Sl1SGt",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "UOsopF": {
+       "children": "FSchUk",
+       "data": {},
+       "external_id": "kmBlvo",
+       "external_type": "text",
+       "id": "UOsopF",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "Uw9L1Z": {
+       "children": "CSeoCe",
+       "data": {},
+       "external_id": "GDgkpT",
+       "external_type": "text",
+       "id": "Uw9L1Z",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "VGDOTL": {
+       "children": "cAeCbZ",
+       "data": {},
+       "external_id": "T-JqpQ",
+       "external_type": "text",
+       "id": "VGDOTL",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "W4I_h6": {
+       "children": "hSdHHq",
+       "data": {
+        "level": 3
+       },
+       "external_id": "S4nb_8",
+       "external_type": "text",
+       "id": "W4I_h6",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "YHexpd": {
+       "children": "yc3BtI",
+       "data": {},
+       "external_id": "ZKqQMB",
+       "external_type": "text",
+       "id": "YHexpd",
+       "parent": "KG1bAm",
+       "ty": "numbered_list"
+      },
+      "YbVhqS": {
+       "children": "1YCgIO",
+       "data": {},
+       "external_id": "epMRpU",
+       "external_type": "text",
+       "id": "YbVhqS",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "YsxmpG": {
+       "children": "TcpqVk",
+       "data": {
+        "number": 1
+       },
+       "external_id": "aycnsk",
+       "external_type": "text",
+       "id": "YsxmpG",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "Yxlz_T": {
+       "children": "uPUqL4",
+       "data": {},
+       "external_id": "OsvBR_",
+       "external_type": "text",
+       "id": "Yxlz_T",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "ZmURxg": {
+       "children": "LeKGDs",
+       "data": {
+        "level": 3
+       },
+       "external_id": "vx59wj",
+       "external_type": "text",
+       "id": "ZmURxg",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "_3XGDF": {
+       "children": "u8S6w6",
+       "data": {},
+       "external_id": "hlECET",
+       "external_type": "text",
+       "id": "_3XGDF",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "_8o9r6": {
+       "children": "vRoETz",
+       "data": {
+        "level": 3
+       },
+       "external_id": "ghksz3",
+       "external_type": "text",
+       "id": "_8o9r6",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "a2T2np": {
+       "children": "9xZsyO",
+       "data": {},
+       "external_id": "sA2pZ9",
+       "external_type": "text",
+       "id": "a2T2np",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "aqAV1e": {
+       "children": "BVjqef",
+       "data": {},
+       "external_id": "-W8mO9",
+       "external_type": "text",
+       "id": "aqAV1e",
+       "parent": "KG1bAm",
+       "ty": "numbered_list"
+      },
+      "bm_ljY": {
+       "children": "Uc9lf2",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "bm_ljY",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "divider"
+      },
+      "c0f0d58d-84fa-5e02-8f67-d8719642af0e": {
+       "children": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "data": {
+        "cover_selection": "https://images.unsplash.com/photo-1530578294319-9d6b376c11ca?crop=entropy&cs=srgb&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MzE4Mjk4NTR8&ixlib=rb-4.0.3&q=85",
+        "cover_selection_type": "CoverType.file",
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"artificial_intelligence\",\"iconName\":\"ai-edit-spark\",\"color\":\"0xFFA34AFD\"}"
+       },
+       "external_id": "B0HJhc",
+       "external_type": "text",
+       "id": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "parent": "",
+       "ty": "page"
+      },
+      "cVlVEw": {
+       "children": "iH6wtJ",
+       "data": {},
+       "external_id": "flCjR2",
+       "external_type": "text",
+       "id": "cVlVEw",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "dScxbX": {
+       "children": "6BMjGO",
+       "data": {
+        "level": 2
+       },
+       "external_id": "Tp4fPJ",
+       "external_type": "text",
+       "id": "dScxbX",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "e9wOFq": {
+       "children": "Tqxq0v",
+       "data": {},
+       "external_id": "6smabU",
+       "external_type": "text",
+       "id": "e9wOFq",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "fUXxHR": {
+       "children": "NzEFgL",
+       "data": {},
+       "external_id": "CSkytA",
+       "external_type": "text",
+       "id": "fUXxHR",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "g_TPcf": {
+       "children": "MBRdnh",
+       "data": {},
+       "external_id": "Sftzhy",
+       "external_type": "text",
+       "id": "g_TPcf",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "hDb3iI": {
+       "children": "f5HcvM",
+       "data": {
+        "number": 1
+       },
+       "external_id": "FsgvWr",
+       "external_type": "text",
+       "id": "hDb3iI",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "hSR5ev": {
+       "children": "aZa_DC",
+       "data": {
+        "bgColor": null,
+        "textDirection": null
+       },
+       "external_id": "6Alpn0",
+       "external_type": "text",
+       "id": "hSR5ev",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "quote"
+      },
+      "hhkTdX": {
+       "children": "3zrCdk",
+       "data": {},
+       "external_id": "dqQ97M",
+       "external_type": "text",
+       "id": "hhkTdX",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "hnJHn_": {
+       "children": "dv45IJ",
+       "data": {
+        "number": 1
+       },
+       "external_id": "ZyUEZ2",
+       "external_type": "text",
+       "id": "hnJHn_",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "iEF27T": {
+       "children": "zbhRdp",
+       "data": {
+        "number": 1
+       },
+       "external_id": "68BU9p",
+       "external_type": "text",
+       "id": "iEF27T",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "iYNEUy": {
+       "children": "BVsqvQ",
+       "data": {
+        "level": 1
+       },
+       "external_id": "95a05B",
+       "external_type": "text",
+       "id": "iYNEUy",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "jD6GXY": {
+       "children": "oG7-sW",
+       "data": {},
+       "external_id": "rYVbR2",
+       "external_type": "text",
+       "id": "jD6GXY",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "jKoy0O": {
+       "children": "h85JQ6",
+       "data": {},
+       "external_id": "fZnPXm",
+       "external_type": "text",
+       "id": "jKoy0O",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "lcfNkm": {
+       "children": "hxIOdZ",
+       "data": {
+        "level": 3
+       },
+       "external_id": "oNNdSW",
+       "external_type": "text",
+       "id": "lcfNkm",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "lsJu7r": {
+       "children": "N8Vfsd",
+       "data": {},
+       "external_id": "nNRHja",
+       "external_type": "text",
+       "id": "lsJu7r",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "m9IdCl": {
+       "children": "PjY-yX",
+       "data": {},
+       "external_id": "W3N8VJ",
+       "external_type": "text",
+       "id": "m9IdCl",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "nDtayB": {
+       "children": "D2CaWm",
+       "data": {},
+       "external_id": "s1021U",
+       "external_type": "text",
+       "id": "nDtayB",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "nFBzwd": {
+       "children": "yYMn_T",
+       "data": {},
+       "external_id": "7TcPEw",
+       "external_type": "text",
+       "id": "nFBzwd",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "ngPCEu": {
+       "children": "qL4DLZ",
+       "data": {
+        "number": 1
+       },
+       "external_id": "DTWBxn",
+       "external_type": "text",
+       "id": "ngPCEu",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "nspH9z": {
+       "children": "NwttLD",
+       "data": {},
+       "external_id": "JCGaHw",
+       "external_type": "text",
+       "id": "nspH9z",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "nyB4ym": {
+       "children": "I8WQZD",
+       "data": {
+        "level": 2
+       },
+       "external_id": "62_VG8",
+       "external_type": "text",
+       "id": "nyB4ym",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "o43XNh": {
+       "children": "i7DsU5",
+       "data": {},
+       "external_id": "X-6Pa3",
+       "external_type": "text",
+       "id": "o43XNh",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "oCtf57": {
+       "children": "hNMtiJ",
+       "data": {},
+       "external_id": "dzOo_R",
+       "external_type": "text",
+       "id": "oCtf57",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "ohHzbM": {
+       "children": "lRBMZR",
+       "data": {},
+       "external_id": "o6Tl8M",
+       "external_type": "text",
+       "id": "ohHzbM",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "pa5CVW": {
+       "children": "iCWZSV",
+       "data": {},
+       "external_id": "zinspt",
+       "external_type": "text",
+       "id": "pa5CVW",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "pu4dkd": {
+       "children": "xN78Y2",
+       "data": {},
+       "external_id": "QJ41Xq",
+       "external_type": "text",
+       "id": "pu4dkd",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "q4YNzs": {
+       "children": "l_8xCD",
+       "data": {},
+       "external_id": "A3q1Fb",
+       "external_type": "text",
+       "id": "q4YNzs",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "q5HQ9g": {
+       "children": "SJxf5y",
+       "data": {},
+       "external_id": "0U1S42",
+       "external_type": "text",
+       "id": "q5HQ9g",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "qLdrrt": {
+       "children": "AHElI-",
+       "data": {},
+       "external_id": "MfnrM_",
+       "external_type": "text",
+       "id": "qLdrrt",
+       "parent": "fUXxHR",
+       "ty": "numbered_list"
+      },
+      "qa0ZqP": {
+       "children": "iXDcWV",
+       "data": {
+        "level": 3
+       },
+       "external_id": "345kmt",
+       "external_type": "text",
+       "id": "qa0ZqP",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "qcccml": {
+       "children": "cBwXm9",
+       "data": {},
+       "external_id": "7MRieb",
+       "external_type": "text",
+       "id": "qcccml",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "rIh-j9": {
+       "children": "Yc7jBR",
+       "data": {},
+       "external_id": "V8J8Ru",
+       "external_type": "text",
+       "id": "rIh-j9",
+       "parent": "fUXxHR",
+       "ty": "numbered_list"
+      },
+      "rLRoQT": {
+       "children": "sHIUNv",
+       "data": {},
+       "external_id": "TzDbUt",
+       "external_type": "text",
+       "id": "rLRoQT",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "sOTdsR": {
+       "children": "Vfqiim",
+       "data": {},
+       "external_id": "vIVkWF",
+       "external_type": "text",
+       "id": "sOTdsR",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "tGrXTA": {
+       "children": "UrebPb",
+       "data": {
+        "level": 2
+       },
+       "external_id": "HTDvRB",
+       "external_type": "text",
+       "id": "tGrXTA",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "heading"
+      },
+      "tbPQoy": {
+       "children": "Jti4JK",
+       "data": {},
+       "external_id": "66oIro",
+       "external_type": "text",
+       "id": "tbPQoy",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "uiKRIu": {
+       "children": "vdMH1y",
+       "data": {},
+       "external_id": "xSASLe",
+       "external_type": "text",
+       "id": "uiKRIu",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "vzy0Y7": {
+       "children": "F_jEOK",
+       "data": {},
+       "external_id": "_-ndn3",
+       "external_type": "text",
+       "id": "vzy0Y7",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "wEJs08": {
+       "children": "tsz8rH",
+       "data": {
+        "number": 1
+       },
+       "external_id": "Eg-Cix",
+       "external_type": "text",
+       "id": "wEJs08",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "x6xAB9": {
+       "children": "uU61yw",
+       "data": {},
+       "external_id": "CMvTOP",
+       "external_type": "text",
+       "id": "x6xAB9",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "paragraph"
+      },
+      "yc26dW": {
+       "children": "JT9A39",
+       "data": {},
+       "external_id": "89Qh0s",
+       "external_type": "text",
+       "id": "yc26dW",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "z2IHw0": {
+       "children": "u9ZzUe",
+       "data": {
+        "number": 1
+       },
+       "external_id": "tApbs_",
+       "external_type": "text",
+       "id": "z2IHw0",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "zZlxfL": {
+       "children": "SCuAan",
+       "data": {
+        "number": 1
+       },
+       "external_id": "C6xlfJ",
+       "external_type": "text",
+       "id": "zZlxfL",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "numbered_list"
+      },
+      "zotsSq": {
+       "children": "-fXOME",
+       "data": {
+        "bgColor": "appflowy_them_color_tint9",
+        "icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"information-circle\"}",
+        "icon_type": "icon",
+        "textColor": "appflowy_them_color_tint9"
+       },
+       "external_id": "6crz4f",
+       "external_type": "text",
+       "id": "zotsSq",
+       "parent": "c0f0d58d-84fa-5e02-8f67-d8719642af0e",
+       "ty": "callout"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "-fXOME": [],
+       "1YCgIO": [],
+       "1mRrGJ": [],
+       "3JdBAa": [],
+       "3zrCdk": [],
+       "6BMjGO": [],
+       "6w7TcE": [],
+       "8b16si": [],
+       "9xZsyO": [],
+       "AHElI-": [],
+       "BVjqef": [],
+       "BVsqvQ": [],
+       "CSeoCe": [],
+       "D2CaWm": [],
+       "F8v2EO": [],
+       "FSchUk": [],
+       "FVM3xM": [],
+       "F_jEOK": [],
+       "GYlN0m": [],
+       "GpkA79": [],
+       "H9cQEd": [],
+       "I4sFvw": [],
+       "I8WQZD": [],
+       "ILvuil": [],
+       "JT9A39": [],
+       "Jti4JK": [],
+       "Kh_oI1": [],
+       "LeKGDs": [],
+       "MBRdnh": [],
+       "MSFFmC": [],
+       "MXIP5U": [],
+       "N8Vfsd": [],
+       "NNbn2V": [],
+       "NwttLD": [],
+       "NzEFgL": [
+        "rIh-j9",
+        "0aNV8g",
+        "qLdrrt"
+       ],
+       "PPyQ8l": [],
+       "PRcMQ-": [
+        "En1drJ",
+        "IbgYes",
+        "RDqyxZ",
+        "YHexpd",
+        "aqAV1e"
+       ],
+       "PjY-yX": [],
+       "RcErcU": [],
+       "SCuAan": [],
+       "SJxf5y": [],
+       "SYVhkZ": [],
+       "T9ERnX": [],
+       "TcpqVk": [],
+       "Tqxq0v": [],
+       "UC8fhs": [],
+       "Uc9lf2": [],
+       "Ue829a": [],
+       "UrebPb": [],
+       "Vfqiim": [],
+       "WAfUvE": [],
+       "WuU_Aw": [],
+       "XJCUqD": [],
+       "XQxyHs": [],
+       "XULU_m": [],
+       "Yc7jBR": [],
+       "YhWM7O": [],
+       "YzS7gq": [],
+       "_sHvOg": [],
+       "aZa_DC": [],
+       "bJWwdP": [],
+       "c0f0d58d-84fa-5e02-8f67-d8719642af0e": [
+        "zotsSq",
+        "bm_ljY",
+        "iYNEUy",
+        "R_gDNl",
+        "H2D0K4",
+        "EjArkA",
+        "hSR5ev",
+        "oCtf57",
+        "R4HJSh",
+        "Fq1wFs",
+        "Sl1SGt",
+        "VGDOTL",
+        "rLRoQT",
+        "UOsopF",
+        "MO_axp",
+        "tbPQoy",
+        "qa0ZqP",
+        "YsxmpG",
+        "NtvT8S",
+        "jD6GXY",
+        "KsngF1",
+        "e9wOFq",
+        "q4YNzs",
+        "Lf74FP",
+        "ngPCEu",
+        "6zO2dP",
+        "Yxlz_T",
+        "ohHzbM",
+        "N9Baub",
+        "-H-b3S",
+        "Kmohas",
+        "CHx9AH",
+        "nspH9z",
+        "Uw9L1Z",
+        "M4twah",
+        "nFBzwd",
+        "F0mo6V",
+        "g_TPcf",
+        "Ejo4iV",
+        "Fhv0Hf",
+        "nyB4ym",
+        "9JplAU",
+        "Mu-CGj",
+        "I0o2H-",
+        "z2IHw0",
+        "KG1bAm",
+        "ECBFAv",
+        "ZmURxg",
+        "7LNwlv",
+        "R_q_x5",
+        "o43XNh",
+        "sOTdsR",
+        "tGrXTA",
+        "9YIEsJ",
+        "YbVhqS",
+        "3bm_mq",
+        "6Vc4CP",
+        "_3XGDF",
+        "SfdrQV",
+        "hhkTdX",
+        "iEF27T",
+        "cVlVEw",
+        "HFSzF_",
+        "qcccml",
+        "nDtayB",
+        "W4I_h6",
+        "zZlxfL",
+        "q5HQ9g",
+        "jKoy0O",
+        "_8o9r6",
+        "vzy0Y7",
+        "-2QqVu",
+        "yc26dW",
+        "1V_5JO",
+        "F8O9Zw",
+        "lcfNkm",
+        "wEJs08",
+        "fUXxHR",
+        "-H9GvY",
+        "uiKRIu",
+        "D9ltYj",
+        "a2T2np",
+        "FdNIi2",
+        "hnJHn_",
+        "lsJu7r",
+        "8PtLjo",
+        "AmOKgI",
+        "7sNn73",
+        "dScxbX",
+        "x6xAB9",
+        "hDb3iI",
+        "Fd2UUG",
+        "6nur1B",
+        "pu4dkd",
+        "LmoLXg",
+        "pa5CVW",
+        "m9IdCl",
+        "P8yBKf"
+       ],
+       "cAeCbZ": [],
+       "cBwXm9": [],
+       "cjHcbS": [],
+       "dv45IJ": [],
+       "f5HcvM": [],
+       "fpy-Bl": [],
+       "gVPonP": [],
+       "h85JQ6": [],
+       "hNMtiJ": [],
+       "hSdHHq": [],
+       "hxFBSa": [],
+       "hxIOdZ": [],
+       "i7DsU5": [],
+       "iCWZSV": [],
+       "iH6wtJ": [],
+       "iXDcWV": [],
+       "jWrgT1": [],
+       "k5Liqs": [],
+       "lRBMZR": [],
+       "l_8xCD": [],
+       "lypu6e": [],
+       "mYRmLf": [],
+       "mda7C3": [],
+       "n3AaLl": [],
+       "oG7-sW": [],
+       "qL4DLZ": [],
+       "quqRyQ": [],
+       "sHIUNv": [],
+       "so5ryr": [],
+       "tByxX9": [],
+       "tsz8rH": [],
+       "u1gv-d": [],
+       "u5GlIz": [],
+       "u8S6w6": [],
+       "u9ZzUe": [
+        "SNoBL2",
+        "9omEbD"
+       ],
+       "uPUqL4": [],
+       "uU61yw": [],
+       "vRoETz": [],
+       "vdMH1y": [],
+       "vycGME": [],
+       "x49nr3": [],
+       "xN78Y2": [],
+       "xV9Qzg": [],
+       "x_aHmV": [],
+       "yYMn_T": [],
+       "yc3BtI": [],
+       "zbhRdp": []
+      },
+      "text_map": {
+       "-W8mO9": "[{\"insert\":\"Tag chats: \",\"attributes\":{\"bold\":true}},{\"insert\":\"after a chat is done, put unstructured text into a comments field.\",\"attributes\":{\"bold\":false}}]",
+       "0U1S42": "[{\"insert\":\"Let’s send: \",\"attributes\":{\"bold\":true}},{\"insert\":\"user_id, user_email, user_agent, booking_id, booking_order_value.\",\"attributes\":{\"bold\":false}}]",
+       "0v0ild": "[{\"insert\":\"Authored by Gaurav Oberoi. Last updated on Sep 28, 2016.\",\"attributes\":{\"strikethrough\":false,\"bold\":false,\"italic\":true,\"underline\":false}}]",
+       "345kmt": "[{\"insert\":\"Goals\",\"attributes\":{\"bold\":true}}]",
+       "4yVKld": "[{\"insert\":\"Oct 8: \",\"attributes\":{\"bold\":true}},{\"insert\":\"test on dev env with customer support’s help in setting up agents/times.\",\"attributes\":{\"bold\":false}}]",
+       "62_VG8": "[{\"insert\":\"Context\",\"attributes\":{\"bold\":true}}]",
+       "66oIro": "[]",
+       "68BU9p": "[{\"insert\":\"Button:\",\"attributes\":{\"underline\":false,\"bold\":true}},{\"insert\":\" label it “Chat Now” and put it near our primary CTA “Book” on the detail page.\",\"attributes\":{\"underline\":false,\"bold\":false}}]",
+       "6Alpn0": "[{\"insert\":\"Describe the project in 2 lines or less. By “line” I mean the default reading width of your medium (e.g., Google Docs, wiki, text file) on a desktop client. Sticking to limits is critical for readability.\",\"attributes\":{\"bold\":false}}]",
+       "6crz4f": "[{\"insert\":\"This is an example product spec, written as part of \",\"attributes\":{\"bold\":true,\"underline\":false}},{\"insert\":\"this blog post\",\"attributes\":{\"underline\":false,\"bold\":true,\"href\":\"https://goberoi.com/on-writing-product-specs-5ca697b992fd\"}},{\"insert\":\". Some notes:\\n\",\"attributes\":{\"bold\":true,\"underline\":false}},{\"insert\":\"- \",\"attributes\":{\"underline\":false}},{\"insert\":\"Commentary will appear with this light blue background throughout the doc. \\n\",\"attributes\":{\"bold\":true,\"underline\":false}},{\"insert\":\"- \",\"attributes\":{\"underline\":false}},{\"insert\":\"Read the doc once through while ignoring the blue bits, then go back and reread.\\n\",\"attributes\":{\"bold\":true,\"underline\":false}},{\"insert\":\"- \",\"attributes\":{\"underline\":false}},{\"insert\":\"Links don’t go anywhere. They exist to illustrate the need to do and show related work.\",\"attributes\":{\"underline\":false,\"bold\":true}}]",
+       "6owxoT": "[{\"insert\":\"Ramp up plan: \",\"attributes\":{\"bold\":true}},{\"insert\":\"on day 1, we’ll only have this be at 5%, but will go to 10% on day 2 and then 20% by day 3 if all is going well per customer ops.\",\"attributes\":{\"bold\":false}}]",
+       "6smabU": "[{\"insert\":\"Make sure one can point to a goal and easily answer “did we hit it?”. Make clear promises.\",\"attributes\":{\"bold\":false}}]",
+       "7LypDD": "[{\"insert\":\"I picked XXX, they meet our stated use-cases and are cheap ($60/month). Note: we’ll do a proper vendor selection if this works. I created a paid account, credentials in our pw tool.\",\"attributes\":{\"underline\":false,\"bold\":false}}]",
+       "7MRieb": "[{\"insert\":\"No auto-popup:\",\"attributes\":{\"underline\":false,\"bold\":true}},{\"insert\":\" we may try this later, but let’s keep it low key for now.\",\"attributes\":{\"underline\":false,\"bold\":false}}]",
+       "7TcPEw": "[{\"insert\":\"Joha (design): \",\"attributes\":{\"bold\":true}},{\"insert\":\"very light review of the changes we’ll make, no major design requests.\",\"attributes\":{\"bold\":false}}]",
+       "89Qh0s": "[{\"insert\":\"Persist which users see it: \",\"attributes\":{\"bold\":true}},{\"insert\":\"if a user sees live chat once, they should continue to see it on any given day that we’re running the test. Either cookie them, or base it on their user_id (e.g., show it if user id modulo 100 <= X).\",\"attributes\":{\"bold\":false}}]",
+       "95a05B": "[{\"insert\":\"Live chat on checkout\"}]",
+       "9zhR5P": "[]",
+       "A3q1Fb": "[]",
+       "C6xlfJ": "[{\"insert\":\"What is it: \",\"attributes\":{\"bold\":true}},{\"insert\":\"when we embed the vendor’s javascript, we can pass on additional variables that the support person can see, and will also get logged in reporting. \",\"attributes\":{\"bold\":false}}]",
+       "CMvTOP": "[{\"insert\":\"This timeline may slip by 1-2 weeks due to the kinds of issues mentioned in “future work”. That’s ok as long as we have results by Dec 1, so we can ask for heads during Q1 resource planning.\",\"attributes\":{\"bold\":false}}]",
+       "CSkytA": "[{\"insert\":\"New reports: \",\"attributes\":{\"bold\":true}}]",
+       "DTWBxn": "[{\"insert\":\"Major UX changes: \",\"attributes\":{\"bold\":true}},{\"insert\":\"we will only add a visible chat button, no other UX changes.\",\"attributes\":{\"bold\":false}}]",
+       "Dh-cIO": "[{\"insert\":\"I highly recommend bullets for readability. Use bold words to quickly convey the gist of each point, and limit bullets to 2-3 lines. I prefer numbered lists so one can refer to a point verbally.\",\"attributes\":{\"bold\":false}}]",
+       "Eg-Cix": "[{\"insert\":\"Logging: add: \",\"attributes\":{\"bold\":true}},{\"insert\":\"“live_checkout=true/false” to our existing metrics logging during checkout.\",\"attributes\":{\"bold\":false}}]",
+       "Fhk_RH": "[]",
+       "FsgvWr": "[{\"insert\":\"Oct 4: \",\"attributes\":{\"bold\":true}},{\"insert\":\"spec review.\",\"attributes\":{\"bold\":false}}]",
+       "GDgkpT": "[{\"insert\":\"Colin (dev): \",\"attributes\":{\"bold\":true}},{\"insert\":\"build and qa. Also configure SnapEngage, and show us all how you did it.\",\"attributes\":{\"bold\":false}}]",
+       "Ge7WB9": "[{\"insert\":\"Heather (cust ops manager): \",\"attributes\":{\"bold\":true}},{\"insert\":\"sign off on our support resourcing assumptions.\",\"attributes\":{\"bold\":false}}]",
+       "H76ETw": "[{\"insert\":\"Use Cases\",\"attributes\":{\"bold\":true}}]",
+       "HLSaEN": "[{\"insert\":\"Problem\",\"attributes\":{\"bold\":false}}]",
+       "HTDvRB": "[{\"insert\":\"Proposal\",\"attributes\":{\"bold\":true}}]",
+       "II5V_s": "[{\"insert\":\"Total num orders and revenue attributed to live chat.\",\"attributes\":{\"bold\":false}}]",
+       "InmT6G": "[{\"insert\":\"Kalpana (finance): \",\"attributes\":{\"bold\":true}},{\"insert\":\"review my profitability assumptions for our test, and down the road.\",\"attributes\":{\"bold\":false}}]",
+       "IsBVk8": "[{\"insert\":\"On mobile or desktop: \",\"attributes\":{\"bold\":true}},{\"insert\":\"28% of checkouts are on the phone, so this is critical.Customer \",\"attributes\":{\"bold\":false}}]",
+       "JCGaHw": "[{\"insert\":\"Randy (cust ops rep): \",\"attributes\":{\"bold\":true}},{\"insert\":\"man the queue, and summarize learnings once a week.\",\"attributes\":{\"bold\":false}}]",
+       "JRnU8Z": "[{\"insert\":\"Only show to X% users: \",\"attributes\":{\"bold\":true}},{\"insert\":\"we must be able to control X without a redeploy, but it’s ok if CS has to file a ticket to dev to do this manually (e.g. if it’s in our DB/Redis).\",\"attributes\":{\"bold\":false}}]",
+       "KEz3O0": "[{\"insert\":\"Ops wants to: \",\"attributes\":{\"bold\":true}}]",
+       "LCX6Mw": "[{\"insert\":\"Help everyone know who is involved, and what is expected of them. Only include people who have authority to veto/approve decisions, or people who will execute on the plan.\",\"attributes\":{\"bold\":false}}]",
+       "MfnrM_": "[{\"insert\":\"Of users in the test, how many actually click on live chat.\",\"attributes\":{\"bold\":false}}]",
+       "NNnsaV": "[{\"insert\":\"Get help within 2 mins: \",\"attributes\":{\"bold\":true}},{\"insert\":\"unsure if this is achievable, but let’s aim here for now.\",\"attributes\":{\"bold\":false}}]",
+       "OsvBR_": "[{\"insert\":\"International and non-English: \",\"attributes\":{\"bold\":true}},{\"insert\":\"only US/English users to keep our test simple.\",\"attributes\":{\"bold\":false}}]",
+       "QJ41Xq": "[{\"insert\":\"Oct 17: \",\"attributes\":{\"bold\":true}},{\"insert\":\"sync after 1 week. We may have additional tasks then.\",\"attributes\":{\"bold\":false}}]",
+       "S4nb_8": "[{\"insert\":\"Chat Variables\",\"attributes\":{\"bold\":true}}]",
+       "SITDM5": "[{\"insert\":\"Future Work\",\"attributes\":{\"bold\":true}}]",
+       "SRoGc7": "[{\"insert\":\"Describe your proposal in the most natural way you can. Break it up into sections, and give it a clear narrative flow. Depending on the project, you may also add: wireframes, user flow diagrams, form inputs/validations, data models… all the specifics needed to execute the plan.\",\"attributes\":{\"bold\":false}}]",
+       "Sftzhy": "[]",
+       "T-JqpQ": "[{\"insert\":\"No clear dropout reason:\",\"attributes\":{\"bold\":true,\"underline\":false}},{\"insert\":\" prior support tickets and survey results show a long tail of possible issues (questions on amenities, fees, checkout time), no clear categories. \",\"attributes\":{\"bold\":false,\"underline\":false}}]",
+       "TLjlDZ": "[{\"insert\":\"Vikram (BI): \",\"attributes\":{\"bold\":true}},{\"insert\":\"make sure we can get the reporting we need in time for the test.\",\"attributes\":{\"bold\":false}}]",
+       "Tp4fPJ": "[{\"insert\":\"Tasks and Timeline\",\"attributes\":{\"bold\":true}}]",
+       "TzDbUt": "[{\"insert\":\"Adding help content didn’t do much: \",\"attributes\":{\"bold\":true}},{\"insert\":\"last quarter we A/B tested content and UI to better point to help content and booking info. This nudged conversion by 1.5% points.\",\"attributes\":{\"bold\":false,\"underline\":false}}]",
+       "V8J8Ru": "[{\"insert\":\"Conversion rate for users in live chat (test) vs. without it (control).\",\"attributes\":{\"bold\":false}}]",
+       "VLM6jn": "[{\"insert\":\"My example above may seem obtuse, but it won’t be for my engineering and BI teams -- and that’s the audience it is for. Remember: write what is necessary for human brains to execute.\",\"attributes\":{\"bold\":false}}]",
+       "Vud_ja": "[{\"insert\":\"This project aims to increase conversion by introducing live chat on our checkout page. It is a 30-day experiment, after which we’ll keep it alive or kill it (Schrödinger's chat? har har).\",\"attributes\":{\"bold\":false}}]",
+       "Vva0XM": "[{\"insert\":\"User Experience\",\"attributes\":{\"bold\":true}}]",
+       "W3N8VJ": "[]",
+       "WeizD6": "[{\"insert\":\"Finalizing a chat vendor: \",\"attributes\":{\"bold\":true}},{\"insert\":\"we’ll use SnapEngage for now, and review if the test works.\",\"attributes\":{\"bold\":false}}]",
+       "X-6Pa3": "[{\"insert\":\"Checkout conversion should go from 18% to 20%:\",\"attributes\":{\"underline\":false,\"bold\":true}},{\"insert\":\" total conversion won’t increase much for us to be successful. See our funnel report here.\",\"attributes\":{\"underline\":false,\"bold\":false}}]",
+       "ZKqQMB": "[{\"insert\":\"View user info: \",\"attributes\":{\"bold\":true}},{\"insert\":\"we must pass in the user-id so they can look up the current user.\",\"attributes\":{\"bold\":false}}]",
+       "ZWyfNH": "[{\"insert\":\"It’s ok if you only have a rough estimate, and need more analysis to refine it (such as a tech spec). But it’s still important to try and put time bounds down as early as possible to signal roughly the size and scope. Estimates must come from the builders (dev, design, etc.).\",\"attributes\":{\"bold\":false}}]",
+       "ZyUEZ2": "[{\"insert\":\"If we see very little live chat usage: we’ll need to try a few things like: (a) auto pop-up chat, (b) change CTA copy/UI, (c) photo of agent next to chat CTA.\",\"attributes\":{\"bold\":true}}]",
+       "_-ndn3": "[{\"insert\":\"We will only show this to some checkout page traffic. Here’s what we need to make that work:\",\"attributes\":{\"bold\":false}}]",
+       "a1yw27": "[]",
+       "a69NSN": "[]",
+       "aZNMj9": "[{\"insert\":\"Set working hours: \",\"attributes\":{\"bold\":true}},{\"insert\":\"control when the live chat button is visible on the site.\",\"attributes\":{\"bold\":false}}]",
+       "aycnsk": "[{\"insert\":\"Test if live chat can profitably increase conversion: \",\"attributes\":{\"bold\":true}},{\"insert\":\"we need to add 90+ orders/day just to break even on our live chat support cost. Unclear if we can do it. This is a test!\",\"attributes\":{\"bold\":false}}]",
+       "cJJsZ3": "[]",
+       "cNXmxA": "[{\"insert\":\"Checkout conversion is too low:\",\"attributes\":{\"underline\":false,\"bold\":true}},{\"insert\":\" only 18% of users who click on “Book” checkout. Comparable funnels for hotel booking sites achieve ~30% (\",\"attributes\":{\"underline\":false,\"bold\":false}},{\"insert\":\"source\",\"attributes\":{\"underline\":false,\"href\":\"https://skift.com/2014/03/18/online-booking-abandonment-is-huge-in-travel-as-consumers-comparison-shop/\",\"bold\":false}},{\"insert\":\"). We are missing out!\",\"attributes\":{\"bold\":false,\"underline\":false}}]",
+       "csTNfr": "[{\"insert\":\"XXX reporting: \",\"attributes\":{\"bold\":true}},{\"insert\":\"can tell us time spent per chat, simultaneous chats, etc.\",\"attributes\":{\"bold\":false}}]",
+       "dqQ97M": "[{\"insert\":\"View the XXX docs to get an idea of how their chat pops up. Based on that:\",\"attributes\":{\"bold\":false,\"underline\":false}}]",
+       "dzOo_R": "[]",
+       "epMRpU": "[]",
+       "fZnPXm": "[]",
+       "flCjR2": "[{\"insert\":\"Behavior:\",\"attributes\":{\"bold\":true,\"underline\":false}},{\"insert\":\" on click, show the agent’s name, and “How can we help you today?”.\",\"attributes\":{\"underline\":false,\"bold\":false}}]",
+       "ghksz3": "[{\"insert\":\"Knobs for Running the Test\",\"attributes\":{\"bold\":true}}]",
+       "h9n6Sr": "[{\"insert\":\"Oct 11: \",\"attributes\":{\"bold\":true}},{\"insert\":\"launch. We will need to increase traffic over the next few days.\",\"attributes\":{\"bold\":false}}]",
+       "hlECET": "[]",
+       "huaMF8": "[{\"insert\":\"This is your chance to eliminate bad assumptions and correctly set expectations.\",\"attributes\":{\"bold\":false}}]",
+       "kGJMK6": "[{\"insert\":\"Add/reduce agents: \",\"attributes\":{\"bold\":true}},{\"insert\":\"on their own without having to consult the dev team. \",\"attributes\":{\"bold\":false}}]",
+       "kmBlvo": "[]",
+       "l36FGv": "[]",
+       "n2Hti5": "[{\"insert\":\"Overview\"}]",
+       "nNRHja": "[{\"insert\":\"If the test succeeds: we’ll ask for more heads, and do a bigger roll out in Q1 with vendor selection, better reporting for wider consumption, and formal chat training.\",\"attributes\":{\"bold\":true}}]",
+       "o6Tl8M": "[]",
+       "oNNdSW": "[{\"insert\":\"Metrics and Reports\",\"attributes\":{\"bold\":true}}]",
+       "pY3jN0": "[{\"insert\":\"People and Roles\",\"attributes\":{\"bold\":true}}]",
+       "pqVPCm": "[]",
+       "r3IpMC": "[]",
+       "r3rVJw": "[{\"insert\":\"Keep the test cheap: \",\"attributes\":{\"bold\":true}},{\"insert\":\"avoid all gold-plating, this will come in Q1 if our test succeeds.\",\"attributes\":{\"bold\":false}}]",
+       "rYVbR2": "[{\"insert\":\"Get final answer by Dec 1: \",\"attributes\":{\"bold\":true}},{\"insert\":\"we have 8 weeks before Q1 resource planning starts.\",\"attributes\":{\"bold\":false}}]",
+       "s1021U": "[]",
+       "sA2pZ9": "[]",
+       "tApbs_": "[{\"insert\":\"Users want to:\",\"attributes\":{\"bold\":true}}]",
+       "u1FPIg": "[{\"insert\":\"Be in the queue: \",\"attributes\":{\"bold\":true}},{\"insert\":\"via a desktop/web client, mobile is not needed.\",\"attributes\":{\"bold\":false}}]",
+       "uspwDo": "[{\"insert\":\"Send 20% of checkout traffic per support head: \",\"attributes\":{\"bold\":true}},{\"insert\":\"based on some assumptions on wait times, chat lengths, and number of simultaneous chats. We don’t have any data to make a good guess, so let’s pick this and allow our system to ramp traffic up/down quickly.\",\"attributes\":{\"bold\":false}}]",
+       "v2YmBx": "[{\"insert\":\"Need +90 orders/day to break even with 1 support head:\",\"attributes\":{\"bold\":true,\"underline\":false}},{\"insert\":\" based on cost per head, and lifetime value of a checkout. See spreadsheet for details.\",\"attributes\":{\"bold\":false,\"underline\":false}}]",
+       "vIVkWF": "[]",
+       "vXAlfa": "[{\"insert\":\"Nov 12: \",\"attributes\":{\"bold\":true}},{\"insert\":\"final sync to review stats and decide if we want to do more or kill it.\",\"attributes\":{\"bold\":false}}]",
+       "vmjCtd": "[]",
+       "vx59wj": "[{\"insert\":\"Assumptions\",\"attributes\":{\"bold\":true}}]",
+       "wwD3sU": "[{\"insert\":\"Live Chat Vendor\",\"attributes\":{\"bold\":true}}]",
+       "xSASLe": "[]",
+       "yLHzfN": "[{\"insert\":\"Use this section to provide supporting evidence for your problem and proposal. Add whatever you need here, e.g.: use-cases, personas, metrics, competitors’ solutions, survey results, etc.\",\"attributes\":{\"bold\":false}}]",
+       "yh49Ef": "[{\"insert\":\"It’s always a good idea to signal where this is headed so people can think longer-term.\",\"attributes\":{\"bold\":false}}]",
+       "ylEM_j": "[{\"insert\":\"Out of Scope\"}]",
+       "z7Bntz": "[{\"insert\":\"All checkout pages:\",\"attributes\":{\"bold\":true,\"underline\":false}},{\"insert\":\" it should persist across all 3 steps of checkout.\",\"attributes\":{\"underline\":false,\"bold\":false}}]",
+       "zinspt": "[{\"insert\":\"Dec 1: \",\"attributes\":{\"bold\":true}},{\"insert\":\"this is the hard date for having the project wrapped up and results on hand.\",\"attributes\":{\"bold\":false}}]"
+      }
+     },
+     "page_id": "c0f0d58d-84fa-5e02-8f67-d8719642af0e"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Product-Spec-Example",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731912012,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"entertainment/pacman\",\"space_icon_color\":\"0xFFA34AFD\",\"space_permission\":0,\"space_created_at\":1724416490474}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1742914907,
+     "layout": 0,
+     "name": "Startups",
+     "view_id": "a159ba4a-2965-408a-913d-a934b8bcd663"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731824703,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1530578294319-9d6b376c11ca?crop=entropy&cs=srgb&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MzE4Mjk4NTR8&ixlib=rb-4.0.3&q=85\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"artificial_intelligence\",\"iconName\":\"ai-edit-spark\",\"color\":\"0xFFA34AFD\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764764503,
+     "layout": 0,
+     "name": "Product Spec Example",
+     "view_id": "c2d21591-e8ee-4552-8d53-abdc68c26617"
+    }
+   ],
+   "childViews": [],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"unsplash\",\"value\":\"https://images.unsplash.com/photo-1530578294319-9d6b376c11ca?crop=entropy&cs=srgb&fm=jpg&ixid=M3w1MTE1Mzd8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MzE4Mjk4NTR8&ixlib=rb-4.0.3&q=85\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"artificial_intelligence\",\"iconName\":\"ai-edit-spark\",\"color\":\"0xFFA34AFD\"}"
+   },
+   "layout": 0,
+   "name": "Product Spec Example",
+   "viewId": "c2d21591-e8ee-4552-8d53-abdc68c26617",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

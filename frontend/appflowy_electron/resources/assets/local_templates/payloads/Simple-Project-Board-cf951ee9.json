@@ -1,0 +1,636 @@
+{
+ "data": {
+  "database": {
+   "activeViewId": "cf951ee9-2fa0-4810-aef2-722ec143116e",
+   "databaseId": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+   "fields": [
+    {
+     "fieldId": "MFX6mm",
+     "fieldType": 0,
+     "isPrimary": true,
+     "name": "Description"
+    },
+    {
+     "fieldId": "NzVncl",
+     "fieldType": 7,
+     "isPrimary": false,
+     "name": "What needs to be done"
+    },
+    {
+     "fieldId": "g9rKF5",
+     "fieldType": 3,
+     "isPrimary": false,
+     "name": "Status"
+    }
+   ],
+   "raw": {
+    "database": {
+     "fields": {
+      "MFX6mm": {
+       "created_at": 1787645192,
+       "icon": "",
+       "id": "MFX6mm",
+       "is_primary": true,
+       "last_modified": 1787645192,
+       "name": "Description",
+       "ty": 0,
+       "type_option": {
+        "0": {}
+       }
+      },
+      "NzVncl": {
+       "created_at": 1787645192,
+       "icon": "",
+       "id": "NzVncl",
+       "is_primary": false,
+       "last_modified": 1787645289,
+       "name": "What needs to be done",
+       "ty": 7,
+       "type_option": {
+        "0": {},
+        "7": {}
+       }
+      },
+      "g9rKF5": {
+       "created_at": 1787645192,
+       "icon": "",
+       "id": "g9rKF5",
+       "is_primary": false,
+       "last_modified": 1787645192,
+       "name": "Status",
+       "ty": 3,
+       "type_option": {
+        "3": {
+         "content": "{\"options\":[{\"id\":\"hBEE\",\"name\":\"BRAINSTORM 🤔\",\"color\":\"Purple\"},{\"id\":\"kPLb\",\"name\":\"TODO 🎯\",\"color\":\"Purple\"},{\"id\":\"llWk\",\"name\":\"DOING 🏂\",\"color\":\"Purple\"},{\"id\":\"Mi9y\",\"name\":\"DONE! ✅\",\"color\":\"Purple\"},{\"id\":\"pjv4\",\"name\":\"About this template ❓\",\"color\":\"Purple\"}],\"disable_color\":false}"
+        }
+       }
+      }
+     },
+     "id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+     "metas": {
+      "iid": "a25a993b-c8f8-53f5-8cdc-f05aa33fe5a2"
+     },
+     "views": {
+      "3a7353f1-36c9-4619-8683-ed220b8f5a07": {
+       "created_at": 0,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "embedded": false,
+       "field_orders": [
+        {
+         "id": "MFX6mm"
+        },
+        {
+         "id": "g9rKF5"
+        },
+        {
+         "id": "NzVncl"
+        }
+       ],
+       "field_settings": {
+        "MFX6mm": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        },
+        "NzVncl": {
+         "visibility": 1,
+         "width": 150,
+         "wrap": false
+        },
+        "g9rKF5": {
+         "visibility": 1,
+         "width": 150,
+         "wrap": false
+        }
+       },
+       "filters": [],
+       "groups": [
+        {
+         "collapsed_group_ids": [],
+         "content": "",
+         "field_id": "g9rKF5",
+         "groups": [
+          {
+           "id": "g9rKF5",
+           "visible": false
+          },
+          {
+           "id": "pjv4",
+           "visible": true
+          },
+          {
+           "id": "hBEE",
+           "visible": true
+          },
+          {
+           "id": "kPLb",
+           "visible": true
+          },
+          {
+           "id": "llWk",
+           "visible": true
+          },
+          {
+           "id": "Mi9y",
+           "visible": true
+          }
+         ],
+         "id": "g:jj-hvv",
+         "ty": 3
+        }
+       ],
+       "id": "3a7353f1-36c9-4619-8683-ed220b8f5a07",
+       "is_inline": false,
+       "layout": 1,
+       "layout_settings": {
+        "1": {
+         "collapse_hidden_groups": true,
+         "hide_ungrouped_column": false
+        }
+       },
+       "modified_at": 1787645311,
+       "name": "Board",
+       "row_orders": [
+        {
+         "height": 60,
+         "id": "4cd96cc2-783c-4179-bc44-1697bbf054fe"
+        },
+        {
+         "height": 60,
+         "id": "c0e1b9a9-9ba2-4814-9284-16e16f1a7226"
+        },
+        {
+         "height": 60,
+         "id": "a09946d3-e036-400c-8d51-bcd825a0e80a"
+        },
+        {
+         "height": 60,
+         "id": "df2bdd8d-424c-4ec4-a78a-2cac2dc96e33"
+        },
+        {
+         "height": 60,
+         "id": "043ed2b1-77b3-40a5-a3c8-d457edcdc631"
+        },
+        {
+         "height": 60,
+         "id": "62608a56-dd2e-497f-8497-eeca6b6524cf"
+        }
+       ],
+       "sorts": []
+      },
+      "46d078a7-39db-4471-bbfa-25d9ba0a6cb3": {
+       "created_at": 1787645192,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "embedded": false,
+       "field_orders": [
+        {
+         "id": "MFX6mm"
+        },
+        {
+         "id": "g9rKF5"
+        },
+        {
+         "id": "NzVncl"
+        }
+       ],
+       "field_settings": {
+        "MFX6mm": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        },
+        "NzVncl": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        },
+        "g9rKF5": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        }
+       },
+       "filters": [],
+       "groups": [],
+       "id": "46d078a7-39db-4471-bbfa-25d9ba0a6cb3",
+       "is_inline": false,
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1787645192,
+       "name": "Grid",
+       "row_orders": [
+        {
+         "height": 60,
+         "id": "4cd96cc2-783c-4179-bc44-1697bbf054fe"
+        },
+        {
+         "height": 60,
+         "id": "c0e1b9a9-9ba2-4814-9284-16e16f1a7226"
+        },
+        {
+         "height": 60,
+         "id": "a09946d3-e036-400c-8d51-bcd825a0e80a"
+        },
+        {
+         "height": 60,
+         "id": "df2bdd8d-424c-4ec4-a78a-2cac2dc96e33"
+        },
+        {
+         "height": 60,
+         "id": "043ed2b1-77b3-40a5-a3c8-d457edcdc631"
+        },
+        {
+         "height": 60,
+         "id": "62608a56-dd2e-497f-8497-eeca6b6524cf"
+        }
+       ],
+       "sorts": []
+      },
+      "a25a993b-c8f8-53f5-8cdc-f05aa33fe5a2": {
+       "created_at": 1787645192,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "embedded": false,
+       "field_orders": [
+        {
+         "id": "MFX6mm"
+        },
+        {
+         "id": "g9rKF5"
+        },
+        {
+         "id": "NzVncl"
+        }
+       ],
+       "field_settings": {},
+       "filters": [],
+       "groups": [],
+       "id": "a25a993b-c8f8-53f5-8cdc-f05aa33fe5a2",
+       "is_inline": true,
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1787645192,
+       "name": "",
+       "row_orders": [
+        {
+         "height": 60,
+         "id": "4cd96cc2-783c-4179-bc44-1697bbf054fe"
+        },
+        {
+         "height": 60,
+         "id": "c0e1b9a9-9ba2-4814-9284-16e16f1a7226"
+        },
+        {
+         "height": 60,
+         "id": "a09946d3-e036-400c-8d51-bcd825a0e80a"
+        },
+        {
+         "height": 60,
+         "id": "df2bdd8d-424c-4ec4-a78a-2cac2dc96e33"
+        },
+        {
+         "height": 60,
+         "id": "043ed2b1-77b3-40a5-a3c8-d457edcdc631"
+        },
+        {
+         "height": 60,
+         "id": "62608a56-dd2e-497f-8497-eeca6b6524cf"
+        }
+       ],
+       "sorts": []
+      }
+     }
+    },
+    "rows": {
+     "043ed2b1-77b3-40a5-a3c8-d457edcdc631": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MFX6mm": {
+         "data": "Card Template",
+         "field_type": 0
+        },
+        "NzVncl": {
+         "data": "[x] Create lists (Brainstorm, todo, doing, done)\n[x] Create template card example\n[x] Turn board into template\n[ ] Share with the community",
+         "field_type": 0
+        },
+        "g9rKF5": {
+         "data": "Mi9y",
+         "field_type": 3
+        }
+       },
+       "created_at": 1787645192,
+       "created_by": 276057230200016900,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "height": 60,
+       "id": "043ed2b1-77b3-40a5-a3c8-d457edcdc631",
+       "last_edited_by": 276057230200016900,
+       "last_modified": 1787645192,
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "4cd96cc2-783c-4179-bc44-1697bbf054fe": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MFX6mm": {
+         "data": "Add what you'd like to work on below",
+         "field_type": 0
+        },
+        "g9rKF5": {
+         "data": "hBEE",
+         "field_type": 3
+        }
+       },
+       "created_at": 1787645192,
+       "created_by": 276057230200016900,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "height": 60,
+       "id": "4cd96cc2-783c-4179-bc44-1697bbf054fe",
+       "last_edited_by": 276057230200016900,
+       "last_modified": 1787645192,
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "62608a56-dd2e-497f-8497-eeca6b6524cf": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MFX6mm": {
+         "data": "Read me",
+         "field_type": 0
+        },
+        "g9rKF5": {
+         "data": "pjv4",
+         "field_type": 3
+        }
+       },
+       "created_at": 1787645192,
+       "created_by": 276057230200016900,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "height": 60,
+       "id": "62608a56-dd2e-497f-8497-eeca6b6524cf",
+       "last_edited_by": "276057230200016896",
+       "last_modified": "1787645677",
+       "visibility": true
+      },
+      "meta": {
+       "d48c4a2e-b4d5-57d4-b7fa-084ee9dc2aa9": false
+      }
+     },
+     "a09946d3-e036-400c-8d51-bcd825a0e80a": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MFX6mm": {
+         "data": "Move anything that is actually started here",
+         "field_type": 0
+        },
+        "g9rKF5": {
+         "data": "llWk",
+         "field_type": 3
+        }
+       },
+       "created_at": 1787645192,
+       "created_by": 276057230200016900,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "height": 60,
+       "id": "a09946d3-e036-400c-8d51-bcd825a0e80a",
+       "last_edited_by": 276057230200016900,
+       "last_modified": 1787645192,
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "c0e1b9a9-9ba2-4814-9284-16e16f1a7226": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MFX6mm": {
+         "data": "Move anything 'ready' here",
+         "field_type": 0
+        },
+        "g9rKF5": {
+         "data": "kPLb",
+         "field_type": 3
+        }
+       },
+       "created_at": 1787645192,
+       "created_by": 276057230200016900,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "height": 60,
+       "id": "c0e1b9a9-9ba2-4814-9284-16e16f1a7226",
+       "last_edited_by": 276057230200016900,
+       "last_modified": 1787645192,
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "df2bdd8d-424c-4ec4-a78a-2cac2dc96e33": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MFX6mm": {
+         "data": "Move anything from doing to done here",
+         "field_type": 0
+        },
+        "g9rKF5": {
+         "data": "Mi9y",
+         "field_type": 3
+        }
+       },
+       "created_at": 1787645192,
+       "created_by": 276057230200016900,
+       "database_id": "8bebcd6c-6373-45f8-b744-22bd8401c87b",
+       "height": 60,
+       "id": "df2bdd8d-424c-4ec4-a78a-2cac2dc96e33",
+       "last_edited_by": 276057230200016900,
+       "last_modified": 1787645192,
+       "visibility": true
+      },
+      "meta": {}
+     }
+    }
+   },
+   "rows": [
+    {
+     "cells": {
+      "MFX6mm": {
+       "data": "Add what you'd like to work on below",
+       "field_type": 0
+      },
+      "g9rKF5": {
+       "data": "hBEE",
+       "field_type": 3
+      }
+     },
+     "rowId": "4cd96cc2-783c-4179-bc44-1697bbf054fe"
+    },
+    {
+     "cells": {
+      "MFX6mm": {
+       "data": "Move anything from doing to done here",
+       "field_type": 0
+      },
+      "g9rKF5": {
+       "data": "Mi9y",
+       "field_type": 3
+      }
+     },
+     "rowId": "df2bdd8d-424c-4ec4-a78a-2cac2dc96e33"
+    },
+    {
+     "cells": {
+      "MFX6mm": {
+       "data": "Card Template",
+       "field_type": 0
+      },
+      "NzVncl": {
+       "data": "[x] Create lists (Brainstorm, todo, doing, done)\n[x] Create template card example\n[x] Turn board into template\n[ ] Share with the community",
+       "field_type": 0
+      },
+      "g9rKF5": {
+       "data": "Mi9y",
+       "field_type": 3
+      }
+     },
+     "rowId": "043ed2b1-77b3-40a5-a3c8-d457edcdc631"
+    },
+    {
+     "cells": {
+      "MFX6mm": {
+       "data": "Read me",
+       "field_type": 0
+      },
+      "g9rKF5": {
+       "data": "pjv4",
+       "field_type": 3
+      }
+     },
+     "rowId": "62608a56-dd2e-497f-8497-eeca6b6524cf"
+    },
+    {
+     "cells": {
+      "MFX6mm": {
+       "data": "Move anything that is actually started here",
+       "field_type": 0
+      },
+      "g9rKF5": {
+       "data": "llWk",
+       "field_type": 3
+      }
+     },
+     "rowId": "a09946d3-e036-400c-8d51-bcd825a0e80a"
+    },
+    {
+     "cells": {
+      "MFX6mm": {
+       "data": "Move anything 'ready' here",
+       "field_type": 0
+      },
+      "g9rKF5": {
+       "data": "kPLb",
+       "field_type": 3
+      }
+     },
+     "rowId": "c0e1b9a9-9ba2-4814-9284-16e16f1a7226"
+    }
+   ],
+   "views": [
+    {
+     "fieldIds": [
+      "MFX6mm",
+      "g9rKF5",
+      "NzVncl"
+     ],
+     "layout": 1,
+     "name": "Board",
+     "rowIds": [
+      "4cd96cc2-783c-4179-bc44-1697bbf054fe",
+      "c0e1b9a9-9ba2-4814-9284-16e16f1a7226",
+      "a09946d3-e036-400c-8d51-bcd825a0e80a",
+      "df2bdd8d-424c-4ec4-a78a-2cac2dc96e33",
+      "043ed2b1-77b3-40a5-a3c8-d457edcdc631",
+      "62608a56-dd2e-497f-8497-eeca6b6524cf"
+     ],
+     "viewId": "3a7353f1-36c9-4619-8683-ed220b8f5a07"
+    },
+    {
+     "fieldIds": [
+      "MFX6mm",
+      "g9rKF5",
+      "NzVncl"
+     ],
+     "layout": 0,
+     "name": "Grid",
+     "rowIds": [
+      "4cd96cc2-783c-4179-bc44-1697bbf054fe",
+      "c0e1b9a9-9ba2-4814-9284-16e16f1a7226",
+      "a09946d3-e036-400c-8d51-bcd825a0e80a",
+      "df2bdd8d-424c-4ec4-a78a-2cac2dc96e33",
+      "043ed2b1-77b3-40a5-a3c8-d457edcdc631",
+      "62608a56-dd2e-497f-8497-eeca6b6524cf"
+     ],
+     "viewId": "46d078a7-39db-4471-bbfa-25d9ba0a6cb3"
+    }
+   ],
+   "visibleViewIds": [
+    "cf951ee9-2fa0-4810-aef2-722ec143116e",
+    "3a7353f1-36c9-4619-8683-ed220b8f5a07",
+    "46d078a7-39db-4471-bbfa-25d9ba0a6cb3"
+   ]
+  },
+  "kind": "database",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Simple-Project-Board-cf951ee9",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [],
+   "childViews": [
+    {
+     "child_views": null,
+     "created_at": 1787645296,
+     "created_by": null,
+     "extra": "{\"database_id\":\"8bebcd6c-6373-45f8-b744-22bd8401c87b\"}",
+     "icon": null,
+     "last_edited_by": null,
+     "last_edited_time": 1787645304,
+     "layout": 2,
+     "name": "Board",
+     "view_id": "3a7353f1-36c9-4619-8683-ed220b8f5a07"
+    },
+    {
+     "child_views": null,
+     "created_at": 1787645192,
+     "created_by": null,
+     "extra": "{\"database_id\":\"8bebcd6c-6373-45f8-b744-22bd8401c87b\"}",
+     "icon": null,
+     "last_edited_by": null,
+     "last_edited_time": 1787645192,
+     "layout": 1,
+     "name": "Grid",
+     "view_id": "46d078a7-39db-4471-bbfa-25d9ba0a6cb3"
+    }
+   ],
+   "databaseRelations": {
+    "8bebcd6c-6373-45f8-b744-22bd8401c87b": "cf951ee9-2fa0-4810-aef2-722ec143116e"
+   },
+   "extra": "{\"database_id\":\"8bebcd6c-6373-45f8-b744-22bd8401c87b\",\"is_database_container\":true}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"entertainment\",\"iconName\":\"dice-4\",\"color\":\"0xFFFFBA00\"}"
+   },
+   "layout": 1,
+   "name": "Simple Project Board",
+   "viewId": "cf951ee9-2fa0-4810-aef2-722ec143116e",
+   "visibleViewIds": [
+    "cf951ee9-2fa0-4810-aef2-722ec143116e",
+    "3a7353f1-36c9-4619-8683-ed220b8f5a07",
+    "46d078a7-39db-4471-bbfa-25d9ba0a6cb3"
+   ]
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

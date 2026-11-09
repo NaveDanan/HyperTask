@@ -1,0 +1,900 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "otj5mt",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Week 1"
+        }
+       ],
+       "textId": "zhoABR",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint7",
+      "level": 2
+     },
+     "relationId": "tWLJI6",
+     "type": "heading"
+    },
+    {
+     "blockId": "Ja_Ndo",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Schedule introductions with Operations, Marketing, Project Management, and Finance teams"
+        }
+       ],
+       "textId": "EKZ1-c",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "checked": false
+     },
+     "relationId": "xDcXqH",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "R8tDaj",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Familiarize yourself with the company's mission statement and core values"
+        }
+       ],
+       "textId": "er6pjC",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "checked": false
+     },
+     "relationId": "Bm349C",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "Arxtrs",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Review the organizational chart to understand team roles and reporting lines"
+        }
+       ],
+       "textId": "s3KW9_",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "checked": false
+     },
+     "relationId": "qSzaRC",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "LP6KCe",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Attend an orientation session on core services and project types"
+        }
+       ],
+       "textId": "MXTvGS",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "checked": false
+     },
+     "relationId": "uOAiCQ",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "Ve8stk",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "AS9hRg",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "uZPYPx",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "FTobJ6",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Week 2"
+        }
+       ],
+       "textId": "kELyRv",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint7",
+      "level": 2
+     },
+     "relationId": "Cxwk3t",
+     "type": "heading"
+    },
+    {
+     "blockId": "QhZrfG",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Review the current sales pipeline"
+        }
+       ],
+       "textId": "u52ZGQ",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "X6Atds",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "Hakzwa",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Complete CRM tutorials and practice managing lead entries"
+        }
+       ],
+       "textId": "aHHv2S",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "5Tblp1",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "TOt1PJ",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Review past proposals"
+        }
+       ],
+       "textId": "gx9ZWQ",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "reAzJ7",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "9vexab",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Analyze recent sales reports to identify trends and areas for improvement"
+        }
+       ],
+       "textId": "4HipLz",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "RQPt43",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "Ic6rnp",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Learn about key performance indicators (KPIs) used to measure success"
+        }
+       ],
+       "textId": "-hxLGP",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "83TuWD",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "6UhtAi",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "OXN65K",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "mC4gJP",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "SQPxFH",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Week 3"
+        }
+       ],
+       "textId": "bZ4EjI",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint7",
+      "level": 2
+     },
+     "relationId": "xEpOEX",
+     "type": "heading"
+    },
+    {
+     "blockId": "iPzCCo",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Attend training sessions on core services"
+        }
+       ],
+       "textId": "ETa7wq",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "g3bqgR",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "UVeGsM",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Schedule visits to ongoing projects with the project manager"
+        }
+       ],
+       "textId": "FmpWYG",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "V6WrJo",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "QpBFEH",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Analyze competitor products/services to understand market positioning"
+        }
+       ],
+       "textId": "-m-vHV",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "1Th3dB",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "Af4QXt",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "ClA9kG",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "spHtdm",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "UkaPBU",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Week 4"
+        }
+       ],
+       "textId": "Vi-XPP",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "appflowy_them_color_tint7",
+      "level": 2
+     },
+     "relationId": "CnK1CP",
+     "type": "heading"
+    },
+    {
+     "blockId": "0xkTPz",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Meet with the team lead to go over key client accounts"
+        }
+       ],
+       "textId": "a71cN6",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "Ri6WtJ",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "U83vwa",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Review company templates and best practices for emails and calls"
+        }
+       ],
+       "textId": "2mOO2Q",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "UULFy0",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "k04F-c",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Discuss sales targets and KPIs with the leadership team"
+        }
+       ],
+       "textId": "KWM6B1",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "ZQaoQN",
+     "type": "todo_list"
+    },
+    {
+     "blockId": "Bw_hzo",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Work with management to identify and prioritize key accounts to focus on"
+        }
+       ],
+       "textId": "0um-Uo",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "checked": false,
+      "textDirection": null
+     },
+     "relationId": "S5OJKr",
+     "type": "todo_list"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "0xkTPz": {
+       "children": "Ri6WtJ",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "a71cN6",
+       "external_type": "text",
+       "id": "0xkTPz",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "4d09c24f-ca3c-58c3-8140-329bd5233aa3": {
+       "children": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "data": {
+        "cover_selection": "https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/17b35848%2Db34f%2D43a9%2Da945%2D0efecc384e7f/j4sukARXcI-D0vzg0QXgdOfb-_wR__qs4EWYHJIqWLY=.jpg",
+        "cover_selection_type": "CoverType.file",
+        "image_type": "1",
+        "selected_icon": "{\"groupName\":\"interface_essential\",\"iconName\":\"check-square\",\"color\":\"0xFFAAD93D\"}"
+       },
+       "external_id": "xMilyl",
+       "external_type": "text",
+       "id": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "parent": "",
+       "ty": "page"
+      },
+      "6UhtAi": {
+       "children": "mC4gJP",
+       "data": {},
+       "external_id": "OXN65K",
+       "external_type": "text",
+       "id": "6UhtAi",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "paragraph"
+      },
+      "9vexab": {
+       "children": "RQPt43",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "4HipLz",
+       "external_type": "text",
+       "id": "9vexab",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "Af4QXt": {
+       "children": "spHtdm",
+       "data": {},
+       "external_id": "ClA9kG",
+       "external_type": "text",
+       "id": "Af4QXt",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "paragraph"
+      },
+      "Arxtrs": {
+       "children": "qSzaRC",
+       "data": {
+        "checked": false
+       },
+       "external_id": "s3KW9_",
+       "external_type": "text",
+       "id": "Arxtrs",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "Bw_hzo": {
+       "children": "S5OJKr",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "0um-Uo",
+       "external_type": "text",
+       "id": "Bw_hzo",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "FTobJ6": {
+       "children": "Cxwk3t",
+       "data": {
+        "bgColor": "appflowy_them_color_tint7",
+        "level": 2
+       },
+       "external_id": "kELyRv",
+       "external_type": "text",
+       "id": "FTobJ6",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "heading"
+      },
+      "Hakzwa": {
+       "children": "5Tblp1",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "aHHv2S",
+       "external_type": "text",
+       "id": "Hakzwa",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "Ic6rnp": {
+       "children": "83TuWD",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "-hxLGP",
+       "external_type": "text",
+       "id": "Ic6rnp",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "Ja_Ndo": {
+       "children": "xDcXqH",
+       "data": {
+        "checked": false
+       },
+       "external_id": "EKZ1-c",
+       "external_type": "text",
+       "id": "Ja_Ndo",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "LP6KCe": {
+       "children": "uOAiCQ",
+       "data": {
+        "checked": false
+       },
+       "external_id": "MXTvGS",
+       "external_type": "text",
+       "id": "LP6KCe",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "QhZrfG": {
+       "children": "X6Atds",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "u52ZGQ",
+       "external_type": "text",
+       "id": "QhZrfG",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "QpBFEH": {
+       "children": "1Th3dB",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "-m-vHV",
+       "external_type": "text",
+       "id": "QpBFEH",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "R8tDaj": {
+       "children": "Bm349C",
+       "data": {
+        "checked": false
+       },
+       "external_id": "er6pjC",
+       "external_type": "text",
+       "id": "R8tDaj",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "SQPxFH": {
+       "children": "xEpOEX",
+       "data": {
+        "bgColor": "appflowy_them_color_tint7",
+        "level": 2
+       },
+       "external_id": "bZ4EjI",
+       "external_type": "text",
+       "id": "SQPxFH",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "heading"
+      },
+      "TOt1PJ": {
+       "children": "reAzJ7",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "gx9ZWQ",
+       "external_type": "text",
+       "id": "TOt1PJ",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "U83vwa": {
+       "children": "UULFy0",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "2mOO2Q",
+       "external_type": "text",
+       "id": "U83vwa",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "UVeGsM": {
+       "children": "V6WrJo",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "FmpWYG",
+       "external_type": "text",
+       "id": "UVeGsM",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "UkaPBU": {
+       "children": "CnK1CP",
+       "data": {
+        "bgColor": "appflowy_them_color_tint7",
+        "level": 2
+       },
+       "external_id": "Vi-XPP",
+       "external_type": "text",
+       "id": "UkaPBU",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "heading"
+      },
+      "Ve8stk": {
+       "children": "uZPYPx",
+       "data": {},
+       "external_id": "AS9hRg",
+       "external_type": "text",
+       "id": "Ve8stk",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "paragraph"
+      },
+      "iPzCCo": {
+       "children": "g3bqgR",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "ETa7wq",
+       "external_type": "text",
+       "id": "iPzCCo",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "k04F-c": {
+       "children": "ZQaoQN",
+       "data": {
+        "bgColor": null,
+        "checked": false,
+        "textDirection": null
+       },
+       "external_id": "KWM6B1",
+       "external_type": "text",
+       "id": "k04F-c",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "todo_list"
+      },
+      "otj5mt": {
+       "children": "tWLJI6",
+       "data": {
+        "bgColor": "appflowy_them_color_tint7",
+        "level": 2
+       },
+       "external_id": "zhoABR",
+       "external_type": "text",
+       "id": "otj5mt",
+       "parent": "4d09c24f-ca3c-58c3-8140-329bd5233aa3",
+       "ty": "heading"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "1Th3dB": [],
+       "4d09c24f-ca3c-58c3-8140-329bd5233aa3": [
+        "otj5mt",
+        "Ja_Ndo",
+        "R8tDaj",
+        "Arxtrs",
+        "LP6KCe",
+        "Ve8stk",
+        "FTobJ6",
+        "QhZrfG",
+        "Hakzwa",
+        "TOt1PJ",
+        "9vexab",
+        "Ic6rnp",
+        "6UhtAi",
+        "SQPxFH",
+        "iPzCCo",
+        "UVeGsM",
+        "QpBFEH",
+        "Af4QXt",
+        "UkaPBU",
+        "0xkTPz",
+        "U83vwa",
+        "k04F-c",
+        "Bw_hzo"
+       ],
+       "5Tblp1": [],
+       "83TuWD": [],
+       "Bm349C": [],
+       "CnK1CP": [],
+       "Cxwk3t": [],
+       "RQPt43": [],
+       "Ri6WtJ": [],
+       "S5OJKr": [],
+       "UULFy0": [],
+       "V6WrJo": [],
+       "X6Atds": [],
+       "ZQaoQN": [],
+       "g3bqgR": [],
+       "mC4gJP": [],
+       "qSzaRC": [],
+       "reAzJ7": [],
+       "spHtdm": [],
+       "tWLJI6": [],
+       "uOAiCQ": [],
+       "uZPYPx": [],
+       "xDcXqH": [],
+       "xEpOEX": []
+      },
+      "text_map": {
+       "-hxLGP": "[{\"insert\":\"Learn about key performance indicators (KPIs) used to measure success\"}]",
+       "-m-vHV": "[{\"insert\":\"Analyze competitor products/services to understand market positioning\"}]",
+       "0um-Uo": "[{\"insert\":\"Work with management to identify and prioritize key accounts to focus on\"}]",
+       "2mOO2Q": "[{\"insert\":\"Review company templates and best practices for emails and calls\"}]",
+       "4HipLz": "[{\"insert\":\"Analyze recent sales reports to identify trends and areas for improvement\"}]",
+       "AS9hRg": "[]",
+       "ClA9kG": "[]",
+       "EKZ1-c": "[{\"insert\":\"Schedule introductions with Operations, Marketing, Project Management, and Finance teams\"}]",
+       "ETa7wq": "[{\"insert\":\"Attend training sessions on core services\"}]",
+       "FmpWYG": "[{\"insert\":\"Schedule visits to ongoing projects with the project manager\"}]",
+       "KWM6B1": "[{\"insert\":\"Discuss sales targets and KPIs with the leadership team\"}]",
+       "MXTvGS": "[{\"insert\":\"Attend an orientation session on core services and project types\"}]",
+       "OXN65K": "[]",
+       "Vi-XPP": "[{\"insert\":\"Week 4\"}]",
+       "a71cN6": "[{\"insert\":\"Meet with the team lead to go over key client accounts\"}]",
+       "aHHv2S": "[{\"insert\":\"Complete CRM tutorials and practice managing lead entries\"}]",
+       "bZ4EjI": "[{\"insert\":\"Week 3\"}]",
+       "er6pjC": "[{\"insert\":\"Familiarize yourself with the company's mission statement and core values\"}]",
+       "gx9ZWQ": "[{\"insert\":\"Review past proposals\"}]",
+       "kELyRv": "[{\"insert\":\"Week 2\"}]",
+       "s3KW9_": "[{\"insert\":\"Review the organizational chart to understand team roles and reporting lines\"}]",
+       "u52ZGQ": "[{\"insert\":\"Review the current sales pipeline\"}]",
+       "zhoABR": "[{\"insert\":\"Week 1\"}]"
+      }
+     },
+     "page_id": "4d09c24f-ca3c-58c3-8140-329bd5233aa3"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Sales-Onboarding-One-Pager-Template-17b35848-b34f-43a9-a945-0efecc384e7f",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731821345,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"money_shopping/briefcase-dollar\",\"space_icon_color\":\"0xFFAAD93D\",\"space_permission\":0,\"space_created_at\":1724566123107}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1731821345,
+     "layout": 0,
+     "name": "Management",
+     "view_id": "77a0708e-cb82-4dec-93ed-6af793581384"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731821345,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"custom\",\"value\":\"https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/17b35848%2Db34f%2D43a9%2Da945%2D0efecc384e7f/j4sukARXcI-D0vzg0QXgdOfb-_wR__qs4EWYHJIqWLY=.jpg\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"check-square\",\"color\":\"0xFFAAD93D\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764767855,
+     "layout": 0,
+     "name": "Sales Onboarding One Pager Template",
+     "view_id": "17b35848-b34f-43a9-a945-0efecc384e7f"
+    }
+   ],
+   "childViews": [],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"custom\",\"value\":\"https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/17b35848%2Db34f%2D43a9%2Da945%2D0efecc384e7f/j4sukARXcI-D0vzg0QXgdOfb-_wR__qs4EWYHJIqWLY=.jpg\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"check-square\",\"color\":\"0xFFAAD93D\"}"
+   },
+   "layout": 0,
+   "name": "Sales Onboarding One Pager Template",
+   "viewId": "17b35848-b34f-43a9-a945-0efecc384e7f",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

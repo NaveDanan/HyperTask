@@ -18,6 +18,7 @@ import { ViewTitleBarWithRow } from '../view-header/ViewTitleBarWithRow';
 import { listenView } from '../view-header/view-listener';
 import { BlankPage, HyperLayoutIcon, LocalToolPlaceholder, PlaceholderMessage, ViewPlaceholderPage } from './PlaceholderPage';
 import { TrashPage } from './trash/TrashPage';
+import { TemplateStorePage } from '../templates/TemplateStorePage';
 
 /** PluginContext: onDeleted(view, index) and the user (null in the secondary view). */
 export interface PluginContext {
@@ -161,7 +162,7 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
         leftBarItem: <MediumLabel text={plugin.title} />,
         rightBarItem: null,
         contentPadding: 0,
-        buildWidget: () => <LocalToolPlaceholder title={plugin.title} />,
+        buildWidget: (context) => plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
       };
     case 'databaseDocument':
       return {

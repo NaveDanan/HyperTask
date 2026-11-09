@@ -1,0 +1,1911 @@
+{
+ "data": {
+  "document": {
+   "children": [
+    {
+     "blockId": "ziGL7B",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "No matter what kind of business you have, you will need to write a proposal at some point. You might respond to a Request for Proposals (RFP) that you saw advertised on an industry website, or you might receive an invitation directly from a client. Either way, it is essential to construct a clear, comprehensive response. You can adapt this template to meet the specific requirements of your potential client. "
+        }
+       ],
+       "textId": "puxd2M",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "I3lLWO",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "tKZKjN",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "If your business proposal is particularly long, consider including an Executive Summary that provides the highlights. See HubSpot’s Executive Summary template for more detailed guidance. "
+        }
+       ],
+       "textId": "SnQQz0",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "XW8JA-",
+     "type": "callout"
+    },
+    {
+     "blockId": "A-HEjW",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff2596be",
+         "text": "Understanding of the Problem"
+        }
+       ],
+       "textId": "mNgv1O",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "dNfVHV",
+     "type": "heading"
+    },
+    {
+     "blockId": "kX4UPZ",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Projects are typically developed around problems that need to be solved. In this section, show the potential client that you understand the history of the problem and the unique requirements that it entails.  "
+        }
+       ],
+       "textId": "Oen6_v",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "Mi_z1P",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "2w_2i7",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Keep your proposal customer-focused. Make the client feel like you understand them better than any of your competitors."
+        }
+       ],
+       "textId": "C5v3Ix",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "b0ejHV",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "9qsach",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Think of the organization of this section like a funnel. Start with a broad description of the context, then continue to give more specifics about the potential client and their general needs, and finally home in on the particular problem at hand."
+        }
+       ],
+       "textId": "wop6QS",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "GNqZEV",
+     "type": "callout"
+    },
+    {
+     "blockId": "8hNVc-",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff2596be",
+         "text": "Proposed Solution"
+        }
+       ],
+       "textId": "W-Yt9g",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "Sdzp83",
+     "type": "heading"
+    },
+    {
+     "blockId": "zbIXX-",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "This section is the heart of your proposal. Present your solution in as much detail as possible, preferably in a step-by-step format that addresses all of the client’s requirements. "
+        }
+       ],
+       "textId": "qkEqdD",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "p5o1H2",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "YSNMHy",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "To really drive home the point that your offering meets all of the client’s needs, consider providing a “features and benefits” table like the one below. It outlines key parts of your product or service and their specific value to the potential client. "
+        }
+       ],
+       "textId": "tWc0Qm",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "NhjIK3",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "eRrdUX",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "xhJXdB",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "ccR_R1",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "Z1YEQj",
+     "children": [
+      {
+       "blockId": "gnjdLP",
+       "children": [
+        {
+         "blockId": "m6e6ry",
+         "children": [
+          {
+           "blockId": "bdSkf4",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "font_color": "0xff2596be",
+               "text": "Product/Service Feature"
+              }
+             ],
+             "textId": "ndUfbb",
+             "type": "text"
+            }
+           ],
+           "data": {
+            "align": "center"
+           },
+           "relationId": "QaBvVJ",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "gTSm2a",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "M5dLJn",
+         "children": [
+          {
+           "blockId": "xra4Yv",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "font_color": "0xff2596be",
+               "text": "Benefit to the Client"
+              }
+             ],
+             "textId": "89UsNw",
+             "type": "text"
+            }
+           ],
+           "data": {
+            "align": "center"
+           },
+           "relationId": "TSK1q8",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "lXkxe1",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "sM6uCQ",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "JtlqqK",
+       "children": [
+        {
+         "blockId": "TtsD9A",
+         "children": [
+          {
+           "blockId": "JGb-Qk",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "fHEglo",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "MILHtx",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "121cD0",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "OEIePB",
+         "children": [
+          {
+           "blockId": "YeNmna",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "FElotg",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "q7NMUi",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "4DVjPd",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "TnrcxC",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 342.21875,
+       "1": 342.21875
+      },
+      "distribute_column_widths_evenly": true,
+      "enable_header_column": false,
+      "enable_header_row": false
+     },
+     "relationId": "siT66c",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "qD3upR",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "You know the saying “a picture is worth a thousand words”? Well, it rings true in business proposals! Try to\nprovide tables and graphics when possible to break up the narrative and make your points easier to understand and digest. If you work in a field that is suited to it, consider including images and examples of your products or services. "
+        }
+       ],
+       "textId": "zQj-lW",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "Ml9NXs",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "q-gE71",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Keep your solution focused on the client. Be specific about how you will meet their unique requirements. Using a proposal template is helpful, but you need to tailor it to every new project."
+        }
+       ],
+       "textId": "aM1eqK",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "vafmpl",
+     "type": "callout"
+    },
+    {
+     "blockId": "weKUiZ",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "TsAg65",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "uUE-0f",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "0U02Vj",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff2596be",
+         "text": "Pricing Information"
+        }
+       ],
+       "textId": "FioZm4",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "OMaUPY",
+     "type": "heading"
+    },
+    {
+     "blockId": "vYKBdw",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "While the Proposed Solution section is important for persuading the potential client to choose your company, it is also crucial to provide a well-documented, competitive pricing summary. Make sure you include pricing for everything that you described in the previous section. "
+        }
+       ],
+       "textId": "LMG4yN",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "qSWujW",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "0nhB14",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Depending on the good or service you are providing, you might be paid on a fixed fee, hourly, or per unit basis. You might want to suggest a one-time payment or a series of installments. If you will be paid in multiple installments, consider detailing this in a Pricing Schedule. "
+        }
+       ],
+       "textId": "qWNGEL",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "GtjuU0",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "CqwXaP",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "You should also list and explain any assumptions that, if they were to change, would alter the price of your proposal. For example, the number of in-person meetings required, the start and completion dates of the\ncontract, and the number of rounds of revisions allowed. "
+        }
+       ],
+       "textId": "c7YQM3",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "8Waqnv",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "PGuG-4",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "If your pricing structure is complicated, consider using Microsoft Excel, Google Sheets, or another spreadsheet tool to calculate your final price. You can provide the price in this format or transfer it to your proposal document. "
+        }
+       ],
+       "textId": "u1kb0g",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "_JtymW",
+     "type": "callout"
+    },
+    {
+     "blockId": "BBEwdQ",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "QXjVuq",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "tQrwUC",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "HohS64",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff2596be",
+         "text": "Proposed Schedule"
+        }
+       ],
+       "textId": "ySl3Xj",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "-FELYO",
+     "type": "heading"
+    },
+    {
+     "blockId": "V2qKgt",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Whether or not your client specified an expected completion date, you will want to propose one. You should offer a detailed schedule of the phases needed to meet the requirements of the proposal. You should also describe the work products, also called deliverables, associated with each phase."
+        }
+       ],
+       "textId": "qLX4F4",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "oUgLFI",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "sHLGVn",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Consider presenting the schedule graphically in a timeline or as a table with activities and dates, as shown below. "
+        }
+       ],
+       "textId": "QD7QX_",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "CZb8wd",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "BTEAIh",
+     "children": [
+      {
+       "text": ""
+      }
+     ],
+     "data": {
+      "align": "center",
+      "height": null,
+      "url": "https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/9bee6e94%2D735c%2D406d%2Da40a%2D1ef9314ed87c/hI-GVJ8ojTXWuWsSDi73A9EBTSdnlAlTIQF2H5UYABY=.png",
+      "width": null
+     },
+     "relationId": "TaDVqA",
+     "type": "image"
+    },
+    {
+     "blockId": "PgFtoL",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "bABJaF",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "jPLUyr",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "AQmpPX",
+     "children": [
+      {
+       "blockId": "VMffx1",
+       "children": [
+        {
+         "blockId": "lyChkS",
+         "children": [
+          {
+           "blockId": "Em6XvO",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "font_color": "0xff2596be",
+               "text": "Project Activity"
+              }
+             ],
+             "textId": "7Q6wj9",
+             "type": "text"
+            }
+           ],
+           "data": {
+            "align": "center"
+           },
+           "relationId": "N8zEPR",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "4khhkC",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "tPGO5A",
+         "children": [
+          {
+           "blockId": "8FGAVz",
+           "children": [
+            {
+             "children": [
+              {
+               "bold": true,
+               "font_color": "0xff2596be",
+               "text": "Date of Completion"
+              }
+             ],
+             "textId": "o5Bnrr",
+             "type": "text"
+            }
+           ],
+           "data": {
+            "align": "center"
+           },
+           "relationId": "QYIVpq",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "nxxfHZ",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "v6yLDu",
+       "type": "simple_table_row"
+      },
+      {
+       "blockId": "zTM0GX",
+       "children": [
+        {
+         "blockId": "9RoRLg",
+         "children": [
+          {
+           "blockId": "duCqFT",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "hZQlbL",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "XSZn_f",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "fpdILb",
+         "type": "simple_table_cell"
+        },
+        {
+         "blockId": "1rV6SW",
+         "children": [
+          {
+           "blockId": "DE0qC_",
+           "children": [
+            {
+             "children": [
+              {
+               "text": ""
+              }
+             ],
+             "textId": "FcQT4Y",
+             "type": "text"
+            }
+           ],
+           "data": {},
+           "relationId": "Hh2LH4",
+           "type": "paragraph"
+          }
+         ],
+         "data": {},
+         "relationId": "KYXsod",
+         "type": "simple_table_cell"
+        }
+       ],
+       "data": {},
+       "relationId": "-5rNPS",
+       "type": "simple_table_row"
+      }
+     ],
+     "data": {
+      "column_widths": {
+       "0": 327.814453125,
+       "1": 327.814453125
+      },
+      "distribute_column_widths_evenly": true,
+      "enable_header_column": false,
+      "enable_header_row": false
+     },
+     "relationId": "Yi7uik",
+     "type": "simple_table"
+    },
+    {
+     "blockId": "f2V5j5",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "2ZSbWC",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "fEw1Z7",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "V5hnGs",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "A project schedule is an essential tool for successful project management. By providing a detailed schedule in your proposal, you can show the client that you are committed to completing the project by the deadline. "
+        }
+       ],
+       "textId": "mKc0ZU",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": "0x0",
+      "icon": "📌"
+     },
+     "relationId": "Qh1qpx",
+     "type": "callout"
+    },
+    {
+     "blockId": "BWUU7H",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "lfDuzM",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "XJxA7J",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "bPSfmI",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff2596be",
+         "text": "Conclusion"
+        }
+       ],
+       "textId": "j0Y2hr",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "BUpUk1",
+     "type": "heading"
+    },
+    {
+     "blockId": "IHkk0w",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "It is always a good idea to simplify things for the customer. Begin the conclusion by briefly stating why you are the best choice to meet the requirements. Describe the next steps and confirm your availability for future discussions. "
+        }
+       ],
+       "textId": "6zhDj-",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "H-s0Lw",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "-oSOl-",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Then, rather than make them search for it, provide detailed contact information right at the end of your proposal, so the client can get in touch with you easily. "
+        }
+       ],
+       "textId": "6m8jNY",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "uln8WR",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "BB4Xg7",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Consider including a signature page directly in your proposal. This way, the client can sign right away without having to request an additional document. "
+        }
+       ],
+       "textId": "ddb1iR",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "textDirection": null
+     },
+     "relationId": "XEitcf",
+     "type": "callout"
+    },
+    {
+     "blockId": "-imnsw",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "h_ttc1",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "p-DLJA",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "3wnekk",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff2596be",
+         "text": "Terms and Conditions"
+        }
+       ],
+       "textId": "OOhN9L",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "klUeA4",
+     "type": "heading"
+    },
+    {
+     "blockId": "ZCGCou",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Include your company’s terms and conditions. The terms and conditions indicate the provisions, requirements, rules, specifications, and standards on which the resulting contract will be based."
+        }
+       ],
+       "textId": "uw4iba",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "IP9N2-",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "v92EDj",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Be sure to make any adaptations that are necessary for this specific proposal."
+        }
+       ],
+       "textId": "DEJFqp",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "textDirection": null
+     },
+     "relationId": "y4zy0a",
+     "type": "callout"
+    },
+    {
+     "blockId": "XCliEE",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "7bcVKb",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "pEIWYg",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "5umJaK",
+     "children": [
+      {
+       "children": [
+        {
+         "font_color": "0xff2596be",
+         "text": "Appendices"
+        }
+       ],
+       "textId": "lW947u",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "level": 1
+     },
+     "relationId": "vAuVjF",
+     "type": "heading"
+    },
+    {
+     "blockId": "1Zzw0I",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Appendices are a good place to include any information that you think is important, but that the client did not specifically request. Also, it is a good place to insert documents that are too large to include within the document. You can reference the proposal and attach them in the Appendices so that they do not interrupt the flow of the narrative.  "
+        }
+       ],
+       "textId": "c5IGyP",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "hkKeZ3",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "RJkg0H",
+     "children": [
+      {
+       "children": [
+        {
+         "text": "Sample items for the Appendices include the bios and/or resumes of the team that would work on the project, photographs of products you will use in the solution, or screenshots of your software solution."
+        }
+       ],
+       "textId": "sadw9f",
+       "type": "text"
+      }
+     ],
+     "data": {
+      "bgColor": null,
+      "textDirection": null
+     },
+     "relationId": "VTf7qQ",
+     "type": "callout"
+    },
+    {
+     "blockId": "Emvqtr",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "0haSdi",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "CM-zpB",
+     "type": "paragraph"
+    },
+    {
+     "blockId": "OWdHzq",
+     "children": [
+      {
+       "children": [
+        {
+         "text": ""
+        }
+       ],
+       "textId": "hKEIM4",
+       "type": "text"
+      }
+     ],
+     "data": {},
+     "relationId": "ULIpLO",
+     "type": "paragraph"
+    }
+   ],
+   "raw": {
+    "data": {
+     "blocks": {
+      "-imnsw": {
+       "children": "p-DLJA",
+       "data": {},
+       "external_id": "h_ttc1",
+       "external_type": "text",
+       "id": "-imnsw",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "-oSOl-": {
+       "children": "uln8WR",
+       "data": {},
+       "external_id": "6m8jNY",
+       "external_type": "text",
+       "id": "-oSOl-",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "0U02Vj": {
+       "children": "OMaUPY",
+       "data": {
+        "level": 1
+       },
+       "external_id": "FioZm4",
+       "external_type": "text",
+       "id": "0U02Vj",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "heading"
+      },
+      "0nhB14": {
+       "children": "GtjuU0",
+       "data": {},
+       "external_id": "qWNGEL",
+       "external_type": "text",
+       "id": "0nhB14",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "1Zzw0I": {
+       "children": "hkKeZ3",
+       "data": {},
+       "external_id": "c5IGyP",
+       "external_type": "text",
+       "id": "1Zzw0I",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "1rV6SW": {
+       "children": "KYXsod",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "1rV6SW",
+       "parent": "zTM0GX",
+       "ty": "simple_table_cell"
+      },
+      "2w_2i7": {
+       "children": "b0ejHV",
+       "data": {},
+       "external_id": "C5v3Ix",
+       "external_type": "text",
+       "id": "2w_2i7",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "3wnekk": {
+       "children": "klUeA4",
+       "data": {
+        "level": 1
+       },
+       "external_id": "OOhN9L",
+       "external_type": "text",
+       "id": "3wnekk",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "heading"
+      },
+      "5umJaK": {
+       "children": "vAuVjF",
+       "data": {
+        "level": 1
+       },
+       "external_id": "lW947u",
+       "external_type": "text",
+       "id": "5umJaK",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "heading"
+      },
+      "7a6290ad-1e33-5733-aca9-f689ff52879d": {
+       "children": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "parent": "",
+       "ty": "page"
+      },
+      "8FGAVz": {
+       "children": "QYIVpq",
+       "data": {
+        "align": "center"
+       },
+       "external_id": "o5Bnrr",
+       "external_type": "text",
+       "id": "8FGAVz",
+       "parent": "tPGO5A",
+       "ty": "paragraph"
+      },
+      "8hNVc-": {
+       "children": "Sdzp83",
+       "data": {
+        "level": 1
+       },
+       "external_id": "W-Yt9g",
+       "external_type": "text",
+       "id": "8hNVc-",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "heading"
+      },
+      "9RoRLg": {
+       "children": "fpdILb",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "9RoRLg",
+       "parent": "zTM0GX",
+       "ty": "simple_table_cell"
+      },
+      "9qsach": {
+       "children": "GNqZEV",
+       "data": {},
+       "external_id": "wop6QS",
+       "external_type": "text",
+       "id": "9qsach",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "callout"
+      },
+      "A-HEjW": {
+       "children": "dNfVHV",
+       "data": {
+        "level": 1
+       },
+       "external_id": "mNgv1O",
+       "external_type": "text",
+       "id": "A-HEjW",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "heading"
+      },
+      "AQmpPX": {
+       "children": "Yi7uik",
+       "data": {
+        "column_widths": {
+         "0": 327.814453125,
+         "1": 327.814453125
+        },
+        "distribute_column_widths_evenly": true,
+        "enable_header_column": false,
+        "enable_header_row": false
+       },
+       "external_id": "p-QUnS",
+       "external_type": "text",
+       "id": "AQmpPX",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "simple_table"
+      },
+      "BB4Xg7": {
+       "children": "XEitcf",
+       "data": {
+        "bgColor": null,
+        "textDirection": null
+       },
+       "external_id": "ddb1iR",
+       "external_type": "text",
+       "id": "BB4Xg7",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "callout"
+      },
+      "BBEwdQ": {
+       "children": "tQrwUC",
+       "data": {},
+       "external_id": "QXjVuq",
+       "external_type": "text",
+       "id": "BBEwdQ",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "BTEAIh": {
+       "children": "TaDVqA",
+       "data": {
+        "align": "center",
+        "height": null,
+        "url": "https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/9bee6e94%2D735c%2D406d%2Da40a%2D1ef9314ed87c/hI-GVJ8ojTXWuWsSDi73A9EBTSdnlAlTIQF2H5UYABY=.png",
+        "width": null
+       },
+       "external_id": null,
+       "external_type": null,
+       "id": "BTEAIh",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "image"
+      },
+      "BWUU7H": {
+       "children": "XJxA7J",
+       "data": {},
+       "external_id": "lfDuzM",
+       "external_type": "text",
+       "id": "BWUU7H",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "CqwXaP": {
+       "children": "8Waqnv",
+       "data": {},
+       "external_id": "c7YQM3",
+       "external_type": "text",
+       "id": "CqwXaP",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "DE0qC_": {
+       "children": "Hh2LH4",
+       "data": {},
+       "external_id": "FcQT4Y",
+       "external_type": "text",
+       "id": "DE0qC_",
+       "parent": "1rV6SW",
+       "ty": "paragraph"
+      },
+      "Em6XvO": {
+       "children": "N8zEPR",
+       "data": {
+        "align": "center"
+       },
+       "external_id": "7Q6wj9",
+       "external_type": "text",
+       "id": "Em6XvO",
+       "parent": "lyChkS",
+       "ty": "paragraph"
+      },
+      "Emvqtr": {
+       "children": "CM-zpB",
+       "data": {},
+       "external_id": "0haSdi",
+       "external_type": "text",
+       "id": "Emvqtr",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "HohS64": {
+       "children": "-FELYO",
+       "data": {
+        "level": 1
+       },
+       "external_id": "ySl3Xj",
+       "external_type": "text",
+       "id": "HohS64",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "heading"
+      },
+      "IHkk0w": {
+       "children": "H-s0Lw",
+       "data": {},
+       "external_id": "6zhDj-",
+       "external_type": "text",
+       "id": "IHkk0w",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "JGb-Qk": {
+       "children": "MILHtx",
+       "data": {},
+       "external_id": "fHEglo",
+       "external_type": "text",
+       "id": "JGb-Qk",
+       "parent": "TtsD9A",
+       "ty": "paragraph"
+      },
+      "JtlqqK": {
+       "children": "TnrcxC",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "JtlqqK",
+       "parent": "Z1YEQj",
+       "ty": "simple_table_row"
+      },
+      "M5dLJn": {
+       "children": "lXkxe1",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "M5dLJn",
+       "parent": "gnjdLP",
+       "ty": "simple_table_cell"
+      },
+      "OEIePB": {
+       "children": "4DVjPd",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "OEIePB",
+       "parent": "JtlqqK",
+       "ty": "simple_table_cell"
+      },
+      "OWdHzq": {
+       "children": "ULIpLO",
+       "data": {},
+       "external_id": "hKEIM4",
+       "external_type": "text",
+       "id": "OWdHzq",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "PGuG-4": {
+       "children": "_JtymW",
+       "data": {},
+       "external_id": "u1kb0g",
+       "external_type": "text",
+       "id": "PGuG-4",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "callout"
+      },
+      "PgFtoL": {
+       "children": "jPLUyr",
+       "data": {},
+       "external_id": "bABJaF",
+       "external_type": "text",
+       "id": "PgFtoL",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "RJkg0H": {
+       "children": "VTf7qQ",
+       "data": {
+        "bgColor": null,
+        "textDirection": null
+       },
+       "external_id": "sadw9f",
+       "external_type": "text",
+       "id": "RJkg0H",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "callout"
+      },
+      "TtsD9A": {
+       "children": "121cD0",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "TtsD9A",
+       "parent": "JtlqqK",
+       "ty": "simple_table_cell"
+      },
+      "V2qKgt": {
+       "children": "oUgLFI",
+       "data": {},
+       "external_id": "qLX4F4",
+       "external_type": "text",
+       "id": "V2qKgt",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "V5hnGs": {
+       "children": "Qh1qpx",
+       "data": {
+        "bgColor": "0x0",
+        "icon": "📌"
+       },
+       "external_id": "mKc0ZU",
+       "external_type": "text",
+       "id": "V5hnGs",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "callout"
+      },
+      "VMffx1": {
+       "children": "v6yLDu",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "VMffx1",
+       "parent": "AQmpPX",
+       "ty": "simple_table_row"
+      },
+      "XCliEE": {
+       "children": "pEIWYg",
+       "data": {},
+       "external_id": "7bcVKb",
+       "external_type": "text",
+       "id": "XCliEE",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "YSNMHy": {
+       "children": "NhjIK3",
+       "data": {},
+       "external_id": "tWc0Qm",
+       "external_type": "text",
+       "id": "YSNMHy",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "YeNmna": {
+       "children": "q7NMUi",
+       "data": {},
+       "external_id": "FElotg",
+       "external_type": "text",
+       "id": "YeNmna",
+       "parent": "OEIePB",
+       "ty": "paragraph"
+      },
+      "Z1YEQj": {
+       "children": "siT66c",
+       "data": {
+        "column_widths": {
+         "0": 342.21875,
+         "1": 342.21875
+        },
+        "distribute_column_widths_evenly": true,
+        "enable_header_column": false,
+        "enable_header_row": false
+       },
+       "external_id": "1VE6Xy",
+       "external_type": "text",
+       "id": "Z1YEQj",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "simple_table"
+      },
+      "ZCGCou": {
+       "children": "IP9N2-",
+       "data": {},
+       "external_id": "uw4iba",
+       "external_type": "text",
+       "id": "ZCGCou",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "bPSfmI": {
+       "children": "BUpUk1",
+       "data": {
+        "level": 1
+       },
+       "external_id": "j0Y2hr",
+       "external_type": "text",
+       "id": "bPSfmI",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "heading"
+      },
+      "bdSkf4": {
+       "children": "QaBvVJ",
+       "data": {
+        "align": "center"
+       },
+       "external_id": "ndUfbb",
+       "external_type": "text",
+       "id": "bdSkf4",
+       "parent": "m6e6ry",
+       "ty": "paragraph"
+      },
+      "duCqFT": {
+       "children": "XSZn_f",
+       "data": {},
+       "external_id": "hZQlbL",
+       "external_type": "text",
+       "id": "duCqFT",
+       "parent": "9RoRLg",
+       "ty": "paragraph"
+      },
+      "eRrdUX": {
+       "children": "ccR_R1",
+       "data": {},
+       "external_id": "xhJXdB",
+       "external_type": "text",
+       "id": "eRrdUX",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "f2V5j5": {
+       "children": "fEw1Z7",
+       "data": {},
+       "external_id": "2ZSbWC",
+       "external_type": "text",
+       "id": "f2V5j5",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "gnjdLP": {
+       "children": "sM6uCQ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "gnjdLP",
+       "parent": "Z1YEQj",
+       "ty": "simple_table_row"
+      },
+      "kX4UPZ": {
+       "children": "Mi_z1P",
+       "data": {},
+       "external_id": "Oen6_v",
+       "external_type": "text",
+       "id": "kX4UPZ",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "lyChkS": {
+       "children": "4khhkC",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "lyChkS",
+       "parent": "VMffx1",
+       "ty": "simple_table_cell"
+      },
+      "m6e6ry": {
+       "children": "gTSm2a",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "m6e6ry",
+       "parent": "gnjdLP",
+       "ty": "simple_table_cell"
+      },
+      "q-gE71": {
+       "children": "vafmpl",
+       "data": {},
+       "external_id": "aM1eqK",
+       "external_type": "text",
+       "id": "q-gE71",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "callout"
+      },
+      "qD3upR": {
+       "children": "Ml9NXs",
+       "data": {},
+       "external_id": "zQj-lW",
+       "external_type": "text",
+       "id": "qD3upR",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "sHLGVn": {
+       "children": "CZb8wd",
+       "data": {},
+       "external_id": "QD7QX_",
+       "external_type": "text",
+       "id": "sHLGVn",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "tKZKjN": {
+       "children": "XW8JA-",
+       "data": {},
+       "external_id": "SnQQz0",
+       "external_type": "text",
+       "id": "tKZKjN",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "callout"
+      },
+      "tPGO5A": {
+       "children": "nxxfHZ",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "tPGO5A",
+       "parent": "VMffx1",
+       "ty": "simple_table_cell"
+      },
+      "v92EDj": {
+       "children": "y4zy0a",
+       "data": {
+        "bgColor": null,
+        "textDirection": null
+       },
+       "external_id": "DEJFqp",
+       "external_type": "text",
+       "id": "v92EDj",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "callout"
+      },
+      "vYKBdw": {
+       "children": "qSWujW",
+       "data": {},
+       "external_id": "LMG4yN",
+       "external_type": "text",
+       "id": "vYKBdw",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "weKUiZ": {
+       "children": "uUE-0f",
+       "data": {},
+       "external_id": "TsAg65",
+       "external_type": "text",
+       "id": "weKUiZ",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "xra4Yv": {
+       "children": "TSK1q8",
+       "data": {
+        "align": "center"
+       },
+       "external_id": "89UsNw",
+       "external_type": "text",
+       "id": "xra4Yv",
+       "parent": "M5dLJn",
+       "ty": "paragraph"
+      },
+      "zTM0GX": {
+       "children": "-5rNPS",
+       "data": {},
+       "external_id": null,
+       "external_type": null,
+       "id": "zTM0GX",
+       "parent": "AQmpPX",
+       "ty": "simple_table_row"
+      },
+      "zbIXX-": {
+       "children": "p5o1H2",
+       "data": {},
+       "external_id": "qkEqdD",
+       "external_type": "text",
+       "id": "zbIXX-",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      },
+      "ziGL7B": {
+       "children": "I3lLWO",
+       "data": {},
+       "external_id": "puxd2M",
+       "external_type": "text",
+       "id": "ziGL7B",
+       "parent": "7a6290ad-1e33-5733-aca9-f689ff52879d",
+       "ty": "paragraph"
+      }
+     },
+     "meta": {
+      "children_map": {
+       "-5rNPS": [
+        "9RoRLg",
+        "1rV6SW"
+       ],
+       "-FELYO": [],
+       "121cD0": [
+        "JGb-Qk"
+       ],
+       "4DVjPd": [
+        "YeNmna"
+       ],
+       "4khhkC": [
+        "Em6XvO"
+       ],
+       "7a6290ad-1e33-5733-aca9-f689ff52879d": [
+        "ziGL7B",
+        "tKZKjN",
+        "A-HEjW",
+        "kX4UPZ",
+        "2w_2i7",
+        "9qsach",
+        "8hNVc-",
+        "zbIXX-",
+        "YSNMHy",
+        "eRrdUX",
+        "Z1YEQj",
+        "qD3upR",
+        "q-gE71",
+        "weKUiZ",
+        "0U02Vj",
+        "vYKBdw",
+        "0nhB14",
+        "CqwXaP",
+        "PGuG-4",
+        "BBEwdQ",
+        "HohS64",
+        "V2qKgt",
+        "sHLGVn",
+        "BTEAIh",
+        "PgFtoL",
+        "AQmpPX",
+        "f2V5j5",
+        "V5hnGs",
+        "BWUU7H",
+        "bPSfmI",
+        "IHkk0w",
+        "-oSOl-",
+        "BB4Xg7",
+        "-imnsw",
+        "3wnekk",
+        "ZCGCou",
+        "v92EDj",
+        "XCliEE",
+        "5umJaK",
+        "1Zzw0I",
+        "RJkg0H",
+        "Emvqtr",
+        "OWdHzq"
+       ],
+       "8Waqnv": [],
+       "BUpUk1": [],
+       "CM-zpB": [],
+       "CZb8wd": [],
+       "GNqZEV": [],
+       "GtjuU0": [],
+       "H-s0Lw": [],
+       "Hh2LH4": [],
+       "I3lLWO": [],
+       "IP9N2-": [],
+       "KYXsod": [
+        "DE0qC_"
+       ],
+       "MILHtx": [],
+       "Mi_z1P": [],
+       "Ml9NXs": [],
+       "N8zEPR": [],
+       "NhjIK3": [],
+       "OMaUPY": [],
+       "QYIVpq": [],
+       "QaBvVJ": [],
+       "Qh1qpx": [],
+       "Sdzp83": [],
+       "TSK1q8": [],
+       "TaDVqA": [],
+       "TnrcxC": [
+        "TtsD9A",
+        "OEIePB"
+       ],
+       "ULIpLO": [],
+       "VTf7qQ": [],
+       "XEitcf": [],
+       "XJxA7J": [],
+       "XSZn_f": [],
+       "XW8JA-": [],
+       "Yi7uik": [
+        "VMffx1",
+        "zTM0GX"
+       ],
+       "_JtymW": [],
+       "b0ejHV": [],
+       "ccR_R1": [],
+       "dNfVHV": [],
+       "fEw1Z7": [],
+       "fpdILb": [
+        "duCqFT"
+       ],
+       "gTSm2a": [
+        "bdSkf4"
+       ],
+       "hkKeZ3": [],
+       "jPLUyr": [],
+       "klUeA4": [],
+       "lXkxe1": [
+        "xra4Yv"
+       ],
+       "nxxfHZ": [
+        "8FGAVz"
+       ],
+       "oUgLFI": [],
+       "p-DLJA": [],
+       "p5o1H2": [],
+       "pEIWYg": [],
+       "q7NMUi": [],
+       "qSWujW": [],
+       "sM6uCQ": [
+        "m6e6ry",
+        "M5dLJn"
+       ],
+       "siT66c": [
+        "gnjdLP",
+        "JtlqqK"
+       ],
+       "tQrwUC": [],
+       "uUE-0f": [],
+       "uln8WR": [],
+       "v6yLDu": [
+        "lyChkS",
+        "tPGO5A"
+       ],
+       "vAuVjF": [],
+       "vafmpl": [],
+       "y4zy0a": []
+      },
+      "text_map": {
+       "0haSdi": "[]",
+       "2ZSbWC": "[]",
+       "6m8jNY": "[{\"insert\":\"Then, rather than make them search for it, provide detailed contact information right at the end of your proposal, so the client can get in touch with you easily. \"}]",
+       "6zhDj-": "[{\"insert\":\"It is always a good idea to simplify things for the customer. Begin the conclusion by briefly stating why you are the best choice to meet the requirements. Describe the next steps and confirm your availability for future discussions. \"}]",
+       "7Q6wj9": "[{\"insert\":\"Project Activity\",\"attributes\":{\"bold\":true,\"font_color\":\"0xff2596be\"}}]",
+       "7bcVKb": "[]",
+       "89UsNw": "[{\"insert\":\"Benefit to the Client\",\"attributes\":{\"bold\":true,\"font_color\":\"0xff2596be\"}}]",
+       "C5v3Ix": "[{\"insert\":\"Keep your proposal customer-focused. Make the client feel like you understand them better than any of your competitors.\"}]",
+       "DEJFqp": "[{\"insert\":\"Be sure to make any adaptations that are necessary for this specific proposal.\"}]",
+       "FElotg": "[]",
+       "FcQT4Y": "[]",
+       "FioZm4": "[{\"insert\":\"Pricing Information\",\"attributes\":{\"font_color\":\"0xff2596be\"}}]",
+       "LMG4yN": "[{\"insert\":\"While the Proposed Solution section is important for persuading the potential client to choose your company, it is also crucial to provide a well-documented, competitive pricing summary. Make sure you include pricing for everything that you described in the previous section. \"}]",
+       "OOhN9L": "[{\"insert\":\"Terms and Conditions\",\"attributes\":{\"font_color\":\"0xff2596be\"}}]",
+       "Oen6_v": "[{\"insert\":\"Projects are typically developed around problems that need to be solved. In this section, show the potential client that you understand the history of the problem and the unique requirements that it entails.  \"}]",
+       "QD7QX_": "[{\"insert\":\"Consider presenting the schedule graphically in a timeline or as a table with activities and dates, as shown below. \"}]",
+       "QXjVuq": "[]",
+       "SnQQz0": "[{\"insert\":\"If your business proposal is particularly long, consider including an Executive Summary that provides the highlights. See HubSpot’s Executive Summary template for more detailed guidance. \"}]",
+       "TsAg65": "[]",
+       "W-Yt9g": "[{\"insert\":\"Proposed Solution\",\"attributes\":{\"font_color\":\"0xff2596be\"}}]",
+       "aM1eqK": "[{\"insert\":\"Keep your solution focused on the client. Be specific about how you will meet their unique requirements. Using a proposal template is helpful, but you need to tailor it to every new project.\"}]",
+       "bABJaF": "[]",
+       "c5IGyP": "[{\"insert\":\"Appendices are a good place to include any information that you think is important, but that the client did not specifically request. Also, it is a good place to insert documents that are too large to include within the document. You can reference the proposal and attach them in the Appendices so that they do not interrupt the flow of the narrative.  \"}]",
+       "c7YQM3": "[{\"insert\":\"You should also list and explain any assumptions that, if they were to change, would alter the price of your proposal. For example, the number of in-person meetings required, the start and completion dates of the\\ncontract, and the number of rounds of revisions allowed. \"}]",
+       "ddb1iR": "[{\"insert\":\"Consider including a signature page directly in your proposal. This way, the client can sign right away without having to request an additional document. \"}]",
+       "fHEglo": "[]",
+       "hKEIM4": "[]",
+       "hZQlbL": "[]",
+       "h_ttc1": "[]",
+       "j0Y2hr": "[{\"insert\":\"Conclusion\",\"attributes\":{\"font_color\":\"0xff2596be\"}}]",
+       "lW947u": "[{\"insert\":\"Appendices\",\"attributes\":{\"font_color\":\"0xff2596be\"}}]",
+       "lfDuzM": "[]",
+       "mKc0ZU": "[{\"insert\":\"A project schedule is an essential tool for successful project management. By providing a detailed schedule in your proposal, you can show the client that you are committed to completing the project by the deadline. \"}]",
+       "mNgv1O": "[{\"insert\":\"Understanding of the Problem\",\"attributes\":{\"font_color\":\"0xff2596be\"}}]",
+       "ndUfbb": "[{\"insert\":\"Product/Service Feature\",\"attributes\":{\"font_color\":\"0xff2596be\",\"bold\":true}}]",
+       "o5Bnrr": "[{\"insert\":\"Date of Completion\",\"attributes\":{\"font_color\":\"0xff2596be\",\"bold\":true}}]",
+       "puxd2M": "[{\"insert\":\"No matter what kind of business you have, you will need to write a proposal at some point. You might respond to a Request for Proposals (RFP) that you saw advertised on an industry website, or you might receive an invitation directly from a client. Either way, it is essential to construct a clear, comprehensive response. You can adapt this template to meet the specific requirements of your potential client. \"}]",
+       "qLX4F4": "[{\"insert\":\"Whether or not your client specified an expected completion date, you will want to propose one. You should offer a detailed schedule of the phases needed to meet the requirements of the proposal. You should also describe the work products, also called deliverables, associated with each phase.\"}]",
+       "qWNGEL": "[{\"insert\":\"Depending on the good or service you are providing, you might be paid on a fixed fee, hourly, or per unit basis. You might want to suggest a one-time payment or a series of installments. If you will be paid in multiple installments, consider detailing this in a Pricing Schedule. \"}]",
+       "qkEqdD": "[{\"insert\":\"This section is the heart of your proposal. Present your solution in as much detail as possible, preferably in a step-by-step format that addresses all of the client’s requirements. \"}]",
+       "sadw9f": "[{\"insert\":\"Sample items for the Appendices include the bios and/or resumes of the team that would work on the project, photographs of products you will use in the solution, or screenshots of your software solution.\"}]",
+       "tWc0Qm": "[{\"insert\":\"To really drive home the point that your offering meets all of the client’s needs, consider providing a “features and benefits” table like the one below. It outlines key parts of your product or service and their specific value to the potential client. \"}]",
+       "u1kb0g": "[{\"insert\":\"If your pricing structure is complicated, consider using Microsoft Excel, Google Sheets, or another spreadsheet tool to calculate your final price. You can provide the price in this format or transfer it to your proposal document. \"}]",
+       "uw4iba": "[{\"insert\":\"Include your company’s terms and conditions. The terms and conditions indicate the provisions, requirements, rules, specifications, and standards on which the resulting contract will be based.\"}]",
+       "wop6QS": "[{\"insert\":\"Think of the organization of this section like a funnel. Start with a broad description of the context, then continue to give more specifics about the potential client and their general needs, and finally home in on the particular problem at hand.\"}]",
+       "xhJXdB": "[]",
+       "ySl3Xj": "[{\"insert\":\"Proposed Schedule\",\"attributes\":{\"font_color\":\"0xff2596be\"}}]",
+       "zQj-lW": "[{\"insert\":\"You know the saying “a picture is worth a thousand words”? Well, it rings true in business proposals! Try to\\nprovide tables and graphics when possible to break up the narrative and make your points easier to understand and digest. If you work in a field that is suited to it, consider including images and examples of your products or services. \"}]"
+      }
+     },
+     "page_id": "7a6290ad-1e33-5733-aca9-f689ff52879d"
+    }
+   }
+  },
+  "kind": "document",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "HubSpot-Business-Proposal-Template",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731912012,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_icon\":\"entertainment/pacman\",\"space_icon_color\":\"0xFFA34AFD\",\"space_permission\":0,\"space_created_at\":1724416490474}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1742914907,
+     "layout": 0,
+     "name": "Startups",
+     "view_id": "a159ba4a-2965-408a-913d-a934b8bcd663"
+    },
+    {
+     "child_views": null,
+     "created_at": 1731912012,
+     "created_by": 276057230200016900,
+     "extra": "{\"cover\":{\"type\":\"none\",\"value\":\"\"}}",
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"money_shopping\",\"iconName\":\"bag-suitcase-1\",\"color\":\"0xFFA34AFD\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1749371419,
+     "layout": 0,
+     "name": "Business Proposal Template",
+     "view_id": "9bee6e94-735c-406d-a40a-1ef9314ed87c"
+    }
+   ],
+   "childViews": [],
+   "databaseRelations": {},
+   "extra": "{\"cover\":{\"type\":\"none\",\"value\":\"\"}}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"money_shopping\",\"iconName\":\"bag-suitcase-1\",\"color\":\"0xFFA34AFD\"}"
+   },
+   "layout": 0,
+   "name": "Business Proposal Template",
+   "viewId": "9bee6e94-735c-406d-a40a-1ef9314ed87c",
+   "visibleViewIds": []
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

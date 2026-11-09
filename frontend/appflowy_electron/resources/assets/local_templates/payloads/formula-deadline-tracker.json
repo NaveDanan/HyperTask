@@ -1,0 +1,732 @@
+{
+ "data": {
+  "database": {
+   "activeViewId": "5277ef3b-c659-44c7-b998-68b0c452fed5",
+   "databaseId": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+   "fields": [
+    {
+     "fieldId": "0FLHvN",
+     "fieldType": 19,
+     "isPrimary": false,
+     "name": "Days left"
+    },
+    {
+     "fieldId": "6YgYpT",
+     "fieldType": 19,
+     "isPrimary": false,
+     "name": "Review on"
+    },
+    {
+     "fieldId": "done",
+     "fieldType": 5,
+     "isPrimary": false,
+     "name": "Done"
+    },
+    {
+     "fieldId": "due",
+     "fieldType": 2,
+     "isPrimary": false,
+     "name": "Due"
+    },
+    {
+     "fieldId": "priority",
+     "fieldType": 3,
+     "isPrimary": false,
+     "name": "Priority"
+    },
+    {
+     "fieldId": "sk1cPe",
+     "fieldType": 19,
+     "isPrimary": false,
+     "name": "Health"
+    },
+    {
+     "fieldId": "task",
+     "fieldType": 0,
+     "isPrimary": true,
+     "name": "Task"
+    }
+   ],
+   "raw": {
+    "database": {
+     "fields": {
+      "0FLHvN": {
+       "created_at": "1791889200",
+       "icon": "",
+       "id": "0FLHvN",
+       "is_primary": false,
+       "last_modified": "1791889204",
+       "name": "Days left",
+       "ty": 19,
+       "type_option": {
+        "0": {},
+        "19": {
+         "expression": "if(prop(\"done\") or empty(prop(\"due\")), empty(), dateBetween(prop(\"due\"), today(), \"days\"))",
+         "format": 0
+        }
+       }
+      },
+      "6YgYpT": {
+       "created_at": "1791889210",
+       "icon": "",
+       "id": "6YgYpT",
+       "is_primary": false,
+       "last_modified": "1791889213",
+       "name": "Review on",
+       "ty": 19,
+       "type_option": {
+        "0": {},
+        "19": {
+         "expression": "if(empty(prop(\"due\")), empty(), dateSubtract(prop(\"due\"), 2, \"days\"))",
+         "format": 0
+        }
+       }
+      },
+      "done": {
+       "created_at": "1791889049",
+       "id": "done",
+       "is_primary": false,
+       "last_modified": "1791889049",
+       "name": "Done",
+       "ty": 5,
+       "type_option": {
+        "5": {}
+       }
+      },
+      "due": {
+       "created_at": "1791889049",
+       "id": "due",
+       "is_primary": false,
+       "last_modified": "1791889049",
+       "name": "Due",
+       "ty": 2,
+       "type_option": {
+        "2": {
+         "date_format": 0,
+         "time_format": 0
+        }
+       }
+      },
+      "priority": {
+       "created_at": "1791889049",
+       "id": "priority",
+       "is_primary": false,
+       "last_modified": "1791889049",
+       "name": "Priority",
+       "ty": 3,
+       "type_option": {
+        "3": {
+         "content": "{\"options\":[{\"id\":\"priority0\",\"name\":\"High\",\"color\":\"Blue\"},{\"id\":\"priority1\",\"name\":\"Medium\",\"color\":\"Purple\"},{\"id\":\"priority2\",\"name\":\"Low\",\"color\":\"Orange\"}],\"disable_color\":false}"
+        }
+       }
+      },
+      "sk1cPe": {
+       "created_at": "1791889204",
+       "icon": "",
+       "id": "sk1cPe",
+       "is_primary": false,
+       "last_modified": "1791889209",
+       "name": "Health",
+       "ty": 19,
+       "type_option": {
+        "0": {},
+        "19": {
+         "expression": "ifs(prop(\"done\"), \"Complete\", empty(prop(\"due\")), \"No due date\", prop(\"due\") < today(), \"Overdue\", dateBetween(prop(\"due\"), today(), \"days\") == 0, \"Due today\", dateBetween(prop(\"due\"), today(), \"days\") <= 3, \"Due soon\", \"On track\")",
+         "format": 0
+        }
+       }
+      },
+      "task": {
+       "created_at": "1791889049",
+       "id": "task",
+       "is_primary": true,
+       "last_modified": "1791889049",
+       "name": "Task",
+       "ty": 0,
+       "type_option": {
+        "0": {}
+       }
+      }
+     },
+     "id": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+     "metas": {
+      "iid": "4e27bc9b-8bc1-58bf-9081-63f5829027af"
+     },
+     "views": {
+      "4e27bc9b-8bc1-58bf-9081-63f5829027af": {
+       "created_at": 1791888599,
+       "database_id": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+       "embedded": false,
+       "field_orders": [
+        {
+         "id": "task"
+        },
+        {
+         "id": "due"
+        },
+        {
+         "id": "done"
+        },
+        {
+         "id": "priority"
+        },
+        {
+         "id": "0FLHvN"
+        },
+        {
+         "id": "sk1cPe"
+        },
+        {
+         "id": "6YgYpT"
+        }
+       ],
+       "field_settings": {
+        "0FLHvN": {
+         "visibility": 0,
+         "width": "105",
+         "wrap": true
+        },
+        "6YgYpT": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        },
+        "done": {
+         "visibility": 0,
+         "width": "100",
+         "wrap": true
+        },
+        "due": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        },
+        "priority": {
+         "visibility": 0,
+         "width": "110",
+         "wrap": true
+        },
+        "sk1cPe": {
+         "visibility": 0,
+         "width": "150",
+         "wrap": true
+        },
+        "task": {
+         "visibility": 0,
+         "width": "255",
+         "wrap": true
+        }
+       },
+       "filters": [],
+       "groups": [],
+       "id": "4e27bc9b-8bc1-58bf-9081-63f5829027af",
+       "is_inline": true,
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1791888599,
+       "name": "",
+       "row_orders": [
+        {
+         "height": 52,
+         "id": "b84464f3-2ad7-4366-8d2b-3b282bad92a7"
+        },
+        {
+         "height": 52,
+         "id": "82331b8c-7c3b-46af-9d6b-140808f29483"
+        },
+        {
+         "height": 52,
+         "id": "646aeb3d-055f-440a-ba17-443cc410044d"
+        },
+        {
+         "height": 52,
+         "id": "673f275f-550f-4042-8748-9d05ef4e1361"
+        },
+        {
+         "height": 52,
+         "id": "d8030724-84ff-4ddd-911e-85ca7967e4c8"
+        }
+       ],
+       "sorts": []
+      },
+      "facb7e74-6370-4207-ab11-dda66ac1f6ed": {
+       "created_at": 1791888599,
+       "database_id": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+       "embedded": true,
+       "field_orders": [
+        {
+         "id": "task"
+        },
+        {
+         "id": "due"
+        },
+        {
+         "id": "done"
+        },
+        {
+         "id": "priority"
+        },
+        {
+         "id": "0FLHvN"
+        },
+        {
+         "id": "sk1cPe"
+        },
+        {
+         "id": "6YgYpT"
+        }
+       ],
+       "field_settings": {
+        "0FLHvN": {
+         "visibility": 0,
+         "width": "105",
+         "wrap": true
+        },
+        "6YgYpT": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        },
+        "done": {
+         "visibility": 0,
+         "width": "100",
+         "wrap": true
+        },
+        "due": {
+         "visibility": 0,
+         "width": "145",
+         "wrap": true
+        },
+        "priority": {
+         "visibility": 0,
+         "width": "110",
+         "wrap": true
+        },
+        "sk1cPe": {
+         "visibility": 0,
+         "width": "150",
+         "wrap": true
+        },
+        "task": {
+         "visibility": 0,
+         "width": "255",
+         "wrap": true
+        }
+       },
+       "filters": [],
+       "groups": [],
+       "id": "facb7e74-6370-4207-ab11-dda66ac1f6ed",
+       "is_inline": false,
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1791888599,
+       "name": "Grid",
+       "row_orders": [
+        {
+         "height": 52,
+         "id": "b84464f3-2ad7-4366-8d2b-3b282bad92a7"
+        },
+        {
+         "height": 52,
+         "id": "82331b8c-7c3b-46af-9d6b-140808f29483"
+        },
+        {
+         "height": 52,
+         "id": "646aeb3d-055f-440a-ba17-443cc410044d"
+        },
+        {
+         "height": 52,
+         "id": "673f275f-550f-4042-8748-9d05ef4e1361"
+        },
+        {
+         "height": 52,
+         "id": "d8030724-84ff-4ddd-911e-85ca7967e4c8"
+        }
+       ],
+       "sorts": []
+      }
+     }
+    },
+    "rows": {
+     "646aeb3d-055f-440a-ba17-443cc410044d": {
+      "data": {
+       "cells": {
+        "done": {
+         "created_at": "1791889049",
+         "data": "No",
+         "field_type": 5,
+         "last_modified": "1791889049"
+        },
+        "priority": {
+         "created_at": "1791889049",
+         "data": "priority1",
+         "field_type": 3,
+         "last_modified": "1791889049"
+        },
+        "task": {
+         "created_at": "1791889049",
+         "data": "Plan customer interviews",
+         "field_type": 0,
+         "last_modified": "1791889049"
+        }
+       },
+       "created_at": "1791889049",
+       "database_id": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+       "height": 52,
+       "id": "646aeb3d-055f-440a-ba17-443cc410044d",
+       "last_modified": "1791889049",
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "673f275f-550f-4042-8748-9d05ef4e1361": {
+      "data": {
+       "cells": {
+        "done": {
+         "created_at": "1791889049",
+         "data": "Yes",
+         "field_type": 5,
+         "last_modified": "1791889049"
+        },
+        "due": {
+         "created_at": "1791889049",
+         "data": "1791561600",
+         "field_type": 2,
+         "include_time": false,
+         "last_modified": "1791889049"
+        },
+        "priority": {
+         "created_at": "1791889049",
+         "data": "priority2",
+         "field_type": 3,
+         "last_modified": "1791889049"
+        },
+        "task": {
+         "created_at": "1791889049",
+         "data": "Approve project brief",
+         "field_type": 0,
+         "last_modified": "1791889049"
+        }
+       },
+       "created_at": "1791889049",
+       "database_id": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+       "height": 52,
+       "id": "673f275f-550f-4042-8748-9d05ef4e1361",
+       "last_modified": "1791889049",
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "82331b8c-7c3b-46af-9d6b-140808f29483": {
+      "data": {
+       "cells": {
+        "done": {
+         "created_at": "1791889049",
+         "data": "No",
+         "field_type": 5,
+         "last_modified": "1791889049"
+        },
+        "due": {
+         "created_at": "1791889049",
+         "data": "1791648000",
+         "field_type": 2,
+         "include_time": false,
+         "last_modified": "1791889049"
+        },
+        "priority": {
+         "created_at": "1791889049",
+         "data": "priority0",
+         "field_type": 3,
+         "last_modified": "1791889049"
+        },
+        "task": {
+         "created_at": "1791889049",
+         "data": "Review onboarding flow",
+         "field_type": 0,
+         "last_modified": "1791889049"
+        }
+       },
+       "created_at": "1791889049",
+       "database_id": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+       "height": 52,
+       "id": "82331b8c-7c3b-46af-9d6b-140808f29483",
+       "last_modified": "1791889049",
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "b84464f3-2ad7-4366-8d2b-3b282bad92a7": {
+      "data": {
+       "cells": {
+        "done": {
+         "created_at": "1791889049",
+         "data": "No",
+         "field_type": 5,
+         "last_modified": "1791889049"
+        },
+        "due": {
+         "created_at": "1791889049",
+         "data": "1791993600",
+         "field_type": 2,
+         "include_time": false,
+         "last_modified": "1791889049"
+        },
+        "priority": {
+         "created_at": "1791889049",
+         "data": "priority0",
+         "field_type": 3,
+         "last_modified": "1791889049"
+        },
+        "task": {
+         "created_at": "1791889049",
+         "data": "Publish launch page",
+         "field_type": 0,
+         "last_modified": "1791889049"
+        }
+       },
+       "created_at": "1791889049",
+       "database_id": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+       "height": 52,
+       "id": "b84464f3-2ad7-4366-8d2b-3b282bad92a7",
+       "last_modified": "1791889049",
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "d8030724-84ff-4ddd-911e-85ca7967e4c8": {
+      "data": {
+       "cells": {
+        "done": {
+         "created_at": "1791889049",
+         "data": "No",
+         "field_type": 5,
+         "last_modified": "1791889049"
+        },
+        "due": {
+         "created_at": "1791889049",
+         "data": "1791820800",
+         "field_type": 2,
+         "include_time": false,
+         "last_modified": "1791889049"
+        },
+        "priority": {
+         "created_at": "1791889049",
+         "data": "priority0",
+         "field_type": 3,
+         "last_modified": "1791889049"
+        },
+        "task": {
+         "created_at": "1791889049",
+         "data": "Run release checklist",
+         "field_type": 0,
+         "last_modified": "1791889049"
+        }
+       },
+       "created_at": "1791889049",
+       "database_id": "b24172f2-3fc2-44a9-9621-e03f2bbb29b4",
+       "height": 52,
+       "id": "d8030724-84ff-4ddd-911e-85ca7967e4c8",
+       "last_modified": "1791889049",
+       "visibility": true
+      },
+      "meta": {}
+     }
+    }
+   },
+   "rows": [
+    {
+     "cells": {
+      "done": {
+       "created_at": "1791889049",
+       "data": "No",
+       "field_type": 5,
+       "last_modified": "1791889049"
+      },
+      "priority": {
+       "created_at": "1791889049",
+       "data": "priority1",
+       "field_type": 3,
+       "last_modified": "1791889049"
+      },
+      "task": {
+       "created_at": "1791889049",
+       "data": "Plan customer interviews",
+       "field_type": 0,
+       "last_modified": "1791889049"
+      }
+     },
+     "rowId": "646aeb3d-055f-440a-ba17-443cc410044d"
+    },
+    {
+     "cells": {
+      "done": {
+       "created_at": "1791889049",
+       "data": "No",
+       "field_type": 5,
+       "last_modified": "1791889049"
+      },
+      "due": {
+       "created_at": "1791889049",
+       "data": "1791820800",
+       "field_type": 2,
+       "include_time": false,
+       "last_modified": "1791889049"
+      },
+      "priority": {
+       "created_at": "1791889049",
+       "data": "priority0",
+       "field_type": 3,
+       "last_modified": "1791889049"
+      },
+      "task": {
+       "created_at": "1791889049",
+       "data": "Run release checklist",
+       "field_type": 0,
+       "last_modified": "1791889049"
+      }
+     },
+     "rowId": "d8030724-84ff-4ddd-911e-85ca7967e4c8"
+    },
+    {
+     "cells": {
+      "done": {
+       "created_at": "1791889049",
+       "data": "Yes",
+       "field_type": 5,
+       "last_modified": "1791889049"
+      },
+      "due": {
+       "created_at": "1791889049",
+       "data": "1791561600",
+       "field_type": 2,
+       "include_time": false,
+       "last_modified": "1791889049"
+      },
+      "priority": {
+       "created_at": "1791889049",
+       "data": "priority2",
+       "field_type": 3,
+       "last_modified": "1791889049"
+      },
+      "task": {
+       "created_at": "1791889049",
+       "data": "Approve project brief",
+       "field_type": 0,
+       "last_modified": "1791889049"
+      }
+     },
+     "rowId": "673f275f-550f-4042-8748-9d05ef4e1361"
+    },
+    {
+     "cells": {
+      "done": {
+       "created_at": "1791889049",
+       "data": "No",
+       "field_type": 5,
+       "last_modified": "1791889049"
+      },
+      "due": {
+       "created_at": "1791889049",
+       "data": "1791993600",
+       "field_type": 2,
+       "include_time": false,
+       "last_modified": "1791889049"
+      },
+      "priority": {
+       "created_at": "1791889049",
+       "data": "priority0",
+       "field_type": 3,
+       "last_modified": "1791889049"
+      },
+      "task": {
+       "created_at": "1791889049",
+       "data": "Publish launch page",
+       "field_type": 0,
+       "last_modified": "1791889049"
+      }
+     },
+     "rowId": "b84464f3-2ad7-4366-8d2b-3b282bad92a7"
+    },
+    {
+     "cells": {
+      "done": {
+       "created_at": "1791889049",
+       "data": "No",
+       "field_type": 5,
+       "last_modified": "1791889049"
+      },
+      "due": {
+       "created_at": "1791889049",
+       "data": "1791648000",
+       "field_type": 2,
+       "include_time": false,
+       "last_modified": "1791889049"
+      },
+      "priority": {
+       "created_at": "1791889049",
+       "data": "priority0",
+       "field_type": 3,
+       "last_modified": "1791889049"
+      },
+      "task": {
+       "created_at": "1791889049",
+       "data": "Review onboarding flow",
+       "field_type": 0,
+       "last_modified": "1791889049"
+      }
+     },
+     "rowId": "82331b8c-7c3b-46af-9d6b-140808f29483"
+    }
+   ],
+   "views": [
+    {
+     "fieldIds": [
+      "task",
+      "due",
+      "done",
+      "priority",
+      "0FLHvN",
+      "sk1cPe",
+      "6YgYpT"
+     ],
+     "layout": 0,
+     "name": "Grid",
+     "rowIds": [
+      "b84464f3-2ad7-4366-8d2b-3b282bad92a7",
+      "82331b8c-7c3b-46af-9d6b-140808f29483",
+      "646aeb3d-055f-440a-ba17-443cc410044d",
+      "673f275f-550f-4042-8748-9d05ef4e1361",
+      "d8030724-84ff-4ddd-911e-85ca7967e4c8"
+     ],
+     "viewId": "facb7e74-6370-4207-ab11-dda66ac1f6ed"
+    }
+   ],
+   "visibleViewIds": [
+    "5277ef3b-c659-44c7-b998-68b0c452fed5",
+    "facb7e74-6370-4207-ab11-dda66ac1f6ed"
+   ]
+  },
+  "kind": "database",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "formula-deadline-tracker",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [],
+   "childViews": [],
+   "databaseRelations": {
+    "b24172f2-3fc2-44a9-9621-e03f2bbb29b4": "5277ef3b-c659-44c7-b998-68b0c452fed5"
+   },
+   "extra": "{\"database_id\":\"b24172f2-3fc2-44a9-9621-e03f2bbb29b4\",\"embedded\":true,\"is_database_container\":true}",
+   "icon": null,
+   "layout": 1,
+   "name": "Deadline Tracker with Formulas",
+   "viewId": "5277ef3b-c659-44c7-b998-68b0c452fed5",
+   "visibleViewIds": [
+    "5277ef3b-c659-44c7-b998-68b0c452fed5",
+    "facb7e74-6370-4207-ab11-dda66ac1f6ed"
+   ]
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

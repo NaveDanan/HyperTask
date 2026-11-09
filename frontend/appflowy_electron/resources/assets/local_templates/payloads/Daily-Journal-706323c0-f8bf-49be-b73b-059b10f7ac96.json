@@ -1,0 +1,755 @@
+{
+ "data": {
+  "database": {
+   "activeViewId": "706323c0-f8bf-49be-b73b-059b10f7ac96",
+   "databaseId": "88b42e1a-8bde-4874-90d3-31344a60ed9f",
+   "fields": [
+    {
+     "fieldId": "JCXYO7",
+     "fieldType": 2,
+     "isPrimary": false,
+     "name": "Created"
+    },
+    {
+     "fieldId": "MrxJRS",
+     "fieldType": 0,
+     "isPrimary": true,
+     "name": "Name"
+    },
+    {
+     "fieldId": "aCSY_C",
+     "fieldType": 4,
+     "isPrimary": false,
+     "name": "Tags"
+    }
+   ],
+   "raw": {
+    "database": {
+     "fields": {
+      "JCXYO7": {
+       "created_at": 1726750818,
+       "id": "JCXYO7",
+       "is_primary": false,
+       "last_modified": 1726751109,
+       "name": "Created",
+       "ty": 2,
+       "type_option": {
+        "2": {
+         "date_format": 3,
+         "time_format": 1,
+         "timezone_id": ""
+        },
+        "3": {
+         "content": "{\"options\":[],\"disable_color\":false}",
+         "date_format": 3,
+         "field_type": 9,
+         "include_time": true,
+         "time_format": 1
+        },
+        "9": {
+         "date_format": 3,
+         "field_type": 9,
+         "include_time": false,
+         "time_format": 1,
+         "timezone_id": ""
+        }
+       }
+      },
+      "MrxJRS": {
+       "created_at": 1726750818,
+       "id": "MrxJRS",
+       "is_primary": true,
+       "last_modified": 1726750818,
+       "name": "Name",
+       "ty": 0,
+       "type_option": {
+        "0": {
+         "data": ""
+        }
+       }
+      },
+      "aCSY_C": {
+       "created_at": 1726751560,
+       "id": "aCSY_C",
+       "is_primary": false,
+       "last_modified": 1726751603,
+       "name": "Tags",
+       "ty": 4,
+       "type_option": {
+        "0": {
+         "content": "{\"options\":[],\"disable_color\":false}",
+         "data": ""
+        },
+        "3": {
+         "content": "{\"options\":[],\"disable_color\":false}"
+        },
+        "4": {
+         "content": "{\"options\":[{\"id\":\"NRw7\",\"name\":\"Special event\",\"color\":\"LightPink\"},{\"id\":\"OOMi\",\"name\":\"Daily\",\"color\":\"Pink\"},{\"id\":\"xrQG\",\"name\":\"Planning\",\"color\":\"Purple\"}],\"disable_color\":false}"
+        }
+       }
+      }
+     },
+     "id": "88b42e1a-8bde-4874-90d3-31344a60ed9f",
+     "metas": {
+      "iid": "706323c0-f8bf-49be-b73b-059b10f7ac96"
+     },
+     "views": {
+      "0531829e-9c29-4897-8ba2-1607ecf9cf0f": {
+       "created_at": 0,
+       "database_id": "88b42e1a-8bde-4874-90d3-31344a60ed9f",
+       "field_orders": [
+        {
+         "id": "MrxJRS"
+        },
+        {
+         "id": "JCXYO7"
+        },
+        {
+         "id": "aCSY_C"
+        }
+       ],
+       "field_settings": {
+        "JCXYO7": {
+         "visibility": 2,
+         "width": 150,
+         "wrap": true
+        },
+        "aCSY_C": {
+         "visibility": 1
+        }
+       },
+       "filters": [],
+       "groups": [],
+       "id": "0531829e-9c29-4897-8ba2-1607ecf9cf0f",
+       "layout": 2,
+       "layout_settings": {
+        "2": {
+         "field_id": "JCXYO7",
+         "first_day_of_week": 0,
+         "layout_ty": 0,
+         "show_week_numbers": false,
+         "show_weekends": false
+        }
+       },
+       "modified_at": 1726751612,
+       "name": "Calendar",
+       "row_orders": [
+        {
+         "height": 60,
+         "id": "446b0d15-b42b-4a68-8677-7b0bf14093e8"
+        },
+        {
+         "height": 60,
+         "id": "9e4eba9d-53c9-4209-81fd-b4f77340b40f"
+        },
+        {
+         "height": 60,
+         "id": "fa5e30a0-0326-47be-9896-c91588d34640"
+        }
+       ],
+       "sorts": []
+      },
+      "706323c0-f8bf-49be-b73b-059b10f7ac96": {
+       "created_at": 1726750818,
+       "database_id": "88b42e1a-8bde-4874-90d3-31344a60ed9f",
+       "field_orders": [
+        {
+         "id": "MrxJRS"
+        },
+        {
+         "id": "JCXYO7"
+        },
+        {
+         "id": "aCSY_C"
+        }
+       ],
+       "field_settings": {
+        "JCXYO7": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": true
+        },
+        "MrxJRS": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": true
+        },
+        "aCSY_C": {
+         "visibility": 0
+        }
+       },
+       "filters": [],
+       "groups": [],
+       "id": "706323c0-f8bf-49be-b73b-059b10f7ac96",
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1726751569,
+       "name": "Untitled",
+       "row_orders": [
+        {
+         "height": 60,
+         "id": "446b0d15-b42b-4a68-8677-7b0bf14093e8"
+        },
+        {
+         "height": 60,
+         "id": "9e4eba9d-53c9-4209-81fd-b4f77340b40f"
+        },
+        {
+         "height": 60,
+         "id": "fa5e30a0-0326-47be-9896-c91588d34640"
+        }
+       ],
+       "sorts": []
+      }
+     }
+    },
+    "row_documents": {
+     "01a1e712-0c68-5df2-a174-deb50851480b": {
+      "data": {
+       "blocks": {
+        "7ba68648-f3d8-56c2-a39e-e07c6c07df00": {
+         "children": "7ba68648-f3d8-56c2-a39e-e07c6c07df00",
+         "data": {},
+         "external_id": null,
+         "external_type": null,
+         "id": "7ba68648-f3d8-56c2-a39e-e07c6c07df00",
+         "parent": "",
+         "ty": "page"
+        },
+        "VbnAVDGiG9": {
+         "children": "XlJwwLrvrD",
+         "data": {},
+         "external_id": "zLaFhwQm_P",
+         "external_type": "text",
+         "id": "VbnAVDGiG9",
+         "parent": "7ba68648-f3d8-56c2-a39e-e07c6c07df00",
+         "ty": "paragraph"
+        },
+        "_Q2Vpj": {
+         "children": "K_T--U",
+         "data": {},
+         "external_id": "39AFFM",
+         "external_type": "text",
+         "id": "_Q2Vpj",
+         "parent": "7ba68648-f3d8-56c2-a39e-e07c6c07df00",
+         "ty": "paragraph"
+        },
+        "d-iG_u": {
+         "children": "91S5e7",
+         "data": {},
+         "external_id": "pjCbcn",
+         "external_type": "text",
+         "id": "d-iG_u",
+         "parent": "7ba68648-f3d8-56c2-a39e-e07c6c07df00",
+         "ty": "paragraph"
+        }
+       },
+       "meta": {
+        "children_map": {
+         "7ba68648-f3d8-56c2-a39e-e07c6c07df00": [
+          "VbnAVDGiG9",
+          "d-iG_u",
+          "_Q2Vpj"
+         ],
+         "91S5e7": [],
+         "K_T--U": [],
+         "XlJwwLrvrD": []
+        },
+        "text_map": {
+         "39AFFM": "[{\"insert\":\"Love open source and AppFlowy\"}]",
+         "pjCbcn": "[]",
+         "zLaFhwQm_P": "[{\"insert\":\"This is my daily note.\"}]"
+        }
+       },
+       "page_id": "7ba68648-f3d8-56c2-a39e-e07c6c07df00"
+      }
+     },
+     "1e2a1dff-565b-5f42-9988-755852e2aea0": {
+      "data": {
+       "blocks": {
+        "DFmUFd": {
+         "children": "ikp9Dp",
+         "data": {
+          "checked": false
+         },
+         "external_id": "p5YutW",
+         "external_type": "text",
+         "id": "DFmUFd",
+         "parent": "f9c47cec-cbb4-52be-aab0-8db90940c676",
+         "ty": "todo_list"
+        },
+        "Qa16aj": {
+         "children": "5_cf8n",
+         "data": {
+          "checked": false
+         },
+         "external_id": "0Bjsb9",
+         "external_type": "text",
+         "id": "Qa16aj",
+         "parent": "f9c47cec-cbb4-52be-aab0-8db90940c676",
+         "ty": "todo_list"
+        },
+        "TLKSfxNxyR": {
+         "children": "JUHiegy9l4",
+         "data": {},
+         "external_id": "JGU3duGGlF",
+         "external_type": "text",
+         "id": "TLKSfxNxyR",
+         "parent": "f9c47cec-cbb4-52be-aab0-8db90940c676",
+         "ty": "paragraph"
+        },
+        "f9c47cec-cbb4-52be-aab0-8db90940c676": {
+         "children": "f9c47cec-cbb4-52be-aab0-8db90940c676",
+         "data": {},
+         "external_id": null,
+         "external_type": null,
+         "id": "f9c47cec-cbb4-52be-aab0-8db90940c676",
+         "parent": "",
+         "ty": "page"
+        }
+       },
+       "meta": {
+        "children_map": {
+         "5_cf8n": [],
+         "JUHiegy9l4": [],
+         "f9c47cec-cbb4-52be-aab0-8db90940c676": [
+          "TLKSfxNxyR",
+          "DFmUFd",
+          "Qa16aj"
+         ],
+         "ikp9Dp": []
+        },
+        "text_map": {
+         "0Bjsb9": "[]",
+         "JGU3duGGlF": "[{\"insert\":\"To-dos:\"}]",
+         "p5YutW": "[{\"insert\":\"Mood board\"}]"
+        }
+       },
+       "page_id": "f9c47cec-cbb4-52be-aab0-8db90940c676"
+      }
+     },
+     "b2358800-546e-559e-b760-903d83d7c76f": {
+      "data": {
+       "blocks": {
+        "35bdc854-fd8b-57c2-9ac2-190b6c2f24cd": {
+         "children": "35bdc854-fd8b-57c2-9ac2-190b6c2f24cd",
+         "data": {},
+         "external_id": null,
+         "external_type": null,
+         "id": "35bdc854-fd8b-57c2-9ac2-190b6c2f24cd",
+         "parent": "",
+         "ty": "page"
+        },
+        "KgQ2jpIDP4": {
+         "children": "31A68qRCy-",
+         "data": {},
+         "external_id": "PKiD45oJvp",
+         "external_type": "text",
+         "id": "KgQ2jpIDP4",
+         "parent": "35bdc854-fd8b-57c2-9ac2-190b6c2f24cd",
+         "ty": "paragraph"
+        }
+       },
+       "meta": {
+        "children_map": {
+         "31A68qRCy-": [],
+         "35bdc854-fd8b-57c2-9ac2-190b6c2f24cd": [
+          "KgQ2jpIDP4"
+         ]
+        },
+        "text_map": {
+         "PKiD45oJvp": "[{\"insert\":\"Jot down quick notes here\"}]"
+        }
+       },
+       "page_id": "35bdc854-fd8b-57c2-9ac2-190b6c2f24cd"
+      }
+     }
+    },
+    "rows": {
+     "446b0d15-b42b-4a68-8677-7b0bf14093e8": {
+      "comment": [],
+      "data": {
+       "cells": {
+        "JCXYO7": {
+         "created_at": 1726751111,
+         "data": "1726751111",
+         "end_timestamp": "",
+         "field_type": 2,
+         "include_time": false,
+         "is_range": false,
+         "last_modified": 1726751111,
+         "reminder_id": ""
+        },
+        "MrxJRS": {
+         "created_at": 1726750850,
+         "data": "09/19/24",
+         "field_type": 0,
+         "last_modified": 1726751027
+        },
+        "aCSY_C": {
+         "created_at": 1726751574,
+         "data": "NRw7",
+         "field_type": 4,
+         "last_modified": 1726751603
+        }
+       },
+       "created_at": 1726750818,
+       "database_id": "88b42e1a-8bde-4874-90d3-31344a60ed9f",
+       "height": 60,
+       "id": "446b0d15-b42b-4a68-8677-7b0bf14093e8",
+       "last_modified": 1726751603,
+       "visibility": true
+      },
+      "meta": {
+       "44ab0a69-6e0c-5231-9acf-a62d57955850": "{\"url\":\"https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/446b0d15%2Db42b%2D4a68%2D8677%2D7b0bf14093e8/2080753440995000646.jpg\",\"upload_type\":\"CloudFile\"}",
+       "7fb69e56-e71c-57e1-8cb0-f59f0972effd": false
+      }
+     },
+     "9e4eba9d-53c9-4209-81fd-b4f77340b40f": {
+      "comment": [],
+      "data": {
+       "cells": {
+        "JCXYO7": {
+         "created_at": 1726751137,
+         "data": "1726664737",
+         "end_timestamp": "",
+         "field_type": 2,
+         "include_time": false,
+         "is_range": false,
+         "last_modified": 1726751137,
+         "reminder_id": ""
+        },
+        "MrxJRS": {
+         "created_at": 1726751135,
+         "data": "09/18/24",
+         "field_type": 0,
+         "last_modified": 1726751135
+        },
+        "aCSY_C": {
+         "created_at": 1726751593,
+         "data": "OOMi",
+         "field_type": 4,
+         "last_modified": 1726751593
+        }
+       },
+       "created_at": 1726750818,
+       "database_id": "88b42e1a-8bde-4874-90d3-31344a60ed9f",
+       "height": 60,
+       "id": "9e4eba9d-53c9-4209-81fd-b4f77340b40f",
+       "last_modified": 1726751593,
+       "visibility": true
+      },
+      "meta": {
+       "10600d44-1e4a-52ea-99df-c0ff567000ec": "{\"url\":\"https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/9e4eba9d%2D53c9%2D4209%2D81fd%2Db4f77340b40f/12453758011549228254.jpg\",\"upload_type\":\"CloudFile\"}",
+       "fcea9404-46b9-5244-ae7b-642af8b7fe60": false
+      }
+     },
+     "fa5e30a0-0326-47be-9896-c91588d34640": {
+      "comment": [],
+      "data": {
+       "cells": {
+        "JCXYO7": {
+         "created_at": 1726751211,
+         "data": "1726578411",
+         "end_timestamp": "",
+         "field_type": 2,
+         "include_time": false,
+         "is_range": false,
+         "last_modified": 1726751211,
+         "reminder_id": ""
+        },
+        "MrxJRS": {
+         "created_at": 1726751222,
+         "data": "09/17/24",
+         "field_type": 0,
+         "last_modified": 1726751222
+        },
+        "aCSY_C": {
+         "created_at": 1726751588,
+         "data": "xrQG",
+         "field_type": 4,
+         "last_modified": 1726751588
+        }
+       },
+       "created_at": 1726750818,
+       "database_id": "88b42e1a-8bde-4874-90d3-31344a60ed9f",
+       "height": 60,
+       "id": "fa5e30a0-0326-47be-9896-c91588d34640",
+       "last_modified": 1726751588,
+       "visibility": true
+      },
+      "meta": {
+       "58253e98-c410-5b07-846d-2eb0934cffc0": "{\"url\":\"https://beta.appflowy.cloud/api/file_storage/fe17e5ce-30f1-4381-90a1-ab583d62cfb6/v1/blob/fa5e30a0%2D0326%2D47be%2D9896%2Dc91588d34640/10280240718353049499.jpg\",\"upload_type\":\"CloudFile\"}",
+       "8915f0db-783f-51a2-8810-b8dff35ff7d2": false
+      }
+     }
+    }
+   },
+   "rows": [
+    {
+     "cells": {
+      "JCXYO7": {
+       "created_at": 1726751111,
+       "data": "1726751111",
+       "end_timestamp": "",
+       "field_type": 2,
+       "include_time": false,
+       "is_range": false,
+       "last_modified": 1726751111,
+       "reminder_id": ""
+      },
+      "MrxJRS": {
+       "created_at": 1726750850,
+       "data": "09/19/24",
+       "field_type": 0,
+       "last_modified": 1726751027
+      },
+      "aCSY_C": {
+       "created_at": 1726751574,
+       "data": "NRw7",
+       "field_type": 4,
+       "last_modified": 1726751603
+      }
+     },
+     "rowId": "446b0d15-b42b-4a68-8677-7b0bf14093e8"
+    },
+    {
+     "cells": {
+      "JCXYO7": {
+       "created_at": 1726751211,
+       "data": "1726578411",
+       "end_timestamp": "",
+       "field_type": 2,
+       "include_time": false,
+       "is_range": false,
+       "last_modified": 1726751211,
+       "reminder_id": ""
+      },
+      "MrxJRS": {
+       "created_at": 1726751222,
+       "data": "09/17/24",
+       "field_type": 0,
+       "last_modified": 1726751222
+      },
+      "aCSY_C": {
+       "created_at": 1726751588,
+       "data": "xrQG",
+       "field_type": 4,
+       "last_modified": 1726751588
+      }
+     },
+     "rowId": "fa5e30a0-0326-47be-9896-c91588d34640"
+    },
+    {
+     "cells": {
+      "JCXYO7": {
+       "created_at": 1726751137,
+       "data": "1726664737",
+       "end_timestamp": "",
+       "field_type": 2,
+       "include_time": false,
+       "is_range": false,
+       "last_modified": 1726751137,
+       "reminder_id": ""
+      },
+      "MrxJRS": {
+       "created_at": 1726751135,
+       "data": "09/18/24",
+       "field_type": 0,
+       "last_modified": 1726751135
+      },
+      "aCSY_C": {
+       "created_at": 1726751593,
+       "data": "OOMi",
+       "field_type": 4,
+       "last_modified": 1726751593
+      }
+     },
+     "rowId": "9e4eba9d-53c9-4209-81fd-b4f77340b40f"
+    }
+   ],
+   "views": [
+    {
+     "fieldIds": [
+      "MrxJRS",
+      "JCXYO7",
+      "aCSY_C"
+     ],
+     "layout": 0,
+     "name": "Untitled",
+     "rowIds": [
+      "446b0d15-b42b-4a68-8677-7b0bf14093e8",
+      "9e4eba9d-53c9-4209-81fd-b4f77340b40f",
+      "fa5e30a0-0326-47be-9896-c91588d34640"
+     ],
+     "viewId": "706323c0-f8bf-49be-b73b-059b10f7ac96"
+    },
+    {
+     "fieldIds": [
+      "MrxJRS",
+      "JCXYO7",
+      "aCSY_C"
+     ],
+     "layout": 2,
+     "name": "Calendar",
+     "rowIds": [
+      "446b0d15-b42b-4a68-8677-7b0bf14093e8",
+      "9e4eba9d-53c9-4209-81fd-b4f77340b40f",
+      "fa5e30a0-0326-47be-9896-c91588d34640"
+     ],
+     "viewId": "0531829e-9c29-4897-8ba2-1607ecf9cf0f"
+    }
+   ],
+   "visibleViewIds": [
+    "706323c0-f8bf-49be-b73b-059b10f7ac96",
+    "0531829e-9c29-4897-8ba2-1607ecf9cf0f"
+   ]
+  },
+  "kind": "database",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Daily-Journal-706323c0-f8bf-49be-b73b-059b10f7ac96",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [
+    {
+     "child_views": null,
+     "created_at": 1731845516,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1761531655,
+     "layout": 0,
+     "name": "Workspace",
+     "view_id": "fe17e5ce-30f1-4381-90a1-ab583d62cfb6"
+    },
+    {
+     "child_views": null,
+     "created_at": 1741151927,
+     "created_by": 276057230200016900,
+     "extra": "{\"is_space\":true,\"space_permission\":0,\"space_created_at\":1724469477827,\"space_icon\":\"work_education/graduation-cap\",\"space_icon_color\":\"0xFF535CE4\"}",
+     "icon": null,
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1749370507,
+     "layout": 0,
+     "name": "Education",
+     "view_id": "00eabf9e-c443-4218-95b9-1e2576e95612"
+    },
+    {
+     "child_views": null,
+     "created_at": 1726750987,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"computer_devices\",\"iconName\":\"keyboard\",\"color\":\"0xFF535CE4\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764766022,
+     "layout": 1,
+     "name": "Daily Journal",
+     "view_id": "706323c0-f8bf-49be-b73b-059b10f7ac96"
+    }
+   ],
+   "childViews": [
+    {
+     "child_views": null,
+     "created_at": 1726750987,
+     "created_by": 276057230200016900,
+     "extra": null,
+     "icon": {
+      "ty": 2,
+      "value": "{\"groupName\":\"interface_essential\",\"iconName\":\"calendar-edit\"}"
+     },
+     "last_edited_by": 276057230200016900,
+     "last_edited_time": 1764766053,
+     "layout": 3,
+     "name": "Calendar",
+     "view_id": "0531829e-9c29-4897-8ba2-1607ecf9cf0f"
+    }
+   ],
+   "databaseRelations": {
+    "00938493-313f-42da-9db8-ca24a2f6d170": "72eec5bc-b99f-4f25-a5a0-e3bbd141588f",
+    "072131ac-418b-4d62-afe8-30616ddd1285": "8c69e93f-64f6-4cc1-8c01-c72f458f6e63",
+    "07f048f9-86ac-4c56-957a-b13dfd2e3f5c": "04d4c39a-0fdc-4724-b51d-82d053bd0aae",
+    "0807814b-2163-43b1-ab8f-b556bb4479d3": "ed7a9d24-f196-42c1-bbf4-89e1ef965ce0",
+    "095ae506-80c7-4f47-b155-9185093dce2b": "44fee635-5c7e-4ac7-b37c-f40a860120cd",
+    "11792141-af51-4dc6-bf3d-e6603940eceb": "73b878ba-816a-4425-963c-1bc86ce41120",
+    "143ffa10-7b5a-4b27-94aa-94212d8f6f75": "d4972a43-9e76-4f45-8c05-f75259bc93e2",
+    "1a0dbdb0-b50a-4966-886e-9c227ce14602": "94da2012-55f2-4315-8443-ffd5f5cea068",
+    "1c396b78-29fd-4932-ba85-40c233905744": "421d4f9c-f326-4f79-8862-737b53a85f59",
+    "1dcacc00-bd89-43ef-8a94-1c60d8c388d8": "f2cc9a38-0a90-49ad-9117-92b5d5d26dac",
+    "20e15e4e-d276-4dbd-bfdf-2faf36cfeca6": "bb4839d1-5379-4947-8cf2-12fa3a7a69a6",
+    "2f3144b2-5dd6-4a9a-bbd0-c672cb8d1e99": "5aea1786-e363-4029-917f-f5bebf5b50c2",
+    "32066efc-2b42-482c-9aef-aab5b55efb56": "4223b089-289d-45e7-8d93-cb3c1c1d2414",
+    "32b4e354-32bd-4b40-9e6f-c3e707aa314f": "08c51cea-5330-4811-9e18-749ac082c8c5",
+    "33804b53-9612-4e4a-9fa6-8b2c5dfec888": "8304142c-06db-4980-9829-38a078438340",
+    "443cebe8-f49c-4b61-acd8-cd50cd660d8a": "274a7979-8492-4496-b8b1-ca44a477f9ac",
+    "4b222b40-94e3-439a-817b-a307eeca791f": "485854a4-cb6c-477c-aac4-f272cc31a7de",
+    "4cfc7ced-a6fe-4488-bc35-490ab349c9f5": "d1f3b593-6060-463a-8865-2347254c09e7",
+    "4d092c34-f3fa-47d5-8557-db6c34cffb48": "43a6fe18-c36e-40ce-bd83-b6cc8bd92c01",
+    "4e568896-89e1-4aff-9f37-a52eaf126c97": "4dcf68ac-1802-47bc-8dd6-b1fc5592e23e",
+    "5010771f-8858-4f6c-b52b-e72914f1e16d": "24625457-d54e-42f8-bdf3-6410023bf487",
+    "50428614-5edd-4f05-8861-8bff55211be8": "218c2c04-3ff2-43f4-a09e-2145d136f91d",
+    "52f0a53c-fe96-4a5a-ba87-d13e2e62d330": "a8c498e7-f4d1-45c5-a57d-7f3f5ef75199",
+    "5708b11e-8e55-427f-bac0-aadbfe12388e": "4f19af1a-01b1-4132-b9d7-cf973f00f8e4",
+    "57d029a0-2fec-4e3b-ac00-201c9e0edec1": "be76ff2d-2abd-4970-9faa-8b1086e83e3f",
+    "5c923930-460c-45d2-b68c-4493b64bc30f": "933a4486-7b84-4f77-8acb-ac08f322be9d",
+    "5e291746-23aa-456a-b17d-e712bc888a44": "bc4c67c3-2d4b-4b7f-8201-d5ec6df35527",
+    "5fe77916-ecca-42c6-8cbf-c67c5384ebec": "9be375d8-5018-40d8-ab28-1bfc21831dca",
+    "606773a0-9cf9-46da-a703-486be6dcd94d": "969edfa3-ef2d-497f-a5ef-284158f7841b",
+    "62d94344-492e-45f7-982c-170c68cb3350": "ca2db846-b99c-4799-9811-aeaeed39ec37",
+    "64301224-62f5-45e4-a1cf-51643f5fa546": "d6041142-dc32-4a0f-9f19-5ecacc2b6973",
+    "65091711-1e68-473b-b441-a731f2abf615": "b3e4a837-1ad7-48b1-83e9-f7ef6f5ef4c7",
+    "66df2372-e035-44e3-910a-c57622a9ae75": "3d7a02b3-8118-48ad-a57d-93fc41eaff08",
+    "70289da4-ff62-4d05-a615-2f6d4ee1d5ad": "84dd79b5-ed86-4e02-b2ab-928f34cf9924",
+    "7b5d0687-965b-420f-b7a6-8e4ab3390fdd": "2951939a-61c7-4cc0-b5ed-f296742e8b15",
+    "7f9f7c40-6c0a-4a51-8742-42cce1917d7b": "c5c1dc1b-7a40-4ac5-ac6e-074ed4ef5153",
+    "855a6251-b409-4c71-979f-19992ebd398f": "01fe498b-54b3-42f8-99dd-a07a7c57ac68",
+    "88b42e1a-8bde-4874-90d3-31344a60ed9f": "706323c0-f8bf-49be-b73b-059b10f7ac96",
+    "8eaf2397-2732-47cd-b4d7-6b9457901523": "92c57526-9c69-4ab6-89f2-65618d62578c",
+    "905ffc77-b550-4d45-87c3-400aba98722a": "9bd59f77-522a-4099-a895-ca117ce7a08b",
+    "9883c0bb-7a78-4fe5-abe6-ee5487b2eed8": "d49ac3d8-a0e7-4428-b4ed-dfa26061b77a",
+    "9a5c3cd3-f3ca-4d08-ae61-e794e4e729c4": "bc598452-1eda-4084-9a34-0586fe0b3b9d",
+    "9a6c4cb0-0570-4ddb-bc4e-bcaf48b8f6f0": "d41614f7-46b2-414a-9d31-1bf1648cff56",
+    "a0922aba-1592-4365-b915-ee0fe9c4269f": "daa0cd9a-4cb2-4345-8549-ae6f4ac8176b",
+    "a7e30c6a-6aff-476d-be49-1d630c4a2c33": "1e49f61d-d81c-4630-97c0-bd3799c82987",
+    "ac08f822-d555-43ba-9c00-7077c41e9c81": "38415cfb-7d7d-4a99-a1f7-0766aa9f36f9",
+    "b5af2da2-1822-4940-a3d1-3c77b512fe74": "6f3a0877-5372-4ecc-a68b-60457f2c8e9a",
+    "b9437998-389c-4726-ab1d-9ad759cfe8da": "0153a878-e3cd-4c69-a7e1-44fba9bba9f1",
+    "bb1f6da1-6523-451d-b22d-078da9503f66": "f02891b8-5c30-4816-a6f2-fb60007c4106",
+    "bf43b97b-0616-43ea-8ec9-3082e613f77e": "84479617-f8c8-466b-aca8-b49e51213614",
+    "c48ed685-d2d5-4b0c-9f41-ce6a0a26a1f2": "e0d50290-3cac-4e50-9ef7-6c2c4e83688e",
+    "c6694ead-6c61-4cdd-b17e-971797eacd13": "ab3ccd92-47ab-4ef2-be09-873edf4293a7",
+    "c79f57cb-cd8d-436a-8db3-07edd6e9f088": "079a177f-75c7-4d86-94d4-41ffa7523cb4",
+    "c8980a39-1012-4cb1-90f9-7710db7b87dc": "0484bd2d-3925-4c27-96b4-acd9aec128f2",
+    "cb707ea3-45e9-4531-b9f4-9adb7f6fb052": "e5c05ab8-9401-43c2-beba-ad2d02758a3b",
+    "cf28d312-d58e-4007-92d6-ef330658ef01": "66323395-4997-4b46-9da3-b9004083bae5",
+    "d3cb4f6a-3918-41fd-bb1c-0a583f4a3c32": "a3684f06-aebf-4532-b357-a2dd6dae20ca",
+    "dafec8db-0746-467a-bd3d-d61c5250f8f1": "d4ec20ef-800d-4d9e-a570-8c330161b6cd",
+    "db57ff23-5000-4903-acd0-91900e69add8": "d9085311-1d32-426f-95d4-1e2db3b64fbe",
+    "e88a9557-7482-4e5c-84ad-86cee2c1e229": "d339a91c-dde4-4170-8bb5-88543da09cb9",
+    "ea47d3ec-3a8f-4edc-b5c9-6252919a110b": "35d1c592-e2b7-4412-b5df-c2ca7de20944",
+    "ee336c4d-895c-41df-bd00-f9ffeb4615f9": "2719d530-6adb-4804-8a7b-a86b944ebfe0",
+    "ee376824-ac5a-41ed-a7b9-9b228cde9a8c": "2e6822fa-50d7-4b9e-8528-890cc5834f4d",
+    "f3855c9b-c4d6-496d-a53f-32efbcf09488": "ea49d339-26af-49e9-8d6b-05ec4261c8e9",
+    "f62b428c-e1f2-488f-a753-da7b7f4337c2": "05bee042-777d-4e98-849b-af3298871d5e",
+    "fb7b19a6-0239-4bb9-9f7b-274c990694f2": "f5a121a6-1bfe-48cd-a2f1-e74cb64b12d7"
+   },
+   "extra": null,
+   "icon": {
+    "ty": 2,
+    "value": "{\"groupName\":\"computer_devices\",\"iconName\":\"keyboard\",\"color\":\"0xFF535CE4\"}"
+   },
+   "layout": 1,
+   "name": "Daily Journal",
+   "viewId": "706323c0-f8bf-49be-b73b-059b10f7ac96",
+   "visibleViewIds": [
+    "706323c0-f8bf-49be-b73b-059b10f7ac96",
+    "0531829e-9c29-4897-8ba2-1607ecf9cf0f"
+   ]
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}

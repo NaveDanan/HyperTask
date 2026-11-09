@@ -1,0 +1,849 @@
+{
+ "data": {
+  "database": {
+   "activeViewId": "add69abe-01b4-45fa-9a0b-66d6282f24de",
+   "databaseId": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+   "fields": [
+    {
+     "fieldId": "FQO4KV",
+     "fieldType": 0,
+     "isPrimary": false,
+     "name": "Description"
+    },
+    {
+     "fieldId": "MCbMM2",
+     "fieldType": 0,
+     "isPrimary": true,
+     "name": "Description"
+    },
+    {
+     "fieldId": "j_93Tx",
+     "fieldType": 3,
+     "isPrimary": false,
+     "name": "Status"
+    },
+    {
+     "fieldId": "zSel7x",
+     "fieldType": 14,
+     "isPrimary": false,
+     "name": "Files & media"
+    }
+   ],
+   "raw": {
+    "database": {
+     "fields": {
+      "FQO4KV": {
+       "created_at": 1786517437,
+       "icon": "",
+       "id": "FQO4KV",
+       "is_primary": false,
+       "last_modified": 1786517437,
+       "name": "Description",
+       "ty": 0,
+       "type_option": {
+        "0": {}
+       }
+      },
+      "MCbMM2": {
+       "created_at": 1786517437,
+       "icon": "",
+       "id": "MCbMM2",
+       "is_primary": true,
+       "last_modified": 1786517437,
+       "name": "Description",
+       "ty": 0,
+       "type_option": {
+        "0": {}
+       }
+      },
+      "j_93Tx": {
+       "created_at": 1786517437,
+       "icon": "",
+       "id": "j_93Tx",
+       "is_primary": false,
+       "last_modified": 1786517437,
+       "name": "Status",
+       "ty": 3,
+       "type_option": {
+        "3": {
+         "content": "{\"options\":[{\"id\":\"jCnQ\",\"name\":\"How to use this Board\",\"color\":\"LightPink\"},{\"id\":\"gto0\",\"name\":\"Backlog\",\"color\":\"Cream\"},{\"id\":\"10ho\",\"name\":\"Next Sprint\",\"color\":\"Orange\"},{\"id\":\"xRlW\",\"name\":\"Sprint Backlog\",\"color\":\"Yellow\"},{\"id\":\"0YhS\",\"name\":\"Dev\",\"color\":\"Aqua\"},{\"id\":\"bvsS\",\"name\":\"Code Review\",\"color\":\"LightPink\"},{\"id\":\"RZD2\",\"name\":\"Testing\",\"color\":\"Pink\"},{\"id\":\"NiM5\",\"name\":\"Done Sprint DATE - DATE 🎉\",\"color\":\"Purple\"}],\"disable_color\":false}"
+        }
+       }
+      },
+      "zSel7x": {
+       "created_at": 1786517437,
+       "icon": "",
+       "id": "zSel7x",
+       "is_primary": false,
+       "last_modified": "1787032561",
+       "name": "Files & media",
+       "ty": 14,
+       "type_option": {
+        "0": {},
+        "14": {
+         "content": "{\"hide_file_names\":true}"
+        }
+       }
+      }
+     },
+     "id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+     "metas": {
+      "iid": "78977d0c-b184-5105-8e68-64920b347920"
+     },
+     "views": {
+      "0a6fc89e-e4ff-4ff7-832e-9f7688e5c058": {
+       "created_at": 1787032339,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "embedded": false,
+       "field_orders": [
+        {
+         "id": "MCbMM2"
+        },
+        {
+         "id": "j_93Tx"
+        },
+        {
+         "id": "FQO4KV"
+        },
+        {
+         "id": "zSel7x"
+        }
+       ],
+       "field_settings": {
+        "FQO4KV": {
+         "visibility": 1,
+         "width": 150,
+         "wrap": false
+        },
+        "MCbMM2": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        },
+        "j_93Tx": {
+         "visibility": 1,
+         "width": 150,
+         "wrap": false
+        },
+        "zSel7x": {
+         "visibility": 1,
+         "width": 150,
+         "wrap": false
+        }
+       },
+       "filters": [],
+       "groups": [
+        {
+         "content": "",
+         "field_id": "j_93Tx",
+         "groups": [
+          {
+           "id": "j_93Tx",
+           "visible": false
+          },
+          {
+           "id": "jCnQ",
+           "visible": true
+          },
+          {
+           "id": "gto0",
+           "visible": true
+          },
+          {
+           "id": "10ho",
+           "visible": true
+          },
+          {
+           "id": "xRlW",
+           "visible": true
+          },
+          {
+           "id": "0YhS",
+           "visible": true
+          },
+          {
+           "id": "bvsS",
+           "visible": true
+          },
+          {
+           "id": "RZD2",
+           "visible": true
+          },
+          {
+           "id": "NiM5",
+           "visible": true
+          }
+         ],
+         "id": "g:6tMf79",
+         "ty": 3
+        }
+       ],
+       "id": "0a6fc89e-e4ff-4ff7-832e-9f7688e5c058",
+       "is_inline": false,
+       "layout": 1,
+       "layout_settings": {
+        "1": {
+         "collapse_hidden_groups": true,
+         "hide_ungrouped_column": true
+        }
+       },
+       "modified_at": 1787032339,
+       "name": "Board",
+       "row_orders": [
+        {
+         "height": 60,
+         "id": "51fa17ed-2b52-4fd5-9faa-2aba73065df0"
+        },
+        {
+         "height": 60,
+         "id": "4168ac44-4eb3-436d-9dca-b00396aacdfb"
+        },
+        {
+         "height": 60,
+         "id": "fdd8ad18-d993-4256-bc4a-09b4ec3853a4"
+        },
+        {
+         "height": 60,
+         "id": "587e1c5d-e73e-418e-85e8-f656e375564a"
+        },
+        {
+         "height": 60,
+         "id": "e9332098-d7af-41f5-b674-5544d2ce45c5"
+        },
+        {
+         "height": 60,
+         "id": "27ebc77e-b6d2-4d13-875c-efaa740641ea"
+        },
+        {
+         "height": 60,
+         "id": "91a0cdcc-a52a-4bd0-a77d-602fa3e21d4f"
+        },
+        {
+         "height": 60,
+         "id": "e74d3a64-ffe5-4324-bc2a-a4e9ad2d3168"
+        },
+        {
+         "height": 60,
+         "id": "91de73a3-34ca-458b-8fbb-36f8c8fa791b"
+        }
+       ],
+       "sorts": []
+      },
+      "40d75fd7-7bf7-416e-a208-af36ce5689e9": {
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "embedded": false,
+       "field_orders": [
+        {
+         "id": "MCbMM2"
+        },
+        {
+         "id": "j_93Tx"
+        },
+        {
+         "id": "FQO4KV"
+        },
+        {
+         "id": "zSel7x"
+        }
+       ],
+       "field_settings": {
+        "FQO4KV": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        },
+        "MCbMM2": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        },
+        "j_93Tx": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        },
+        "zSel7x": {
+         "visibility": 0,
+         "width": 150,
+         "wrap": false
+        }
+       },
+       "filters": [],
+       "groups": [],
+       "id": "40d75fd7-7bf7-416e-a208-af36ce5689e9",
+       "is_inline": false,
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1786517437,
+       "name": "Grid",
+       "row_orders": [
+        {
+         "height": 60,
+         "id": "51fa17ed-2b52-4fd5-9faa-2aba73065df0"
+        },
+        {
+         "height": 60,
+         "id": "4168ac44-4eb3-436d-9dca-b00396aacdfb"
+        },
+        {
+         "height": 60,
+         "id": "fdd8ad18-d993-4256-bc4a-09b4ec3853a4"
+        },
+        {
+         "height": 60,
+         "id": "587e1c5d-e73e-418e-85e8-f656e375564a"
+        },
+        {
+         "height": 60,
+         "id": "e9332098-d7af-41f5-b674-5544d2ce45c5"
+        },
+        {
+         "height": 60,
+         "id": "27ebc77e-b6d2-4d13-875c-efaa740641ea"
+        },
+        {
+         "height": 60,
+         "id": "91a0cdcc-a52a-4bd0-a77d-602fa3e21d4f"
+        },
+        {
+         "height": 60,
+         "id": "e74d3a64-ffe5-4324-bc2a-a4e9ad2d3168"
+        },
+        {
+         "height": 60,
+         "id": "91de73a3-34ca-458b-8fbb-36f8c8fa791b"
+        }
+       ],
+       "sorts": []
+      },
+      "78977d0c-b184-5105-8e68-64920b347920": {
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "embedded": false,
+       "field_orders": [
+        {
+         "id": "MCbMM2"
+        },
+        {
+         "id": "j_93Tx"
+        },
+        {
+         "id": "FQO4KV"
+        },
+        {
+         "id": "zSel7x"
+        }
+       ],
+       "field_settings": {},
+       "filters": [],
+       "groups": [],
+       "id": "78977d0c-b184-5105-8e68-64920b347920",
+       "is_inline": true,
+       "layout": 0,
+       "layout_settings": {},
+       "modified_at": 1786517437,
+       "name": "",
+       "row_orders": [
+        {
+         "height": 60,
+         "id": "51fa17ed-2b52-4fd5-9faa-2aba73065df0"
+        },
+        {
+         "height": 60,
+         "id": "4168ac44-4eb3-436d-9dca-b00396aacdfb"
+        },
+        {
+         "height": 60,
+         "id": "fdd8ad18-d993-4256-bc4a-09b4ec3853a4"
+        },
+        {
+         "height": 60,
+         "id": "587e1c5d-e73e-418e-85e8-f656e375564a"
+        },
+        {
+         "height": 60,
+         "id": "e9332098-d7af-41f5-b674-5544d2ce45c5"
+        },
+        {
+         "height": 60,
+         "id": "27ebc77e-b6d2-4d13-875c-efaa740641ea"
+        },
+        {
+         "height": 60,
+         "id": "91a0cdcc-a52a-4bd0-a77d-602fa3e21d4f"
+        },
+        {
+         "height": 60,
+         "id": "e74d3a64-ffe5-4324-bc2a-a4e9ad2d3168"
+        },
+        {
+         "height": 60,
+         "id": "91de73a3-34ca-458b-8fbb-36f8c8fa791b"
+        }
+       ],
+       "sorts": []
+      }
+     }
+    },
+    "rows": {
+     "27ebc77e-b6d2-4d13-875c-efaa740641ea": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MCbMM2": {
+         "data": "This Card is blocked!",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "0YhS",
+         "field_type": 3
+        },
+        "zSel7x": {
+         "data": "",
+         "field_type": 0,
+         "last_modified": "1787032557"
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "27ebc77e-b6d2-4d13-875c-efaa740641ea",
+       "last_modified": "1787032557",
+       "visibility": true
+      },
+      "meta": {
+       "7f6c24b5-b7b4-5554-a1f0-3de84e436f12": "🛑"
+      }
+     },
+     "4168ac44-4eb3-436d-9dca-b00396aacdfb": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "FQO4KV": {
+         "data": "Cards in the Backlog List need to be done but are not yet committed to be worked on by the team.",
+         "field_type": 0
+        },
+        "MCbMM2": {
+         "data": "This Card is todo - but the team is not committed to completing it yet",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "gto0",
+         "field_type": 3
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "4168ac44-4eb3-436d-9dca-b00396aacdfb",
+       "last_modified": 1786517437,
+       "visibility": true
+      },
+      "meta": {
+       "a14b41c6-8722-5f60-88fe-1a9cff619a04": "😄"
+      }
+     },
+     "51fa17ed-2b52-4fd5-9faa-2aba73065df0": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MCbMM2": {
+         "data": "How to manage Sprints",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "jCnQ",
+         "field_type": 3
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "51fa17ed-2b52-4fd5-9faa-2aba73065df0",
+       "last_modified": 1786517437,
+       "visibility": true
+      },
+      "meta": {
+       "4c5746fd-27a5-5132-96f8-3859a6c68bad": false
+      }
+     },
+     "587e1c5d-e73e-418e-85e8-f656e375564a": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MCbMM2": {
+         "data": "Sprint Goal: -INSERT SPRINT GOAL HERE-",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "xRlW",
+         "field_type": 3
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "587e1c5d-e73e-418e-85e8-f656e375564a",
+       "last_modified": 1786517437,
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "91a0cdcc-a52a-4bd0-a77d-602fa3e21d4f": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MCbMM2": {
+         "data": "This Card is a Bug",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "bvsS",
+         "field_type": 3
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "91a0cdcc-a52a-4bd0-a77d-602fa3e21d4f",
+       "last_modified": 1786517437,
+       "visibility": true
+      },
+      "meta": {
+       "5ae5eae1-cb10-568b-9a63-a60aa207325a": "🐛"
+      }
+     },
+     "91de73a3-34ca-458b-8fbb-36f8c8fa791b": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MCbMM2": {
+         "data": "I am a Card completed in the Current Sprint",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "NiM5",
+         "field_type": 3
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "91de73a3-34ca-458b-8fbb-36f8c8fa791b",
+       "last_modified": 1786517437,
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "e74d3a64-ffe5-4324-bc2a-a4e9ad2d3168": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MCbMM2": {
+         "data": "This Card needs to be expedited",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "RZD2",
+         "field_type": 3
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "e74d3a64-ffe5-4324-bc2a-a4e9ad2d3168",
+       "last_modified": 1786517437,
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "e9332098-d7af-41f5-b674-5544d2ce45c5": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "MCbMM2": {
+         "data": "This Card is part of the Current Sprint. The Plan is to complete all Cards in this List by the end of the Sprint.",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "xRlW",
+         "field_type": 3
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "e9332098-d7af-41f5-b674-5544d2ce45c5",
+       "last_modified": 1786517437,
+       "visibility": true
+      },
+      "meta": {}
+     },
+     "fdd8ad18-d993-4256-bc4a-09b4ec3853a4": {
+      "comment": {},
+      "data": {
+       "cells": {
+        "FQO4KV": {
+         "data": "This Card is hoped to be included in the next Sprint.",
+         "field_type": 0
+        },
+        "MCbMM2": {
+         "data": "This Card is todo - in the next Sprint",
+         "field_type": 0
+        },
+        "j_93Tx": {
+         "data": "10ho",
+         "field_type": 3
+        }
+       },
+       "created_at": 1786517437,
+       "database_id": "4184684d-331c-451b-a1e5-d5fe8dff08d1",
+       "height": 60,
+       "id": "fdd8ad18-d993-4256-bc4a-09b4ec3853a4",
+       "last_modified": 1786517437,
+       "visibility": true
+      },
+      "meta": {
+       "6cff2bb5-177a-51ac-af54-653d6e82c2e8": "👍"
+      }
+     }
+    }
+   },
+   "rows": [
+    {
+     "cells": {
+      "MCbMM2": {
+       "data": "This Card is blocked!",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "0YhS",
+       "field_type": 3
+      },
+      "zSel7x": {
+       "data": "",
+       "field_type": 0,
+       "last_modified": "1787032557"
+      }
+     },
+     "rowId": "27ebc77e-b6d2-4d13-875c-efaa740641ea"
+    },
+    {
+     "cells": {
+      "MCbMM2": {
+       "data": "Sprint Goal: -INSERT SPRINT GOAL HERE-",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "xRlW",
+       "field_type": 3
+      }
+     },
+     "rowId": "587e1c5d-e73e-418e-85e8-f656e375564a"
+    },
+    {
+     "cells": {
+      "MCbMM2": {
+       "data": "How to manage Sprints",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "jCnQ",
+       "field_type": 3
+      }
+     },
+     "rowId": "51fa17ed-2b52-4fd5-9faa-2aba73065df0"
+    },
+    {
+     "cells": {
+      "MCbMM2": {
+       "data": "This Card is part of the Current Sprint. The Plan is to complete all Cards in this List by the end of the Sprint.",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "xRlW",
+       "field_type": 3
+      }
+     },
+     "rowId": "e9332098-d7af-41f5-b674-5544d2ce45c5"
+    },
+    {
+     "cells": {
+      "MCbMM2": {
+       "data": "This Card needs to be expedited",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "RZD2",
+       "field_type": 3
+      }
+     },
+     "rowId": "e74d3a64-ffe5-4324-bc2a-a4e9ad2d3168"
+    },
+    {
+     "cells": {
+      "MCbMM2": {
+       "data": "I am a Card completed in the Current Sprint",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "NiM5",
+       "field_type": 3
+      }
+     },
+     "rowId": "91de73a3-34ca-458b-8fbb-36f8c8fa791b"
+    },
+    {
+     "cells": {
+      "FQO4KV": {
+       "data": "This Card is hoped to be included in the next Sprint.",
+       "field_type": 0
+      },
+      "MCbMM2": {
+       "data": "This Card is todo - in the next Sprint",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "10ho",
+       "field_type": 3
+      }
+     },
+     "rowId": "fdd8ad18-d993-4256-bc4a-09b4ec3853a4"
+    },
+    {
+     "cells": {
+      "FQO4KV": {
+       "data": "Cards in the Backlog List need to be done but are not yet committed to be worked on by the team.",
+       "field_type": 0
+      },
+      "MCbMM2": {
+       "data": "This Card is todo - but the team is not committed to completing it yet",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "gto0",
+       "field_type": 3
+      }
+     },
+     "rowId": "4168ac44-4eb3-436d-9dca-b00396aacdfb"
+    },
+    {
+     "cells": {
+      "MCbMM2": {
+       "data": "This Card is a Bug",
+       "field_type": 0
+      },
+      "j_93Tx": {
+       "data": "bvsS",
+       "field_type": 3
+      }
+     },
+     "rowId": "91a0cdcc-a52a-4bd0-a77d-602fa3e21d4f"
+    }
+   ],
+   "views": [
+    {
+     "fieldIds": [
+      "MCbMM2",
+      "j_93Tx",
+      "FQO4KV",
+      "zSel7x"
+     ],
+     "layout": 1,
+     "name": "Board",
+     "rowIds": [
+      "51fa17ed-2b52-4fd5-9faa-2aba73065df0",
+      "4168ac44-4eb3-436d-9dca-b00396aacdfb",
+      "fdd8ad18-d993-4256-bc4a-09b4ec3853a4",
+      "587e1c5d-e73e-418e-85e8-f656e375564a",
+      "e9332098-d7af-41f5-b674-5544d2ce45c5",
+      "27ebc77e-b6d2-4d13-875c-efaa740641ea",
+      "91a0cdcc-a52a-4bd0-a77d-602fa3e21d4f",
+      "e74d3a64-ffe5-4324-bc2a-a4e9ad2d3168",
+      "91de73a3-34ca-458b-8fbb-36f8c8fa791b"
+     ],
+     "viewId": "0a6fc89e-e4ff-4ff7-832e-9f7688e5c058"
+    },
+    {
+     "fieldIds": [
+      "MCbMM2",
+      "j_93Tx",
+      "FQO4KV",
+      "zSel7x"
+     ],
+     "layout": 0,
+     "name": "Grid",
+     "rowIds": [
+      "51fa17ed-2b52-4fd5-9faa-2aba73065df0",
+      "4168ac44-4eb3-436d-9dca-b00396aacdfb",
+      "fdd8ad18-d993-4256-bc4a-09b4ec3853a4",
+      "587e1c5d-e73e-418e-85e8-f656e375564a",
+      "e9332098-d7af-41f5-b674-5544d2ce45c5",
+      "27ebc77e-b6d2-4d13-875c-efaa740641ea",
+      "91a0cdcc-a52a-4bd0-a77d-602fa3e21d4f",
+      "e74d3a64-ffe5-4324-bc2a-a4e9ad2d3168",
+      "91de73a3-34ca-458b-8fbb-36f8c8fa791b"
+     ],
+     "viewId": "40d75fd7-7bf7-416e-a208-af36ce5689e9"
+    }
+   ],
+   "visibleViewIds": [
+    "add69abe-01b4-45fa-9a0b-66d6282f24de",
+    "0a6fc89e-e4ff-4ff7-832e-9f7688e5c058",
+    "40d75fd7-7bf7-416e-a208-af36ce5689e9"
+   ]
+  },
+  "kind": "database",
+  "namespace": "5fca8c8a-8126-428e-bb5e-0efeef22ab56",
+  "publishName": "Scrum-Board-Template-add69abe",
+  "schemaVersion": 1,
+  "view": {
+   "ancestorViews": [],
+   "childViews": [
+    {
+     "child_views": null,
+     "created_at": 1787032340,
+     "created_by": null,
+     "extra": "{\"database_id\":\"4184684d-331c-451b-a1e5-d5fe8dff08d1\"}",
+     "icon": null,
+     "last_edited_by": null,
+     "last_edited_time": 1787032582,
+     "layout": 2,
+     "name": "Board",
+     "view_id": "0a6fc89e-e4ff-4ff7-832e-9f7688e5c058"
+    },
+    {
+     "child_views": null,
+     "created_at": 1786517437,
+     "created_by": null,
+     "extra": "{\"database_id\":\"4184684d-331c-451b-a1e5-d5fe8dff08d1\"}",
+     "icon": null,
+     "last_edited_by": null,
+     "last_edited_time": 1786517437,
+     "layout": 1,
+     "name": "Grid",
+     "view_id": "40d75fd7-7bf7-416e-a208-af36ce5689e9"
+    }
+   ],
+   "databaseRelations": {
+    "4184684d-331c-451b-a1e5-d5fe8dff08d1": "add69abe-01b4-45fa-9a0b-66d6282f24de"
+   },
+   "extra": "{\"database_id\":\"4184684d-331c-451b-a1e5-d5fe8dff08d1\",\"is_database_container\":true}",
+   "icon": {
+    "ty": 2,
+    "value": "{\"color\":\"0xFFFFBA00\",\"groupName\":\"artificial_intelligence\",\"iconName\":\"ai-generate-variation-spark\"}"
+   },
+   "layout": 1,
+   "name": "Scrum Board Template",
+   "viewId": "add69abe-01b4-45fa-9a0b-66d6282f24de",
+   "visibleViewIds": [
+    "add69abe-01b4-45fa-9a0b-66d6282f24de",
+    "0a6fc89e-e4ff-4ff7-832e-9f7688e5c058",
+    "40d75fd7-7bf7-416e-a208-af36ce5689e9"
+   ]
+  }
+ },
+ "code": 0,
+ "message": "Operation completed successfully."
+}
