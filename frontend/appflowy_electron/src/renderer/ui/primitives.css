@@ -1,3 +1,5 @@
+/* Pre-redesign styles; delete this file once nothing uses its classes. */
+@layer legacy {
 /* Shared primitives. Hover visuals are instant (no transitions), as in Flutter. */
 
 /* FlowyHover: hover fill MS.secondary radius 6; foreground switches to MS.onSurface. */
@@ -153,4 +155,5 @@
   from {
     opacity: 0;
   }
+}
 }

@@ -3,7 +3,7 @@
 // checks where electron.exe cannot run. Not part of the app.
 //
 //   npm run build && npm run harness:compile
-//   node scripts/web-harness/server.cjs --port 5199 --support <scratch dir>
+//   node scripts/web-harness/server.cjs --port 5199 --support <scratch dir> [--renderer <built renderer dir>]
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
@@ -23,7 +23,7 @@ const port = Number(arg('port', '5199'));
 const support = path.resolve(arg('support', path.join(root, '.cache/harness-support')));
 fs.mkdirSync(support, { recursive: true });
 
-const rendererDir = path.join(root, 'out/renderer');
+const rendererDir = path.resolve(arg('renderer', path.join(root, 'out/renderer')));
 const prefs = new SharedPreferences(path.join(support, 'shared_preferences.json'));
 const core = new CoreProcess(coreBinaryPath(root, false));
 let started = null;

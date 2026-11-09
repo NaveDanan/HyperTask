@@ -1,3 +1,5 @@
+/* Pre-redesign styles; delete this file once nothing uses its classes. */
+@layer legacy {
 /* Sidebar-local styles. Hover visuals are instant, as in Flutter. */
 
 /* Tree rows (SingleInnerViewItem): the hover/selected fill spans the full row width. */
@@ -171,4 +173,5 @@
 .sb-emoji {
   font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
   line-height: 1;
+}
 }

@@ -78,8 +78,45 @@ await send('Emulation.setDeviceMetricsOverride', { width: plan.width ?? 1280, he
 if (plan.colorScheme) await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: plan.colorScheme }] });
 await send('Page.navigate', { url });
 
+// Real input events: { "click": [x, y] }, { "move": [x, y] }, { "clickText": "Label" } (centre of
+// the smallest visible element whose text matches), { "key": "Escape", "modifiers": 2 } (CDP
+// modifier bits: 1 Alt, 2 Ctrl, 4 Meta, 8 Shift).
+const mouse = async (type, x, y) =>
+  send('Input.dispatchMouseEvent', { type, x, y, button: type === 'mouseMoved' ? 'none' : 'left', clickCount: type === 'mouseMoved' ? 0 : 1 });
+const click = async ([x, y]) => {
+  await mouse('mouseMoved', x, y);
+  await mouse('mousePressed', x, y);
+  await mouse('mouseReleased', x, y);
+};
+const KEY_CODES = { Escape: 27, Enter: 13, Tab: 9, ArrowDown: 40, ArrowUp: 38, ',': 188, '\\': 220, p: 80, n: 78 };
+const findText = (text) => `(() => {
+  const want = ${JSON.stringify(text)};
+  const hits = [...document.querySelectorAll('body *')].filter((el) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && (el.innerText ?? '').trim() === want;
+  });
+  hits.sort((a, b) => a.getBoundingClientRect().width * a.getBoundingClientRect().height - b.getBoundingClientRect().width * b.getBoundingClientRect().height);
+  const r = hits[0]?.getBoundingClientRect();
+  return r ? [r.x + r.width / 2, r.y + r.height / 2] : null;
+})()`;
+
 for (const step of plan.steps) {
   if (step.wait) await sleep(step.wait);
+  if (step.move) await mouse('mouseMoved', step.move[0], step.move[1]);
+  if (step.click) await click(step.click);
+  if (step.clickText) {
+    const found = await send('Runtime.evaluate', { expression: findText(step.clickText), returnByValue: true });
+    const point = found.result?.result?.value;
+    if (point) await click(point);
+    else console.log(`clickText: "${step.clickText}" not found`);
+  }
+  if (step.key) {
+    const code = KEY_CODES[step.key] ?? step.key.toUpperCase().charCodeAt(0);
+    const base = { key: step.key, windowsVirtualKeyCode: code, nativeVirtualKeyCode: code, modifiers: step.modifiers ?? 0 };
+    await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...base });
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', ...base });
+  }
+  if (step.settle) await sleep(step.settle);
   if (step.eval) {
     const result = await send('Runtime.evaluate', { expression: step.eval, awaitPromise: true, returnByValue: true });
     const value = result.result?.result?.value;

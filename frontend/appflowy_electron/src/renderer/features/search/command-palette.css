@@ -1,3 +1,5 @@
+/* Pre-redesign styles; delete this file once nothing uses its classes. */
+@layer legacy {
 /* SearchField hint: AppFlowyTheme heading4 standard in textColorScheme.tertiary. */
 .command-palette-input::placeholder {
   color: var(--af-text-tertiary);
@@ -5,4 +7,5 @@
 
 .command-palette input {
   user-select: text;
+}
 }

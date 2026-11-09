@@ -1,3 +1,5 @@
+/* Pre-redesign styles; delete this file once nothing uses its classes. */
+@layer legacy {
 /* Settings dialog: Material 2 controls used by the custom (hard-coded English) settings pages,
    and the settings menu items. Material defaults are those of Flutter 3.27 with useMaterial3: false. */
 
@@ -288,4 +290,5 @@
 .settings-selectable {
   user-select: text;
   cursor: text;
+}
 }

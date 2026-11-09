@@ -1,3 +1,5 @@
+/* Pre-redesign styles; delete this file once nothing uses its classes. */
+@layer legacy {
 /* ShortcutSettingTile key editor: FlowyTextField (height 32, radius 8, 12px padding, outline → primary). */
 .shortcut-binding-field {
   display: flex;
@@ -22,4 +24,5 @@
 }
 .shortcut-binding-field input::placeholder {
   color: var(--th-hint);
+}
 }

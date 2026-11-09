@@ -1,11 +1,15 @@
-import logo from '@resources/hypertask-logo.svg';
+import logoSvg from '@resources/hypertask-logo.svg?raw';
+import { cn } from '@/lib/utils';
+
+// The master SVG, recoloured to follow the text color (black in light mode, white in dark).
+const MARK = logoSvg.replace(/fill="#[0-9A-Fa-f]{3,8}"/g, 'fill="currentColor"');
 
 /** HyperTask mark, with an optional wordmark for app chrome. */
-export function HyperLogo({ size = 36, wordmark = false }: { size?: number; wordmark?: boolean }) {
+export function HyperLogo({ size = 36, wordmark = false, className }: { size?: number; wordmark?: boolean; className?: string }) {
   return (
-    <span aria-label="HyperTask" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--cs-on-surface)', whiteSpace: 'nowrap' }}>
-      <span aria-hidden="true" style={{ display: 'inline-block', width: size, height: size, flexShrink: 0, backgroundColor: 'var(--hyper-logo-color)', mask: `url(${logo}) center / contain no-repeat`, WebkitMask: `url(${logo}) center / contain no-repeat` }} />
-      {wordmark && <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.03em' }}>HyperTask</span>}
+    <span aria-label="HyperTask" className={cn('inline-flex items-center gap-2 whitespace-nowrap text-foreground', className)}>
+      <span aria-hidden className="inline-block shrink-0 [&>svg]:block [&>svg]:size-full" style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: MARK }} />
+      {wordmark && <span className="text-sm font-semibold tracking-tight">HyperTask</span>}
     </span>
   );
 }
