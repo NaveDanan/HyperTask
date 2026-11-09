@@ -1,0 +1,2 @@
+# Bundled templates are hashed in manifest.json; keep their bytes as committed.
+resources/assets/local_templates/** -text
