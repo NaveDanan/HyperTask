@@ -4,9 +4,9 @@
 //! `[u32 LE body length][u8 kind][kind-specific bytes]`. Integers are little endian.
 //!
 //! Electron -> core:
-//! - `INIT`:     UTF-8 JSON, the same document dart-ffi's `init_sdk` receives
+//! - `INIT`:     UTF-8 JSON core configuration
 //! - `REQUEST`:  `[u64 id][u32 event name length][event name][protobuf payload]`
-//! - `LOG`:      `[u8 level][UTF-8 message]`, the same levels as dart-ffi's `rust_log`
+//! - `LOG`:      `[u8 level][UTF-8 message]`
 //! - `SHUTDOWN`: empty, closes the database and exits
 //!
 //! Core -> Electron:

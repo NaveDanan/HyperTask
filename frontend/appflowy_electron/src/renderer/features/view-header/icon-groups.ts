@@ -1,6 +1,6 @@
 // kIconGroups (shared/icon_emoji_picker/icon_picker.dart): the bundled icon set, loaded lazily
-// from appflowy_flutter/assets/icons/icons.json (1.5 MB, so fetched on first use).
-import iconsJsonUrl from '@flutter-assets/icons/icons.json?url';
+// from resources/assets/icons/icons.json (1.5 MB, so fetched on first use).
+import iconsJsonUrl from '@assets/icons/icons.json?url';
 import { useEffect, useState } from 'react';
 
 export interface IconEntry {

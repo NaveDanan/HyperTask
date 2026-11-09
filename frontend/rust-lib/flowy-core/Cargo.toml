@@ -71,15 +71,6 @@ file_reader = ["flowy-ai/file_reader"]
 profiling = ["console-subscriber", "tokio/tracing"]
 http_sync = []
 native_sync = []
-dart = [
-  "flowy-user/dart",
-  "flowy-date/dart",
-  "flowy-search/dart",
-  "flowy-folder/dart",
-  "flowy-database2/dart",
-  "flowy-ai/dart",
-  "flowy-storage/dart",
-]
 openssl_vendored = ["flowy-sqlite/openssl_vendored"]
 
 # Enable/Disable AppFlowy Verbose Log Configuration

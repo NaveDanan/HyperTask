@@ -1,9 +1,7 @@
 //! AppFlowy core process for the Electron shell.
 //!
-//! dart-ffi exposes `init_sdk`, `async_event`, `set_stream_port` and `rust_log` to Flutter.
-//! This binary offers the same operations to the Electron main process over the framed
-//! loopback connection described in [`protocol`]. Events run on the same
-//! `AFPluginDispatcher` with the same runtime layout, so the behaviour is identical.
+//! This binary serves Electron requests over the framed loopback connection described
+//! in [`protocol`]. Events run on the core `AFPluginDispatcher`.
 
 use std::future::Future;
 use std::io::{BufReader, Write};
@@ -188,7 +186,7 @@ impl CoreHost {
 
   fn dispatch(&self, request: Request<'_>) {
     let (Some(core), Some(sender)) = (self.core.as_ref(), self.sender.as_ref()) else {
-      // dart-ffi drops such requests silently; answer so the caller does not wait forever.
+      // Answer requests received before initialization instead of leaving callers waiting.
       error!("[Electron]: event {} sent before init", request.event);
       send_response(request.id, STATUS_INTERNAL, b"AppFlowy core is not initialized");
       return;
@@ -216,7 +214,7 @@ impl CoreHost {
   }
 }
 
-/// A persistent future that processes [Task]s, as in dart-ffi.
+/// A persistent future that processes [Task]s.
 struct Runner {
   rx: mpsc::UnboundedReceiver<Task>,
 }

@@ -5,7 +5,6 @@ use crate::entities::{
 use crate::middleware::chat_service_mw::ChatServiceMiddleware;
 use crate::notification::{ChatNotification, chat_notification_builder};
 use crate::stream_message::{AIFollowUpData, StreamMessage};
-use allo_isolate::Isolate;
 use flowy_ai_pub::cloud::{
   AIModel, ChatCloudService, ChatMessage, MessageCursor, QuestionStreamValue, ResponseFormat,
 };
@@ -17,7 +16,7 @@ use flowy_ai_pub::user_service::AIUserService;
 use flowy_error::{ErrorCode, FlowyError, FlowyResult};
 use flowy_sqlite::DBConnection;
 use futures::{SinkExt, StreamExt};
-use lib_infra::isolate_stream::IsolateSink;
+use lib_infra::hyper_stream::HyperStreamSink;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicI64};
@@ -86,7 +85,7 @@ impl Chat {
       .store(false, std::sync::atomic::Ordering::SeqCst);
     self.stream_buffer.lock().await.clear();
 
-    let mut question_sink = IsolateSink::new(Isolate::new(params.question_stream_port));
+    let mut question_sink = HyperStreamSink::new(params.question_stream_port);
     let answer_stream_buffer = self.stream_buffer.clone();
     let uid = self.user_service.user_id()?;
     let workspace_id = self.user_service.workspace_id()?;
@@ -179,7 +178,7 @@ impl Chat {
     let chat_id = self.chat_id;
     let cloud_service = self.chat_service.clone();
     tokio::spawn(async move {
-      let mut answer_sink = IsolateSink::new(Isolate::new(answer_stream_port));
+      let mut answer_sink = HyperStreamSink::new(answer_stream_port);
       match cloud_service
         .stream_answer(&workspace_id, &chat_id, question_id, format, ai_model)
         .await
@@ -202,7 +201,7 @@ impl Chat {
                     .send(StreamMessage::OnData(value).to_string())
                     .await
                   {
-                    error!("Failed to stream answer via IsolateSink: {}", err);
+                    error!("Failed to stream answer via HyperStreamSink: {}", err);
                   }
                 },
                 QuestionStreamValue::Metadata { value } => {

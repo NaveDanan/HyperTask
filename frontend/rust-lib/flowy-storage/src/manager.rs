@@ -8,7 +8,6 @@ use crate::sqlite_sql::{
   update_upload_file_completed, update_upload_file_upload_id,
 };
 use crate::uploader::{FileUploader, FileUploaderRunner, Signal, UploadTask, UploadTaskQueue};
-use allo_isolate::Isolate;
 use async_trait::async_trait;
 use collab_importer::util::FileId;
 use dashmap::DashMap;
@@ -21,7 +20,7 @@ use flowy_storage_pub::storage::{
   ProgressNotifier, StorageService, UploadPartResponse,
 };
 use lib_infra::box_any::BoxAny;
-use lib_infra::isolate_stream::{IsolateSink, SinkExt};
+use lib_infra::hyper_stream::{HyperStreamSink, SinkExt};
 use lib_infra::util::timestamp;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -137,7 +136,7 @@ impl StorageManager {
 
   pub async fn register_file_progress_stream(&self, port: i64) {
     info!("register file progress stream: {}", port);
-    let mut sink = IsolateSink::new(Isolate::new(port));
+    let mut sink = HyperStreamSink::new(port);
     let mut rx = self.global_notifier.subscribe();
     tokio::spawn(async move {
       while let Ok(progress) = rx.recv().await {

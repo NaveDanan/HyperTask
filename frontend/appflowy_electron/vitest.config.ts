@@ -7,6 +7,7 @@ export default defineConfig({
       '@shared': resolve(__dirname, 'src/shared'),
       '@': resolve(__dirname, 'src/renderer'),
       '@resources': resolve(__dirname, '../resources'),
+      '@assets': resolve(__dirname, 'resources/assets'),
     },
   },
   test: {

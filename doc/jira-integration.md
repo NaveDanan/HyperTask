@@ -1,5 +1,7 @@
 # Jira integration (Server / Data Center)
 
+> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/appflowy_electron/docs/STATUS.md) for current Electron functionality.
+
 A local Jira dashboard inside AppFlowy: sync issues from a Jira project, view
 progress, and create, edit and close issues. Code lives in
 `frontend/appflowy_flutter/lib/features/jira/`; tests in

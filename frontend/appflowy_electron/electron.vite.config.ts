@@ -20,7 +20,7 @@ export default defineConfig({
         '@shared': shared,
         '@': resolve(__dirname, 'src/renderer'),
         '@resources': resolve(__dirname, '../resources'),
-        '@flutter-assets': resolve(__dirname, '../appflowy_flutter/assets'),
+        '@assets': resolve(__dirname, 'resources/assets'),
       },
     },
     server: { fs: { allow: [resolve(__dirname, '..')] } },

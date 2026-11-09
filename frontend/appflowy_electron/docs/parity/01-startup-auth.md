@@ -1,5 +1,7 @@
 # 01 — Startup, SDK init, auth flow, window (Windows desktop) — parity spec
 
+> Historical reference: the previous client source has been removed; paths below describe the original implementation.
+
 Source of truth: `frontend/appflowy_flutter` in this checkout (modified, self-hosted build) + the modified Rust core (`frontend/rust-lib`, reused unchanged by Electron). Desktop/Windows only; mobile branches omitted. All paths below are relative to `appflowy_flutter/lib` unless prefixed.
 
 Conventions:

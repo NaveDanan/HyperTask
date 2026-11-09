@@ -44,7 +44,5 @@ proto_gen = [
   "walkdir",
   "protoc-bin-vendored",
 ]
-dart_event = ["walkdir", "tera", ]
-dart = ["proto_gen", "dart_event"]
 ts_event = ["walkdir", "tera", ]
 ts = ["proto_gen", "ts_event"]

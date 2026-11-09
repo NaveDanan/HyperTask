@@ -19,7 +19,7 @@
       "@/*": ["./src/renderer/*"],
       "@shared/*": ["./src/shared/*"],
       "@resources/*": ["../resources/*"],
-      "@flutter-assets/*": ["../appflowy_flutter/assets/*"]
+      "@assets/*": ["./resources/assets/*"]
     }
   },
   "include": ["src/renderer/**/*", "src/shared/**/*"]

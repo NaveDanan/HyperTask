@@ -4,17 +4,17 @@
 
 import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { DateFormatPB, TimeFormatPB } from "./date_entities_pb";
-import { file_date_entities } from "./date_entities_pb";
 import type { FieldType } from "./field_entities_pb";
 import { file_field_entities } from "./field_entities_pb";
+import type { DateFormatPB, TimeFormatPB } from "./date_entities_pb";
+import { file_date_entities } from "./date_entities_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file timestamp_entities.proto.
  */
 export const file_timestamp_entities: GenFile = /*@__PURE__*/
-  fileDesc("Chh0aW1lc3RhbXBfZW50aXRpZXMucHJvdG8iUQoTVGltZXN0YW1wQ2VsbERhdGFQQhIRCglkYXRlX3RpbWUYASABKAkSEwoJdGltZXN0YW1wGAIgASgDSABCEgoQb25lX29mX3RpbWVzdGFtcCKVAQoVVGltZXN0YW1wVHlwZU9wdGlvblBCEiIKC2RhdGVfZm9ybWF0GAEgASgOMg0uRGF0ZUZvcm1hdFBCEiIKC3RpbWVfZm9ybWF0GAIgASgOMg0uVGltZUZvcm1hdFBCEhQKDGluY2x1ZGVfdGltZRgDIAEoCBIeCgpmaWVsZF90eXBlGAQgASgOMgouRmllbGRUeXBlYgZwcm90bzM", [file_date_entities, file_field_entities]);
+  fileDesc("Chh0aW1lc3RhbXBfZW50aXRpZXMucHJvdG8iUQoTVGltZXN0YW1wQ2VsbERhdGFQQhIRCglkYXRlX3RpbWUYASABKAkSEwoJdGltZXN0YW1wGAIgASgDSABCEgoQb25lX29mX3RpbWVzdGFtcCKVAQoVVGltZXN0YW1wVHlwZU9wdGlvblBCEiIKC2RhdGVfZm9ybWF0GAEgASgOMg0uRGF0ZUZvcm1hdFBCEiIKC3RpbWVfZm9ybWF0GAIgASgOMg0uVGltZUZvcm1hdFBCEhQKDGluY2x1ZGVfdGltZRgDIAEoCBIeCgpmaWVsZF90eXBlGAQgASgOMgouRmllbGRUeXBlYgZwcm90bzM", [file_field_entities, file_date_entities]);
 
 /**
  * @generated from message TimestampCellDataPB

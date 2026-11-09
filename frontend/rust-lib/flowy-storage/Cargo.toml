@@ -23,7 +23,6 @@ flowy-derive.workspace = true
 protobuf = { workspace = true }
 dashmap.workspace = true
 strum_macros = "0.25.2"
-allo-isolate = { version = "^0.1", features = ["catch-unwind"] }
 collab-importer = { workspace = true }
 uuid.workspace = true
 
@@ -33,7 +32,6 @@ uuid = "1.6.1"
 rand = { version = "0.8", features = ["std_rng"] }
 
 [features]
-dart = ["flowy-codegen/dart", "flowy-notification/dart"]
 
 [build-dependencies]
 flowy-codegen.workspace = true

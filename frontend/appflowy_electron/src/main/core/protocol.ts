@@ -50,7 +50,7 @@ export function decodeResponse(body: Buffer): CoreResponse {
   };
 }
 
-/** Dart typed-data element types (allo-isolate DartTypedDataType) → typed array views. */
+/** Stream element types retained for compatibility with the core wire format. */
 const TYPED_ARRAYS: Record<number, { new (buffer: ArrayBuffer): ArrayBufferView }> = {
   0: Uint8Array, // ByteData
   1: Int8Array,
@@ -68,7 +68,7 @@ const TYPED_ARRAYS: Record<number, { new (buffer: ArrayBuffer): ArrayBufferView 
 
 /**
  * Decodes a value posted to a stream port (rust-lib/electron-core/src/ports.rs) into what
- * Dart would receive: null, boolean, number/bigint, string, typed array or array.
+ * the corresponding JavaScript value: null, boolean, number/bigint, string, typed array or array.
  */
 export function decodePortValue(buffer: Buffer, offset = 0): { value: unknown; next: number } {
   const tag = buffer.readUInt8(offset);

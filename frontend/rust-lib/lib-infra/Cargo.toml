@@ -21,7 +21,6 @@ tempfile = "3.8.1"
 validator = { workspace = true, features = ["derive"] }
 tracing.workspace = true
 atomic_refcell = "0.1"
-allo-isolate = { version = "^0.1", features = ["catch-unwind"], optional = true }
 futures = "0.3.31"
 cfg-if = "1.0.0"
 futures-util = "0.3.30"
@@ -44,5 +43,4 @@ brotli = { version = "3.4.0", optional = true }
 
 [features]
 compression = ["brotli"]
-isolate_flutter = ["allo-isolate"]
 encryption = ["aes-gcm", "rand", "pbkdf2", "hmac", "sha2"]

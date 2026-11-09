@@ -61,7 +61,6 @@ impl_from_tantivy = ["tantivy"]
 
 impl_from_sqlite = ["flowy-sqlite", "r2d2"]
 impl_from_appflowy_cloud = ["client-api"]
-dart = ["flowy-codegen/dart"]
 
 [build-dependencies]
 flowy-codegen = { workspace = true, features = ["proto_gen"] }

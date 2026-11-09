@@ -1,5 +1,7 @@
 # Local template store
 
+> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/appflowy_electron/docs/STATUS.md) for current Electron functionality.
+
 The local template store is a copy of the public template catalog at
 https://appflowy.com/templates, bundled with the app so templates can be
 browsed and imported with no network access. Each template's published snapshot

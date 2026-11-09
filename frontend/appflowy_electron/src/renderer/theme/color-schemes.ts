@@ -1,4 +1,4 @@
-// Generated from appflowy_flutter/packages/flowy_infra/lib/colorscheme by scripts/gen-colorschemes.mjs. Do not edit.
+// Built-in HyperTask color schemes.
 export type FlowyColorScheme = Record<string, string>;
 
 export const builtInColorSchemes: Record<string, { light: FlowyColorScheme; dark: FlowyColorScheme }> = {

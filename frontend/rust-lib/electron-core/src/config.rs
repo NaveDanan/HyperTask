@@ -1,5 +1,4 @@
-//! The init configuration and `appflowy.yaml` handling, identical to dart-ffi's
-//! `env_serde.rs` and `appflowy_yaml.rs` so both shells configure the core the same way.
+//! Core initialization configuration and `appflowy.yaml` handling.
 
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};

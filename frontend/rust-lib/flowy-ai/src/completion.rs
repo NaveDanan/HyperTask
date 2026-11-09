@@ -1,5 +1,4 @@
 use crate::entities::{CompleteTextPB, CompleteTextTaskPB, CompletionTypePB};
-use allo_isolate::Isolate;
 use std::str::FromStr;
 
 use dashmap::DashMap;
@@ -10,7 +9,7 @@ use flowy_ai_pub::cloud::{
 use flowy_error::{FlowyError, FlowyResult};
 
 use futures::{SinkExt, StreamExt};
-use lib_infra::isolate_stream::IsolateSink;
+use lib_infra::hyper_stream::HyperStreamSink;
 
 use crate::stream_message::StreamMessage;
 use flowy_ai_pub::user_service::AIUserService;
@@ -120,7 +119,7 @@ impl CompletionTask {
         tasks,
         id: self.task_id.clone(),
       };
-      let mut sink = IsolateSink::new(Isolate::new(self.context.stream_port));
+      let mut sink = HyperStreamSink::new(self.context.stream_port);
 
       if let Some(cloud_service) = self.cloud_service.upgrade() {
         let complete_type = match self.context.completion_type {
@@ -203,7 +202,7 @@ impl CompletionTask {
   }
 }
 
-async fn handle_error(sink: &mut IsolateSink, err: FlowyError) {
+async fn handle_error(sink: &mut HyperStreamSink, err: FlowyError) {
   if err.is_ai_response_limit_exceeded() {
     let _ = sink.send("ai_response_limit:".to_string()).await;
   } else if err.is_ai_image_response_limit_exceeded() {

@@ -14,7 +14,7 @@ export interface IconGroup {
   icons: IconItem[];
 }
 
-const urls = import.meta.glob('@flutter-assets/icons/icons.json', {
+const urls = import.meta.glob('@assets/icons/icons.json', {
   query: '?url',
   import: 'default',
   eager: true,

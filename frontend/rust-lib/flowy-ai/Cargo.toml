@@ -22,13 +22,12 @@ protobuf.workspace = true
 bytes.workspace = true
 arc-swap.workspace = true
 validator = { workspace = true, features = ["derive"] }
-lib-infra = { workspace = true, features = ["isolate_flutter"] }
+lib-infra.workspace = true
 flowy-ai-pub.workspace = true
 dashmap.workspace = true
 flowy-sqlite = { workspace = true }
 tokio.workspace = true
 futures.workspace = true
-allo-isolate = { version = "^0.1", features = ["catch-unwind"] }
 log = "0.4.21"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -69,7 +68,6 @@ tempdir = "0.3.7"
 
 [features]
 default = []
-dart = ["flowy-codegen/dart", "flowy-notification/dart"]
 local_ai = []
 file_reader = ["lopdf", "pulldown-cmark"]
 ai-tool = []

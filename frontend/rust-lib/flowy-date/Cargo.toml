@@ -23,4 +23,3 @@ fancy-regex = { version = "0.11.0" }
 flowy-codegen.workspace = true
 
 [features]
-dart = ["flowy-codegen/dart"]

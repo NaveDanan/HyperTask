@@ -46,5 +46,4 @@ num_enum.workspace = true
 flowy-codegen.workspace = true
 
 [features]
-dart = ["flowy-codegen/dart", "flowy-notification/dart"]
 test_helper = []

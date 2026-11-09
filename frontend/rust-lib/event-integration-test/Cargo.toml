@@ -52,5 +52,4 @@ flowy-ai-pub = { workspace = true }
 serial_test = "2.0.0"
 
 [features]
-dart = ["flowy-core/dart"]
 single_thread = []

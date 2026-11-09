@@ -65,7 +65,7 @@ pub fn create_log_filter(
   filters.push(format!("flowy_sqlite_vec={}", level));
   // Enable the frontend logs. DO NOT DISABLE.
   // These logs are essential for debugging and verifying frontend behavior.
-  filters.push(format!("dart_ffi={}", level));
+  filters.push(format!("appflowy_core={}", level));
 
   // Most of the time, we don't need to see the logs from the following crates
   // filters.push(format!("flowy_sqlite={}", "info"));

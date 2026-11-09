@@ -8,7 +8,7 @@ use syn::{parse_macro_input, DeriveInput};
 #[macro_use]
 extern crate quote;
 
-mod dart_event;
+mod event;
 mod node;
 mod proto_buf;
 
@@ -30,9 +30,9 @@ pub fn derive_proto_buf_enum(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(Flowy_Event, attributes(event, event_err))]
-pub fn derive_dart_event(input: TokenStream) -> TokenStream {
+pub fn derive_flowy_event(input: TokenStream) -> TokenStream {
   let input = parse_macro_input!(input as DeriveInput);
-  dart_event::expand_enum_derive(&input)
+  event::expand_enum_derive(&input)
     .unwrap_or_else(to_compile_errors)
     .into()
 }

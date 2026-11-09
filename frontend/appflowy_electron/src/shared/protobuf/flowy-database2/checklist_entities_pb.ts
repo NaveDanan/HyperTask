@@ -4,17 +4,17 @@
 
 import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { CellIdPB } from "./cell_entities_pb";
-import { file_cell_entities } from "./cell_entities_pb";
 import type { SelectOptionPB } from "./select_option_entities_pb";
 import { file_select_option_entities } from "./select_option_entities_pb";
+import type { CellIdPB } from "./cell_entities_pb";
+import { file_cell_entities } from "./cell_entities_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file checklist_entities.proto.
  */
 export const file_checklist_entities: GenFile = /*@__PURE__*/
-  fileDesc("ChhjaGVja2xpc3RfZW50aXRpZXMucHJvdG8idgoTQ2hlY2tsaXN0Q2VsbERhdGFQQhIgCgdvcHRpb25zGAEgAygLMg8uU2VsZWN0T3B0aW9uUEISKQoQc2VsZWN0ZWRfb3B0aW9ucxgCIAMoCzIPLlNlbGVjdE9wdGlvblBCEhIKCnBlcmNlbnRhZ2UYAyABKAEizgEKHENoZWNrbGlzdENlbGxEYXRhQ2hhbmdlc2V0UEISGgoHY2VsbF9pZBgBIAEoCzIJLkNlbGxJZFBCEisKC2luc2VydF90YXNrGAIgAygLMhYuQ2hlY2tsaXN0Q2VsbEluc2VydFBCEhQKDGRlbGV0ZV90YXNrcxgDIAMoCRIlCgx1cGRhdGVfdGFza3MYBCADKAsyDy5TZWxlY3RPcHRpb25QQhIXCg9jb21wbGV0ZWRfdGFza3MYBSADKAkSDwoHcmVvcmRlchgGIAEoCSJGChVDaGVja2xpc3RDZWxsSW5zZXJ0UEISDAoEbmFtZRgBIAEoCRIPCgVpbmRleBgCIAEoBUgAQg4KDG9uZV9vZl9pbmRleGIGcHJvdG8z", [file_cell_entities, file_select_option_entities]);
+  fileDesc("ChhjaGVja2xpc3RfZW50aXRpZXMucHJvdG8idgoTQ2hlY2tsaXN0Q2VsbERhdGFQQhIgCgdvcHRpb25zGAEgAygLMg8uU2VsZWN0T3B0aW9uUEISKQoQc2VsZWN0ZWRfb3B0aW9ucxgCIAMoCzIPLlNlbGVjdE9wdGlvblBCEhIKCnBlcmNlbnRhZ2UYAyABKAEizgEKHENoZWNrbGlzdENlbGxEYXRhQ2hhbmdlc2V0UEISGgoHY2VsbF9pZBgBIAEoCzIJLkNlbGxJZFBCEisKC2luc2VydF90YXNrGAIgAygLMhYuQ2hlY2tsaXN0Q2VsbEluc2VydFBCEhQKDGRlbGV0ZV90YXNrcxgDIAMoCRIlCgx1cGRhdGVfdGFza3MYBCADKAsyDy5TZWxlY3RPcHRpb25QQhIXCg9jb21wbGV0ZWRfdGFza3MYBSADKAkSDwoHcmVvcmRlchgGIAEoCSJGChVDaGVja2xpc3RDZWxsSW5zZXJ0UEISDAoEbmFtZRgBIAEoCRIPCgVpbmRleBgCIAEoBUgAQg4KDG9uZV9vZl9pbmRleGIGcHJvdG8z", [file_select_option_entities, file_cell_entities]);
 
 /**
  * @generated from message ChecklistCellDataPB

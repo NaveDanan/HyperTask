@@ -1,5 +1,7 @@
 # Company certificates
 
+> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/appflowy_electron/docs/STATUS.md) for current Electron functionality.
+
 Open **Settings → Certificates**, choose a `.cer`, `.crt`, or `.pem`
 file provided by IT, review its subject, issuer, expiry and SHA-256 fingerprint,
 and choose **Trust certificate**. PEM bundles may contain multiple CA

@@ -5,7 +5,7 @@ Milestone 1 (foundation and app shell) is in place. The document editor, databas
 ## Done
 
 **Platform**
-- Rust core as a child process (`rust-lib/electron-core`): same `init_sdk` configuration, all 229 events, notifications, and stream ports (search results, AI streaming, upload progress) via a replacement for allo-isolate's Dart post hook.
+- Rust core as a child process (`rust-lib/electron-core`): same `init_sdk` configuration, all 229 events, notifications, and stream ports (search results, AI streaming, upload progress) via the native Rust stream bridge.
 - Generated TypeScript protobuf bindings and event wrappers, the Flutter icon set, translations (easy_localization semantics), fonts and all four built-in color schemes plus the appflowy_ui tokens.
 - Same data and settings locations as the Flutter build; shared_preferences.json read and written compatibly (including Dart doubles), same device id.
 - Frameless window with the Windows caption bar, saved size/position/maximized state and zoom, single instance, `appflowy-flutter://` deep links in self-hosted mode, vendor hosts blocked.

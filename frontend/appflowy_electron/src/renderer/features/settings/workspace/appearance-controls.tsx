@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { LayoutDirectionPB, TextDirectionPB, ThemeModePB } from '@shared/protobuf/flowy-user/user_setting_pb';
 import { UserDateFormatPB, UserTimeFormatPB } from '@shared/protobuf/flowy-user/date_time_pb';
-import appearanceSystem from '@flutter-assets/images/appearance/system.png';
-import appearanceLight from '@flutter-assets/images/appearance/light.png';
-import appearanceDark from '@flutter-assets/images/appearance/dark.png';
+import appearanceSystem from '@assets/images/appearance/system.png';
+import appearanceLight from '@assets/images/appearance/light.png';
+import appearanceDark from '@assets/images/appearance/dark.png';
 import { FlowySvg } from '@/icons/FlowySvg';
 import { useTr, tr } from '@/i18n';
 import { KeyValueStorage } from '@/startup/kv';

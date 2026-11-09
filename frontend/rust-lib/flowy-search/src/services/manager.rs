@@ -1,13 +1,12 @@
 use crate::document::local_search_handler::DocumentLocalSearchHandler;
 use crate::entities::{SearchResponsePB, SearchStatePB};
-use allo_isolate::Isolate;
 use arc_swap::ArcSwapOption;
 use dashmap::DashMap;
 use flowy_error::FlowyResult;
 use flowy_search_pub::tantivy_state::DocumentTantivyState;
 use futures::Sink;
 use lib_infra::async_trait::async_trait;
-use lib_infra::isolate_stream::{IsolateSink, SinkExt};
+use lib_infra::hyper_stream::{HyperStreamSink, SinkExt};
 use std::pin::Pin;
 use std::sync::{Arc, Weak};
 use tokio::sync::RwLock;
@@ -112,7 +111,7 @@ impl SearchManager {
   }
 
   pub async fn perform_search(&self, query: String, stream_port: i64, search_id: i64) {
-    let sink = IsolateSink::new(Isolate::new(stream_port));
+    let sink = HyperStreamSink::new(stream_port);
     self.perform_search_with_sink(query, sink, search_id).await;
   }
 

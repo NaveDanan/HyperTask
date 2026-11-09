@@ -1,5 +1,7 @@
 # 03 — Settings, theme & assets (Flutter → Electron/React parity spec)
 
+> Historical reference: the previous client source has been removed; paths below describe the original implementation.
+
 Reference spec for re-implementing the customized AppFlowy desktop app (Flutter) 1:1 in Electron + React. The Rust core is reused unchanged. Renderer calls go through the same protobuf events (`appflowy_flutter/packages/appflowy_backend/lib/dispatch/dart_event/<crate>/dart_event.dart`).
 
 - Baseline: git HEAD `8fcee27d9` plus the uncommitted customizations in this checkout. **[CUSTOM]** = differs from upstream HEAD (checked with `git diff`/`git status`). **[UPSTREAM]** = unchanged upstream code.

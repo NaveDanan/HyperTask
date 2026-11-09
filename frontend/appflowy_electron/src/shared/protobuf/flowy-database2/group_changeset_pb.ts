@@ -4,17 +4,17 @@
 
 import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { InsertedRowPB, RowMetaPB } from "./row_entities_pb";
-import { file_row_entities } from "./row_entities_pb";
 import type { GroupPB } from "./group_pb";
 import { file_group } from "./group_pb";
+import type { InsertedRowPB, RowMetaPB } from "./row_entities_pb";
+import { file_row_entities } from "./row_entities_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file group_changeset.proto.
  */
 export const file_group_changeset: GenFile = /*@__PURE__*/
-  fileDesc("ChVncm91cF9jaGFuZ2VzZXQucHJvdG8iigEKF0dyb3VwUm93c05vdGlmaWNhdGlvblBCEhAKCGdyb3VwX2lkGAEgASgJEiUKDWluc2VydGVkX3Jvd3MYAiADKAsyDi5JbnNlcnRlZFJvd1BCEhQKDGRlbGV0ZWRfcm93cxgDIAMoCRIgCgx1cGRhdGVkX3Jvd3MYBCADKAsyCi5Sb3dNZXRhUEIiUQoSTW92ZUdyb3VwUGF5bG9hZFBCEg8KB3ZpZXdfaWQYASABKAkSFQoNZnJvbV9ncm91cF9pZBgCIAEoCRITCgt0b19ncm91cF9pZBgDIAEoCSKnAQoOR3JvdXBDaGFuZ2VzUEISDwoHdmlld19pZBgBIAEoCRIpCg9pbnNlcnRlZF9ncm91cHMYAiADKAsyEC5JbnNlcnRlZEdyb3VwUEISIAoOaW5pdGlhbF9ncm91cHMYAyADKAsyCC5Hcm91cFBCEhYKDmRlbGV0ZWRfZ3JvdXBzGAQgAygJEh8KDXVwZGF0ZV9ncm91cHMYBSADKAsyCC5Hcm91cFBCIjkKD0luc2VydGVkR3JvdXBQQhIXCgVncm91cBgBIAEoCzIILkdyb3VwUEISDQoFaW5kZXgYAiABKAViBnByb3RvMw", [file_row_entities, file_group]);
+  fileDesc("ChVncm91cF9jaGFuZ2VzZXQucHJvdG8iigEKF0dyb3VwUm93c05vdGlmaWNhdGlvblBCEhAKCGdyb3VwX2lkGAEgASgJEiUKDWluc2VydGVkX3Jvd3MYAiADKAsyDi5JbnNlcnRlZFJvd1BCEhQKDGRlbGV0ZWRfcm93cxgDIAMoCRIgCgx1cGRhdGVkX3Jvd3MYBCADKAsyCi5Sb3dNZXRhUEIiUQoSTW92ZUdyb3VwUGF5bG9hZFBCEg8KB3ZpZXdfaWQYASABKAkSFQoNZnJvbV9ncm91cF9pZBgCIAEoCRITCgt0b19ncm91cF9pZBgDIAEoCSKnAQoOR3JvdXBDaGFuZ2VzUEISDwoHdmlld19pZBgBIAEoCRIpCg9pbnNlcnRlZF9ncm91cHMYAiADKAsyEC5JbnNlcnRlZEdyb3VwUEISIAoOaW5pdGlhbF9ncm91cHMYAyADKAsyCC5Hcm91cFBCEhYKDmRlbGV0ZWRfZ3JvdXBzGAQgAygJEh8KDXVwZGF0ZV9ncm91cHMYBSADKAsyCC5Hcm91cFBCIjkKD0luc2VydGVkR3JvdXBQQhIXCgVncm91cBgBIAEoCzIILkdyb3VwUEISDQoFaW5kZXgYAiABKAViBnByb3RvMw", [file_group, file_row_entities]);
 
 /**
  * @generated from message GroupRowsNotificationPB

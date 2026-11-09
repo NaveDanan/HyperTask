@@ -9,9 +9,7 @@
   "scripts": {
     "gen:proto": "node scripts/gen-proto.mjs",
     "gen:events": "node scripts/gen-events.mjs",
-    "gen:icons": "node scripts/gen-icons.mjs",
-    "gen:colors": "node scripts/gen-colorschemes.mjs",
-    "gen": "npm run gen:proto && npm run gen:events && npm run gen:icons && npm run gen:colors",
+    "gen": "npm run gen:proto && npm run gen:events",
     "build:core": "node scripts/build-core.mjs",
     "dev": "electron-vite dev",
     "build": "electron-vite build",

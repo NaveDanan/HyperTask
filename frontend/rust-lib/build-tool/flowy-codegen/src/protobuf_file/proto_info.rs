@@ -46,20 +46,7 @@ impl ProtobufCrateContext {
     }
   }
 
-  #[allow(dead_code)]
-  pub fn flutter_mod_dir(&self, root: &str) -> String {
-    let crate_module_dir = format!("{}/{}", root, self.protobuf_crate.crate_folder);
-    crate_module_dir
-  }
 
-  #[allow(dead_code)]
-  pub fn flutter_mod_file(&self, root: &str) -> String {
-    let crate_module_dir = format!(
-      "{}/{}/protobuf.dart",
-      root, self.protobuf_crate.crate_folder
-    );
-    crate_module_dir
-  }
 }
 
 #[derive(Clone, Debug)]

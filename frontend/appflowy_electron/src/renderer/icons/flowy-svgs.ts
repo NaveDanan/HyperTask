@@ -1,4 +1,4 @@
-// Generated from appflowy_flutter/lib/generated/flowy_svgs.g.dart by scripts/gen-icons.mjs. Do not edit.
+// Built-in icon manifest.
 export interface FlowySvgData {
   /** Path below frontend/resources/flowy_icons. */
   path: string;

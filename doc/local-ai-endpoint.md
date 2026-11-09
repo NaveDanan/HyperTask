@@ -1,5 +1,7 @@
 # User-configured AI in the local desktop build
 
+> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/appflowy_electron/docs/STATUS.md) for current Electron functionality.
+
 Open **Settings > AI**, enter the API base URL (including its API prefix, commonly `/v1`) and exact chat model ID, optionally enter an API key, embeddings model ID, and image generation model ID, enable the endpoint, and save. **Test endpoint** sends a small chat request to the configured API. Reopen existing chats after changing the model. No provider URL or credential is preconfigured.
 
 Inference uses the OpenAI `POST /chat/completions` API. Streaming uses SSE; a non-streaming JSON completion response is also accepted. The configured service must supply a text-capable chat model. If its optional embeddings model is configured, it must also supply OpenAI-compatible `/embeddings` responses. Redirects are rejected so credentials never move to an unconfigured host. AppFlowy-owned domains are rejected by both settings validation and the backend. Disabling the endpoint produces a configuration/capability error and does not select a hosted fallback.

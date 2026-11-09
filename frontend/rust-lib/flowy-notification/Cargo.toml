@@ -24,4 +24,3 @@ lib-dispatch = { workspace = true }
 flowy-codegen.workspace = true
 
 [features]
-dart = ["flowy-codegen/dart"]

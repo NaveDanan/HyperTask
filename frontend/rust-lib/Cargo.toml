@@ -3,7 +3,6 @@ members = [
   "lib-dispatch",
   "lib-log",
   "flowy-core",
-  "dart-ffi",
   "electron-core",
   "flowy-user",
   "flowy-user-pub",
@@ -41,10 +40,9 @@ lib-dispatch = { path = "lib-dispatch" }
 lib-log = { path = "lib-log" }
 lib-infra = { path = "lib-infra" }
 flowy-ast = { path = "build-tool/flowy-ast" }
-flowy-codegen = { path = "build-tool/flowy-codegen" }
+flowy-codegen = { path = "build-tool/flowy-codegen", features = ["proto_gen"] }
 flowy-derive = { path = "build-tool/flowy-derive" }
 flowy-core = { path = "flowy-core" }
-dart-ffi = { path = "dart-ffi" }
 flowy-user = { path = "flowy-user" }
 flowy-user-pub = { path = "flowy-user-pub" }
 flowy-sqlite = { path = "flowy-sqlite" }

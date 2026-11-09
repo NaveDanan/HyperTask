@@ -1,5 +1,7 @@
 # 02 — Desktop Home Shell (parity spec)
 
+> Historical reference: the previous client source has been removed; paths below describe the original implementation.
+
 Source of truth: `D:\Projects\appflowy\frontend\appflowy_flutter\lib` (Flutter, customized checkout). All paths below are relative to `appflowy_flutter/lib` unless prefixed (`packages/...` = `appflowy_flutter/packages/...`, `rust-lib/...` = `frontend/rust-lib/...`). Mobile (`lib/mobile/**`) is out of scope.
 
 Conventions used in this document:
