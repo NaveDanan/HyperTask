@@ -617,11 +617,14 @@ imperative handles). Restyle only:
   footer `-mx-4 -mb-4 flex justify-end gap-2 rounded-b-xl border-t bg-muted/50 p-4` with
   Cancel `Button variant="outline"` and confirm `Button` (deletion: `bg-destructive text-white
   hover:bg-destructive/90`); text field uses `Input`.
-- `Tooltip.tsx`: implement with shadcn `Tooltip`/`TooltipTrigger`/`TooltipContent` (Base UI).
-  Keep the props (`message`, `rich`, `preferBelow` → `side="bottom"` else `"top"`, wait/show
-  durations → `delay`). `shortcutTooltip(label, keys)` returns `<span className="flex
-  items-center gap-2">{label}<ShortcutKeys keys={keys} /></span>`. The trigger must not change
-  the child's layout (`render` a `span className="contents"` or the child itself).
+- `Tooltip.tsx`: keep the existing hover timing, wheel-dismiss, `display: contents` wrapper and
+  first-child anchoring (Base UI cannot anchor to a `contents` wrapper). Restyle `TooltipBubble`
+  to the shadcn tooltip look: `z-50 max-w-xs rounded-md bg-foreground px-3 py-1.5 text-xs
+  text-background animate-in fade-in-0 zoom-in-95 duration-100`, no arrow, 6px gap from the
+  anchor. Rich content with keys: `shortcutTooltip(label, keys)` returns `<span className="flex
+  items-center gap-2">{label}<ShortcutKeys keys={keys} className="[&_kbd]:bg-background/20
+  [&_kbd]:text-background" /></span>`. New code may also use shadcn `Tooltip` directly when the
+  trigger is a real element (`TooltipTrigger render={<Button … />}`).
 - `toast.tsx`: `showToast(...)` maps to `sonner`'s `toast` / `toast.success` / `toast.error` /
   `toast.warning` by type; `ToastHost` renders nothing (the `<Toaster>` is mounted in `App.tsx`).
 - `Buttons.tsx`: `FlowyHover` → `rounded-md transition-colors hover:bg-accent` (selected →
