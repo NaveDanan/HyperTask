@@ -33,6 +33,7 @@ export function themeVariables(colors: FlowyColorScheme, brightness: Brightness)
   }
   Object.assign(vars, {
     // ColorScheme (desktop_appearance.dart)
+    '--hyper-logo-color': light ? '#000000' : '#FFFFFF',
     '--cs-primary': colors.primary,
     '--cs-on-primary': colors.onPrimary,
     '--cs-primary-container': colors.main2,
@@ -116,3 +117,4 @@ export function applyTheme(options: ThemeOptions): void {
   // not the app chrome; the editor reads this attribute.
   root.dataset.layoutDirection = options.rtl ? 'rtl' : 'ltr';
 }
+
