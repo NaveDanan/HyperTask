@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=HyperTask
+Comment=Self-hostable productivity workspace
+Exec=hypertask %U
+Icon=hypertask
+Terminal=false
+Categories=Office;ProjectManagement;
+StartupNotify=true
+StartupWMClass=io.github.navedanan.hypertask

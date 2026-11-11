@@ -12,6 +12,7 @@ use flowy_ai_pub::persistence::{
 };
 use flowy_error::{FlowyError, FlowyResult};
 use flowy_folder::manager::FolderManager;
+use flowy_search::services::manager::HyperSearchOwner;
 use flowy_server::af_cloud::define::LoggedUser;
 use flowy_server_pub::workspace_dto::IconType;
 use lib_infra::async_trait::async_trait;
@@ -30,6 +31,7 @@ pub trait FullIndexedDataConsumer: Send + Sync {
 
 #[derive(Clone)]
 pub struct FullIndexedDataWriter {
+  owner: HyperSearchOwner,
   workspace_id: Uuid,
   folder_manager: Weak<FolderManager>,
   logged_user: Weak<dyn LoggedUser>,
@@ -39,14 +41,15 @@ pub struct FullIndexedDataWriter {
 
 impl FullIndexedDataWriter {
   pub fn new(
-    workspace_id: Uuid,
+    owner: HyperSearchOwner,
     folder_manager: Weak<FolderManager>,
     logged_user: Weak<dyn LoggedUser>,
   ) -> Self {
     let cancel_token = CancellationToken::new();
     let consumers = Arc::new(RwLock::new(Vec::new()));
     Self {
-      workspace_id,
+      workspace_id: owner.workspace_id(),
+      owner,
       folder_manager,
       cancel_token,
       logged_user,
@@ -73,9 +76,13 @@ impl FullIndexedDataWriter {
   }
 
   async fn is_workspace_changed(&self) -> bool {
+    if !self.owner.is_current() {
+      return true;
+    }
     if let Some(logged_user) = self.logged_user.upgrade() {
       if let Ok(current_workspace_id) = logged_user.workspace_id() {
-        return current_workspace_id != self.workspace_id;
+        return current_workspace_id != self.workspace_id
+          || logged_user.user_id().ok() != Some(self.owner.uid());
       }
     }
     // If we can't determine, assume it changed to be safe
@@ -83,6 +90,17 @@ impl FullIndexedDataWriter {
   }
 
   pub async fn full_index_unindexed_documents(&self) -> FlowyResult<()> {
+    self
+      .owner
+      .run_if_current(self.full_index_unindexed_documents_inner())
+      .await
+      .unwrap_or(Ok(()))
+  }
+
+  async fn full_index_unindexed_documents_inner(&self) -> FlowyResult<()> {
+    if self.is_workspace_changed().await {
+      return Ok(());
+    }
     if self.consumers.read().await.is_empty() {
       warn!("[Indexing] Indexing cancelled: No consumers registered");
       return Ok(());
@@ -93,8 +111,8 @@ impl FullIndexedDataWriter {
         .with_context("[Indexing] Failed to upgrade AuthenticateUser when indexing")
     })?;
 
-    let uid = logged_user.user_id()?;
-    let workspace_id = logged_user.workspace_id()?;
+    let uid = self.owner.uid();
+    let workspace_id = self.owner.workspace_id();
     let mut conn = logged_user.get_sqlite_db(uid)?;
 
     let folder_manager = self
@@ -220,6 +238,9 @@ impl FullIndexedDataWriter {
     unindex_ids: Vec<String>,
     view_by_id: Arc<HashMap<String, Arc<View>>>,
   ) -> FlowyResult<Vec<UnindexedCollab>> {
+    if !self.owner.matches(uid, workspace_id) {
+      return Ok(Vec::new());
+    }
     // Early return for empty input
     if unindex_ids.is_empty() {
       return Ok(Vec::new());
@@ -240,11 +261,15 @@ impl FullIndexedDataWriter {
 
     // Move everything needed into the blocking closure
     let workspace_id = *workspace_id;
+    let owner = self.owner.clone();
     let handle = tokio::task::spawn_blocking(move || -> FlowyResult<Vec<UnindexedCollab>> {
       let read_txn = collab_db.read_txn();
       let mut results = Vec::with_capacity(filtered_ids.len());
 
       for object_str in filtered_ids {
+        if !owner.matches(uid, &workspace_id) {
+          break;
+        }
         // We know the view exists because of the pre-filtering
         let view = &view_by_id[&object_str];
 

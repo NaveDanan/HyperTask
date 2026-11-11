@@ -22,7 +22,7 @@ export interface PluginArguments {
   rowId?: string;
 }
 
-export type LocalToolId = 'jira' | 'templates';
+export type LocalToolId = 'jira' | 'templates' | 'organization';
 
 /**
  * What a tab shows. Tab identity is `id`: the view id for view plugins, "TrashStack",
@@ -51,7 +51,7 @@ export const localToolPlugin = (toolId: LocalToolId): Plugin => ({
   id: `local-tool:${toolId}`,
   type: PluginType.blank,
   toolId,
-  title: toolId === 'jira' ? 'Jira' : 'Templates',
+  title: toolId === 'jira' ? 'Jira' : toolId === 'organization' ? 'All docs' : 'Templates',
 });
 
 export function pluginTypeForLayout(layout: ViewLayoutPB): PluginType {

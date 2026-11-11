@@ -1,12 +1,6 @@
 import type { ReactNode } from 'react';
-import { useTr } from '@/i18n';
-import { PanelLeftOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ShortcutKeys } from '@/components/app/shortcut';
-import { Tooltip } from '@/ui';
-import { MenuStatus, homeSettingActions, useHomeSettingStore } from '../home/home-setting-store';
+import { MenuStatus, useHomeSettingStore } from '../home/home-setting-store';
 
-const isWindows = navigator.userAgent.includes('Windows');
 const isMac = navigator.userAgent.includes('Mac');
 
 /** HomeLayout.menuSpacing: 80 only when the sidebar is hidden on macOS. */
@@ -15,20 +9,15 @@ export function useMenuSpacing() {
   return hidden && isMac ? 80 : 0;
 }
 
-/** FlowyNavigation (workspace/presentation/home/navigation.dart): [collapse button] + leftBarItem. */
+/**
+ * FlowyNavigation (workspace/presentation/home/navigation.dart): the tab's leftBarItem.
+ * When the sidebar is hidden only the title bar's open-sidebar button shows (HomeStack's
+ * ToggleMenuButton) — adding one here duplicated it.
+ */
 export function FlowyNavigation({ leftBarItem }: { leftBarItem: ReactNode }) {
-  const { tr } = useTr();
-  const hidden = useHomeSettingStore((s) => s.menuStatus === MenuStatus.hidden);
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2">
-      {!isWindows && hidden && (
-        <Tooltip rich={<span className="flex items-center gap-2">{tr('sideBar.openSidebar')}<ShortcutKeys keys={isMac ? '⌘+.' : 'Ctrl+\\'} /></span>}>
-          <Button variant="ghost" size="icon-sm" aria-label={tr('sideBar.openSidebar')} onMouseDown={() => homeSettingActions.collapseMenu()}>
-            <PanelLeftOpen className="size-4" />
-          </Button>
-        </Tooltip>
-      )}
-      <div className="flex min-w-0 flex-1 items-center">{leftBarItem}</div>
+    <div className="flex min-w-0 flex-1 items-center">
+      {leftBarItem}
     </div>
   );
 }

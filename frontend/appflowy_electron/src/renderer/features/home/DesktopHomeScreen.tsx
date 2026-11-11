@@ -8,9 +8,12 @@ import { HomeSideBar } from '@/features/sidebar/Sidebar';
 import { HomeStack } from '@/features/tabs/HomeStack';
 import { CommandPaletteHost } from '@/features/search/CommandPalette';
 import { SettingsDialogHost } from '@/features/settings/SettingsDialog';
+import { HyperDocumentDuplicateRecovery } from '@/features/document-duplicate/HyperDocumentDuplicateRecovery';
+import { HyperViewAppearanceRecovery } from '@/features/view-appearance/HyperViewAppearanceRecovery';
 import { Spinner } from '@/components/ui/spinner';
 import { PluginType, viewPlugin } from '../tabs/plugin';
 import { tabsActions, useTabsStore } from '../tabs/tabs-store';
+import { SidebarRail } from '../sidebar/SidebarRail';
 import { homeSettingActions, useHomeLayout } from './home-setting-store';
 import { startHome, useHomeStore } from './home-store';
 import { useHomeHotKeys } from './hotkeys';
@@ -83,28 +86,32 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
   return (
     <div className="relative h-full overflow-hidden bg-sidebar text-foreground">
       <div
-        className="absolute inset-y-0 right-0 min-w-[500px]"
+        className="absolute inset-y-0 right-0 flex min-w-[500px] flex-col"
         style={{
           left: layout.homePageLOffset,
           transition: `left ${ease(layout.animDuration)}`,
         }}
       >
-        <HomeStack />
+        <HyperDocumentDuplicateRecovery />
+        <HyperViewAppearanceRecovery />
+        <div className="min-h-0 flex-1"><HomeStack /></div>
       </div>
       <QuestionBubble />
       {layout.showNotificationPanel && (
-        <NotificationPanel left={layout.showMenu ? layout.menuWidth : 0} top={layout.showMenu ? 0 : 52} />
+        <NotificationPanel left={layout.showMenu ? layout.menuWidth : layout.railWidth} top={layout.showMenu ? 0 : 52} />
       )}
       <div
         className="absolute inset-y-0 left-0 z-2"
         style={{
           width: layout.menuWidth,
+          // Collapsed: the full sidebar slides out and the 56px icon rail (SidebarRail) takes over.
           transform: layout.showMenu ? 'translateX(0)' : `translateX(-${layout.menuWidth}px)`,
           transition: `transform ${ease(layout.animDuration)}, width ${ease(layout.animDuration)}`,
         }}
       >
         <HomeSideBar user={user} />
       </div>
+      {!layout.showMenu && <SidebarRail user={user} />}
       {layout.showMenu && <SidebarResizer left={layout.menuWidth} />}
       <CommandPaletteHost />
       <SettingsDialogHost user={user} />

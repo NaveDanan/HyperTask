@@ -23,6 +23,7 @@ import {
 } from '../stores/reminder-store';
 import { blockDelta, deltaPlainText, findBlock, topLevelIndex } from './reminder-document';
 import { filterReminders, formatReminderTimestamp, formatUserDate, formatUserTime, type NotificationTabType } from './notification-utils';
+import { hyperDocumentOwnerKey, useHyperDocumentOwner } from '../../document/HyperDocumentOwner';
 
 const TABS: NotificationTabType[] = ['inbox', 'unread', 'archive'];
 const TAB_KEYS: Record<NotificationTabType, string> = {
@@ -109,6 +110,7 @@ function EmptyNotification({ tab }: { tab: NotificationTabType }) {
 }
 
 interface LoadedReminder {
+  ownerKey: string;
   view: ViewPB;
   scheduledAt: string;
   pageTitle: string;
@@ -120,25 +122,29 @@ interface LoadedReminder {
 
 /** NotificationReminderBloc: the view, its title, and the block (documents) or message (databases). */
 function useLoadedReminder(reminder: ReminderPB): LoadedReminder | null {
+  const owner = useHyperDocumentOwner(), ownerKey = hyperDocumentOwnerKey(owner);
   const dateFormat = useAppearanceStore((s) => s.dateTime.dateFormat);
   const timeFormat = useAppearanceStore((s) => s.dateTime.timeFormat);
   const [loaded, setLoaded] = useState<LoadedReminder | null>(null);
   useEffect(() => {
     let alive = true;
+    setLoaded(null);
+    const current = () => alive && !!owner && owner.isCurrent();
     void (async () => {
+      if (!current()) return;
       const scheduledAt = formatReminderTimestamp(scheduledAtMs(reminder), dateFormat, timeFormat);
       const viewResult = await ViewBackendService.getView(reminder.objectId);
-      if (!viewResult.ok) return;
+      if (!current() || !viewResult.ok || viewResult.value.id !== reminder.objectId) return;
       const view = viewResult.value;
-      const base = { view, scheduledAt, pageTitle: nameOrDefault(view), isLocked: isViewLocked(view) };
+      const base = { ownerKey, view, scheduledAt, pageTitle: nameOrDefault(view), isLocked: isViewLocked(view) };
       if (isDatabaseLayout(view.layout)) {
-        if (alive) setLoaded({ ...base, content: reminder.message, nodePath: null });
+        if (current()) setLoaded({ ...base, content: reminder.message, nodePath: null });
         return;
       }
       const blockId = reminder.meta[ReminderMetaKeys.blockId];
       if (blockId === undefined) return;
       const doc = await DocumentEventOpenDocument({ documentId: reminder.objectId });
-      if (!doc.ok) return;
+      if (!current() || !doc.ok) return;
       const block = findBlock(doc.value, blockId);
       if (!block) return;
       const delta = blockDelta(doc.value, block) ?? [];
@@ -150,13 +156,13 @@ function useLoadedReminder(reminder: ReminderPB): LoadedReminder | null {
         }
         return '@';
       });
-      if (alive) setLoaded({ ...base, content, nodePath: topLevelIndex(doc.value, blockId) });
+      if (current()) setLoaded({ ...base, content, nodePath: topLevelIndex(doc.value, blockId) });
     })();
     return () => {
       alive = false;
     };
-  }, [reminder, dateFormat, timeFormat]);
-  return loaded;
+  }, [reminder, dateFormat, timeFormat, ownerKey]);
+  return loaded?.ownerKey === ownerKey && owner?.isCurrent() ? loaded : null;
 }
 
 /** NotificationItemV2: hidden until its page loads; hover shows read/archive actions. */

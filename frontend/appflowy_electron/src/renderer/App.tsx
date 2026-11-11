@@ -9,7 +9,7 @@ import {
 } from '@/features/auth/screens';
 import { DesktopHomeScreen } from '@/features/home/DesktopHomeScreen';
 import { useAppStore } from '@/startup/app-store';
-import { runAppFlowy } from '@/startup/launcher';
+import { runHyperTask } from '@/startup/HyperLauncher';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DialogHost } from '@/ui/Dialog';
@@ -44,10 +44,10 @@ export function App() {
   useEffect(() => {
     if (!started) {
       started = true;
-      void runAppFlowy();
+      void runHyperTask();
     }
     // The core process restarts after a crash; the app restarts with it.
-    return window.appflowy.core.onExit(() => void runAppFlowy());
+    return window.appflowy.core.onExit(() => void runHyperTask());
   }, []);
 
   return (

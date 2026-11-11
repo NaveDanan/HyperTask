@@ -2,6 +2,7 @@ mod entities;
 mod event_handler;
 pub mod event_map;
 mod file_cache;
+mod hyper_download;
 pub mod manager;
 mod notification;
 mod protobuf;

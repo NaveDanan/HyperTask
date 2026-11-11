@@ -475,10 +475,15 @@ pub(crate) async fn download_file_handler(
   let DownloadFilePB {
     url,
     local_file_path,
+    wait_for_completion,
   } = params.try_into_inner()?;
 
   let manager = upgrade_document(manager)?;
-  manager.download_file(local_file_path, url).await
+  if wait_for_completion {
+    manager.download_file_complete(local_file_path, url).await
+  } else {
+    manager.download_file(local_file_path, url).await
+  }
 }
 
 // Handler for deleting file

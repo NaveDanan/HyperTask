@@ -32,7 +32,7 @@ vi.mock('@/startup/deep-link', async () => {
     passGotrueTokenResponse: mocks.token,
   };
 });
-vi.mock('@/startup/launcher', () => ({
+vi.mock('@/startup/HyperLauncher', () => ({
   signUpAsGuest: mocks.guest,
   openWorkspaceOrHandleError: mocks.openWorkspace,
 }));

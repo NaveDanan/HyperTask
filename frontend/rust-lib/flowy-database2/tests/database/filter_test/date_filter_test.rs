@@ -14,6 +14,7 @@ async fn grid_filter_date_is_test() {
       None,
       FieldType::DateTime,
       BoxAny::new(DateFilterPB {
+        use_field_timezone: false,
         condition: DateFilterConditionPB::DateStartsOn,
         start: None,
         end: None,
@@ -42,6 +43,7 @@ async fn grid_filter_date_after_test() {
       None,
       FieldType::DateTime,
       BoxAny::new(DateFilterPB {
+        use_field_timezone: false,
         condition: DateFilterConditionPB::DateStartsAfter,
         start: None,
         end: None,
@@ -70,6 +72,7 @@ async fn grid_filter_date_on_or_after_test() {
       None,
       FieldType::DateTime,
       BoxAny::new(DateFilterPB {
+        use_field_timezone: false,
         condition: DateFilterConditionPB::DateStartsOnOrAfter,
         start: None,
         end: None,
@@ -98,6 +101,7 @@ async fn grid_filter_date_on_or_before_test() {
       None,
       FieldType::DateTime,
       BoxAny::new(DateFilterPB {
+        use_field_timezone: false,
         condition: DateFilterConditionPB::DateStartsOnOrBefore,
         start: None,
         end: None,
@@ -126,6 +130,7 @@ async fn grid_filter_date_within_test() {
       None,
       FieldType::DateTime,
       BoxAny::new(DateFilterPB {
+        use_field_timezone: false,
         condition: DateFilterConditionPB::DateStartsBetween,
         start: Some(1647251762),
         end: Some(1668704685),

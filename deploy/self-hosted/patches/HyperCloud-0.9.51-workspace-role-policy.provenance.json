@@ -1,0 +1,65 @@
+{
+  "source": {
+    "repository": "https://github.com/AppFlowy-IO/AppFlowy-Cloud",
+    "commit": "0311f6a9314da56e12d2b33d18c398dba1933240",
+    "tag": "0.9.51",
+    "license": "AGPL-3.0",
+    "license_sha256": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef",
+    "cargo_lock_sha256": "9dfde561793e70e94b67d1d620c294f9c90fc82a5b2f9961a953f042f08870c1"
+  },
+  "patch": {
+    "file": "0001-HyperCloud-0.9.51-workspace-role-policy.patch",
+    "sha256": "702adf9270e76cab6c3837ddbfabc60921e7ee0fbfc64c7e7bf55ceba8696987",
+    "files_changed": 15,
+    "fresh_base_apply_check": true,
+    "applied_files_match_validated_checkout": true,
+    "upstream_license_unchanged": true
+  },
+  "validation": {
+    "access_control_unit_tests": 17,
+    "access_control_unit_failures": 0,
+    "dedicated_postgres_integration_tests": 1,
+    "dedicated_postgres_integration_failures": 0,
+    "production_build": "passed",
+    "runtime_native_client_role_matrix": "passed: fresh Member positive control, Guest downgrade denial, full revocation denial, each with cold-owner read",
+    "high_availability_revocation": "not_validated",
+    "runtime_document_database_file_baseline": "passed: 7 stages",
+    "runtime_evidence_file": "HyperCloud-0.9.51-workspace-role-policy.runtime.json"
+  },
+  "observed_binary": {
+    "relative_path": "target/debug/appflowy_cloud",
+    "sha256": "3aeb78168835416d63c6bfd86a792237ccdfc4939738bcbb286da5445039a32c",
+    "bytes": 126399600,
+    "platform": "linux/amd64",
+    "rustc": "rustc 1.85.0 (4d91de4e4 2025-02-17)",
+    "profile": "dev; debug=0; incremental=0; jobs=1",
+    "loader_verify_and_dependency_resolution": "passed; main not invoked by this check"
+  },
+  "build_flags": {
+    "SQLX_OFFLINE": "true",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "1"
+  },
+  "distribution": {
+    "default_compose_image_changed": false,
+    "docker_image_built_or_published": false,
+    "independent_bit_for_bit_reproduction": "not_validated",
+    "scope": "auditable patch and source-pinned local build candidate"
+  },
+  "build_tools": {
+    "protoc": "libprotoc 28.2",
+    "protoc_package": "protoc-bin-vendored-linux-x86_64 3.1.0",
+    "openssl_runtime": "libssl3t64 3.0.13-0ubuntu3.16",
+    "openssl_headers_package": {
+      "url": "https://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_3.0.13-0ubuntu3.16_amd64.deb",
+      "sha256": "2b4734df0475e305ac03abb0a2cc5659651ed37ef02d967a1c4033a154cf714b",
+      "bytes": 2408684,
+      "package": "libssl-dev",
+      "version": "3.0.13-0ubuntu3.16",
+      "verification": "SHA256 matches local signed apt package metadata; runtime package version matches",
+      "installation": false
+    }
+  }
+}

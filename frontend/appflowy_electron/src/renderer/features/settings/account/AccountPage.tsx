@@ -12,13 +12,14 @@ import { HyperLogo } from '@/ui/HyperLogo';
 import { useTr, tr } from '@/i18n';
 import { useAppStore } from '@/startup/app-store';
 import { isAuthEnabled } from '@/startup/cloud-env';
-import { runAppFlowy } from '@/startup/launcher';
+import { runHyperTask } from '@/startup/HyperLauncher';
 import { signInActions, useSignInStore } from '@/features/auth/sign-in-store';
 import { useDeepLinkStore } from '@/startup/deep-link';
 import { AFAvatar, AFTextField, Tooltip, showConfirmDialog, showDialog, showToast, type AFTextFieldHandle } from '@/ui';
 import { EmojiPicker } from '../emoji/EmojiPicker';
 import type { SettingsPageProps } from '../page-props';
 import { SettingsBody, SettingsCategory } from '../shared';
+import { HyperStartupSettings } from '../HyperStartupSettings';
 import { SettingsInputField } from '../shared-widgets';
 import { showChangePasswordDialog, showSetupPasswordDialog } from './PasswordDialogs';
 import { usePasswordStore } from './password-store';
@@ -91,7 +92,7 @@ function LoginDialog({ close, didLogin }: { close: () => void; didLogin: () => v
   const { isSubmitting, emailError, passwordError, successOrFail } = useSignInStore();
   const deepLinkState = useDeepLinkStore((s) => s.state);
   useEffect(() => {
-    // The token goes through the login-callback deep link, which runs runAppFlowy() itself.
+    // The token goes through the login-callback deep link, which runs runHyperTask() itself.
     if (deepLinkState === 'finish') {
       close();
       didLogin();
@@ -194,7 +195,7 @@ function AccountDeletion({ closeDialog }: { closeDialog: () => void }) {
         close();
         window.setTimeout(() => {
           closeDialog();
-          void runAppFlowy();
+          void runHyperTask();
         }, 1000);
       },
     });
@@ -229,6 +230,7 @@ export function AccountPage({ user, closeDialog, didLogout, snapshotAuthType }: 
         <AppVersion />
         <div className="px-4 py-3 text-xs text-muted-foreground">Developed by NaveDanan</div>
       </SettingsCategory>
+      <HyperStartupSettings key="desktop" />
       {snapshotAuthType === AuthTypePB.Server && <AccountDeletion key="delete" closeDialog={closeDialog} />}
     </SettingsBody>
   );

@@ -7,11 +7,12 @@ import { ChevronsDownUp, Copy, FolderInput, PencilLine, SmilePlus, SquareArrowOu
 import { tr as translate, useTr } from '@/i18n';
 import { AppFlowyPopover, Tooltip, showAFTextFieldDialog, showConfirmDeletionDialog, type PopoverController } from '@/ui';
 import { tabsActions } from '@/features/tabs/tabs-store';
-import { isViewLocked, nameOrDefault, viewIconData } from '@/features/view/view-ext';
+import { isViewLocked, nameOrDefault } from '@/features/view/view-ext';
 import { ViewBackendService } from '@/features/view/view-service';
 import { ActionListPopover, MenuDivider } from '../components';
 import { MenuRow } from '@/components/app/menu-row';
-import { IconEmojiPicker, type SelectedEmojiIconResult } from '../icon-picker/IconEmojiPicker';
+import { type SelectedEmojiIconResult } from '../icon-picker/IconEmojiPicker';
+import { HyperViewIconPicker } from '../../view-appearance/HyperViewIconPicker';
 import { favoriteActions } from '../stores/favorite-store';
 import { sidebarSpace } from '../stores/space-store';
 import type { FolderSpaceType } from '../stores/types';
@@ -107,7 +108,7 @@ function ViewMoreActionItem({
         constraints={{ maxWidth: 364, maxHeight: 356 }}
         margin={0}
         popup={() => (
-          <IconEmojiPicker tabs={['emoji', 'icon', 'custom']} initialType={viewIconData(view).type} onSelected={(result) => onTap(result)} />
+          <HyperViewIconPicker view={view} onApplied={keep => { if (!keep) onTap(null); }} />
         )}
       >
         {item()}

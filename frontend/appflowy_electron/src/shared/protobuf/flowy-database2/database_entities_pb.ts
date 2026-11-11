@@ -4,19 +4,19 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { FieldIdPB } from "./field_entities_pb";
-import { file_field_entities } from "./field_entities_pb";
 import type { DatabaseLayoutPB } from "./setting_entities_pb";
 import { file_setting_entities } from "./setting_entities_pb";
 import type { RowMetaPB } from "./row_entities_pb";
 import { file_row_entities } from "./row_entities_pb";
+import type { FieldIdPB } from "./field_entities_pb";
+import { file_field_entities } from "./field_entities_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file database_entities.proto.
  */
 export const file_database_entities: GenFile = /*@__PURE__*/
-  fileDesc("ChdkYXRhYmFzZV9lbnRpdGllcy5wcm90byJ2CgpEYXRhYmFzZVBCEgoKAmlkGAEgASgJEhoKBmZpZWxkcxgCIAMoCzIKLkZpZWxkSWRQQhIYCgRyb3dzGAMgAygLMgouUm93TWV0YVBCEiYKC2xheW91dF90eXBlGAQgASgOMhEuRGF0YWJhc2VMYXlvdXRQQiJkChtDcmVhdGVEYXRhYmFzZVZpZXdQYXlsb2FkUEISDAoEbmFtZRgBIAEoCRIPCgd2aWV3X2lkGAIgASgJEiYKC2xheW91dF90eXBlGAMgASgOMhEuRGF0YWJhc2VMYXlvdXRQQiIdCgxEYXRhYmFzZUlkUEISDQoFdmFsdWUYASABKAkiNAoUUmVwZWF0ZWREYXRhYmFzZUlkUEISHAoFdmFsdWUYASADKAsyDS5EYXRhYmFzZUlkUEIiIQoQRGF0YWJhc2VWaWV3SWRQQhINCgV2YWx1ZRgBIAEoCSJRChJNb3ZlRmllbGRQYXlsb2FkUEISDwoHdmlld19pZBgBIAEoCRIVCg1mcm9tX2ZpZWxkX2lkGAIgASgJEhMKC3RvX2ZpZWxkX2lkGAMgASgJIksKEE1vdmVSb3dQYXlsb2FkUEISDwoHdmlld19pZBgBIAEoCRITCgtmcm9tX3Jvd19pZBgCIAEoCRIRCgl0b19yb3dfaWQYAyABKAkikgEKFU1vdmVHcm91cFJvd1BheWxvYWRQQhIPCgd2aWV3X2lkGAEgASgJEhMKC2Zyb21fcm93X2lkGAIgASgJEhMKC3RvX2dyb3VwX2lkGAMgASgJEhMKCXRvX3Jvd19pZBgEIAEoCUgAEhUKDWZyb21fZ3JvdXBfaWQYBSABKAlCEgoQb25lX29mX3RvX3Jvd19pZCI2Cg5EYXRhYmFzZU1ldGFQQhITCgtkYXRhYmFzZV9pZBgBIAEoCRIPCgd2aWV3X2lkGAIgASgJIj8KHVJlcGVhdGVkRGF0YWJhc2VEZXNjcmlwdGlvblBCEh4KBWl0ZW1zGAEgAygLMg8uRGF0YWJhc2VNZXRhUEIiNgoRRGF0YWJhc2VHcm91cElkUEISDwoHdmlld19pZBgBIAEoCRIQCghncm91cF9pZBgCIAEoCSJKChREYXRhYmFzZUxheW91dE1ldGFQQhIPCgd2aWV3X2lkGAEgASgJEiEKBmxheW91dBgCIAEoDjIRLkRhdGFiYXNlTGF5b3V0UEIiOAoTRGF0YWJhc2VTeW5jU3RhdGVQQhIhCgV2YWx1ZRgBIAEoDjISLkRhdGFiYXNlU3luY1N0YXRlIjIKF0RhdGFiYXNlU25hcHNob3RTdGF0ZVBCEhcKD25ld19zbmFwc2hvdF9pZBgBIAEoAyJAChpSZXBlYXRlZERhdGFiYXNlU25hcHNob3RQQhIiCgVpdGVtcxgBIAMoCzITLkRhdGFiYXNlU25hcHNob3RQQiJiChJEYXRhYmFzZVNuYXBzaG90UEISEwoLc25hcHNob3RfaWQYASABKAMSFQoNc25hcHNob3RfZGVzYxgCIAEoCRISCgpjcmVhdGVkX2F0GAMgASgDEgwKBGRhdGEYBCABKAwiNwoUUmVtb3ZlQ292ZXJQYXlsb2FkUEISDwoHdmlld19pZBgBIAEoCRIOCgZyb3dfaWQYAiABKAkiOAoWUmVwZWF0ZWRDdXN0b21Qcm9tcHRQQhIeCgVpdGVtcxgBIAMoCzIPLkN1c3RvbVByb21wdFBCIl4KDkN1c3RvbVByb21wdFBCEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHY29udGVudBgDIAEoCRIPCgdleGFtcGxlGAQgASgJEhAKCGNhdGVnb3J5GAUgASgJItEBChxDdXN0b21Qcm9tcHREYXRhYmFzZUNvbmZpZ1BCEg8KB3ZpZXdfaWQYASABKAkSFgoOdGl0bGVfZmllbGRfaWQYAiABKAkSGAoQY29udGVudF9maWVsZF9pZBgDIAEoCRIaChBleGFtcGxlX2ZpZWxkX2lkGAQgASgJSAASGwoRY2F0ZWdvcnlfZmllbGRfaWQYBSABKAlIAUIZChdvbmVfb2ZfZXhhbXBsZV9maWVsZF9pZEIaChhvbmVfb2ZfY2F0ZWdvcnlfZmllbGRfaWQqVgoRRGF0YWJhc2VTeW5jU3RhdGUSEQoNSW5pdFN5bmNCZWdpbhAAEg8KC0luaXRTeW5jRW5kEAESCwoHU3luY2luZxACEhAKDFN5bmNGaW5pc2hlZBADYgZwcm90bzM", [file_field_entities, file_setting_entities, file_row_entities]);
+  fileDesc("ChdkYXRhYmFzZV9lbnRpdGllcy5wcm90byKUAQoKRGF0YWJhc2VQQhIKCgJpZBgBIAEoCRIaCgZmaWVsZHMYAiADKAsyCi5GaWVsZElkUEISGAoEcm93cxgDIAMoCzIKLlJvd01ldGFQQhImCgtsYXlvdXRfdHlwZRgEIAEoDjIRLkRhdGFiYXNlTGF5b3V0UEISHAoUcm93X2FjdGl2aXR5X2NvbnRleHQYBSABKAkiZAobQ3JlYXRlRGF0YWJhc2VWaWV3UGF5bG9hZFBCEgwKBG5hbWUYASABKAkSDwoHdmlld19pZBgCIAEoCRImCgtsYXlvdXRfdHlwZRgDIAEoDjIRLkRhdGFiYXNlTGF5b3V0UEIiHQoMRGF0YWJhc2VJZFBCEg0KBXZhbHVlGAEgASgJIjQKFFJlcGVhdGVkRGF0YWJhc2VJZFBCEhwKBXZhbHVlGAEgAygLMg0uRGF0YWJhc2VJZFBCIiEKEERhdGFiYXNlVmlld0lkUEISDQoFdmFsdWUYASABKAkiUQoSTW92ZUZpZWxkUGF5bG9hZFBCEg8KB3ZpZXdfaWQYASABKAkSFQoNZnJvbV9maWVsZF9pZBgCIAEoCRITCgt0b19maWVsZF9pZBgDIAEoCSJLChBNb3ZlUm93UGF5bG9hZFBCEg8KB3ZpZXdfaWQYASABKAkSEwoLZnJvbV9yb3dfaWQYAiABKAkSEQoJdG9fcm93X2lkGAMgASgJIpIBChVNb3ZlR3JvdXBSb3dQYXlsb2FkUEISDwoHdmlld19pZBgBIAEoCRITCgtmcm9tX3Jvd19pZBgCIAEoCRITCgt0b19ncm91cF9pZBgDIAEoCRITCgl0b19yb3dfaWQYBCABKAlIABIVCg1mcm9tX2dyb3VwX2lkGAUgASgJQhIKEG9uZV9vZl90b19yb3dfaWQiNgoORGF0YWJhc2VNZXRhUEISEwoLZGF0YWJhc2VfaWQYASABKAkSDwoHdmlld19pZBgCIAEoCSI/Ch1SZXBlYXRlZERhdGFiYXNlRGVzY3JpcHRpb25QQhIeCgVpdGVtcxgBIAMoCzIPLkRhdGFiYXNlTWV0YVBCIjYKEURhdGFiYXNlR3JvdXBJZFBCEg8KB3ZpZXdfaWQYASABKAkSEAoIZ3JvdXBfaWQYAiABKAkiSgoURGF0YWJhc2VMYXlvdXRNZXRhUEISDwoHdmlld19pZBgBIAEoCRIhCgZsYXlvdXQYAiABKA4yES5EYXRhYmFzZUxheW91dFBCIjgKE0RhdGFiYXNlU3luY1N0YXRlUEISIQoFdmFsdWUYASABKA4yEi5EYXRhYmFzZVN5bmNTdGF0ZSIyChdEYXRhYmFzZVNuYXBzaG90U3RhdGVQQhIXCg9uZXdfc25hcHNob3RfaWQYASABKAMiQAoaUmVwZWF0ZWREYXRhYmFzZVNuYXBzaG90UEISIgoFaXRlbXMYASADKAsyEy5EYXRhYmFzZVNuYXBzaG90UEIiYgoSRGF0YWJhc2VTbmFwc2hvdFBCEhMKC3NuYXBzaG90X2lkGAEgASgDEhUKDXNuYXBzaG90X2Rlc2MYAiABKAkSEgoKY3JlYXRlZF9hdBgDIAEoAxIMCgRkYXRhGAQgASgMIjcKFFJlbW92ZUNvdmVyUGF5bG9hZFBCEg8KB3ZpZXdfaWQYASABKAkSDgoGcm93X2lkGAIgASgJIjgKFlJlcGVhdGVkQ3VzdG9tUHJvbXB0UEISHgoFaXRlbXMYASADKAsyDy5DdXN0b21Qcm9tcHRQQiJeCg5DdXN0b21Qcm9tcHRQQhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB2NvbnRlbnQYAyABKAkSDwoHZXhhbXBsZRgEIAEoCRIQCghjYXRlZ29yeRgFIAEoCSLRAQocQ3VzdG9tUHJvbXB0RGF0YWJhc2VDb25maWdQQhIPCgd2aWV3X2lkGAEgASgJEhYKDnRpdGxlX2ZpZWxkX2lkGAIgASgJEhgKEGNvbnRlbnRfZmllbGRfaWQYAyABKAkSGgoQZXhhbXBsZV9maWVsZF9pZBgEIAEoCUgAEhsKEWNhdGVnb3J5X2ZpZWxkX2lkGAUgASgJSAFCGQoXb25lX29mX2V4YW1wbGVfZmllbGRfaWRCGgoYb25lX29mX2NhdGVnb3J5X2ZpZWxkX2lkIo8BChhIeXBlclVwZGF0ZVJvd0FjdGl2aXR5UEISDwoHdmlld19pZBgBIAEoCRISCgpjb250ZXh0X2lkGAIgASgJEhMKC2FjdGl2aXR5X2lkGAMgASgJEhAKCHJldmlzaW9uGAQgASgEEg8KB3Jvd19pZHMYBSADKAkSFgoOY2xvc2VfYWN0aXZpdHkYBiABKAgiUgoVSHlwZXJSb3dBY3Rpdml0eUFja1BCEhIKCmNvbnRleHRfaWQYASABKAkSEwoLYWN0aXZpdHlfaWQYAiABKAkSEAoIcmV2aXNpb24YAyABKAQqVgoRRGF0YWJhc2VTeW5jU3RhdGUSEQoNSW5pdFN5bmNCZWdpbhAAEg8KC0luaXRTeW5jRW5kEAESCwoHU3luY2luZxACEhAKDFN5bmNGaW5pc2hlZBADYgZwcm90bzM", [file_setting_entities, file_row_entities, file_field_entities]);
 
 /**
  * @generated from message DatabasePB
@@ -41,6 +41,11 @@ export type DatabasePB = Message<"DatabasePB"> & {
    * @generated from field: DatabaseLayoutPB layout_type = 4;
    */
   layoutType: DatabaseLayoutPB;
+
+  /**
+   * @generated from field: string row_activity_context = 5;
+   */
+  rowActivityContext: string;
 };
 
 /**
@@ -515,6 +520,75 @@ export type CustomPromptDatabaseConfigPB = Message<"CustomPromptDatabaseConfigPB
  */
 export const CustomPromptDatabaseConfigPBSchema: GenMessage<CustomPromptDatabaseConfigPB> = /*@__PURE__*/
   messageDesc(file_database_entities, 19);
+
+/**
+ * @generated from message HyperUpdateRowActivityPB
+ */
+export type HyperUpdateRowActivityPB = Message<"HyperUpdateRowActivityPB"> & {
+  /**
+   * @generated from field: string view_id = 1;
+   */
+  viewId: string;
+
+  /**
+   * @generated from field: string context_id = 2;
+   */
+  contextId: string;
+
+  /**
+   * @generated from field: string activity_id = 3;
+   */
+  activityId: string;
+
+  /**
+   * @generated from field: uint64 revision = 4;
+   */
+  revision: bigint;
+
+  /**
+   * @generated from field: repeated string row_ids = 5;
+   */
+  rowIds: string[];
+
+  /**
+   * @generated from field: bool close_activity = 6;
+   */
+  closeActivity: boolean;
+};
+
+/**
+ * Describes the message HyperUpdateRowActivityPB.
+ * Use `create(HyperUpdateRowActivityPBSchema)` to create a new message.
+ */
+export const HyperUpdateRowActivityPBSchema: GenMessage<HyperUpdateRowActivityPB> = /*@__PURE__*/
+  messageDesc(file_database_entities, 20);
+
+/**
+ * @generated from message HyperRowActivityAckPB
+ */
+export type HyperRowActivityAckPB = Message<"HyperRowActivityAckPB"> & {
+  /**
+   * @generated from field: string context_id = 1;
+   */
+  contextId: string;
+
+  /**
+   * @generated from field: string activity_id = 2;
+   */
+  activityId: string;
+
+  /**
+   * @generated from field: uint64 revision = 3;
+   */
+  revision: bigint;
+};
+
+/**
+ * Describes the message HyperRowActivityAckPB.
+ * Use `create(HyperRowActivityAckPBSchema)` to create a new message.
+ */
+export const HyperRowActivityAckPBSchema: GenMessage<HyperRowActivityAckPB> = /*@__PURE__*/
+  messageDesc(file_database_entities, 21);
 
 /**
  * @generated from enum DatabaseSyncState

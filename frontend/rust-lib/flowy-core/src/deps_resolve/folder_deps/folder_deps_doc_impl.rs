@@ -14,7 +14,7 @@ use flowy_folder::share::ImportType;
 use flowy_folder::view_operation::{
   FolderOperationHandler, GatherEncodedCollab, ImportedData, ViewData,
 };
-use flowy_search_pub::tantivy_state_init::get_document_tantivy_state;
+use flowy_search::services::manager::SearchManager;
 use lib_dispatch::prelude::ToBytes;
 use lib_infra::async_trait::async_trait;
 use std::convert::TryFrom;
@@ -23,11 +23,14 @@ use std::sync::{Arc, Weak};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-pub struct DocumentFolderOperation(pub Weak<DocumentManager>);
+pub struct DocumentFolderOperation {
+  pub manager: Weak<DocumentManager>,
+  pub search: Weak<SearchManager>,
+}
 
 impl DocumentFolderOperation {
   fn document_manager(&self) -> Result<Arc<DocumentManager>, FlowyError> {
-    self.0.upgrade().ok_or_else(FlowyError::ref_drop)
+    self.manager.upgrade().ok_or_else(FlowyError::ref_drop)
   }
 }
 #[async_trait]
@@ -80,11 +83,18 @@ impl FolderOperationHandler for DocumentFolderOperation {
   async fn delete_view(&self, view_id: &Uuid) -> Result<(), FlowyError> {
     let document_manager = self.document_manager()?;
     let workspace_id = document_manager.user_service.workspace_id()?;
-    if let Some(state) = get_document_tantivy_state(&workspace_id).and_then(|v| v.upgrade()) {
-      let _ = state.write().await.delete_document(&view_id.to_string());
+    let search = self.search.upgrade().ok_or_else(FlowyError::ref_drop)?;
+    let stale = || FlowyError::invalid_data().with_context("The search owner changed during document deletion.");
+    let owner = search.owner_for_workspace(&workspace_id).ok_or_else(stale)?;
+    if !owner.matches(document_manager.user_service.user_id()?, &workspace_id) { return Err(stale()); }
+    if let Some(state) = search.index_state(&owner).and_then(|state| state.upgrade()) {
+      let Some(mut state) = owner.run_if_current(state.write()).await else { return Err(stale()); };
+      if !owner.is_current() { return Err(stale()); }
+      let _ = state.delete_document(&view_id.to_string());
     }
 
-    match document_manager.delete_document(view_id).await {
+    let result = owner.run_if_current(document_manager.delete_document(view_id)).await.ok_or_else(stale)?;
+    match result {
       Ok(_) => tracing::trace!("Delete document: {}", view_id),
       Err(e) => tracing::error!("🔴delete document failed: {}", e),
     }
@@ -92,11 +102,13 @@ impl FolderOperationHandler for DocumentFolderOperation {
   }
 
   async fn duplicate_view(&self, view_id: &Uuid) -> Result<Bytes, FlowyError> {
-    let data: DocumentDataPB = self
-      .document_manager()?
-      .get_document_data(view_id)
-      .await?
-      .into();
+    let manager = self.document_manager()?;
+    let workspace = manager.user_service.workspace_id()?;
+    let search = self.search.upgrade().ok_or_else(FlowyError::ref_drop)?;
+    let stale = || FlowyError::invalid_data().with_context("The document copy owner changed.");
+    let owner = search.owner_for_workspace(&workspace).ok_or_else(stale)?;
+    if !owner.matches(manager.user_service.user_id()?, &workspace) { return Err(stale()); }
+    let data: DocumentDataPB = owner.run_if_current(manager.get_document_data_for_duplicate(view_id)).await.ok_or_else(stale)??.into();
     let data_bytes = data.into_bytes().map_err(|_| FlowyError::invalid_data())?;
     Ok(data_bytes)
   }
@@ -119,7 +131,12 @@ impl FolderOperationHandler for DocumentFolderOperation {
   ) -> Result<Option<EncodedCollab>, FlowyError> {
     debug_assert_eq!(params.layout, ViewLayoutPB::Document);
     let data = match params.initial_data {
-      ViewData::DuplicateData(data) => Some(DocumentDataPB::try_from(data)?),
+      ViewData::DuplicateData(data) => Some(
+        super::hyper_document_duplicate::hyper_remap_document_reminders(
+          DocumentDataPB::try_from(data)?,
+          &params.view_id,
+        )?,
+      ),
       ViewData::Data(data) => Some(DocumentDataPB::try_from(data)?),
       ViewData::Empty => None,
     };

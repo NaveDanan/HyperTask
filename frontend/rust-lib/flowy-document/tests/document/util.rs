@@ -70,6 +70,7 @@ impl Deref for DocumentTest {
 pub struct FakeUser {
   workspace_id: Uuid,
   collab_db: Arc<CollabKVDB>,
+  _directory: TempDir,
 }
 
 impl FakeUser {
@@ -77,13 +78,13 @@ impl FakeUser {
     setup_log();
 
     let tempdir = TempDir::new().unwrap();
-    let path = tempdir.into_path();
-    let collab_db = Arc::new(CollabKVDB::open(path).unwrap());
+    let collab_db = Arc::new(CollabKVDB::open(tempdir.path()).unwrap());
     let workspace_id = uuid::Uuid::new_v4();
 
     Self {
       collab_db,
       workspace_id,
+      _directory: tempdir,
     }
   }
 }

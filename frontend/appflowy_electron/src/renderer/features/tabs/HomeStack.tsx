@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
-import { useTr } from '@/i18n';
-import { PanelLeftOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { TitleBar } from '@/components/app/window-controls';
-import { ShortcutKeys } from '@/components/app/shortcut';
 import { cn } from '@/lib/utils';
-import { Tooltip } from '@/ui';
-import { MenuStatus, homeSettingActions, useHomeSettingStore } from '../home/home-setting-store';
+import { MenuStatus, useHomeSettingStore } from '../home/home-setting-store';
 import { useHomeStore } from '../home/home-store';
 import { PageStack, usePluginScope } from '../plugins/PageStack';
 import { pluginWidgets } from '../plugins/registry';
@@ -17,27 +12,6 @@ import { didDeleteStackWidget } from './did-delete';
 import { SecondaryView } from './SecondaryView';
 import { TabsManager } from './TabsManager';
 import { tabsActions, useTabsStore, type Tab } from './tabs-store';
-
-const isMac = navigator.userAgent.includes('Mac');
-
-/** _buildToggleMenuButton (Windows): "Open sidebar" while the sidebar is hidden. */
-function ToggleMenuButton() {
-  const { tr } = useTr();
-  const expanded = useHomeSettingStore((s) => s.menuStatus === MenuStatus.expanded);
-  if (expanded) return null;
-  return (
-    <Tooltip rich={<span className="flex items-center gap-2">{tr('sideBar.openSidebar')}<ShortcutKeys keys={isMac ? '⌘+.' : 'Ctrl+\\'} /></span>}>
-      <Button variant="ghost" size="icon-sm" aria-label={tr('sideBar.openSidebar')}
-        onMouseDown={() => {
-          const isExpanded = useHomeSettingStore.getState().menuStatus === MenuStatus.expanded;
-          homeSettingActions.changeMenuStatus(isExpanded ? MenuStatus.hidden : MenuStatus.expanded);
-        }}
-      >
-        <PanelLeftOpen className="size-4" />
-      </Button>
-    </Tooltip>
-  );
-}
 
 const onDeleted = (view: ViewPB, index?: number) => void didDeleteStackWidget(view, index);
 
@@ -89,8 +63,7 @@ export function HomeStack() {
 
   return (
     <div className="flex h-full flex-col">
-      <TitleBar className={hidden ? 'pl-1.5' : 'pl-2'}>
-        <ToggleMenuButton />
+      <TitleBar className={hidden ? 'pl-2' : 'pl-2'}>
         <div className="flex min-w-0" style={{ paddingLeft: menuSpacing }}>
           <TabsManager onIndexChanged={(index) => tabsActions.selectTab(index)} />
         </div>

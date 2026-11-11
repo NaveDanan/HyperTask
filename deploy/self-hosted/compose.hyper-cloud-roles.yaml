@@ -1,0 +1,11 @@
+# Optional source build of the reviewed AGPL 0.9.51 workspace-role patch.
+# Combine only with compose.yaml, not compose.source.yaml. Other services are inherited unchanged.
+services:
+  appflowy_cloud:
+    image: hypertask/cloud:0.9.51-hyper-roles-702adf9270e7
+    platform: linux/amd64
+    pull_policy: never
+    build:
+      context: .sources/hyper-cloud-role-policy
+      dockerfile: .hyper-build/Dockerfile
+      target: runtime

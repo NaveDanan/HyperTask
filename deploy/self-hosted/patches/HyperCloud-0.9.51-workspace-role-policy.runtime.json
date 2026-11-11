@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "checked_at_utc": "2026-11-11T07:35:47.786353+00:00",
+  "server": {
+    "upstream_commit": "0311f6a9314da56e12d2b33d18c398dba1933240",
+    "license": "AGPL-3.0",
+    "binary_sha256": "3aeb78168835416d63c6bfd86a792237ccdfc4939738bcbb286da5445039a32c",
+    "binary_bytes": 126399600,
+    "patch_sha256": "702adf9270e76cab6c3837ddbfabc60921e7ee0fbfc64c7e7bf55ceba8696987",
+    "binary_identity_checked_before_requests": true
+  },
+  "environment": {
+    "platform": "linux/amd64",
+    "services": "PostgreSQL16, Redis7, SeaweedFS, GoTrue, source-patched Cloud0.9.51",
+    "execution": "five ordinary non-root processes",
+    "network": "verified owned loopback listeners",
+    "accounts": "new or previously recorded disposable fixture accounts only",
+    "existing_deployment_used": false,
+    "container_proxy_or_tls_validation": false
+  },
+  "roles": {
+    "fresh_member_account": true,
+    "fresh_support_directories": true,
+    "membership_setup": "native invitation and acceptance before the role update",
+    "steps": [
+      {
+        "name": "existing-native-member-positive-control",
+        "status": "GREEN",
+        "seconds": 26.529,
+        "checks": {
+          "distinctActor": true,
+          "role": "Member",
+          "nativeEditStatus": 0,
+          "ownerLiveAndFreshCloudReadChanged": true,
+          "noRawApiOrDbMembershipWrites": true
+        }
+      },
+      {
+        "name": "native-Guest-downgrade-local-ACK-vs-fresh-owner-remote-denial",
+        "status": "GREEN",
+        "seconds": 13.976,
+        "checks": {
+          "memberLocalChanged": true,
+          "ownerLiveStayedOriginal": true,
+          "freshOwnerCloudStayedOriginal": true,
+          "localAckIsNotRemotePermissionVerdict": true
+        }
+      },
+      {
+        "name": "native-revocation-local-ACK-vs-fresh-owner-remote-denial",
+        "status": "GREEN",
+        "seconds": 13.448,
+        "checks": {
+          "ownerLiveStayedOriginal": true,
+          "freshOwnerCloudStayedOriginal": true,
+          "cachedMemberReadNotRemoteAuthorization": true
+        }
+      }
+    ]
+  },
+  "same_account_baseline": {
+    "fresh_support_directories": true,
+    "signup_replayed": false,
+    "frontend_init_row_workaround": false,
+    "steps": [
+      {
+        "name": "existing-account-native-login",
+        "status": "GREEN",
+        "seconds": 6.786,
+        "checks": {
+          "sameActor": true,
+          "sameWorkspace": true,
+          "distinctDeviceIds": true,
+          "separateSupportRoots": true
+        }
+      },
+      {
+        "name": "Unicode-document-A-to-B-to-A",
+        "status": "GREEN",
+        "seconds": 10.211,
+        "checks": {
+          "textSha256": "43d8fa45c7007bdcbc5c6efe496c5186c05cb4c7e75de886e52470db3b99f60d",
+          "utf16Units": 41
+        }
+      },
+      {
+        "name": "database-initial-server-read-without-InitRow",
+        "status": "GREEN",
+        "seconds": 2.987,
+        "checks": {
+          "nativeReadSequence": [
+            "GetDatabase",
+            "GetRowMeta",
+            "GetCell"
+          ],
+          "explicitInitRow": false
+        }
+      },
+      {
+        "name": "row-cell-live-A-to-B-without-InitRow",
+        "status": "GREEN",
+        "seconds": 1.284,
+        "checks": {
+          "explicitInitRow": false,
+          "valueSha256": "542498248e841b2ee293a1d31a8c85218f3d9912f957e222731121fc2c8b7602"
+        }
+      },
+      {
+        "name": "row-body-metadata-and-content-live-without-InitRow",
+        "status": "GREEN",
+        "seconds": 2.824,
+        "checks": {
+          "explicitInitRow": false,
+          "bodySha256": "abc11e0a0fcb3d63367b963d3b59024f06adbf0854510931c73b2324ac727484"
+        }
+      },
+      {
+        "name": "native-upload-and-authenticated-completed-download",
+        "status": "GREEN",
+        "seconds": 1.821,
+        "checks": {
+          "sha256": "48b9279c776d914fbe0390ba4ae7ce2818a80cd689216ab65bd0c00684936935",
+          "bytes": 77,
+          "completedFilePresentAtAcknowledgement": true,
+          "existingFileRetained": true
+        }
+      },
+      {
+        "name": "B-restart-reads-through-current-frontend-lifecycle",
+        "status": "GREEN",
+        "seconds": 0.756,
+        "checks": {
+          "separatePersistedSupport": true,
+          "explicitInitRow": false
+        }
+      }
+    ]
+  },
+  "cleanup": {
+    "all_probe_cores_stopped": true,
+    "fixture_data_retained": true
+  },
+  "limits": [
+    "No native fresh-Guest workspace navigation proof.",
+    "No multi-replica policy invalidation proof.",
+    "Untouched initial database rows and remote copied objects remain separate client gaps.",
+    "No Docker, NGINX, TLS or published-image proof.",
+    "No production deployment changed."
+  ]
+}

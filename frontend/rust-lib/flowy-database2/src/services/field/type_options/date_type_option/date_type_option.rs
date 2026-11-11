@@ -206,7 +206,9 @@ impl TypeOptionCellDataFilter for DateTypeOption {
     filter: &<Self as TypeOption>::CellFilter,
     cell_data: &<Self as TypeOption>::CellData,
   ) -> bool {
-    filter.is_visible(cell_data).unwrap_or(true)
+    filter
+      .is_visible_in_timezone(cell_data, &self.timezone_id)
+      .unwrap_or(true)
   }
 }
 

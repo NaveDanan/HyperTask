@@ -1,20 +1,23 @@
 mod folder_deps_chat_impl;
 mod folder_deps_database_impl;
 mod folder_deps_doc_impl;
+mod hyper_database_duplicate;
+mod hyper_document_duplicate;
 
 use crate::server_layer::ServerProvider;
 use collab_entity::{CollabType, EncodedCollab};
-use collab_integrate::collab_builder::AppFlowyCollabBuilder;
 use collab_integrate::CollabKVDB;
+use collab_integrate::collab_builder::AppFlowyCollabBuilder;
 use flowy_ai::ai_manager::AIManager;
 use flowy_database2::DatabaseManager;
 use flowy_document::manager::DocumentManager;
-use flowy_error::{internal_error, FlowyError, FlowyResult};
+use flowy_error::{FlowyError, FlowyResult, internal_error};
+use flowy_folder::ViewLayout;
 use flowy_folder::entities::UpdateViewParams;
 use flowy_folder::manager::{FolderManager, FolderUser};
-use flowy_folder::ViewLayout;
-use flowy_sqlite::kv::KVStorePreferences;
+use flowy_search::services::manager::SearchManager;
 use flowy_sqlite::DBConnection;
+use flowy_sqlite::kv::KVStorePreferences;
 use flowy_user::services::authenticate_user::AuthenticateUser;
 use flowy_user::services::data_import::load_collab_by_object_id;
 use flowy_user_pub::entities::UserWorkspace;
@@ -60,8 +63,23 @@ pub fn register_handlers(
   document_manager: Weak<DocumentManager>,
   database_manager: Weak<DatabaseManager>,
   chat_manager: Weak<AIManager>,
+  search_manager: Weak<SearchManager>,
+  user_manager: Weak<flowy_user::user_manager::UserManager>,
 ) {
-  let document_folder_operation = Arc::new(DocumentFolderOperation(document_manager));
+  if let Some(database) = database_manager.upgrade() {
+    database.set_hyper_duplicate_hook(Arc::new(
+      hyper_database_duplicate::HyperNativeDatabaseDuplicate {
+        document: document_manager.clone(),
+        user: user_manager,
+        folder: Arc::downgrade(folder_manager),
+        database: database_manager.clone(),
+      },
+    ));
+  }
+  let document_folder_operation = Arc::new(DocumentFolderOperation {
+    manager: document_manager,
+    search: search_manager,
+  });
   folder_manager.register_operation_handler(ViewLayout::Document, document_folder_operation);
 
   let database_folder_operation = Arc::new(DatabaseFolderOperation(database_manager));

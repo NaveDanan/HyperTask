@@ -1,25 +1,30 @@
 // The plugin registry (startup/plugin/plugin.dart, startup/tasks/load_plugin.dart) and each
 // plugin's PluginWidgetBuilder: tab label, header items, content padding and body.
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode } from 'react';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import type { UserProfilePB } from '@shared/protobuf/flowy-user/user_profile_pb';
 import { tr, useTr } from '@/i18n';
-import { FileText, LayoutTemplate, SquareCheckBig, Trash2 } from 'lucide-react';
+import { Files, FileText, LayoutTemplate, SquareCheckBig, Trash2 } from 'lucide-react';
 import { MenuSeparator } from '@/components/app/menu-row';
-import { cn } from '@/lib/utils';
 import { PluginType, type Plugin } from '../tabs/plugin';
 import { nameOrDefault } from '../view/view-ext';
 import { ViewFavoriteButton } from '../view-header/FavoriteButton';
 import { CustomViewAction, MoreViewActions } from '../view-header/MoreViewActions';
 import { ShareButton } from '../view-header/share/ShareButton';
-import { RawEmojiIcon, viewIcon } from '../view-header/ViewIcon';
+import { HyperViewTabBarItem } from '../view-appearance/HyperViewTabBarItem';
 import { ViewTitleBar } from '../view-header/ViewTitleBar';
 import { ViewTitleBarWithRow } from '../view-header/ViewTitleBarWithRow';
-import { listenView } from '../view-header/view-listener';
 import { BlankPage, HyperLayoutIcon, LocalToolPlaceholder, PlaceholderMessage, ViewPlaceholderPage } from './PlaceholderPage';
 import { TrashPage } from './trash/TrashPage';
 import { TemplateStorePage } from '../templates/TemplateStorePage';
 import { JiraDashboardPage } from '../jira/ui/JiraDashboardPage';
+import { HyperDocumentPage } from '../document/HyperDocumentPage';
+import { HyperViewAppearance } from '../view-appearance/HyperViewAppearance';
+import { HyperOrganizationPage } from '../organization/HyperOrganizationPage';
+import { HyperCollectionPage } from '../organization/HyperCollectionPage';
+import { hyperIsCollectionView } from '../organization/HyperCollectionModel';
+import { HyperAIChatPage } from '../ai-chat/HyperAIChatPage';
+import { HyperDatabasePage } from '../database/HyperDatabasePage';
 
 /** PluginContext: onDeleted(view, index) and the user (null in the secondary view). */
 export interface PluginContext {
@@ -58,19 +63,8 @@ export const pluginBuilders = () => [
   { pluginType: PluginType.chat, menuName: 'AI Chat', icon: 'chat_ai_page_s' as const, layout: ViewLayoutPB.Chat },
 ];
 
-/** ViewTabBarItem (workspace/presentation/widgets/tab_bar_item.dart). */
-export function ViewTabBarItem({ view, shortForm }: { view: ViewPB; shortForm: boolean }) {
-  // The icon comes from the view the tab was opened with (icon changes need a reopen); the name is live.
-  const [initialIcon] = useState(() => viewIcon(view));
-  const [current, setCurrent] = useState(view);
-  useEffect(() => listenView(view.id, { onViewUpdated: setCurrent }), [view.id]);
-  return (
-    <div className={cn('flex min-w-0 items-center gap-1.5', shortForm && 'justify-center')}>
-      {initialIcon ? <RawEmojiIcon icon={initialIcon} size={16} /> : <HyperLayoutIcon layout={view.layout} />}
-      {!shortForm && <span className="min-w-0 truncate">{nameOrDefault(current)}</span>}
-    </div>
-  );
-}
+/** Live owner-scoped appearance shared by document and database tabs. */
+export const ViewTabBarItem = HyperViewTabBarItem;
 
 function MediumLabel({ text }: { text: string }) {
   return <span className="truncate text-sm font-medium">{text}</span>;
@@ -159,11 +153,11 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
     case 'localTool':
       return {
         viewName: plugin.title,
-        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs">{plugin.toolId === 'jira' ? <SquareCheckBig className="size-4 text-muted-foreground" /> : <LayoutTemplate className="size-4 text-muted-foreground" />}{!shortForm && <span className="truncate">{plugin.title}</span>}</span>,
+        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs">{plugin.toolId === 'jira' ? <SquareCheckBig className="size-4 text-muted-foreground" /> : plugin.toolId === 'organization' ? <Files className="size-4 text-muted-foreground" /> : <LayoutTemplate className="size-4 text-muted-foreground" />}{!shortForm && <span className="truncate">{plugin.title}</span>}</span>,
         leftBarItem: <MediumLabel text={plugin.title} />,
         rightBarItem: null,
         contentPadding: 0,
-        buildWidget: (context) => plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : plugin.toolId === 'jira' ? <JiraDashboardPage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
+        buildWidget: (context) => plugin.toolId === 'organization' ? <HyperOrganizationPage /> : plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : plugin.toolId === 'jira' ? <JiraDashboardPage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
       };
     case 'databaseDocument':
       return {
@@ -193,7 +187,7 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
           ),
         // Document and chat use EdgeInsets.zero; databases EdgeInsets.only(top: 28).
         contentPadding: isDatabase ? '28px 0 0 0' : 0,
-        buildWidget: (context) => <ViewPlaceholderPage view={view} context={context} />,
+        buildWidget: (context) => type === PluginType.document ? hyperIsCollectionView(view) ? <HyperCollectionPage view={view} context={context} /> : <HyperDocumentPage view={view} context={context} renderHeader={(session, current, editable) => <HyperViewAppearance view={current} session={session} editable={editable} />} /> : type === PluginType.chat ? <HyperAIChatPage view={view} context={context} /> : isDatabase ? <HyperDatabasePage view={view} context={context} /> : <ViewPlaceholderPage view={view} context={context} />,
       };
     }
   }

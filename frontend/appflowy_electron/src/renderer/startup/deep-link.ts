@@ -59,8 +59,8 @@ export async function handleDeepLink(url: string): Promise<void> {
     if (result.ok) {
       set('finish');
       // Imported lazily: the launcher imports this module.
-      const { runAppFlowy } = await import('./launcher');
-      await runAppFlowy();
+      const { runHyperTask } = await import('./HyperLauncher');
+      await runHyperTask();
     } else {
       // The Flutter app leaves the sign-in button spinning here; report the error instead.
       set('error');

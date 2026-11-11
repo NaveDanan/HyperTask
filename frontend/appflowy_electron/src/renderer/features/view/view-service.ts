@@ -1,10 +1,8 @@
 // ViewBackendService (workspace/application/view/view_service.dart).
 import type { ViewLayoutPB, ViewPB, ViewSectionPB } from '@shared/protobuf/flowy-folder/view_pb';
 import {
-  DocumentEventDeleteFile,
   FolderEventCreateView,
   FolderEventDeleteView,
-  FolderEventDuplicateView,
   FolderEventGetAllViews,
   FolderEventGetPublishInfo,
   FolderEventGetView,
@@ -13,11 +11,13 @@ import {
   FolderEventToggleFavorite,
   FolderEventUnpublishViews,
   FolderEventUpdateView,
-  FolderEventUpdateViewIcon,
   FolderEventUpdateViewVisibilityStatus,
 } from '@/backend/events';
 import type { FlowyResult } from '@/backend/dispatch';
-import { iconTypeToProto, viewIconData, type EmojiIconData } from './view-ext';
+import { iconTypeToProto, type EmojiIconData } from './view-ext';
+import { hyperDuplicateView } from '../document-duplicate/HyperDocumentDuplicateBackend';
+import type { HyperDocumentOwner } from '../document/HyperDocumentOwner';
+import { hyperUpdateViewIcon, type HyperAppearanceTarget } from '../view-appearance/HyperViewAppearanceService';
 
 export interface CreateViewOptions {
   layoutType: ViewLayoutPB;
@@ -85,6 +85,7 @@ export const ViewBackendService = {
     parentViewId,
     suffix,
     syncAfterDuplicate,
+    owner,
   }: {
     view: Pick<ViewPB, 'id'>;
     openAfterDuplicate: boolean;
@@ -92,15 +93,9 @@ export const ViewBackendService = {
     parentViewId?: string;
     suffix?: string;
     syncAfterDuplicate: boolean;
+    owner?: HyperDocumentOwner | null;
   }) {
-    return FolderEventDuplicateView({
-      viewId: view.id,
-      openAfterDuplicate,
-      includeChildren,
-      syncAfterCreate: syncAfterDuplicate,
-      ...(parentViewId !== undefined ? { oneOfParentViewId: { case: 'parentViewId', value: parentViewId } } : null),
-      ...(suffix !== undefined ? { oneOfSuffix: { case: 'suffix', value: suffix } } : null),
-    });
+    return hyperDuplicateView({ view, openAfterDuplicate, includeChildren, parentViewId, suffix, syncAfterDuplicate, owner });
   },
 
   favorite(viewId: string) {
@@ -116,16 +111,9 @@ export const ViewBackendService = {
     });
   },
 
-  /** updateViewIcon: a replaced custom (uploaded) icon file is deleted. */
-  updateViewIcon(view: ViewPB, icon: EmojiIconData) {
-    const old = viewIconData(view);
-    if (old.type === 'custom' && icon.emoji !== old.emoji) {
-      void DocumentEventDeleteFile({ url: old.emoji });
-    }
-    return FolderEventUpdateViewIcon({
-      viewId: view.id,
-      oneOfIcon: { case: 'icon', value: { ty: iconTypeToProto(icon.type), value: icon.emoji } },
-    });
+  /** Shared assets are retained when their page reference changes. */
+  updateViewIcon(view: ViewPB, icon: EmojiIconData, target?: HyperAppearanceTarget) {
+    return hyperUpdateViewIcon(view, { ty: iconTypeToProto(icon.type), value: icon.emoji }, target);
   },
 
   /** moveViewV2: a null prevViewId moves the view to the start of the new parent. */

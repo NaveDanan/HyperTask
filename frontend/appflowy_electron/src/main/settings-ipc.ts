@@ -1,12 +1,13 @@
 import { ipcMain, type BrowserWindow } from 'electron';
-import { IpcChannel as C, type CompanyCertificate, type CustomThemeFiles, type JiraCredentials, type OpenAIEndpointTestRequest } from '@shared/api';
+import { IpcChannel as C, type CompanyCertificate, type CustomThemeFiles, type JiraCredentials, type OpenAIEndpointDiscoveryRequest, type OpenAIEndpointTestRequest } from '@shared/api';
 import { CompanyCertificateStore } from './certificates';
 import { installCustomTheme, listCustomThemes, readPluginDirectory, removeCustomTheme } from './custom-themes';
 import { protect } from './dpapi';
 import { loadGoogleFont } from './google-fonts';
 import { JiraCredentialFiles } from './jira-credentials';
-import { testEndpoint, writeEndpointSettings } from './openai-endpoint';
+import { discoverEndpoint, testEndpoint, writeEndpointSettings } from './openai-endpoint';
 import { toIpcResult } from './settings-error';
+import type { HyperAICredentials } from './HyperAICredentials';
 
 export interface SettingsIpcDeps {
   /** Flutter's getApplicationSupportDirectory(). */
@@ -14,13 +15,14 @@ export interface SettingsIpcDeps {
   /** getApplicationDocumentsDirectory(): where `.flowy_plugin` themes live. */
   documentsDirectory: () => string;
   getWindow?: () => BrowserWindow | null;
+  aiCredentials?: Pick<HyperAICredentials, 'protect' | 'unprotect'>;
 }
 
 /** IPC for the settings dialog: DPAPI, AI endpoint, company certificates, custom themes, fonts. */
 export function registerSettingsIpc(deps: SettingsIpcDeps): void {
   const certificates = new CompanyCertificateStore(deps.supportDirectory);
 
-  ipcMain.handle(C.DpapiProtect, (_, value: string) => toIpcResult(() => protect(value)));
+  ipcMain.handle(C.DpapiProtect, (_, value: string) => toIpcResult(() => deps.aiCredentials ? deps.aiCredentials.protect(value) : protect(value)));
 
   const jira = new JiraCredentialFiles(deps.supportDirectory);
   ipcMain.handle(C.JiraReadCredentials, (_, accountId: string) => toIpcResult(() => jira.read(accountId)));
@@ -33,7 +35,21 @@ export function registerSettingsIpc(deps: SettingsIpcDeps): void {
   ipcMain.handle(C.AiEndpointWriteSettings, (_, json: string) =>
     toIpcResult(() => writeEndpointSettings(deps.supportDirectory(), json)),
   );
-  ipcMain.handle(C.AiEndpointTest, (_, request: OpenAIEndpointTestRequest) => toIpcResult(() => testEndpoint(request)));
+  ipcMain.handle(C.AiEndpointTest, (_, request: OpenAIEndpointTestRequest) => toIpcResult(() => testEndpoint(request, deps.aiCredentials ? value => deps.aiCredentials!.unprotect(value) : undefined)));
+  const discoveries = new Map<number, AbortController>();
+  ipcMain.handle(C.AiEndpointDiscover, (event, request: OpenAIEndpointDiscoveryRequest) => toIpcResult(async () => {
+    const senderId = event.sender.id;
+    discoveries.get(senderId)?.abort();
+    const controller = new AbortController();
+    discoveries.set(senderId, controller);
+    const destroyed = () => controller.abort();
+    event.sender.once('destroyed', destroyed);
+    try { return await discoverEndpoint(request, controller.signal, deps.aiCredentials ? value => deps.aiCredentials!.unprotect(value) : undefined); }
+    finally {
+      event.sender.removeListener('destroyed', destroyed);
+      if (discoveries.get(senderId) === controller) discoveries.delete(senderId);
+    }
+  }));
 
   ipcMain.handle(C.CertificatesList, () => toIpcResult(() => certificates.list()));
   ipcMain.handle(C.CertificatesInspectFile, (_, filePath: string) => toIpcResult(() => certificates.inspectFile(filePath)));

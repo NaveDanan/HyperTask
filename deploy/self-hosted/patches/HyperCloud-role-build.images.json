@@ -1,0 +1,34 @@
+{
+  "verification": "Registry index, linux/amd64 manifest and image config SHA256 verified; no layer blobs downloaded.",
+  "images": [
+    {
+      "repository": "library/rust",
+      "tag": "1.85.0-bookworm",
+      "index_digest": "sha256:0ff31c9ffa641a62e48d543fb00b4960955ea375f40776f40f585b89e654cc5e",
+      "linux_amd64_digest": "sha256:16a7f242108de02f10fe4a392991679bafa7694e59f5b40a54d5af1be9b40d03",
+      "config_digest": "sha256:9436385238b1d9cddae43c7eb32bd9204021346f9ed6628c00c5ef55cbfc7cc0",
+      "created": "2025-03-05T18:46:45Z",
+      "architecture": "amd64",
+      "registry_manifest_url": "https://registry-1.docker.io/v2/library/rust/manifests/1.85.0-bookworm",
+      "compressed_layer_bytes": 541924948,
+      "rust_version": "1.85.0",
+      "metadata_sha256_verified": true,
+      "layers_downloaded": false
+    },
+    {
+      "repository": "library/debian",
+      "tag": "12.10-slim",
+      "index_digest": "sha256:4b50eb66f977b4062683ff434ef18ac191da862dbe966961bc11990cf5791a8d",
+      "linux_amd64_digest": "sha256:5accafaaf0f2c0a3ee5f2dcd9a5f2ef7ed3089fe4ac6a9fc9b1cf16396571322",
+      "config_digest": "sha256:59429810452a41b3c3c45ec3ad270e50f10db1100edc71b175728a04e1bb97ad",
+      "created": "2025-04-28T00:00:00Z",
+      "architecture": "amd64",
+      "registry_manifest_url": "https://registry-1.docker.io/v2/library/debian/manifests/12.10-slim",
+      "compressed_layer_bytes": 28227642,
+      "rust_version": null,
+      "metadata_sha256_verified": true,
+      "layers_downloaded": false
+    }
+  ],
+  "scope": "Pinned base metadata only. Container build, proxy/TLS and independent reproducibility are unverified."
+}

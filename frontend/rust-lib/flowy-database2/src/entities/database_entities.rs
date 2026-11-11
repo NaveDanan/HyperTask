@@ -27,6 +27,9 @@ pub struct DatabasePB {
 
   #[pb(index = 4)]
   pub layout_type: DatabaseLayoutPB,
+
+  #[pb(index = 5)]
+  pub row_activity_context: String,
 }
 
 #[derive(ProtoBuf, Default)]
@@ -391,4 +394,32 @@ pub struct CustomPromptDatabaseConfigPB {
 
   #[pb(index = 5, one_of)]
   pub category_field_id: Option<String>,
+}
+
+/// A mounted reader replaces its complete desired row set. Empty rows retain a
+/// live empty pane; close_activity permanently disposes that pane.
+#[derive(Debug, Clone, Default, ProtoBuf)]
+pub struct HyperUpdateRowActivityPB {
+  #[pb(index = 1)]
+  pub view_id: String,
+  #[pb(index = 2)]
+  pub context_id: String,
+  #[pb(index = 3)]
+  pub activity_id: String,
+  #[pb(index = 4)]
+  pub revision: u64,
+  #[pb(index = 5)]
+  pub row_ids: Vec<String>,
+  #[pb(index = 6)]
+  pub close_activity: bool,
+}
+
+#[derive(Debug, Clone, Default, ProtoBuf)]
+pub struct HyperRowActivityAckPB {
+  #[pb(index = 1)]
+  pub context_id: String,
+  #[pb(index = 2)]
+  pub activity_id: String,
+  #[pb(index = 3)]
+  pub revision: u64,
 }

@@ -101,6 +101,13 @@ pub struct ChatMessagesResult {
   pub has_more: bool,
 }
 
+/// Message ids are primary keys across every chat in a user's database.
+pub fn select_latest_chat_message_id(mut conn: DBConnection) -> QueryResult<Option<i64>> {
+  dsl::chat_message_table
+    .select(diesel::dsl::max(chat_message_table::message_id))
+    .first::<Option<i64>>(&mut *conn)
+}
+
 pub fn select_chat_messages(
   mut conn: DBConnection,
   chat_id_val: &str,

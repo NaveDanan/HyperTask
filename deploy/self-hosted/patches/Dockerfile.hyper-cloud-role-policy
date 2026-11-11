@@ -1,0 +1,32 @@
+# Source-pinned AGPL 0.9.51 role-policy candidate. Container build/runtime are not yet validated.
+FROM docker.io/library/rust:1.85.0-bookworm@sha256:0ff31c9ffa641a62e48d543fb00b4960955ea375f40776f40f585b89e654cc5e AS builder
+WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 protobuf-compiler pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN printf '%s  %s\n' '88127818c44acad66d2f7c3b52e8ff5d409820885d24728d7169bbdd885f21cf' '.hyper-build/HyperPrepareCloudRoles.py' | sha256sum --check - \
+    && python3 -B .hyper-build/HyperPrepareCloudRoles.py --verify-export /app
+ENV SQLX_OFFLINE=true RUSTUP_TOOLCHAIN=1.85.0 CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 \
+    CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+RUN cargo test --locked -j1 -p access-control --lib \
+    && cargo build --locked -j1 --release -p appflowy-cloud --bin appflowy_cloud
+
+FROM docker.io/library/debian:12.10-slim@sha256:4b50eb66f977b4062683ff434ef18ac191da862dbe966961bc11990cf5791a8d AS runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+LABEL org.opencontainers.image.source="https://github.com/AppFlowy-IO/AppFlowy-Cloud" \
+      org.opencontainers.image.revision="0311f6a9314da56e12d2b33d18c398dba1933240" \
+      org.opencontainers.image.version="0.9.51-hyper-roles-702adf9270e7" \
+      org.opencontainers.image.licenses="AGPL-3.0" \
+      io.github.navedanan.hypertask.patch.sha256="702adf9270e76cab6c3837ddbfabc60921e7ee0fbfc64c7e7bf55ceba8696987" \
+      io.github.navedanan.hypertask.source-tree.sha256="1a5bcec3937a45f9f72b8e1e80cb754317cef1b3dd07125538a0f9319c42e902"
+COPY --from=builder /app/target/release/appflowy_cloud /usr/local/bin/appflowy_cloud
+COPY --from=builder /app/LICENSE /usr/share/doc/hyper-cloud-role-policy/LICENSE
+COPY --from=builder /app/.hyper-build/ /usr/share/doc/hyper-cloud-role-policy/build/
+RUN chmod -R a+rX /usr/share/doc/hyper-cloud-role-policy
+ENV APPFLOWY_APPLICATION_PORT=8000 PORT=8000
+EXPOSE 8000
+CMD ["appflowy_cloud"]

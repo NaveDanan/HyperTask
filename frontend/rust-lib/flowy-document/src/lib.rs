@@ -4,6 +4,8 @@ pub mod entities;
 pub mod event_handler;
 pub mod event_map;
 pub mod manager;
+pub mod hyper_duplicate;
+pub mod hyper_committed_document;
 pub mod parser;
 pub mod protobuf;
 

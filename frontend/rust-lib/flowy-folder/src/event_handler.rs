@@ -144,11 +144,12 @@ pub(crate) async fn get_view_ancestors_handler(
 pub(crate) async fn update_view_handler(
   data: AFPluginData<UpdateViewPayloadPB>,
   folder: AFPluginState<Weak<FolderManager>>,
-) -> Result<(), FlowyError> {
+) -> DataResult<ViewPB, FlowyError> {
   let folder = upgrade_folder(folder)?;
   let params: UpdateViewParams = data.into_inner().try_into()?;
+  let view_id = params.view_id.clone();
   folder.update_view_with_params(params).await?;
-  Ok(())
+  data_result_ok(folder.get_view_pb(&view_id).await?)
 }
 
 #[tracing::instrument(level = "debug", skip(data, folder), err)]

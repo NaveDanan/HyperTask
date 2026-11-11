@@ -80,6 +80,8 @@ export const homeSettingActions = {
 
 export const MINIMUM_SIDEBAR_WIDTH = 268;
 export const NOTIFICATION_PANEL_WIDTH = 380;
+/** How much of the sidebar stays visible when it is collapsed: an icon rail. */
+export const SIDEBAR_RAIL_WIDTH = 56;
 
 /** HomeLayout (home/home_layout.dart). */
 export function useHomeLayout(windowWidth: number) {
@@ -90,8 +92,10 @@ export function useHomeLayout(windowWidth: number) {
   return {
     menuWidth,
     showMenu,
+    railWidth: SIDEBAR_RAIL_WIDTH,
     menuIsDrawer,
-    homePageLOffset: showMenu && !menuIsDrawer ? menuWidth : 0,
+    // Hidden: the sidebar peeks back by the rail, so its icons stay tappable.
+    homePageLOffset: showMenu && !menuIsDrawer ? menuWidth : SIDEBAR_RAIL_WIDTH,
     menuSpacing: !showMenu && navigator.userAgent.includes('Mac') ? 80 : 0,
     animDuration: state.resizeType === 'drag' ? 30 : 350,
     showNotificationPanel: !state.isNotificationPanelCollapsed,

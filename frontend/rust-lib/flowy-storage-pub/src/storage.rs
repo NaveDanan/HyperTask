@@ -13,6 +13,18 @@ pub trait StorageService: Send + Sync {
 
   fn download_object(&self, url: String, local_file_path: String) -> FlowyResult<()>;
 
+  /// Unlike the legacy fire-and-forget method, success confirms a complete file.
+  async fn download_object_complete(
+    &self,
+    _url: String,
+    _local_file_path: String,
+  ) -> FlowyResult<()> {
+    Err(
+      FlowyError::internal()
+        .with_context("This storage provider does not support completed downloads"),
+    )
+  }
+
   async fn create_upload(
     &self,
     workspace_id: &str,

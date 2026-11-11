@@ -54,6 +54,7 @@ impl TaskQueue {
   #[allow(dead_code)]
   pub(crate) fn clear(&mut self) {
     self.queue.clear();
+    self.index_tasks.clear();
   }
 
   pub(crate) fn mut_head<T, F>(&mut self, mut f: F) -> Option<T>

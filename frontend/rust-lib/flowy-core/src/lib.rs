@@ -26,7 +26,7 @@ use uuid::Uuid;
 use lib_dispatch::prelude::*;
 use lib_dispatch::runtime::AFPluginRuntime;
 use lib_infra::priority_task::{TaskDispatcher, TaskRunner};
-use lib_infra::util::{get_operating_system, OperatingSystem};
+use lib_infra::util::{OperatingSystem, get_operating_system};
 use lib_log::stream_log::StreamLogSender;
 use module::make_plugins;
 
@@ -47,6 +47,8 @@ pub mod config;
 mod deps_resolve;
 mod folder_view_observer;
 mod full_indexed_data_provider;
+#[cfg(test)]
+mod hyper_download_provider_tests;
 mod indexed_data_consumer;
 mod indexing_data_runner;
 mod log_filter;
@@ -117,6 +119,10 @@ impl AppFlowyCore {
   }
 
   pub fn close_db(&self) {
+    self.search_manager.invalidate_context();
+    self.database_manager.invalidate_duplicate_operations();
+    self.document_manager.invalidate_document_context();
+    self.storage_manager.invalidate_download_operations();
     self.user_manager.close_db();
   }
 
@@ -243,10 +249,12 @@ impl AppFlowyCore {
       )
       .await;
 
-      let search_manager =
-        SearchDepsResolver::resolve(
-          folder_manager.clone(), document_manager.clone(), ai_manager.clone(),
-        ).await;
+      let search_manager = SearchDepsResolver::resolve(
+        folder_manager.clone(),
+        document_manager.clone(),
+        ai_manager.clone(),
+      )
+      .await;
 
       // Register the folder operation handlers
       register_handlers(
@@ -254,6 +262,8 @@ impl AppFlowyCore {
         Arc::downgrade(&document_manager),
         Arc::downgrade(&database_manager),
         Arc::downgrade(&ai_manager),
+        Arc::downgrade(&search_manager),
+        Arc::downgrade(&user_manager),
       );
 
       (

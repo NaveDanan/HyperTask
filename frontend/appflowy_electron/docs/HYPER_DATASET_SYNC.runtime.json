@@ -1,0 +1,375 @@
+{
+  "version": 1,
+  "checked_at_utc": "2026-11-11T12:30:27.405227+00:00",
+  "client_core": {
+    "sha256": "48d88b4c9cf7bc7d79dec2401cbecfa9be18288f13838a79a895a854ccdc1932",
+    "bytes": 212565056,
+    "platform": "linux/amd64",
+    "features": [
+      "file_reader"
+    ],
+    "focused_library_tests": 149,
+    "host_tests": 5,
+    "full_database_library_tests": 97,
+    "event_bindings": 230
+  },
+  "server": {
+    "cloud_binary_sha256": "3aeb78168835416d63c6bfd86a792237ccdfc4939738bcbb286da5445039a32c",
+    "upstream_revision": "0311f6a9314da56e12d2b33d18c398dba1933240",
+    "role_patch_sha256": "702adf9270e76cab6c3837ddbfabc60921e7ee0fbfc64c7e7bf55ceba8696987",
+    "execution": "five verified non-root loopback processes",
+    "existing_deployment_used": false
+  },
+  "copied_object_publication": {
+    "observer_reads_precede_creator_target_inspection": true,
+    "source_document_open_retries": 0,
+    "database_copies_skip_legacy_snapshot_upsert": true,
+    "same_operation_recovery_preserves_targets_and_source": true,
+    "stages": [
+      {
+        "name": "same-disposable-account-fresh-clients",
+        "status": "GREEN",
+        "seconds": 5.268
+      },
+      {
+        "name": "native-source-body-cell-reminders-control-on-observer",
+        "status": "GREEN",
+        "seconds": 16.98
+      },
+      {
+        "name": "whole-dataset-native-copy-binding-before-any-creator-body-read",
+        "status": "GREEN",
+        "seconds": 0.917
+      },
+      {
+        "name": "whole-dataset-copy-remotely-readable-bodies-cells-reminders",
+        "status": "GREEN",
+        "seconds": 2.125
+      },
+      {
+        "name": "whole-dataset-local-body-inspection-after-remote-first-control",
+        "status": "GREEN",
+        "seconds": 0.442
+      },
+      {
+        "name": "DuplicateRow-discarded-ack-local-copy-and-independent-timers",
+        "status": "GREEN",
+        "seconds": 0.917
+      },
+      {
+        "name": "DuplicateRow-remotely-readable-bodies-cells-reminders",
+        "status": "GREEN",
+        "seconds": 5.24
+      },
+      {
+        "name": "row-copy-local-body-inspection-after-remote-first-control",
+        "status": "GREEN",
+        "seconds": 0.442
+      },
+      {
+        "name": "creator-restart-row-operation-recovery-and-source-preservation",
+        "status": "GREEN",
+        "seconds": 3.31
+      },
+      {
+        "name": "observer-restart-remote-row-copy-durable-read",
+        "status": "GREEN",
+        "seconds": 4.167
+      }
+    ]
+  },
+  "row_activity": {
+    "source_rows": 61,
+    "overlapping_second_pane_rows": 41,
+    "legacy_InitRow_calls": 0,
+    "reader_lifetimes_include_empty_panes": true,
+    "stages": [
+      {
+        "name": "same-owned-account-disposable-roots",
+        "status": "GREEN",
+        "seconds": 5.122
+      },
+      {
+        "name": "create-and-read-all-61-source-rows-without-legacy-InitRow",
+        "status": "GREEN",
+        "seconds": 28.654
+      },
+      {
+        "name": "activate-full-61-and-overlapping-pane-with-one-context",
+        "status": "GREEN",
+        "seconds": 1.041
+      },
+      {
+        "name": "remote-updates-reach-first-and-last-of-more-than-fifty-active-rows",
+        "status": "GREEN",
+        "seconds": 2.997
+      },
+      {
+        "name": "terminal-first-pane-keeps-overlapping-pane-live-and-rejects-replay",
+        "status": "GREEN",
+        "seconds": 2.401
+      },
+      {
+        "name": "live-empty-pane-prevents-retirement-until-terminal-disposal",
+        "status": "GREEN",
+        "seconds": 3.769
+      },
+      {
+        "name": "new-activity-keeps-bidirectional-cell-and-metadata-live",
+        "status": "GREEN",
+        "seconds": 2.633
+      },
+      {
+        "name": "restart-rejects-old-activity-and-rereads-existing-data",
+        "status": "GREEN",
+        "seconds": 2.424
+      }
+    ]
+  },
+  "same_process_cloud_sdk_reinitialization": {
+    "same_pid_core_process_support_and_workspace": true,
+    "active_row_subscription_and_open_cloud_document": true,
+    "repeated_oauth_login": false,
+    "stages": [
+      {
+        "name": "one-owned-account-signin-on-each-fresh-root",
+        "status": "GREEN",
+        "seconds": 5.1
+      },
+      {
+        "name": "source-cloud-grid-and-body-reach-observer-without-legacy-InitRow",
+        "status": "GREEN",
+        "seconds": 8.703
+      },
+      {
+        "name": "active-row-subscription-and-cloud-document-open-before-sdk-reinit",
+        "status": "GREEN",
+        "seconds": 0.448
+      },
+      {
+        "name": "same-process-same-support-CoreInit-without-repeat-OAuth",
+        "status": "GREEN",
+        "seconds": 0.557
+      },
+      {
+        "name": "profile-workspace-and-database-ready-then-old-context-rejected",
+        "status": "GREEN",
+        "seconds": 1.346
+      },
+      {
+        "name": "creator-cell-and-metadata-updates-reach-reinitialized-cloud-reader",
+        "status": "GREEN",
+        "seconds": 6.91
+      },
+      {
+        "name": "cloud-document-edits-sync-both-directions-after-same-process-init",
+        "status": "GREEN",
+        "seconds": 3.004
+      },
+      {
+        "name": "reinitialized-reader-cell-edit-reaches-creator-and-lease-disposes",
+        "status": "GREEN",
+        "seconds": 1.944
+      }
+    ]
+  },
+  "same_path_local_sdk_regressions": {
+    "passed": 2,
+    "no_activity_control_and_active_61_row_case": true,
+    "original_red_cases_retained_without_weakened_assertions": true,
+    "unchanged_immediate_and_repeat_passes": 8
+  },
+  "cleanup": {
+    "all_probe_cores_stopped": true,
+    "original_failing_reports_retained": true,
+    "remote_test_artifacts_retained": true
+  },
+  "limits": [
+    "Native probes use the same owned disposable account and the pinned patched Cloud 0.9.51 server.",
+    "Restart stages cover client/Core restarts and same-process SDK replacement, not backend-restart durability.",
+    "No offline-partition, arbitrary-server, container, reverse-proxy, TLS or multi-replica claim."
+  ],
+  "thumbnail_and_document_history": {
+    "native_history_success_and_creator_state_checked_before_observer": true,
+    "comparison": "Canonical JSON object ordering only; values and raster bytes remain exact.",
+    "stages": [
+      {
+        "name": "same-disposable-account-one-login-per-fresh-client",
+        "status": "GREEN",
+        "seconds": 6.447
+      },
+      {
+        "name": "production-guarded-bookmark-snapshot-cloud-upload-save",
+        "status": "GREEN",
+        "seconds": 53.912
+      },
+      {
+        "name": "fresh-B-exact-cloud-ref-and-readable-body",
+        "status": "GREEN",
+        "seconds": 0.716
+      },
+      {
+        "name": "B-strict-completed-download-exact-bytes",
+        "status": "GREEN",
+        "seconds": 0.645
+      },
+      {
+        "name": "thumbnail-remove-Undo-Redo-sync-without-file-deletion",
+        "status": "GREEN",
+        "seconds": 21.602
+      },
+      {
+        "name": "B-restart-without-relogin-retains-independent-saved-card-and-download",
+        "status": "GREEN",
+        "seconds": 1.439
+      },
+      {
+        "name": "fresh-cold-C-exact-native-cloud-card-after-history",
+        "status": "GREEN",
+        "seconds": 3.975
+      },
+      {
+        "name": "plain-text-native-Undo-Redo-two-client-control",
+        "status": "GREEN",
+        "seconds": 10.801
+      }
+    ]
+  },
+  "row_reader_contention": {
+    "original_full_suite_error": "First 61-row activation returned operation would block.",
+    "deterministic_old_code_reproducer": "failed before correction",
+    "corrected_native_cases": 3,
+    "initial_activation_waits_for_readers": true,
+    "terminal_release_and_owner_loss_prevent_late_initialization": true,
+    "original_lifecycle_fixture_modified": false
+  },
+  "prior_desktop_regression": {
+    "state": "failed_before_prepared_write_fix",
+    "passed": 1482,
+    "failed": 1,
+    "tests": 1483,
+    "files": 246,
+    "failure": "First 61-row activation returned operation would block under a concurrent reader.",
+    "isolated_production_build": "passed",
+    "typescript_projects": "3 passed",
+    "core_sha256": "90ef091d8b9bc5b2c31292526106a7ac46f98a96b036a7712cf399567027d501"
+  },
+  "desktop_verification": {
+    "state": "passed",
+    "tests": 1543,
+    "files": 253,
+    "failed": 0,
+    "skipped": 0,
+    "typescript_projects_passed": 3,
+    "isolated_production_build": "passed",
+    "source_manifest_unchanged": true,
+    "includes_inline_math_editor_export_import": true
+  },
+  "previous_desktop_verification": {
+    "state": "passed",
+    "tests": 1507,
+    "files": 247,
+    "failed": 0,
+    "skipped": 0,
+    "typescript_projects_passed": 3,
+    "isolated_production_build": "passed"
+  },
+  "inline_math": {
+    "state": "verified in completed desktop checkpoint",
+    "initial_foundation_model_tests": 24,
+    "actual_core_cases": 5,
+    "upstream_storage": "ASCII dollar placeholder with string formula attribute",
+    "core_or_protocol_changes": false,
+    "native_checks": [
+      "UTF-16 and merged atoms",
+      "Undo/Redo and physical restart",
+      "copy and Markdown native import preservation",
+      "fresh page/database locks and row-body binding",
+      "keyboard focus, IME and read-only inspection",
+      "unknown-data source fallback and uncertain-save recovery"
+    ],
+    "portable_formats": {
+      "html_clipboard_pdf": "trusted inline MathML with bundled STIX font",
+      "markdown": "inert exact-source spans with full attributes; ordinary dollar text remains literal"
+    },
+    "live_limits": {
+      "atoms_per_block": 64,
+      "distinct_formula_parses_per_paint": 8,
+      "formula_source_units_per_paint": 32768,
+      "mathml_units_per_paint": 262144,
+      "mathml_tags_per_paint": 5000
+    },
+    "export_limits": {
+      "atoms_per_document": 2048,
+      "inline_output_bytes": 8388608,
+      "metadata_utf8_bytes_per_atom": 65536
+    },
+    "pdf_checks": [
+      "embedded font",
+      "overwide formula",
+      "120px containing box",
+      "excessive height",
+      "no script or remote resource loading",
+      "rendered sample visually inspected"
+    ],
+    "independent_source_review": "no new actionable findings",
+    "remaining": [
+      "unsupported MathML constructs",
+      "diagrams"
+    ]
+  },
+  "follow_up_verification": {
+    "state": "focused checks passed after the full desktop checkpoint",
+    "core_or_protocol_changes": false,
+    "calendar_week_start": {
+      "model_and_service_tests": 42,
+      "native_controls_and_actual_page_tests": 3,
+      "checks": [
+        "Sunday/Monday alignment",
+        "keyboard and async focus",
+        "linked view preference isolation",
+        "read-only browsing and fresh native locks",
+        "date values, zones and flags preserved",
+        "physical core restart"
+      ]
+    },
+    "time_and_shared_filter_regressions": {
+      "tests": 87,
+      "files": 10,
+      "checks": [
+        "all eight operators",
+        "exact integer-minute signed i64 values",
+        "empty versus zero by authoritative row membership",
+        "native prefill and restart",
+        "current native locks",
+        "legacy and future wire preservation",
+        "captured generation across reads and late acknowledgements",
+        "unsupported predicate summaries"
+      ]
+    },
+    "markdown_styled_whitespace": {
+      "converter_regressions": 48,
+      "inert_html_checks": 10,
+      "actual_native_import_restart_cases": 1,
+      "preserves": [
+        "leading and trailing whitespace",
+        "whitespace-only code",
+        "CRLF and line separators",
+        "adjacent code with different opaque attributes",
+        "full attributes and safe links"
+      ],
+      "ordinary_valid_output_changed": false
+    },
+    "typescript_projects_passed": 3,
+    "isolated_production_build": "passed",
+    "full_suite_repeated": false,
+    "watched_electron_app": "running with isolated development data"
+  },
+  "successor_desktop_checkpoint": {
+    "evidence": "HYPER_FILTER_GROUPS.runtime.json",
+    "core_sha256": "cfdcdd33ef1af0f2feb655484f7ae421393df0cf9bf156585a0f8d1c8dca1a89",
+    "tests": 1627,
+    "files": 265,
+    "note": "The server stages above retain their original core identity."
+  }
+}

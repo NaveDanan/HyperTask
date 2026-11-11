@@ -7,9 +7,11 @@ use std::future::Future;
 use std::io::{BufReader, Write};
 use std::net::{Ipv4Addr, TcpStream};
 use std::pin::Pin;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc as std_mpsc;
 use std::sync::{Arc, OnceLock};
 use std::task::{Context, Poll};
+use std::time::{Duration, Instant};
 
 use bytes::Bytes;
 use futures::ready;
@@ -32,10 +34,14 @@ use crate::config::{save_appflowy_cloud_config, AppFlowyConfiguration};
 use crate::protocol::*;
 
 mod config;
+#[cfg(test)]
+mod hyper_host_tests;
 mod ports;
 mod protocol;
 
 static OUTBOX: OnceLock<std_mpsc::Sender<Vec<u8>>> = OnceLock::new();
+pub(crate) static SDK_READY: AtomicBool = AtomicBool::new(false);
+const RETIRE_TIMEOUT: Duration = Duration::from_secs(2);
 
 pub(crate) fn send_frame(frame: Vec<u8>) {
   if let Some(outbox) = OUTBOX.get() {
@@ -44,7 +50,10 @@ pub(crate) fn send_frame(frame: Vec<u8>) {
 }
 
 fn send_response(id: u64, status: u8, payload: &[u8]) {
-  send_frame(encode(KIND_RESPONSE, &[&id.to_le_bytes(), &[status], payload]));
+  send_frame(encode(
+    KIND_RESPONSE,
+    &[&id.to_le_bytes(), &[status], payload],
+  ));
 }
 
 fn main() {
@@ -108,6 +117,9 @@ unsafe impl Send for Task {}
 struct CoreHost {
   core: Option<AppFlowyCore>,
   sender: Option<mpsc::UnboundedSender<Task>>,
+  runner: Option<std::thread::JoinHandle<()>>,
+  runtime: Option<Arc<AFPluginRuntime>>,
+  shutdown: Option<std::thread::JoinHandle<()>>,
 }
 
 impl CoreHost {
@@ -141,6 +153,32 @@ impl CoreHost {
         return -1;
       },
     };
+    // A prior usable workspace is a narrower readiness expectation than merely
+    // having an account. Signup and missing-workspace recovery remain valid.
+    let mut readiness_uncertain = false;
+    let previous_workspace = self.core.as_ref().and_then(|core| {
+      let runtime = self.runtime.as_ref()?;
+      let uid = core.user_manager.user_id().ok()?;
+      let workspace = core.user_manager.workspace_id().ok()?;
+      match workspace_database_ready(core, runtime, RETIRE_TIMEOUT) {
+        Some(true) => Some((core.config.storage_path.clone(), uid, workspace)),
+        Some(false) => None,
+        None => {
+          readiness_uncertain = true;
+          None
+        },
+      }
+    });
+    // Old tasks must finish before configuration mutates this process's global
+    // environment or a replacement SDK opens the same physical workspace.
+    if !self.retire(RETIRE_TIMEOUT) {
+      error!("[Electron]: the previous workspace is still closing. Existing data was kept; retry opening the workspace.");
+      return -1;
+    }
+    if readiness_uncertain {
+      error!("[Electron]: the previous workspace was busy. It was closed without replaying requests; retry opening it.");
+      return -1;
+    }
     configuration.write_env();
 
     if configuration.authenticator_type == AuthenticatorType::AppFlowyCloud {
@@ -164,23 +202,46 @@ impl CoreHost {
       DEFAULT_NAME.to_string(),
     );
 
-    if let Some(core) = &self.core {
-      core.close_db();
-    }
-
     let (sender, task_rx) = mpsc::unbounded_channel::<Task>();
-    let runtime = Arc::new(AFPluginRuntime::new().unwrap());
+    let runtime = match AFPluginRuntime::new() {
+      Ok(runtime) => Arc::new(runtime),
+      Err(error) => {
+        error!(
+          "[Electron]: could not start the workspace runtime: {}",
+          error
+        );
+        return -1;
+      },
+    };
     let cloned_runtime = runtime.clone();
-    std::thread::spawn(move || {
+    self.runner = Some(std::thread::spawn(move || {
       let local_set = LocalSet::new();
       cloned_runtime.block_on(local_set.run_until(Runner { rx: task_rx }));
-    });
+    }));
 
-    // Replacing the sender ends the previous runner thread.
     self.sender = Some(sender);
+    self.runtime = Some(runtime.clone());
     let cloned_runtime = runtime.clone();
-    self.core =
-      Some(runtime.block_on(async move { AppFlowyCore::new(config, cloned_runtime, None).await }));
+    let core =
+      runtime.block_on(async move { AppFlowyCore::new(config, cloned_runtime, None).await });
+    // Core construction logs failures instead of returning them. Only enforce
+    // reopening when this exact account/root/workspace was usable before init;
+    // a new account, root, signup or workspace-selection state can still load.
+    let reopening = previous_workspace.is_some_and(|(path, uid, workspace)| {
+      path == core.config.storage_path
+        && core.user_manager.user_id().ok() == Some(uid)
+        && core.user_manager.workspace_id().ok() == Some(workspace)
+    });
+    let ready =
+      !reopening || workspace_database_ready(&core, &runtime, RETIRE_TIMEOUT) == Some(true);
+    self.core = Some(core);
+    drop(runtime);
+    if !ready {
+      error!("[Electron]: could not reopen the previous workspace. Existing files were kept; restart the app before trying again.");
+      self.retire(RETIRE_TIMEOUT);
+      return -1;
+    }
+    SDK_READY.store(true, Ordering::Release);
     0
   }
 
@@ -188,7 +249,11 @@ impl CoreHost {
     let (Some(core), Some(sender)) = (self.core.as_ref(), self.sender.as_ref()) else {
       // Answer requests received before initialization instead of leaving callers waiting.
       error!("[Electron]: event {} sent before init", request.event);
-      send_response(request.id, STATUS_INTERNAL, b"AppFlowy core is not initialized");
+      send_response(
+        request.id,
+        STATUS_INTERNAL,
+        b"AppFlowy core is not initialized",
+      );
       return;
     };
 
@@ -207,10 +272,78 @@ impl CoreHost {
   }
 
   fn close(&mut self) {
+    self.retire(RETIRE_TIMEOUT);
+  }
+
+  fn retire(&mut self, timeout: Duration) -> bool {
+    SDK_READY.store(false, Ordering::Release);
     if let Some(core) = self.core.take() {
       core.close_db();
+      drop(core);
     }
     self.sender = None;
+    if !join_retired_thread(&mut self.runner, timeout) {
+      return false;
+    }
+    if let Some(mut runtime) = self.runtime.take() {
+      let deadline = Instant::now() + timeout;
+      loop {
+        runtime = match Arc::try_unwrap(runtime) {
+          Ok(runtime) => {
+            // Runtime Drop joins blocking workers as well as cancelling async
+            // tasks. Keep its thread if slow: a later Init can retry retirement,
+            // but no new owner is exposed while old workers can still emit.
+            self.shutdown = Some(std::thread::spawn(move || drop(runtime)));
+            break;
+          },
+          Err(runtime) => runtime,
+        };
+        if Instant::now() >= deadline {
+          self.runtime = Some(runtime);
+          return false;
+        }
+        std::thread::sleep(Duration::from_millis(5));
+      }
+    }
+    join_retired_thread(&mut self.shutdown, timeout)
+  }
+}
+
+fn join_retired_thread(
+  thread: &mut Option<std::thread::JoinHandle<()>>,
+  timeout: Duration,
+) -> bool {
+  if let Some(runner) = thread.as_ref() {
+    let deadline = Instant::now() + timeout;
+    while !runner.is_finished() {
+      if Instant::now() >= deadline {
+        return false;
+      }
+      std::thread::sleep(Duration::from_millis(5));
+    }
+  }
+  thread.take().is_none_or(|runner| runner.join().is_ok())
+}
+
+fn workspace_database_ready(
+  core: &AppFlowyCore,
+  runtime: &AFPluginRuntime,
+  timeout: Duration,
+) -> Option<bool> {
+  // A missing sentinel is expected; this authoritative read never creates data.
+  match runtime.block_on(async {
+    tokio::time::timeout(
+      timeout,
+      core
+        .database_manager
+        .get_database_id_with_view_id("00000000-0000-0000-0000-000000000000"),
+    )
+    .await
+  }) {
+    Ok(Ok(_)) => Some(true),
+    Ok(Err(error)) if error.code == flowy_error::ErrorCode::RecordNotFound => Some(true),
+    Ok(Err(_)) => Some(false),
+    Err(_) => None,
   }
 }
 
@@ -262,6 +395,9 @@ struct ElectronNotificationSender;
 
 impl NotificationSender for ElectronNotificationSender {
   fn send_subject(&self, subject: SubscribeObject) -> Result<(), String> {
+    if !SDK_READY.load(Ordering::Acquire) {
+      return Ok(());
+    }
     let bytes: Bytes = subject.try_into().map_err(|err| format!("{:?}", err))?;
     send_frame(encode(KIND_NOTIFICATION, &[&bytes]));
     Ok(())

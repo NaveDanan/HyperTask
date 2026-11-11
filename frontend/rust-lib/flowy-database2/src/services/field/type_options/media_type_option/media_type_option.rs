@@ -1,5 +1,7 @@
 use crate::{
-  entities::{FieldType, MediaCellChangeset, MediaCellDataPB, MediaFilterPB},
+  entities::{
+    FieldType, MediaCellChangeset, MediaCellDataPB, MediaFilterConditionPB, MediaFilterPB,
+  },
   services::{
     cell::{CellDataChangeset, CellDataDecoder},
     field::{
@@ -100,10 +102,13 @@ impl CellDataChangeset for MediaTypeOption {
 impl TypeOptionCellDataFilter for MediaTypeOption {
   fn apply_filter(
     &self,
-    _filter: &<Self as TypeOption>::CellFilter,
-    _cell_data: &<Self as TypeOption>::CellData,
+    filter: &<Self as TypeOption>::CellFilter,
+    cell_data: &<Self as TypeOption>::CellData,
   ) -> bool {
-    true
+    match filter.condition {
+      MediaFilterConditionPB::MediaIsEmpty => cell_data.files.is_empty(),
+      MediaFilterConditionPB::MediaIsNotEmpty => !cell_data.files.is_empty(),
+    }
   }
 }
 
@@ -120,5 +125,47 @@ impl TypeOptionCellDataCompare for MediaTypeOption {
       (false, true) => Ordering::Less,
       (false, false) => default_order(),
     }
+  }
+}
+
+#[cfg(test)]
+mod hyper_presence_tests {
+  use super::*;
+
+  #[test]
+  fn hyper_presence_media_uses_attachment_records_even_without_display_names() {
+    let mut attached = MediaCellData::default();
+    attached.files.push(Default::default());
+    attached.files[0].id = "stored-attachment".into();
+    attached.files[0].url = "https://example.invalid/no-fetch".into();
+    let empty = MediaCellData::default();
+    for hide_file_names in [false, true] {
+      let option = MediaTypeOption { hide_file_names };
+      for (condition, empty_visible, attached_visible) in [
+        (MediaFilterConditionPB::MediaIsEmpty, true, false),
+        (MediaFilterConditionPB::MediaIsNotEmpty, false, true),
+      ] {
+        let filter = MediaFilterPB {
+          condition,
+          content: String::new(),
+        };
+        assert_eq!(option.apply_filter(&filter, &empty), empty_visible);
+        assert_eq!(option.apply_filter(&filter, &attached), attached_visible);
+      }
+    }
+  }
+
+  #[test]
+  fn hyper_presence_media_empty_condition_matches_after_removing_the_final_reference() {
+    let option = MediaTypeOption::default();
+    let filter = MediaFilterPB {
+      condition: MediaFilterConditionPB::MediaIsEmpty,
+      content: String::new(),
+    };
+    let mut data = MediaCellData::default();
+    data.files.push(Default::default());
+    assert!(!option.apply_filter(&filter, &data));
+    data.files.clear();
+    assert!(option.apply_filter(&filter, &data));
   }
 }

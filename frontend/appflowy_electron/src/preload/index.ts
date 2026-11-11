@@ -30,10 +30,13 @@ const api: AppFlowyApi = {
     takeLaunchDeepLink: () => ipcRenderer.invoke(C.AppTakeLaunchDeepLink),
     exportLogs: () => ipcRenderer.invoke(C.AppExportLogs),
     clearCache: () => ipcRenderer.invoke(C.AppClearCache),
+    getStartup: () => ipcRenderer.invoke(C.HyperStartupGet),
+    setStartup: (enabled) => ipcRenderer.invoke(C.HyperStartupSet, enabled),
   },
   net: {
     request: (options) => ipcRenderer.invoke(C.NetRequest, options),
   },
+  bookmarks: { load: (url, owner) => ipcRenderer.invoke(C.HyperBookmarkLoad, url, owner), loadThumbnail: (url, owner) => ipcRenderer.invoke(C.HyperBookmarkThumbnailLoad, url, owner), importThumbnail: (data, owner) => ipcRenderer.invoke(C.HyperBookmarkThumbnailImport, data, owner) },
   clipboard: {
     writeText: (text) => ipcRenderer.send(C.ClipboardWriteText, text),
     readText: () => ipcRenderer.invoke(C.ClipboardReadText),
@@ -51,6 +54,17 @@ const api: AppFlowyApi = {
     writeText: (path, content) => ipcRenderer.invoke(C.FsWriteText, path, content),
     writeBytes: (path, data) => ipcRenderer.invoke(C.FsWriteBytes, path, data),
   },
+  assets: {
+    importFile: (path, kind) => ipcRenderer.invoke(C.AssetsImportFile, path, kind),
+    importGeneratedImage: (fileUrl) => ipcRenderer.invoke(C.AssetsImportGeneratedImage, fileUrl),
+    previewUrl: (path) => ipcRenderer.invoke(C.AssetsPreviewUrl, path),
+    previewCloud: (url, owner) => ipcRenderer.invoke(C.AssetsPreviewCloud, url, owner),
+    exportFile: (source, target) => ipcRenderer.invoke(C.AssetsExportFile, source, target),
+    inlineUrl: (path) => ipcRenderer.invoke(C.AssetsInlineUrl, path),
+    writeExportText: (path, content) => ipcRenderer.invoke(C.AssetsWriteExportText, path, content),
+    writeExportBytes: (path, content) => ipcRenderer.invoke(C.AssetsWriteExportBytes, path, content),
+  },
+  documentExport: { renderPdf: (html) => ipcRenderer.invoke(C.DocumentExportPdf, html) },
   window: {
     minimize: () => ipcRenderer.send(C.WindowMinimize),
     toggleMaximize: () => ipcRenderer.send(C.WindowToggleMaximize),
@@ -81,6 +95,7 @@ const api: AppFlowyApi = {
   aiEndpoint: {
     writeSettings: (json) => ipcRenderer.invoke(C.AiEndpointWriteSettings, json),
     test: (request) => ipcRenderer.invoke(C.AiEndpointTest, request),
+    discover: (request) => ipcRenderer.invoke(C.AiEndpointDiscover, request),
   },
   certificates: {
     list: () => ipcRenderer.invoke(C.CertificatesList),
@@ -96,6 +111,15 @@ const api: AppFlowyApi = {
   },
   fonts: {
     loadGoogleFont: (family, text) => ipcRenderer.invoke(C.FontsLoadGoogleFont, family, text),
+  },
+  updates: {
+    state: () => ipcRenderer.invoke(C.UpdateState),
+    check: () => ipcRenderer.invoke(C.UpdateCheck),
+    download: () => ipcRenderer.invoke(C.UpdateDownload),
+    cancelDownload: () => ipcRenderer.invoke(C.UpdateCancelDownload),
+    install: () => ipcRenderer.invoke(C.UpdateInstall),
+    openRelease: () => ipcRenderer.invoke(C.UpdateOpenRelease),
+    onChange: (listener) => on(C.UpdateStateChanged, listener),
   },
 };
 

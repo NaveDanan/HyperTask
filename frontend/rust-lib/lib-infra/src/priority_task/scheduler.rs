@@ -16,6 +16,7 @@ pub struct TaskDispatcher {
   store: TaskStore,
   timeout: Duration,
   handlers: HashMap<String, Arc<dyn TaskHandler>>,
+  stopped: bool,
 
   notifier: watch::Sender<bool>,
   pub(crate) notifier_rx: Option<watch::Receiver<bool>>,
@@ -29,6 +30,7 @@ impl TaskDispatcher {
       store: TaskStore::new(),
       timeout,
       handlers: HashMap::new(),
+      stopped: false,
       notifier,
       notifier_rx: Some(notifier_rx),
     }
@@ -53,53 +55,31 @@ impl TaskDispatcher {
   }
 
   pub fn stop(&mut self) {
+    self.stopped = true;
     let _ = self.notifier.send(true);
     self.queue.clear();
     self.store.clear();
   }
 
-  pub(crate) async fn process_next_task(&mut self) -> Option<()> {
-    let pending_task = self.queue.mut_head(|list| list.pop())?;
-    let mut task = self.store.remove_task(&pending_task.id)?;
-    let ret = task.ret.take()?;
-
-    // Do not execute the task if the task was cancelled.
-    if task.state().is_cancel() {
-      let _ = ret.send(task.into());
-      self.notify();
+  fn take_next_task(&mut self) -> Option<(Task, Option<Arc<dyn TaskHandler>>, Duration)> {
+    if self.stopped {
       return None;
     }
-
-    let content = task.content.take()?;
-    if let Some(handler) = self.handlers.get(&task.handler_id) {
-      task.set_state(TaskState::Processing);
-      tracing::trace!("{} task is running", handler.handler_name(),);
-      match tokio::time::timeout(self.timeout, handler.run(content)).await {
-        Ok(result) => match result {
-          Ok(_) => {
-            tracing::trace!("{} task is done", handler.handler_name(),);
-            task.set_state(TaskState::Done)
-          },
-          Err(e) => {
-            tracing::error!("{} task is failed: {:?}", handler.handler_name(), e);
-            task.set_state(TaskState::Failure);
-          },
-        },
-        Err(e) => {
-          tracing::error!("{} task is timeout: {:?}", handler.handler_name(), e);
-          task.set_state(TaskState::Timeout);
-        },
-      }
-    } else {
-      tracing::trace!("{} is cancel", task.handler_id);
-      task.set_state(TaskState::Cancel);
-    }
-    let _ = ret.send(task.into());
-    self.notify();
-    None
+    let pending_task = self.queue.mut_head(|list| list.pop())?;
+    let task = self.store.remove_task(&pending_task.id)?;
+    let handler = self.handlers.get(&task.handler_id).cloned();
+    Some((task, handler, self.timeout))
   }
 
   pub fn add_task(&mut self, task: Task) {
+    if self.stopped {
+      let mut task = task;
+      task.set_state(TaskState::Cancel);
+      if let Some(ret) = task.ret.take() {
+        let _ = ret.send(task.into());
+      }
+      return;
+    }
     debug_assert!(!task.state().is_done());
     if task.state().is_done() {
       tracing::warn!("Should not add a task which state is done");
@@ -127,6 +107,7 @@ impl TaskDispatcher {
   }
 
   pub fn clear_task(&mut self) {
+    self.queue.clear();
     self.store.clear();
   }
   pub fn next_task_id(&self) -> TaskId {
@@ -134,7 +115,9 @@ impl TaskDispatcher {
   }
 
   pub(crate) fn notify(&self) {
-    let _ = self.notifier.send(false);
+    if !self.stopped {
+      let _ = self.notifier.send(false);
+    }
   }
 }
 pub struct TaskRunner();
@@ -161,7 +144,43 @@ impl TaskRunner {
 
       let mut interval = interval(debounce_duration);
       interval.tick().await;
-      let _ = dispatcher.write().await.process_next_task().await;
+      // Handlers may need controller locks held by a caller scheduling another task.
+      // Release the dispatcher lock before awaiting the handler to avoid a lock cycle.
+      let next = dispatcher.write().await.take_next_task();
+      let processed = next.is_some();
+      if let Some((mut task, handler, timeout)) = next {
+        if !task.state().is_cancel() {
+          match (handler, task.content.take()) {
+            (Some(handler), Some(content)) => {
+              task.set_state(TaskState::Processing);
+              tracing::trace!("{} task is running", handler.handler_name());
+              match tokio::time::timeout(timeout, handler.run(content)).await {
+                Ok(Ok(())) => task.set_state(TaskState::Done),
+                Ok(Err(error)) => {
+                  tracing::error!("{} task failed: {:?}", handler.handler_name(), error);
+                  task.set_state(TaskState::Failure);
+                },
+                Err(error) => {
+                  tracing::error!("{} task timed out: {:?}", handler.handler_name(), error);
+                  task.set_state(TaskState::Timeout);
+                },
+              }
+            },
+            _ => task.set_state(TaskState::Cancel),
+          }
+        }
+        if let Some(ret) = task.ret.take() {
+          let _ = ret.send(task.into());
+        }
+      }
+      // Do not replace a stop notification received while the handler was running.
+      let dispatcher = dispatcher.read().await;
+      if dispatcher.stopped {
+        break;
+      }
+      if processed {
+        dispatcher.notify();
+      }
     }
   }
 }

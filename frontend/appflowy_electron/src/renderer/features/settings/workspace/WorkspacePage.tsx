@@ -154,7 +154,7 @@ export function WorkspacePage({ user, role, closeDialog, restartApp }: SettingsP
         // The view listener pops the settings dialog, then UserWorkspaceBloc handles the event.
         closeDialog();
         const switched = isOwner ? await deleteWorkspace(workspace.workspaceId) : await leaveWorkspace(workspace.workspaceId);
-        // Deliberate deviation: the home screen is reloaded with runAppFlowy() so it opens
+        // Deliberate deviation: the home screen is reloaded with runHyperTask() so it opens
         // the remaining workspace (the Dart home rebuilds from UserWorkspaceBloc state).
         if (switched) restartApp();
       },

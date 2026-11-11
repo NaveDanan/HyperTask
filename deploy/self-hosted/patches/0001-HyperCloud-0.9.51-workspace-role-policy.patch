@@ -1,0 +1,2070 @@
+diff --git a/libs/access-control/src/casbin/access.rs b/libs/access-control/src/casbin/access.rs
+index dcb3450e296137293eb2ddf64cbc44836397bfb9..cdc74ee850c7d5ea30a07c9310020be35d5e5b07 100644
+--- a/libs/access-control/src/casbin/access.rs
++++ b/libs/access-control/src/casbin/access.rs
+@@ -3,6 +3,7 @@ use super::enforcer::AFEnforcer;
+ use crate::act::{Action, Acts};
+ use crate::entity::{ObjectType, SubjectType};
+ use crate::metrics::{tick_metric, AccessControlMetrics};
++use crate::workspace::{HyperWorkspaceRoleMutation, HyperWorkspaceRoleTarget};
+ 
+ use anyhow::anyhow;
+ use app_error::AppError;
+@@ -67,6 +68,17 @@ impl AccessControl {
+     }
+   }
+ 
++  pub async fn mutate_workspace_roles(
++    &self,
++    targets: Vec<HyperWorkspaceRoleTarget>,
++    mutation: HyperWorkspaceRoleMutation<'_>,
++  ) -> Result<(), AppError> {
++    self
++      .enforcer
++      .mutate_workspace_roles(targets, mutation)
++      .await
++  }
++
+   pub async fn update_policy<T>(
+     &self,
+     sub: SubjectType,
+diff --git a/libs/access-control/src/casbin/enforcer.rs b/libs/access-control/src/casbin/enforcer.rs
+index ac3619dd1b036031883c737c0cf62201ae557125..69f96fd4c1e1415e40527097f015aa2e2fe0b26a 100644
+--- a/libs/access-control/src/casbin/enforcer.rs
++++ b/libs/access-control/src/casbin/enforcer.rs
+@@ -3,15 +3,27 @@ use crate::act::Acts;
+ use crate::entity::{ObjectType, SubjectType};
+ use crate::metrics::MetricsCalState;
+ use crate::request::PolicyRequest;
++use crate::workspace::{HyperWorkspaceRoleMutation, HyperWorkspaceRoleTarget};
+ use anyhow::anyhow;
+ use app_error::AppError;
+ use casbin::{CoreApi, Enforcer, MgmtApi};
++use std::collections::{HashMap, HashSet};
+ use std::sync::atomic::Ordering;
+-use tokio::sync::RwLock;
++use std::sync::{Arc, Mutex as StdMutex, Weak};
++use tokio::sync::{Mutex, RwLock};
+ use tracing::{event, instrument, trace};
+ 
++// A failed or cancelled replacement must never leave a previous write grant usable.
++type HyperPolicyKey = (String, String);
++
++struct HyperRolePolicyState {
++  enforcer: Enforcer,
++  denied: HashMap<HyperPolicyKey, Arc<()>>,
++}
++
+ pub struct AFEnforcer {
+-  enforcer: RwLock<Enforcer>,
++  enforcer: RwLock<HyperRolePolicyState>,
++  role_mutations: StdMutex<HashMap<HyperPolicyKey, Weak<Mutex<()>>>>,
+   pub(crate) metrics_state: MetricsCalState,
+ }
+ 
+@@ -19,13 +31,18 @@ impl AFEnforcer {
+   pub async fn new(mut enforcer: Enforcer) -> Result<Self, AppError> {
+     load_group_policies(&mut enforcer).await?;
+     Ok(Self {
+-      enforcer: RwLock::new(enforcer),
++      enforcer: RwLock::new(HyperRolePolicyState {
++        enforcer,
++        denied: HashMap::new(),
++      }),
++      role_mutations: StdMutex::new(HashMap::new()),
+       metrics_state: MetricsCalState::new(),
+     })
+   }
+ 
+-  /// Update policy for a user.
+-  /// If the policy is already exist, then it will return Ok(false).
++  /// Replace every previous policy for this subject and resource.
++  /// Enforcement observes the old role or the complete replacement, never their union.
++  /// Adapter errors and cancellation leave this subject/resource denied.
+   ///
+   /// [`ObjectType::Workspace`] has to be paired with [`ActionType::Role`],
+   /// [`ObjectType::Collab`] has to be paired with [`ActionType::Level`],
+@@ -45,15 +62,164 @@ impl AFEnforcer {
+       .map(|act| vec![sub.policy_subject(), obj.policy_object(), act])
+       .collect::<Vec<Vec<_>>>();
+ 
+-    trace!("[access control]: add policy:{:?}", policies);
++    trace!("[access control]: replace policy:{:?}", policies);
++    let key = (sub.policy_subject(), obj.policy_object());
++    let mut state = self.enforcer.write().await;
++    // Existing memberships with an uncertain outcome require a committed
++    // database refresh. A delayed trusted-role callback cannot reopen them.
++    if matches!(&obj, ObjectType::Workspace(_)) && state.denied.contains_key(&key) {
++      return Err(AppError::Internal(anyhow!(
++        "workspace role requires authoritative refresh"
++      )));
++    }
++    let token = Arc::new(());
++    state.denied.insert(key.clone(), token.clone());
+     self
++      .remove_with_enforcer(sub, obj, &mut state.enforcer)
++      .await?;
++    let has_new_policies = !policies.is_empty();
++    let added = state
+       .enforcer
+-      .write()
+-      .await
+       .add_policies(policies)
+       .await
+-      .map_err(|e| AppError::Internal(anyhow!("fail to add policy: {e:?}")))?;
++      .map_err(|e| AppError::Internal(anyhow!("fail to replace policy: {e:?}")))?;
++    if has_new_policies && !added {
++      return Err(AppError::Internal(anyhow!(
++        "role policy replacement was not applied"
++      )));
++    }
++    Self::clear_denial(&mut state, &key, &token);
++    Ok(())
++  }
+ 
++  fn mutation_locks(&self, keys: &[HyperPolicyKey]) -> Result<Vec<Arc<Mutex<()>>>, AppError> {
++    let mut registry = self
++      .role_mutations
++      .lock()
++      .map_err(|_| AppError::Internal(anyhow!("role mutation lock registry poisoned")))?;
++    registry.retain(|_, lock| lock.strong_count() > 0);
++    Ok(
++      keys
++        .iter()
++        .map(|key| {
++          if let Some(lock) = registry.get(key).and_then(Weak::upgrade) {
++            lock
++          } else {
++            let lock = Arc::new(Mutex::new(()));
++            registry.insert(key.clone(), Arc::downgrade(&lock));
++            lock
++          }
++        })
++        .collect(),
++    )
++  }
++
++  fn clear_denial(state: &mut HyperRolePolicyState, key: &HyperPolicyKey, token: &Arc<()>) {
++    if state
++      .denied
++      .get(key)
++      .is_some_and(|current| Arc::ptr_eq(current, token))
++    {
++      state.denied.remove(key);
++    }
++  }
++
++  /// Process-local membership transaction boundary. Sorted key leases protect
++  /// database commit and policy refresh together, without holding the global
++  /// enforcer write guard across database I/O. Dropping a future only releases
++  /// leases; it never clears denial. Tokens prevent stale completion from
++  /// clearing or replacing a newer policy generation.
++  pub async fn mutate_workspace_roles(
++    &self,
++    targets: Vec<HyperWorkspaceRoleTarget>,
++    mutation: HyperWorkspaceRoleMutation<'_>,
++  ) -> Result<(), AppError> {
++    let mut keys = targets
++      .iter()
++      .map(|(uid, workspace)| {
++        (
++          uid.to_string(),
++          ObjectType::Workspace(workspace.to_string()).policy_object(),
++        )
++      })
++      .collect::<Vec<_>>();
++    let unique = keys.iter().cloned().collect::<HashSet<_>>();
++    if keys.is_empty() || unique.len() != keys.len() {
++      return Err(AppError::InvalidRequest(
++        "empty or duplicate role mutation targets".to_owned(),
++      ));
++    }
++    keys.sort();
++    let locks = self.mutation_locks(&keys)?;
++    let mut leases = Vec::with_capacity(locks.len());
++    for lock in locks {
++      leases.push(lock.lock_owned().await);
++    }
++    let token = Arc::new(());
++    {
++      let mut state = self.enforcer.write().await;
++      for key in &keys {
++        state.denied.insert(key.clone(), token.clone());
++      }
++    }
++    // This is the first poll of caller-owned SQL. Cancellation or error leaves
++    // all affected keys denied, including an uncertain post-commit outcome.
++    let roles = mutation.await?;
++    if roles.len() != targets.len() {
++      return Err(AppError::Internal(anyhow!(
++        "committed role result count mismatch"
++      )));
++    }
++    let mut state = self.enforcer.write().await;
++    if keys.iter().any(|key| {
++      !state
++        .denied
++        .get(key)
++        .is_some_and(|current| Arc::ptr_eq(current, &token))
++    }) {
++      return Err(AppError::Internal(anyhow!(
++        "stale role mutation completion"
++      )));
++    }
++    let mut cleanup_keys = Vec::new();
++    for ((uid, workspace), role) in targets.into_iter().zip(roles) {
++      let subject = SubjectType::User(uid);
++      let object = ObjectType::Workspace(workspace.to_string());
++      self
++        .remove_with_enforcer(subject.clone(), object.clone(), &mut state.enforcer)
++        .await?;
++      if let Some(role) = role {
++        let policies = role
++          .policy_acts()
++          .into_iter()
++          .map(|act| vec![subject.policy_subject(), object.policy_object(), act])
++          .collect::<Vec<_>>();
++        let added = state
++          .enforcer
++          .add_policies(policies)
++          .await
++          .map_err(|e| AppError::Internal(anyhow!("fail to replace committed role: {e:?}")))?;
++        if !added {
++          return Err(AppError::Internal(anyhow!(
++            "committed role replacement was not applied"
++          )));
++        }
++      } else {
++        // Preserve upstream membership-removal cleanup of the legacy collab
++        // policy whose object ID is the workspace ID.
++        let legacy = ObjectType::Collab(workspace.to_string());
++        let key = (subject.policy_subject(), legacy.policy_object());
++        state.denied.insert(key.clone(), token.clone());
++        cleanup_keys.push(key);
++        self
++          .remove_with_enforcer(subject, legacy, &mut state.enforcer)
++          .await?;
++      }
++    }
++    for key in keys.iter().chain(cleanup_keys.iter()) {
++      Self::clear_denial(&mut state, key, &token);
++    }
++    drop(leases);
+     Ok(())
+   }
+ 
+@@ -63,10 +229,15 @@ impl AFEnforcer {
+     sub: SubjectType,
+     object_type: ObjectType,
+   ) -> Result<(), AppError> {
+-    let mut enforcer = self.enforcer.write().await;
++    let key = (sub.policy_subject(), object_type.policy_object());
++    let mut state = self.enforcer.write().await;
++    let token = Arc::new(());
++    state.denied.insert(key.clone(), token.clone());
+     self
+-      .remove_with_enforcer(sub, object_type, &mut enforcer)
+-      .await
++      .remove_with_enforcer(sub, object_type, &mut state.enforcer)
++      .await?;
++    Self::clear_denial(&mut state, &key, &token);
++    Ok(())
+   }
+ 
+   /// ## Parameters:
+@@ -94,12 +265,15 @@ impl AFEnforcer {
+       .total_read_enforce_result
+       .fetch_add(1, Ordering::Relaxed);
+ 
++    let key = (uid.to_string(), obj.policy_object());
+     let policy_request = PolicyRequest::new(*uid, obj, act);
+     let policy = policy_request.to_policy();
+-    let result = self
++    let state = self.enforcer.read().await;
++    if state.denied.contains_key(&key) {
++      return Ok(false);
++    }
++    let result = state
+       .enforcer
+-      .read()
+-      .await
+       .enforce(policy)
+       .map_err(|e| AppError::Internal(anyhow!("enforce: {e:?}")))?;
+     Ok(result)
+@@ -123,11 +297,18 @@ impl AFEnforcer {
+       policies_for_user_on_object
+     );
+ 
+-    enforcer
++    if policies_for_user_on_object.is_empty() {
++      return Ok(());
++    }
++    let removed = enforcer
+       .remove_policies(policies_for_user_on_object)
+       .await
+       .map_err(|e| AppError::Internal(anyhow!("error enforce: {e:?}")))?;
+-
++    if !removed {
++      return Err(AppError::Internal(anyhow!(
++        "previous role policies were not removed"
++      )));
++    }
+     Ok(())
+   }
+ }
+diff --git a/libs/access-control/src/casbin/hyper_role_policy_tests.rs b/libs/access-control/src/casbin/hyper_role_policy_tests.rs
+new file mode 100644
+index 0000000000000000000000000000000000000000..4118069cb6fde0676dde1ac7fc7f3a57556914bf
+--- /dev/null
++++ b/libs/access-control/src/casbin/hyper_role_policy_tests.rs
+@@ -0,0 +1,484 @@
++//! HyperTask regressions for replacement of a previously granted role.
++//! Tests use the public enforcer update/enforcement boundary, with no server or database.
++use super::enforcer::tests::test_enforcer;
++use crate::{
++  act::Action,
++  entity::{ObjectType, SubjectType},
++};
++use database_entity::dto::AFRole;
++
++#[tokio::test]
++async fn hyper_role_downgrade_replaces_warm_member_and_owner_grants() {
++  let enforcer = test_enforcer().await;
++  let user = SubjectType::User(41);
++  let workspace = ObjectType::Workspace("hyper-role-transition".to_owned());
++  enforcer
++    .update_policy(user.clone(), workspace.clone(), AFRole::Member)
++    .await
++    .unwrap();
++  for _ in 0..8 {
++    assert!(enforcer
++      .enforce_policy(&41, workspace.clone(), Action::Write)
++      .await
++      .unwrap());
++  }
++  enforcer
++    .update_policy(user.clone(), workspace.clone(), AFRole::Guest)
++    .await
++    .unwrap();
++  assert!(enforcer
++    .enforce_policy(&41, workspace.clone(), Action::Read)
++    .await
++    .unwrap());
++  assert!(!enforcer
++    .enforce_policy(&41, workspace.clone(), Action::Write)
++    .await
++    .unwrap());
++  assert!(!enforcer
++    .enforce_policy(&41, workspace.clone(), AFRole::Member)
++    .await
++    .unwrap());
++
++  enforcer
++    .update_policy(user.clone(), workspace.clone(), AFRole::Owner)
++    .await
++    .unwrap();
++  assert!(enforcer
++    .enforce_policy(&41, workspace.clone(), Action::Delete)
++    .await
++    .unwrap());
++  enforcer
++    .update_policy(user.clone(), workspace.clone(), AFRole::Guest)
++    .await
++    .unwrap();
++  enforcer
++    .update_policy(user, workspace.clone(), AFRole::Guest)
++    .await
++    .unwrap();
++  assert!(enforcer
++    .enforce_policy(&41, workspace.clone(), Action::Read)
++    .await
++    .unwrap());
++  assert!(!enforcer
++    .enforce_policy(&41, workspace.clone(), Action::Delete)
++    .await
++    .unwrap());
++  assert!(!enforcer
++    .enforce_policy(&41, workspace, Action::Write)
++    .await
++    .unwrap());
++}
++
++#[tokio::test]
++async fn hyper_role_replacement_preserves_other_users_and_workspaces() {
++  let enforcer = test_enforcer().await;
++  let first = ObjectType::Workspace("hyper-first".to_owned());
++  let second = ObjectType::Workspace("hyper-second".to_owned());
++  enforcer
++    .update_policy(SubjectType::User(41), first.clone(), AFRole::Member)
++    .await
++    .unwrap();
++  enforcer
++    .update_policy(SubjectType::User(42), first.clone(), AFRole::Owner)
++    .await
++    .unwrap();
++  enforcer
++    .update_policy(SubjectType::User(41), second.clone(), AFRole::Member)
++    .await
++    .unwrap();
++  enforcer
++    .update_policy(SubjectType::User(41), first.clone(), AFRole::Guest)
++    .await
++    .unwrap();
++  assert!(!enforcer
++    .enforce_policy(&41, first.clone(), Action::Write)
++    .await
++    .unwrap());
++  assert!(enforcer
++    .enforce_policy(&42, first, Action::Delete)
++    .await
++    .unwrap());
++  assert!(enforcer
++    .enforce_policy(&41, second, Action::Write)
++    .await
++    .unwrap());
++}
++
++use super::access::{casbin_model, cmp_role_or_level};
++use super::enforcer::AFEnforcer;
++use async_trait::async_trait;
++use casbin::{function_map::OperatorFunction, Adapter, CoreApi, Filter, MemoryAdapter, Model};
++use std::sync::{
++  atomic::{AtomicBool, Ordering},
++  Arc,
++};
++use std::time::Duration;
++use tokio::sync::Notify;
++
++#[derive(Default)]
++struct HyperAdapterControl {
++  fail_add: AtomicBool,
++  fail_remove: AtomicBool,
++  reject_add: AtomicBool,
++  reject_remove: AtomicBool,
++  pause_remove: AtomicBool,
++  entered: Notify,
++  resume: Notify,
++}
++
++struct HyperFailureAdapter {
++  inner: MemoryAdapter,
++  control: Arc<HyperAdapterControl>,
++}
++
++fn hyper_adapter_error() -> casbin::Error {
++  std::io::Error::new(
++    std::io::ErrorKind::Other,
++    "injected role policy adapter failure",
++  )
++  .into()
++}
++
++#[async_trait]
++impl Adapter for HyperFailureAdapter {
++  async fn load_policy(&mut self, model: &mut dyn Model) -> casbin::Result<()> {
++    self.inner.load_policy(model).await
++  }
++  async fn load_filtered_policy<'a>(
++    &mut self,
++    model: &mut dyn Model,
++    filter: Filter<'a>,
++  ) -> casbin::Result<()> {
++    self.inner.load_filtered_policy(model, filter).await
++  }
++  async fn save_policy(&mut self, model: &mut dyn Model) -> casbin::Result<()> {
++    self.inner.save_policy(model).await
++  }
++  async fn clear_policy(&mut self) -> casbin::Result<()> {
++    self.inner.clear_policy().await
++  }
++  fn is_filtered(&self) -> bool {
++    self.inner.is_filtered()
++  }
++  async fn add_policy(
++    &mut self,
++    section: &str,
++    kind: &str,
++    rule: Vec<String>,
++  ) -> casbin::Result<bool> {
++    self.inner.add_policy(section, kind, rule).await
++  }
++  async fn add_policies(
++    &mut self,
++    section: &str,
++    kind: &str,
++    rules: Vec<Vec<String>>,
++  ) -> casbin::Result<bool> {
++    if self.control.fail_add.load(Ordering::SeqCst) {
++      return Err(hyper_adapter_error());
++    }
++    if self.control.reject_add.load(Ordering::SeqCst) {
++      return Ok(false);
++    }
++    self.inner.add_policies(section, kind, rules).await
++  }
++  async fn remove_policy(
++    &mut self,
++    section: &str,
++    kind: &str,
++    rule: Vec<String>,
++  ) -> casbin::Result<bool> {
++    self.inner.remove_policy(section, kind, rule).await
++  }
++  async fn remove_policies(
++    &mut self,
++    section: &str,
++    kind: &str,
++    rules: Vec<Vec<String>>,
++  ) -> casbin::Result<bool> {
++    if self.control.pause_remove.load(Ordering::SeqCst) {
++      self.control.entered.notify_one();
++      self.control.resume.notified().await;
++    }
++    if self.control.fail_remove.load(Ordering::SeqCst) {
++      return Err(hyper_adapter_error());
++    }
++    if self.control.reject_remove.load(Ordering::SeqCst) {
++      return Ok(false);
++    }
++    self.inner.remove_policies(section, kind, rules).await
++  }
++  async fn remove_filtered_policy(
++    &mut self,
++    section: &str,
++    kind: &str,
++    index: usize,
++    values: Vec<String>,
++  ) -> casbin::Result<bool> {
++    self
++      .inner
++      .remove_filtered_policy(section, kind, index, values)
++      .await
++  }
++}
++
++async fn hyper_failure_enforcer() -> (Arc<AFEnforcer>, Arc<HyperAdapterControl>) {
++  let control = Arc::new(HyperAdapterControl::default());
++  let model = casbin_model().await.unwrap();
++  let adapter = HyperFailureAdapter {
++    inner: MemoryAdapter::default(),
++    control: control.clone(),
++  };
++  let mut enforcer = casbin::Enforcer::new(model, adapter).await.unwrap();
++  enforcer.add_function("cmpRoleOrLevel", OperatorFunction::Arg2(cmp_role_or_level));
++  (Arc::new(AFEnforcer::new(enforcer).await.unwrap()), control)
++}
++
++#[tokio::test]
++async fn hyper_role_adapter_failures_deny_previous_grants_and_allow_explicit_recovery() {
++  for failure in [
++    "add error",
++    "remove error",
++    "add rejected",
++    "remove rejected",
++  ] {
++    let (enforcer, control) = hyper_failure_enforcer().await;
++    let workspace_id = uuid::Uuid::new_v4();
++    let workspace = ObjectType::Workspace(workspace_id.to_string());
++    enforcer
++      .update_policy(SubjectType::User(41), workspace.clone(), AFRole::Member)
++      .await
++      .unwrap();
++    enforcer
++      .update_policy(SubjectType::User(42), workspace.clone(), AFRole::Member)
++      .await
++      .unwrap();
++    assert!(enforcer
++      .enforce_policy(&41, workspace.clone(), Action::Write)
++      .await
++      .unwrap());
++    control
++      .fail_remove
++      .store(failure == "remove error", Ordering::SeqCst);
++    control
++      .fail_add
++      .store(failure == "add error", Ordering::SeqCst);
++    control
++      .reject_remove
++      .store(failure == "remove rejected", Ordering::SeqCst);
++    control
++      .reject_add
++      .store(failure == "add rejected", Ordering::SeqCst);
++    assert!(enforcer
++      .update_policy(SubjectType::User(41), workspace.clone(), AFRole::Guest)
++      .await
++      .is_err());
++    assert!(!enforcer
++      .enforce_policy(&41, workspace.clone(), Action::Write)
++      .await
++      .unwrap());
++    assert!(!enforcer
++      .enforce_policy(&41, workspace.clone(), Action::Read)
++      .await
++      .unwrap());
++    assert!(enforcer
++      .enforce_policy(&42, workspace.clone(), Action::Write)
++      .await
++      .unwrap());
++    control.fail_add.store(false, Ordering::SeqCst);
++    control.fail_remove.store(false, Ordering::SeqCst);
++    control.reject_add.store(false, Ordering::SeqCst);
++    control.reject_remove.store(false, Ordering::SeqCst);
++    assert!(enforcer
++      .update_policy(SubjectType::User(41), workspace.clone(), AFRole::Member)
++      .await
++      .is_err());
++    enforcer
++      .mutate_workspace_roles(
++        vec![(41, workspace_id)],
++        Box::pin(async { Ok(vec![Some(AFRole::Guest)]) }),
++      )
++      .await
++      .unwrap();
++    assert!(enforcer
++      .enforce_policy(&41, workspace.clone(), Action::Read)
++      .await
++      .unwrap());
++    assert!(!enforcer
++      .enforce_policy(&41, workspace, Action::Write)
++      .await
++      .unwrap());
++  }
++}
++
++#[tokio::test]
++async fn hyper_role_cancelled_replacement_does_not_retain_a_member_write_grant() {
++  let (enforcer, control) = hyper_failure_enforcer().await;
++  let workspace_id = uuid::Uuid::new_v4();
++  let workspace = ObjectType::Workspace(workspace_id.to_string());
++  enforcer
++    .update_policy(SubjectType::User(41), workspace.clone(), AFRole::Member)
++    .await
++    .unwrap();
++  control.pause_remove.store(true, Ordering::SeqCst);
++  let update = {
++    let enforcer = enforcer.clone();
++    let workspace = workspace.clone();
++    tokio::spawn(async move {
++      enforcer
++        .update_policy(SubjectType::User(41), workspace, AFRole::Guest)
++        .await
++    })
++  };
++  tokio::time::timeout(Duration::from_secs(2), control.entered.notified())
++    .await
++    .unwrap();
++  update.abort();
++  assert!(update.await.unwrap_err().is_cancelled());
++  assert!(!enforcer
++    .enforce_policy(&41, workspace.clone(), Action::Write)
++    .await
++    .unwrap());
++  control.pause_remove.store(false, Ordering::SeqCst);
++  assert!(enforcer
++    .update_policy(SubjectType::User(41), workspace.clone(), AFRole::Member)
++    .await
++    .is_err());
++  enforcer
++    .mutate_workspace_roles(
++      vec![(41, workspace_id)],
++      Box::pin(async { Ok(vec![Some(AFRole::Guest)]) }),
++    )
++    .await
++    .unwrap();
++  assert!(enforcer
++    .enforce_policy(&41, workspace.clone(), Action::Read)
++    .await
++    .unwrap());
++  assert!(!enforcer
++    .enforce_policy(&41, workspace, Action::Write)
++    .await
++    .unwrap());
++}
++
++#[tokio::test]
++async fn hyper_role_enforcement_waits_for_complete_replacement() {
++  let (enforcer, control) = hyper_failure_enforcer().await;
++  let workspace = ObjectType::Workspace("hyper-atomic-role".to_owned());
++  enforcer
++    .update_policy(SubjectType::User(41), workspace.clone(), AFRole::Member)
++    .await
++    .unwrap();
++  control.pause_remove.store(true, Ordering::SeqCst);
++  let update = {
++    let enforcer = enforcer.clone();
++    let workspace = workspace.clone();
++    tokio::spawn(async move {
++      enforcer
++        .update_policy(SubjectType::User(41), workspace, AFRole::Guest)
++        .await
++    })
++  };
++  tokio::time::timeout(Duration::from_secs(2), control.entered.notified())
++    .await
++    .unwrap();
++  let mut read = {
++    let enforcer = enforcer.clone();
++    let workspace = workspace.clone();
++    tokio::spawn(async move { enforcer.enforce_policy(&41, workspace, Action::Write).await })
++  };
++  assert!(tokio::time::timeout(Duration::from_millis(20), &mut read)
++    .await
++    .is_err());
++  control.resume.notify_one();
++  update.await.unwrap().unwrap();
++  assert!(!read.await.unwrap().unwrap());
++  assert!(enforcer
++    .enforce_policy(&41, workspace, Action::Read)
++    .await
++    .unwrap());
++}
++
++#[tokio::test]
++async fn hyper_role_batch_adapter_failure_denies_every_affected_key() {
++  let (enforcer, control) = hyper_failure_enforcer().await;
++  let workspace = uuid::Uuid::new_v4();
++  let object = ObjectType::Workspace(workspace.to_string());
++  for user in [41, 42] {
++    enforcer
++      .update_policy(SubjectType::User(user), object.clone(), AFRole::Member)
++      .await
++      .unwrap();
++  }
++  control.fail_add.store(true, Ordering::SeqCst);
++  assert!(enforcer
++    .mutate_workspace_roles(
++      vec![(41, workspace), (42, workspace)],
++      Box::pin(async { Ok(vec![Some(AFRole::Guest), Some(AFRole::Guest)]) })
++    )
++    .await
++    .is_err());
++  for user in [41, 42] {
++    assert!(!enforcer
++      .enforce_policy(&user, object.clone(), Action::Write)
++      .await
++      .unwrap());
++    assert!(!enforcer
++      .enforce_policy(&user, object.clone(), Action::Read)
++      .await
++      .unwrap());
++  }
++}
++
++#[tokio::test]
++async fn hyper_role_stale_completion_does_not_clear_newer_failure_denial() {
++  let (enforcer, control) = hyper_failure_enforcer().await;
++  let workspace = uuid::Uuid::new_v4();
++  let object = ObjectType::Workspace(workspace.to_string());
++  enforcer
++    .update_policy(SubjectType::User(41), object.clone(), AFRole::Member)
++    .await
++    .unwrap();
++  let entered = Arc::new(Notify::new());
++  let resume = Arc::new(Notify::new());
++  let older = {
++    let enforcer = enforcer.clone();
++    let entered = entered.clone();
++    let resume = resume.clone();
++    tokio::spawn(async move {
++      enforcer
++        .mutate_workspace_roles(
++          vec![(41, workspace)],
++          Box::pin(async move {
++            entered.notify_one();
++            resume.notified().await;
++            Ok(vec![Some(AFRole::Member)])
++          }),
++        )
++        .await
++    })
++  };
++  tokio::time::timeout(Duration::from_secs(2), entered.notified())
++    .await
++    .unwrap();
++  enforcer
++    .remove_policy(SubjectType::User(41), object.clone())
++    .await
++    .unwrap();
++  control.fail_add.store(true, Ordering::SeqCst);
++  assert!(enforcer
++    .update_policy(SubjectType::User(41), object.clone(), AFRole::Guest)
++    .await
++    .is_err());
++  control.fail_add.store(false, Ordering::SeqCst);
++  resume.notify_one();
++  assert!(older.await.unwrap().is_err());
++  assert!(!enforcer
++    .enforce_policy(&41, object.clone(), Action::Read)
++    .await
++    .unwrap());
++  assert!(!enforcer
++    .enforce_policy(&41, object, Action::Write)
++    .await
++    .unwrap());
++}
+diff --git a/libs/access-control/src/casbin/hyper_workspace_role_mutation_tests.rs b/libs/access-control/src/casbin/hyper_workspace_role_mutation_tests.rs
+new file mode 100644
+index 0000000000000000000000000000000000000000..16db68028c9cb88bbe06661a9aa0dcc135525be6
+--- /dev/null
++++ b/libs/access-control/src/casbin/hyper_workspace_role_mutation_tests.rs
+@@ -0,0 +1,382 @@
++//! The caller's future represents the external database commit/read boundary.
++//! These tests exercise the public workspace ACL without inspecting lock state.
++use super::{
++  access::AccessControl, enforcer::tests::test_enforcer, workspace::WorkspaceAccessControlImpl,
++};
++use crate::{act::Action, workspace::WorkspaceAccessControl};
++use app_error::AppError;
++use database_entity::dto::AFRole;
++use std::sync::{
++  atomic::{AtomicBool, AtomicU8, Ordering},
++  Arc,
++};
++use std::time::Duration;
++use tokio::sync::Notify;
++use uuid::Uuid;
++
++async fn hyper_acl() -> Arc<dyn WorkspaceAccessControl> {
++  Arc::new(WorkspaceAccessControlImpl::new(
++    AccessControl::with_enforcer(test_enforcer().await),
++  ))
++}
++
++#[tokio::test]
++async fn hyper_role_mutation_denies_before_database_poll_and_preserves_other_keys() {
++  let acl = hyper_acl().await;
++  let first = Uuid::new_v4();
++  let second = Uuid::new_v4();
++  acl.insert_role(&41, &first, AFRole::Member).await.unwrap();
++  acl.insert_role(&42, &first, AFRole::Member).await.unwrap();
++  acl.insert_role(&41, &second, AFRole::Member).await.unwrap();
++  assert!(acl.enforce_action(&41, &first, Action::Write).await.is_ok());
++  let observer = acl.clone();
++  tokio::time::timeout(
++    Duration::from_secs(2),
++    acl.mutate_workspace_roles(
++      vec![(41, first)],
++      Box::pin(async move {
++        assert!(observer
++          .enforce_action(&41, &first, Action::Write)
++          .await
++          .is_err());
++        assert!(observer
++          .enforce_action(&41, &first, Action::Read)
++          .await
++          .is_err());
++        assert!(observer
++          .enforce_action(&42, &first, Action::Write)
++          .await
++          .is_ok());
++        assert!(observer
++          .enforce_action(&41, &second, Action::Write)
++          .await
++          .is_ok());
++        Ok(vec![Some(AFRole::Guest)])
++      }),
++    ),
++  )
++  .await
++  .unwrap()
++  .unwrap();
++  assert!(acl.enforce_action(&41, &first, Action::Read).await.is_ok());
++  assert!(acl
++    .enforce_action(&41, &first, Action::Write)
++    .await
++    .is_err());
++}
++
++#[tokio::test]
++async fn hyper_role_database_updates_are_serialized_before_commit_not_just_policy_callbacks() {
++  let acl = hyper_acl().await;
++  let workspace = Uuid::new_v4();
++  acl
++    .insert_role(&41, &workspace, AFRole::Member)
++    .await
++    .unwrap();
++  let persisted = Arc::new(AtomicU8::new(2));
++  let entered = Arc::new(Notify::new());
++  let resume = Arc::new(Notify::new());
++  let older = {
++    let acl = acl.clone();
++    let persisted = persisted.clone();
++    let entered = entered.clone();
++    let resume = resume.clone();
++    tokio::spawn(async move {
++      acl
++        .mutate_workspace_roles(
++          vec![(41, workspace)],
++          Box::pin(async move {
++            entered.notify_one();
++            resume.notified().await;
++            persisted.store(2, Ordering::SeqCst);
++            Ok(vec![Some(AFRole::Member)])
++          }),
++        )
++        .await
++    })
++  };
++  tokio::time::timeout(Duration::from_secs(2), entered.notified())
++    .await
++    .unwrap();
++  let newer_started = Arc::new(Notify::new());
++  let newer_polled = Arc::new(Notify::new());
++  let newer = {
++    let acl = acl.clone();
++    let persisted = persisted.clone();
++    let started = newer_started.clone();
++    let polled = newer_polled.clone();
++    tokio::spawn(async move {
++      started.notify_one();
++      acl
++        .mutate_workspace_roles(
++          vec![(41, workspace)],
++          Box::pin(async move {
++            polled.notify_one();
++            persisted.store(3, Ordering::SeqCst);
++            Ok(vec![Some(AFRole::Guest)])
++          }),
++        )
++        .await
++    })
++  };
++  newer_started.notified().await;
++  assert!(
++    tokio::time::timeout(Duration::from_millis(20), newer_polled.notified())
++      .await
++      .is_err()
++  );
++  resume.notify_one();
++  older.await.unwrap().unwrap();
++  tokio::time::timeout(Duration::from_secs(2), newer)
++    .await
++    .unwrap()
++    .unwrap()
++    .unwrap();
++  assert_eq!(persisted.load(Ordering::SeqCst), 3);
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Read)
++    .await
++    .is_ok());
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Write)
++    .await
++    .is_err());
++}
++
++#[tokio::test]
++async fn hyper_role_cancel_after_database_commit_keeps_key_denied_until_authoritative_retry() {
++  let acl = hyper_acl().await;
++  let workspace = Uuid::new_v4();
++  acl
++    .insert_role(&41, &workspace, AFRole::Member)
++    .await
++    .unwrap();
++  let committed = Arc::new(Notify::new());
++  let persisted = Arc::new(AtomicU8::new(2));
++  let task = {
++    let acl = acl.clone();
++    let committed = committed.clone();
++    let persisted = persisted.clone();
++    tokio::spawn(async move {
++      acl
++        .mutate_workspace_roles(
++          vec![(41, workspace)],
++          Box::pin(async move {
++            persisted.store(3, Ordering::SeqCst);
++            committed.notify_one();
++            std::future::pending::<()>().await;
++            Ok(vec![Some(AFRole::Guest)])
++          }),
++        )
++        .await
++    })
++  };
++  tokio::time::timeout(Duration::from_secs(2), committed.notified())
++    .await
++    .unwrap();
++  assert_eq!(persisted.load(Ordering::SeqCst), 3);
++  task.abort();
++  assert!(task.await.unwrap_err().is_cancelled());
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Write)
++    .await
++    .is_err());
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Read)
++    .await
++    .is_err());
++  acl
++    .mutate_workspace_roles(
++      vec![(41, workspace)],
++      Box::pin(async { Ok(vec![Some(AFRole::Guest)]) }),
++    )
++    .await
++    .unwrap();
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Read)
++    .await
++    .is_ok());
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Write)
++    .await
++    .is_err());
++}
++
++#[tokio::test]
++async fn hyper_role_database_failure_and_wrong_result_count_leave_previous_member_denied() {
++  for bad_count in [false, true] {
++    let acl = hyper_acl().await;
++    let workspace = Uuid::new_v4();
++    acl
++      .insert_role(&41, &workspace, AFRole::Member)
++      .await
++      .unwrap();
++    let result = acl
++      .mutate_workspace_roles(
++        vec![(41, workspace)],
++        Box::pin(async move {
++          if bad_count {
++            Ok(vec![])
++          } else {
++            Err(AppError::Internal(anyhow::anyhow!(
++              "database commit result uncertain"
++            )))
++          }
++        }),
++      )
++      .await;
++    assert!(result.is_err());
++    assert!(acl
++      .enforce_action(&41, &workspace, Action::Read)
++      .await
++      .is_err());
++    assert!(acl
++      .enforce_action(&41, &workspace, Action::Write)
++      .await
++      .is_err());
++  }
++}
++
++#[tokio::test]
++async fn hyper_role_stale_completion_cannot_replace_or_clear_a_newer_role_generation() {
++  let acl = hyper_acl().await;
++  let workspace = Uuid::new_v4();
++  acl
++    .insert_role(&41, &workspace, AFRole::Member)
++    .await
++    .unwrap();
++  let entered = Arc::new(Notify::new());
++  let resume = Arc::new(Notify::new());
++  let older = {
++    let acl = acl.clone();
++    let entered = entered.clone();
++    let resume = resume.clone();
++    tokio::spawn(async move {
++      acl
++        .mutate_workspace_roles(
++          vec![(41, workspace)],
++          Box::pin(async move {
++            entered.notify_one();
++            resume.notified().await;
++            Ok(vec![Some(AFRole::Member)])
++          }),
++        )
++        .await
++    })
++  };
++  tokio::time::timeout(Duration::from_secs(2), entered.notified())
++    .await
++    .unwrap();
++  // The trusted bootstrap interface simulates a newer policy generation. An
++  // older asynchronous callback must not overwrite it or clear its token.
++  assert!(acl
++    .insert_role(&41, &workspace, AFRole::Member)
++    .await
++    .is_err());
++  acl
++    .remove_user_from_workspace(&41, &workspace)
++    .await
++    .unwrap();
++  acl
++    .insert_role(&41, &workspace, AFRole::Guest)
++    .await
++    .unwrap();
++  resume.notify_one();
++  assert!(older.await.unwrap().is_err());
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Read)
++    .await
++    .is_ok());
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Write)
++    .await
++    .is_err());
++}
++
++#[tokio::test]
++async fn hyper_role_reversed_batches_do_not_deadlock_and_keep_original_result_order() {
++  let acl = hyper_acl().await;
++  let first = Uuid::new_v4();
++  let second = Uuid::new_v4();
++  acl.insert_role(&41, &first, AFRole::Member).await.unwrap();
++  acl.insert_role(&42, &second, AFRole::Member).await.unwrap();
++  let entered = Arc::new(Notify::new());
++  let resume = Arc::new(Notify::new());
++  let a = {
++    let acl = acl.clone();
++    let entered = entered.clone();
++    let resume = resume.clone();
++    tokio::spawn(async move {
++      acl
++        .mutate_workspace_roles(
++          vec![(42, second), (41, first)],
++          Box::pin(async move {
++            entered.notify_one();
++            resume.notified().await;
++            Ok(vec![Some(AFRole::Guest), Some(AFRole::Member)])
++          }),
++        )
++        .await
++    })
++  };
++  tokio::time::timeout(Duration::from_secs(2), entered.notified())
++    .await
++    .unwrap();
++  let second_started = Arc::new(Notify::new());
++  let b = {
++    let acl = acl.clone();
++    let second_started = second_started.clone();
++    tokio::spawn(async move {
++      second_started.notify_one();
++      acl
++        .mutate_workspace_roles(
++          vec![(41, first), (42, second)],
++          Box::pin(async { Ok(vec![Some(AFRole::Guest), Some(AFRole::Member)]) }),
++        )
++        .await
++    })
++  };
++  second_started.notified().await;
++  resume.notify_one();
++  a.await.unwrap().unwrap();
++  tokio::time::timeout(Duration::from_secs(2), b)
++    .await
++    .unwrap()
++    .unwrap()
++    .unwrap();
++  assert!(acl
++    .enforce_action(&41, &first, Action::Write)
++    .await
++    .is_err());
++  assert!(acl
++    .enforce_action(&42, &second, Action::Write)
++    .await
++    .is_ok());
++}
++
++#[tokio::test]
++async fn hyper_role_duplicate_targets_reject_before_database_poll() {
++  let acl = hyper_acl().await;
++  let workspace = Uuid::new_v4();
++  let polled = Arc::new(AtomicBool::new(false));
++  acl
++    .insert_role(&41, &workspace, AFRole::Member)
++    .await
++    .unwrap();
++  let flag = polled.clone();
++  assert!(acl
++    .mutate_workspace_roles(
++      vec![(41, workspace), (41, workspace)],
++      Box::pin(async move {
++        flag.store(true, Ordering::SeqCst);
++        Ok(vec![None, None])
++      })
++    )
++    .await
++    .is_err());
++  assert!(!polled.load(Ordering::SeqCst));
++  assert!(acl
++    .enforce_action(&41, &workspace, Action::Write)
++    .await
++    .is_ok());
++}
+diff --git a/libs/access-control/src/casbin/mod.rs b/libs/access-control/src/casbin/mod.rs
+index af149de31a494ec51796fd9c14b8cd86d5669957..fb2cd3e4010489740bd38e6f8cb8e526380a29db 100644
+--- a/libs/access-control/src/casbin/mod.rs
++++ b/libs/access-control/src/casbin/mod.rs
+@@ -3,3 +3,9 @@ mod adapter;
+ pub mod collab;
+ mod enforcer;
+ pub mod workspace;
++
++#[cfg(test)]
++mod hyper_role_policy_tests;
++
++#[cfg(test)]
++mod hyper_workspace_role_mutation_tests;
+diff --git a/libs/access-control/src/casbin/workspace.rs b/libs/access-control/src/casbin/workspace.rs
+index 5b73065a12c93b8f26db4638c67013dad04cbaaa..55c45f7842f6fdb28db85411082033bc8b6d99be 100644
+--- a/libs/access-control/src/casbin/workspace.rs
++++ b/libs/access-control/src/casbin/workspace.rs
+@@ -6,6 +6,7 @@ use super::access::AccessControl;
+ use crate::act::Action;
+ use crate::entity::{ObjectType, SubjectType};
+ use crate::workspace::WorkspaceAccessControl;
++use crate::workspace::{HyperWorkspaceRoleMutation, HyperWorkspaceRoleTarget};
+ use app_error::AppError;
+ use database_entity::dto::AFRole;
+ 
+@@ -22,6 +23,17 @@ impl WorkspaceAccessControlImpl {
+ 
+ #[async_trait]
+ impl WorkspaceAccessControl for WorkspaceAccessControlImpl {
++  async fn mutate_workspace_roles(
++    &self,
++    targets: Vec<HyperWorkspaceRoleTarget>,
++    mutation: HyperWorkspaceRoleMutation<'_>,
++  ) -> Result<(), AppError> {
++    self
++      .access_control
++      .mutate_workspace_roles(targets, mutation)
++      .await
++  }
++
+   async fn enforce_role(
+     &self,
+     uid: &i64,
+diff --git a/libs/access-control/src/noops/workspace.rs b/libs/access-control/src/noops/workspace.rs
+index 97e4b4704cd92dc7e788543b20d7651639377e57..e4f4df48a8accdf562a9b8106dd4e6323073d5ce 100644
+--- a/libs/access-control/src/noops/workspace.rs
++++ b/libs/access-control/src/noops/workspace.rs
+@@ -3,6 +3,7 @@ use uuid::Uuid;
+ 
+ use crate::act::Action;
+ use crate::workspace::WorkspaceAccessControl;
++use crate::workspace::{HyperWorkspaceRoleMutation, HyperWorkspaceRoleTarget};
+ use app_error::AppError;
+ use database_entity::dto::AFRole;
+ 
+@@ -23,6 +24,20 @@ impl Default for WorkspaceAccessControlImpl {
+ 
+ #[async_trait]
+ impl WorkspaceAccessControl for WorkspaceAccessControlImpl {
++  async fn mutate_workspace_roles(
++    &self,
++    targets: Vec<HyperWorkspaceRoleTarget>,
++    mutation: HyperWorkspaceRoleMutation<'_>,
++  ) -> Result<(), AppError> {
++    let roles = mutation.await?;
++    if roles.len() != targets.len() {
++      return Err(AppError::Internal(anyhow::anyhow!(
++        "committed role result count mismatch"
++      )));
++    }
++    Ok(())
++  }
++
+   async fn enforce_role(
+     &self,
+     _uid: &i64,
+diff --git a/libs/access-control/src/workspace.rs b/libs/access-control/src/workspace.rs
+index 7fe5b7e31c266e44da76a6556777d38c8b0a79b3..ff240ed02c6c7b402922d661dde05c9c86dd1cca 100644
+--- a/libs/access-control/src/workspace.rs
++++ b/libs/access-control/src/workspace.rs
+@@ -2,10 +2,24 @@ use crate::act::Action;
+ use app_error::AppError;
+ use async_trait::async_trait;
+ use database_entity::dto::AFRole;
++use futures_util::future::BoxFuture;
+ use sqlx::types::Uuid;
+ 
++/// The returned roles must be read from committed storage in this exact target order.
++pub type HyperWorkspaceRoleTarget = (i64, Uuid);
++pub type HyperWorkspaceRoleMutation<'a> = BoxFuture<'a, Result<Vec<Option<AFRole>>, AppError>>;
++
+ #[async_trait]
+ pub trait WorkspaceAccessControl: Send + Sync + 'static {
++  /// Serialize affected memberships and deny them before polling database work.
++  /// The future commits its transaction, then reads the actual optional roles.
++  /// Failure/cancellation must not restore a previous privileged policy.
++  async fn mutate_workspace_roles(
++    &self,
++    targets: Vec<HyperWorkspaceRoleTarget>,
++    mutation: HyperWorkspaceRoleMutation<'_>,
++  ) -> Result<(), AppError>;
++
+   /// Check if the user has the role in the workspace.
+   /// Returns AppError::NotEnoughPermission if the user does not have the role.
+   async fn enforce_role(
+diff --git a/libs/access-control/tests/hyper_role_transactions.rs b/libs/access-control/tests/hyper_role_transactions.rs
+new file mode 100644
+index 0000000000000000000000000000000000000000..13bd2deb985b3527190f7cca10503df6c98adc32
+--- /dev/null
++++ b/libs/access-control/tests/hyper_role_transactions.rs
+@@ -0,0 +1,200 @@
++//! Explicit disposable PostgreSQL proof, separate from the --lib unit suite.
++//! Parent must first verify its owned listener and create a NEW empty database
++//! named hyper_role_policy_test_<UUID>. Never point this target at appflowy.
++use database::workspace::{
++  hyper_lock_workspace_role_targets, hyper_select_committed_workspace_roles,
++  upsert_workspace_member,
++};
++use database_entity::dto::AFRole;
++use sqlx::{
++  postgres::{PgConnectOptions, PgPoolOptions},
++  PgPool,
++};
++use std::{ops::DerefMut, str::FromStr, sync::Arc, time::Duration};
++use tokio::sync::Notify;
++use uuid::Uuid;
++
++const HYPER_COMMIT_GATE: i64 = 7239571004488111;
++
++async fn hyper_pool() -> PgPool {
++  let value = std::env::var("HYPER_ROLE_TEST_DATABASE_URL")
++    .expect("Supply only a newly created private hyper_role_policy_test_<UUID> database");
++  let options = PgConnectOptions::from_str(&value)
++    .unwrap_or_else(|_| panic!("Invalid private test database options"));
++  assert_eq!(
++    options.get_host(),
++    "127.0.0.1",
++    "Only the verified disposable loopback server is supported"
++  );
++  let name = options
++    .get_database()
++    .expect("Explicit disposable database required");
++  let suffix = name
++    .strip_prefix("hyper_role_policy_test_")
++    .expect("Refusing a non-test database");
++  assert!(
++    Uuid::parse_str(suffix).is_ok(),
++    "A fresh UUID database name is required"
++  );
++  PgPoolOptions::new()
++    .max_connections(5)
++    .acquire_timeout(Duration::from_secs(3))
++    .connect_with(options)
++    .await
++    .unwrap_or_else(|_| panic!("Cannot connect to private role test database"))
++}
++
++async fn hyper_wait_commit_is_server_blocked(pool: &PgPool, pid: i32) {
++  tokio::time::timeout(Duration::from_secs(3), async {
++    loop {
++      let blocked = sqlx::query_scalar::<_, bool>(
++        "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE pid = $1 AND wait_event_type = 'Lock' AND wait_event = 'advisory')",
++      ).bind(pid).fetch_one(pool).await.unwrap();
++      if blocked { break; }
++      tokio::time::sleep(Duration::from_millis(10)).await;
++    }
++  }).await.expect("Older COMMIT must actually be blocked inside PostgreSQL before cancellation");
++}
++
++#[tokio::test]
++async fn hyper_role_transaction_lock_orders_canceled_commit_before_newer_guest() {
++  let pool = hyper_pool().await;
++  let relations = sqlx::query_scalar::<_, i64>(
++    "SELECT COUNT(*) FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
++     WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
++       AND n.nspname NOT LIKE 'pg_temp_%' AND c.relkind IN ('r','p','v','m','S','f')",
++  ).fetch_one(&pool).await.unwrap();
++  assert_eq!(
++    relations, 0,
++    "Refusing a database containing existing relations"
++  );
++  // No IF NOT EXISTS: this target refuses a database containing an old test or
++  // user tables. The caller owns creation and later removal of this database.
++  sqlx::query(
++    "CREATE TABLE public.af_workspace (workspace_id uuid PRIMARY KEY, owner_uid bigint NOT NULL)",
++  )
++  .execute(&pool)
++  .await
++  .unwrap();
++  sqlx::query("CREATE TABLE public.af_workspace_member (workspace_id uuid NOT NULL, uid bigint NOT NULL, role_id integer NOT NULL, PRIMARY KEY (workspace_id, uid))")
++    .execute(&pool).await.unwrap();
++  let workspace = Uuid::new_v4();
++  let other_workspace = Uuid::new_v4();
++  for id in [workspace, other_workspace] {
++    sqlx::query("INSERT INTO public.af_workspace VALUES ($1, 99)")
++      .bind(id)
++      .execute(&pool)
++      .await
++      .unwrap();
++  }
++  sqlx::query("INSERT INTO public.af_workspace_member VALUES ($1,41,3),($1,42,2),($2,41,2)")
++    .bind(workspace)
++    .bind(other_workspace)
++    .execute(&pool)
++    .await
++    .unwrap();
++  assert_eq!(
++    hyper_select_committed_workspace_roles(
++      &pool,
++      &[(41, other_workspace), (77, workspace), (41, workspace)]
++    )
++    .await
++    .unwrap(),
++    vec![Some(AFRole::Member), None, Some(AFRole::Guest)]
++  );
++
++  // A test-only deferred write makes the old Member change occur inside COMMIT,
++  // after its Rust future is aborted. It intentionally has no membership row
++  // lock yet, so removing the production advisory lock makes this proof fail.
++  sqlx::query("CREATE TABLE public.hyper_delayed_role_updates (workspace_id uuid NOT NULL, uid bigint NOT NULL)")
++    .execute(&pool).await.unwrap();
++  sqlx::query(&format!("CREATE FUNCTION public.hyper_hold_role_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock({HYPER_COMMIT_GATE}::bigint); UPDATE public.af_workspace_member SET role_id=2 WHERE workspace_id=NEW.workspace_id AND uid=NEW.uid; RETURN NEW; END $$"))
++    .execute(&pool).await.unwrap();
++  sqlx::query("CREATE CONSTRAINT TRIGGER hyper_delay_role_commit AFTER INSERT ON public.hyper_delayed_role_updates DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.hyper_hold_role_commit()")
++    .execute(&pool).await.unwrap();
++  let mut commit_gate = pool.acquire().await.unwrap();
++  sqlx::query("SELECT pg_advisory_lock($1)")
++    .bind(HYPER_COMMIT_GATE)
++    .execute(commit_gate.deref_mut())
++    .await
++    .unwrap();
++  let mut old_tx = pool.begin().await.unwrap();
++  let old_pid = sqlx::query_scalar::<_, i32>("SELECT pg_backend_pid()")
++    .fetch_one(old_tx.deref_mut())
++    .await
++    .unwrap();
++  hyper_lock_workspace_role_targets(&mut old_tx, &[(41, workspace)])
++    .await
++    .unwrap();
++  sqlx::query("INSERT INTO public.hyper_delayed_role_updates VALUES ($1,41)")
++    .bind(workspace)
++    .execute(old_tx.deref_mut())
++    .await
++    .unwrap();
++  let old_commit = tokio::spawn(async move { old_tx.commit().await });
++  hyper_wait_commit_is_server_blocked(&pool, old_pid).await;
++  old_commit.abort();
++  assert!(old_commit.await.unwrap_err().is_cancelled());
++
++  let new_started = Arc::new(Notify::new());
++  let newer = {
++    let pool = pool.clone();
++    let new_started = new_started.clone();
++    tokio::spawn(async move {
++      let mut txn = pool.begin().await.unwrap();
++      new_started.notify_one();
++      hyper_lock_workspace_role_targets(&mut txn, &[(41, workspace)])
++        .await
++        .unwrap();
++      upsert_workspace_member(&mut txn, &workspace, &41, AFRole::Guest)
++        .await
++        .unwrap();
++      txn.commit().await.unwrap();
++    })
++  };
++  new_started.notified().await;
++  let mut newer = newer;
++  assert!(
++    tokio::time::timeout(Duration::from_millis(30), &mut newer)
++      .await
++      .is_err(),
++    "New mutation must not overtake the older uncertain server COMMIT"
++  );
++  sqlx::query("SELECT pg_advisory_unlock($1)")
++    .bind(HYPER_COMMIT_GATE)
++    .execute(commit_gate.deref_mut())
++    .await
++    .unwrap();
++  tokio::time::timeout(Duration::from_secs(3), newer)
++    .await
++    .unwrap()
++    .unwrap();
++  let actual = hyper_select_committed_workspace_roles(
++    &pool,
++    &[(41, workspace), (42, workspace), (41, other_workspace)],
++  )
++  .await
++  .unwrap();
++  assert_eq!(
++    actual,
++    vec![
++      Some(AFRole::Guest),
++      Some(AFRole::Member),
++      Some(AFRole::Member)
++    ]
++  );
++  // A fresh connection confirms the final committed result rather than a local
++  // policy cache or a successful request acknowledgment.
++  let mut cold = pool.acquire().await.unwrap();
++  let role = sqlx::query_scalar::<_, i32>(
++    "SELECT role_id FROM public.af_workspace_member WHERE workspace_id=$1 AND uid=41",
++  )
++  .bind(workspace)
++  .fetch_one(cold.deref_mut())
++  .await
++  .unwrap();
++  assert_eq!(role, 3);
++  drop(cold);
++  drop(commit_gate);
++  pool.close().await;
++}
+diff --git a/libs/database/src/workspace.rs b/libs/database/src/workspace.rs
+index 4af5867cbcbc890513b52b9241d00e4f2f9d2a57..81d0bdbe1efe000f12ebef8bd3d7517c6eb4ccf1 100644
+--- a/libs/database/src/workspace.rs
++++ b/libs/database/src/workspace.rs
+@@ -6,7 +6,6 @@ use database_entity::dto::{
+ use futures_util::stream::BoxStream;
+ use sqlx::{types::uuid, Executor, PgPool, Postgres, Transaction};
+ use std::{collections::HashMap, ops::DerefMut};
+-use tracing::{event, instrument};
+ use uuid::Uuid;
+ 
+ use crate::pg_row::{
+@@ -14,7 +13,6 @@ use crate::pg_row::{
+   AFWebUserWithEmailColumn, AFWorkspaceInvitationMinimal, AFWorkspaceMemberPermRow,
+   AFWorkspaceMemberRow, AFWorkspaceRow,
+ };
+-use crate::user::select_uid_from_email;
+ use app_error::AppError;
+ 
+ #[inline]
+@@ -210,6 +208,66 @@ pub async fn select_user_role<'a, E: Executor<'a, Database = Postgres>>(
+   Ok(AFRole::from(row))
+ }
+ 
++/// Keep role writes ordered at the server even while a cancelled SQLx future
++/// is draining its statement/COMMIT/ROLLBACK. Hash collisions only serialize
++/// otherwise independent keys; they do not change the SQL target identity.
++pub async fn hyper_lock_workspace_role_targets(
++  txn: &mut Transaction<'_, Postgres>,
++  targets: &[(i64, Uuid)],
++) -> Result<(), AppError> {
++  let mut keys = targets
++    .iter()
++    .map(|(uid, workspace)| (uid.to_string(), workspace.to_string()))
++    .collect::<Vec<_>>();
++  keys.sort();
++  keys.dedup();
++  for (uid, workspace) in keys {
++    let key = format!("hypertask:workspace-role:{}:{}", uid, workspace);
++    sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
++      .bind(key)
++      .execute(txn.deref_mut())
++      .await?;
++  }
++  Ok(())
++}
++
++/// Read one committed PostgreSQL snapshot in the caller's target order.
++/// Business mutations call this after commit while their ACL key leases remain held.
++pub async fn hyper_select_committed_workspace_roles(
++  pool: &PgPool,
++  targets: &[(i64, Uuid)],
++) -> Result<Vec<Option<AFRole>>, AppError> {
++  let users = targets.iter().map(|(uid, _)| *uid).collect::<Vec<_>>();
++  let workspaces = targets
++    .iter()
++    .map(|(_, workspace)| *workspace)
++    .collect::<Vec<_>>();
++  let roles = sqlx::query_scalar::<_, Option<i32>>(
++    "SELECT membership.role_id
++     FROM UNNEST($1::bigint[], $2::uuid[]) WITH ORDINALITY
++       AS target(uid, workspace_id, target_ordinal)
++     LEFT JOIN public.af_workspace_member AS membership
++       ON membership.uid = target.uid AND membership.workspace_id = target.workspace_id
++     ORDER BY target.target_ordinal",
++  )
++  .bind(users)
++  .bind(workspaces)
++  .fetch_all(pool)
++  .await?;
++  roles
++    .into_iter()
++    .map(|role| match role {
++      None => Ok(None),
++      Some(1) => Ok(Some(AFRole::Owner)),
++      Some(2) => Ok(Some(AFRole::Member)),
++      Some(3) => Ok(Some(AFRole::Guest)),
++      Some(_) => Err(AppError::Internal(anyhow::anyhow!(
++        "unknown committed workspace role"
++      ))),
++    })
++    .collect()
++}
++
+ #[inline]
+ pub async fn upsert_workspace_member_with_txn(
+   txn: &mut Transaction<'_, sqlx::Postgres>,
+@@ -411,38 +469,22 @@ pub async fn select_workspace_invitation_for_user(
+ }
+ 
+ #[inline]
+-#[instrument(level = "trace", skip(pool, email, role), err)]
+ pub async fn upsert_workspace_member(
+-  pool: &PgPool,
++  txn: &mut Transaction<'_, Postgres>,
+   workspace_id: &Uuid,
+-  email: &str,
++  member_uid: &i64,
+   role: AFRole,
+ ) -> Result<(), sqlx::Error> {
+-  event!(
+-    tracing::Level::TRACE,
+-    "update workspace member: workspace_id:{}, uid {:?}, role:{:?}",
+-    workspace_id,
+-    select_uid_from_email(pool, email).await,
+-    role
+-  );
+-
++  // The UID is the same immutable target held by the ACL role mutation lease.
+   let role_id: i32 = role.into();
+-  sqlx::query!(
+-    r#"
+-        UPDATE af_workspace_member
+-        SET
+-            role_id = $1
+-        WHERE workspace_id = $2 AND uid = (
+-            SELECT uid FROM af_user WHERE email = $3
+-        )
+-        "#,
+-    role_id,
+-    workspace_id,
+-    email
++  sqlx::query(
++    "UPDATE public.af_workspace_member SET role_id = $1 WHERE workspace_id = $2 AND uid = $3",
+   )
+-  .execute(pool)
++  .bind(role_id)
++  .bind(workspace_id)
++  .bind(member_uid)
++  .execute(txn.deref_mut())
+   .await?;
+-
+   Ok(())
+ }
+ 
+@@ -450,52 +492,26 @@ pub async fn upsert_workspace_member(
+ pub async fn delete_workspace_members(
+   txn: &mut Transaction<'_, sqlx::Postgres>,
+   workspace_id: &Uuid,
+-  member_email: &str,
++  member_uid: &i64,
+ ) -> Result<(), AppError> {
+-  let is_owner = sqlx::query_scalar!(
+-    r#"
+-  SELECT EXISTS (
+-    SELECT 1
+-    FROM public.af_workspace
+-    WHERE
+-        workspace_id = $1
+-        AND owner_uid = (
+-            SELECT uid FROM public.af_user WHERE email = $2
+-        )
+-   ) AS "is_owner";
+-  "#,
+-    workspace_id,
+-    member_email
++  let is_owner = sqlx::query_scalar::<_, bool>(
++    "SELECT EXISTS (SELECT 1 FROM public.af_workspace WHERE workspace_id = $1 AND owner_uid = $2)",
+   )
++  .bind(workspace_id)
++  .bind(member_uid)
+   .fetch_one(txn.deref_mut())
+-  .await?
+-  .unwrap_or(false);
+-
++  .await?;
+   if is_owner {
+     return Err(AppError::NotEnoughPermissions);
+   }
+-
+-  sqlx::query!(
+-    r#"
+-    DELETE FROM public.af_workspace_member
+-    WHERE
+-    workspace_id = $1
+-    AND uid = (
+-        SELECT uid FROM public.af_user WHERE email = $2
+-    )
+-    -- Ensure the user to be deleted is not the original owner.
+-    -- 1. TODO(nathan): User must transfer ownership to another user first.
+-    -- 2. User must have at least one workspace
+-    AND uid <> (
+-        SELECT owner_uid FROM public.af_workspace WHERE workspace_id = $1
+-    );
+-    "#,
+-    workspace_id,
+-    member_email,
++  sqlx::query(
++    "DELETE FROM public.af_workspace_member WHERE workspace_id = $1 AND uid = $2
++       AND uid <> (SELECT owner_uid FROM public.af_workspace WHERE workspace_id = $1)",
+   )
++  .bind(workspace_id)
++  .bind(member_uid)
+   .execute(txn.deref_mut())
+   .await?;
+-
+   Ok(())
+ }
+ 
+@@ -1566,8 +1582,8 @@ pub async fn select_view_id_from_publish_name(
+   Ok(res)
+ }
+ 
+-pub async fn select_invited_workspace_id(
+-  pg_pool: &PgPool,
++pub async fn select_invited_workspace_id<'a, E: Executor<'a, Database = Postgres>>(
++  executor: E,
+   invitation_code: &str,
+ ) -> Result<Uuid, AppError> {
+   let res = sqlx::query_scalar!(
+@@ -1579,7 +1595,7 @@ pub async fn select_invited_workspace_id(
+     "#,
+     invitation_code
+   )
+-  .fetch_one(pg_pool)
++  .fetch_one(executor)
+   .await?;
+ 
+   Ok(res)
+diff --git a/src/api/workspace.rs b/src/api/workspace.rs
+index 955581b38e1855a1909b78d96e607323363d5426..58dbd1c94c730c456c705edace2a566fca768a95 100644
+--- a/src/api/workspace.rs
++++ b/src/api/workspace.rs
+@@ -578,12 +578,13 @@ async fn post_join_workspace_invite_by_code_handler(
+   payload: Json<JoinWorkspaceByInviteCodeParams>,
+ ) -> Result<JsonAppResponse<InvitedWorkspace>> {
+   let uid = state.user_cache.get_user_uid(&user_uuid).await?;
+-  let invited_workspace_id =
+-    join_workspace_invite_by_code(&state.pg_pool, &payload.code, uid).await?;
+-  state
+-    .workspace_access_control
+-    .insert_role(&uid, &invited_workspace_id, AFRole::Member)
+-    .await?;
++  let invited_workspace_id = join_workspace_invite_by_code(
++    &state.pg_pool,
++    &payload.code,
++    uid,
++    state.workspace_access_control.clone(),
++  )
++  .await?;
+   Ok(
+     AppResponse::Ok()
+       .with_data(InvitedWorkspace {
+diff --git a/src/biz/access_request/ops.rs b/src/biz/access_request/ops.rs
+index 8294ec12eb54c276a463e087e6958ee17833e955..87ce38e78175ed939f0b84f2e904b45458df4144 100644
+--- a/src/biz/access_request/ops.rs
++++ b/src/biz/access_request/ops.rs
+@@ -11,13 +11,16 @@ use access_control::workspace::WorkspaceAccessControl;
+ use anyhow::Context;
+ use app_error::AppError;
+ use appflowy_collaborate::collab::storage::CollabAccessControlStorage;
++use database::workspace::{
++  hyper_lock_workspace_role_targets, hyper_select_committed_workspace_roles,
++};
+ use database::{
+   access_request::{
+     insert_new_access_request, select_access_request_by_request_id, update_access_request_status,
+   },
+   collab::GetCollabOrigin,
+   pg_row::AFAccessRequestStatusColumn,
+-  workspace::upsert_workspace_member_with_txn,
++  workspace::upsert_workspace_member_uid,
+ };
+ use database_entity::dto::AFRole;
+ use shared_entity::dto::access_request_dto::{AccessRequest, AccessRequestView};
+@@ -125,21 +128,35 @@ pub async fn approve_or_reject_access_request(
+     .enforce_role(&uid, &access_request.workspace.workspace_id, AFRole::Owner)
+     .await?;
+ 
+-  let mut txn = pg_pool.begin().await.context("approving request")?;
+-  let role = AFRole::Member;
+   if is_approved {
+-    upsert_workspace_member_with_txn(
+-      &mut txn,
+-      &access_request.workspace.workspace_id,
+-      &access_request.requester.email,
+-      role.clone(),
+-    )
+-    .await?;
++    let workspace_id = access_request.workspace.workspace_id;
++    let requester_uid = access_request.requester.uid;
++    let targets = vec![(access_request.requester.uid, workspace_id)];
+     workspace_access_control
+-      .insert_role(
+-        &access_request.requester.uid,
+-        &access_request.workspace.workspace_id,
+-        role.clone(),
++      .mutate_workspace_roles(
++        targets.clone(),
++        Box::pin(async move {
++          let mut txn = pg_pool.begin().await.context("approving request")?;
++          hyper_lock_workspace_role_targets(&mut txn, &targets).await?;
++          upsert_workspace_member_uid(
++            txn.deref_mut(),
++            &workspace_id,
++            requester_uid,
++            AFRole::Member,
++          )
++          .await?;
++          update_access_request_status(
++            txn.deref_mut(),
++            request_id,
++            AFAccessRequestStatusColumn::Approved,
++          )
++          .await?;
++          txn
++            .commit()
++            .await
++            .context("committing approved membership")?;
++          hyper_select_committed_workspace_roles(pg_pool, &targets).await
++        }),
+       )
+       .await?;
+     let cloned_mailer = mailer.clone();
+@@ -172,12 +189,15 @@ pub async fn approve_or_reject_access_request(
+       };
+     });
+   }
+-  let status = if is_approved {
+-    AFAccessRequestStatusColumn::Approved
+-  } else {
+-    AFAccessRequestStatusColumn::Rejected
+-  };
+-  update_access_request_status(txn.deref_mut(), request_id, status).await?;
+-  txn.commit().await.context("committing transaction")?;
++  if !is_approved {
++    let mut txn = pg_pool.begin().await.context("rejecting request")?;
++    update_access_request_status(
++      txn.deref_mut(),
++      request_id,
++      AFAccessRequestStatusColumn::Rejected,
++    )
++    .await?;
++    txn.commit().await.context("committing rejected request")?;
++  }
+   Ok(())
+ }
+diff --git a/src/biz/user/user_verify.rs b/src/biz/user/user_verify.rs
+index eeb271cfa151d2b1badd438188f973c175db5912..8006874ae4300ffedd81d0e18778d56444bdc0f1 100644
+--- a/src/biz/user/user_verify.rs
++++ b/src/biz/user/user_verify.rs
+@@ -37,17 +37,17 @@ pub async fn verify_token(access_token: &str, state: &AppState) -> Result<bool,
+       create_user(txn.deref_mut(), new_uid, &user_uuid, &user.email, &name).await?;
+     let workspace_row = select_workspace(txn.deref_mut(), &workspace_id).await?;
+ 
+-    // It's essential to cache the user's role because subsequent actions will rely on this cached information.
+-    state
+-      .workspace_access_control
+-      .insert_role(&new_uid, &workspace_id, AFRole::Owner)
+-      .await?;
+     // Need to commit the transaction for the record in `af_user` to be inserted
+     // so that `initialize_workspace_for_user` will be able to find the user
+     txn
+       .commit()
+       .await
+       .context("fail to commit transaction to verify token")?;
++    // Bootstrap a new workspace's Owner only after its membership has committed.
++    state
++      .workspace_access_control
++      .insert_role(&new_uid, &workspace_id, AFRole::Owner)
++      .await?;
+ 
+     // Create a workspace with the GetStarted template
+     let mut txn2 = state.pg_pool.begin().await?;
+diff --git a/src/biz/workspace/invite.rs b/src/biz/workspace/invite.rs
+index ed77a4f4c21e95af3bce1464e787a49df7d11d68..a03094fcfb40011c1ecb0dcd41ff1d11e73e6c78 100644
+--- a/src/biz/workspace/invite.rs
++++ b/src/biz/workspace/invite.rs
+@@ -1,10 +1,16 @@
++use access_control::workspace::WorkspaceAccessControl;
+ use app_error::AppError;
+ use database::workspace::{
+   delete_all_invite_code_for_workspace, insert_workspace_invite_code, select_invitation_code_info,
+   select_invite_code_for_workspace_id, select_invited_workspace_id, upsert_workspace_member_uid,
+ };
++use database::workspace::{
++  hyper_lock_workspace_role_targets, hyper_select_committed_workspace_roles,
++};
+ use rand::{distributions::Alphanumeric, Rng};
+ use sqlx::PgPool;
++use std::ops::DerefMut;
++use std::sync::Arc;
+ use uuid::Uuid;
+ 
+ use database_entity::dto::{AFRole, InvitationCodeInfo, WorkspaceInviteToken};
+@@ -37,9 +43,30 @@ pub async fn join_workspace_invite_by_code(
+   pg_pool: &PgPool,
+   invitation_code: &str,
+   uid: i64,
++  workspace_access_control: Arc<dyn WorkspaceAccessControl>,
+ ) -> Result<Uuid, AppError> {
+   let invited_workspace_id = select_invited_workspace_id(pg_pool, invitation_code).await?;
+-  upsert_workspace_member_uid(pg_pool, &invited_workspace_id, uid, AFRole::Member).await?;
++  let targets = vec![(uid, invited_workspace_id)];
++  workspace_access_control
++    .mutate_workspace_roles(
++      targets.clone(),
++      Box::pin(async move {
++        let mut txn = pg_pool.begin().await?;
++        hyper_lock_workspace_role_targets(&mut txn, &targets).await?;
++        let current = select_invited_workspace_id(txn.deref_mut(), invitation_code).await?;
++        if current != invited_workspace_id {
++          return Err(AppError::InvalidRequest(
++            "invitation code target changed".to_owned(),
++          ));
++        }
++        upsert_workspace_member_uid(txn.deref_mut(), &invited_workspace_id, uid, AFRole::Member)
++          .await?;
++        txn.commit().await?;
++        // ON CONFLICT DO NOTHING must never turn a persisted Guest into a cached Member.
++        hyper_select_committed_workspace_roles(pg_pool, &targets).await
++      }),
++    )
++    .await?;
+   Ok(invited_workspace_id)
+ }
+ 
+diff --git a/src/biz/workspace/ops.rs b/src/biz/workspace/ops.rs
+index a5c2bead7eaa13d9ff85d36fb3c14c68febf186f..c53a60560f7d6caa4767719b0e502086823e71d6 100644
+--- a/src/biz/workspace/ops.rs
++++ b/src/biz/workspace/ops.rs
+@@ -2,7 +2,7 @@ use collab_folder::CollabOrigin;
+ use collab_rt_entity::{ClientCollabMessage, UpdateSync};
+ use collab_rt_protocol::{Message, SyncMessage};
+ use database_entity::dto::AFWorkspaceSettingsChange;
+-use std::collections::HashMap;
++use std::collections::{HashMap, HashSet};
+ 
+ use anyhow::{anyhow, Context};
+ use redis::AsyncCommands;
+@@ -324,25 +324,36 @@ pub async fn accept_workspace_invite(
+   user_uuid: &Uuid,
+   invite_id: &Uuid,
+ ) -> Result<(), AppError> {
+-  let mut txn = pg_pool.begin().await?;
+-  let inv = get_invitation_by_id(&mut txn, invite_id).await?;
+-  if let Some(invitee_uid) = inv.invitee_uid {
+-    if invitee_uid != user_uid {
+-      return Err(AppError::NotInviteeOfWorkspaceInvitation(format!(
+-        "User with uid {} is not the invitee for invite_id {}",
+-        user_uid, invite_id
+-      )));
+-    }
++  // Resolve the immutable target before waiting for its lease, without holding
++  // a pool connection while another role mutation may need that connection.
++  let mut lookup = pg_pool.begin().await?;
++  let invitation = get_invitation_by_id(&mut lookup, invite_id).await?;
++  lookup.rollback().await?;
++  if invitation.invitee_uid != Some(user_uid) {
++    return Err(AppError::NotInviteeOfWorkspaceInvitation(
++      "invitation target mismatch".to_owned(),
++    ));
+   }
+-  update_workspace_invitation_set_status_accepted(&mut txn, user_uuid, invite_id).await?;
+-  let invited_uid = inv
+-    .invitee_uid
+-    .ok_or_else(|| AppError::Internal(anyhow::anyhow!("Invitee uid is missing for {:?}", inv)))?;
++  let workspace_id = invitation.workspace_id;
++  let targets = vec![(user_uid, workspace_id)];
+   workspace_access_control
+-    .insert_role(&invited_uid, &inv.workspace_id, inv.role)
+-    .await?;
+-  txn.commit().await?;
+-  Ok(())
++    .mutate_workspace_roles(
++      targets.clone(),
++      Box::pin(async move {
++        let mut txn = pg_pool.begin().await?;
++        hyper_lock_workspace_role_targets(&mut txn, &targets).await?;
++        let current = get_invitation_by_id(&mut txn, invite_id).await?;
++        if current.invitee_uid != Some(user_uid) || current.workspace_id != workspace_id {
++          return Err(AppError::NotInviteeOfWorkspaceInvitation(
++            "invitation target changed".to_owned(),
++          ));
++        }
++        update_workspace_invitation_set_status_accepted(&mut txn, user_uuid, invite_id).await?;
++        txn.commit().await?;
++        hyper_select_committed_workspace_roles(pg_pool, &targets).await
++      }),
++    )
++    .await
+ }
+ 
+ #[instrument(level = "debug", skip_all, err)]
+@@ -529,27 +540,42 @@ pub async fn remove_workspace_members(
+   member_emails: &[String],
+   workspace_access_control: Arc<dyn WorkspaceAccessControl>,
+ ) -> Result<(), AppResponseError> {
+-  let mut txn = pg_pool
+-    .begin()
+-    .await
+-    .context("Begin transaction to delete workspace members")?;
+-
++  let mut targets = Vec::new();
++  let mut seen = HashSet::new();
+   for email in member_emails {
+-    delete_workspace_members(&mut txn, workspace_id, email.as_str()).await?;
+-    if let Ok(uid) = select_uid_from_email(txn.deref_mut(), email)
+-      .await
+-      .map_err(AppResponseError::from)
+-    {
+-      workspace_access_control
+-        .remove_user_from_workspace(&uid, workspace_id)
+-        .await?;
++    match select_uid_from_email(pg_pool, email).await {
++      Ok(uid) => {
++        if seen.insert(uid) {
++          targets.push((uid, *workspace_id));
++        }
++      },
++      Err(error) if error.is_record_not_found() => {},
++      Err(error) => return Err(AppResponseError::from(error)),
+     }
+   }
+-
+-  txn
+-    .commit()
+-    .await
+-    .context("Commit transaction to delete workspace members")?;
++  if targets.is_empty() {
++    return Ok(());
++  }
++  workspace_access_control
++    .mutate_workspace_roles(
++      targets.clone(),
++      Box::pin(async move {
++        let mut txn = pg_pool
++          .begin()
++          .await
++          .context("Begin transaction to delete workspace members")?;
++        hyper_lock_workspace_role_targets(&mut txn, &targets).await?;
++        for (uid, _) in &targets {
++          delete_workspace_members(&mut txn, workspace_id, uid).await?;
++        }
++        txn
++          .commit()
++          .await
++          .context("Commit transaction to delete workspace members")?;
++        hyper_select_committed_workspace_roles(pg_pool, &targets).await
++      }),
++    )
++    .await?;
+   Ok(())
+ }
+ 
+@@ -584,9 +610,18 @@ pub async fn update_workspace_member(
+   workspace_access_control: Arc<dyn WorkspaceAccessControl>,
+ ) -> Result<(), AppError> {
+   if let Some(role) = &changeset.role {
+-    upsert_workspace_member(pg_pool, workspace_id, &changeset.email, role.clone()).await?;
++    let targets = vec![(*uid, *workspace_id)];
+     workspace_access_control
+-      .insert_role(uid, workspace_id, role.clone())
++      .mutate_workspace_roles(
++        targets.clone(),
++        Box::pin(async move {
++          let mut txn = pg_pool.begin().await?;
++          hyper_lock_workspace_role_targets(&mut txn, &targets).await?;
++          upsert_workspace_member(&mut txn, workspace_id, uid, role.clone()).await?;
++          txn.commit().await?;
++          hyper_select_committed_workspace_roles(pg_pool, &targets).await
++        }),
++      )
+       .await?;
+   }
+ 

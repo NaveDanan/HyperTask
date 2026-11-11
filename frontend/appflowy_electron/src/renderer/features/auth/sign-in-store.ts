@@ -7,7 +7,7 @@ import { tr } from '@/i18n';
 import { isLocalType } from '@/startup/cloud-env';
 import { getAppFlowyCloudUrl } from '@/startup/cloud-env';
 import { passGotrueTokenResponse, useDeepLinkStore } from '@/startup/deep-link';
-import { openWorkspaceOrHandleError, signUpAsGuest } from '@/startup/launcher';
+import { openWorkspaceOrHandleError, signUpAsGuest } from '@/startup/HyperLauncher';
 import { useAppStore } from '@/startup/app-store';
 
 type Outcome = { ok: true } | { ok: false; message: string } | null;

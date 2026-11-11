@@ -1,5 +1,7 @@
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::sync::Weak;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use collab::core::collab::DataSource;
 use collab::core::collab_plugin::CollabPersistence;
@@ -14,13 +16,12 @@ use collab_document::document_awareness::DocumentAwarenessUser;
 use collab_document::document_data::default_document_data;
 use collab_entity::CollabType;
 
-use crate::document::{
-  subscribe_document_changed, subscribe_document_snapshot_state, subscribe_document_sync_state,
-};
+use collab_integrate::CollabKVAction;
 use collab_integrate::collab_builder::{
   AppFlowyCollabBuilder, CollabBuilderConfig, CollabPersistenceImpl,
 };
 use collab_plugins::CollabKVDB;
+use collab_plugins::local_storage::kv::KVTransactionDB;
 use dashmap::DashMap;
 use flowy_document_pub::cloud::DocumentCloudService;
 use flowy_error::{ErrorCode, FlowyError, FlowyResult, internal_error};
@@ -33,6 +34,9 @@ use uuid::Uuid;
 use crate::entities::UpdateDocumentAwarenessStatePB;
 use crate::entities::{
   DocumentSnapshotData, DocumentSnapshotMeta, DocumentSnapshotMetaPB, DocumentSnapshotPB,
+};
+use crate::hyper_committed_document::{
+  HyperDocumentCacheEntry, HyperDocumentContext, hyper_subscribe_prepared_document,
 };
 use crate::reminder::DocumentReminderAction;
 
@@ -53,9 +57,11 @@ pub trait DocumentSnapshotService: Send + Sync {
 
 pub struct DocumentManager {
   pub user_service: Arc<dyn DocumentUserService>,
-  collab_builder: Weak<AppFlowyCollabBuilder>,
-  documents: Arc<DashMap<Uuid, Arc<RwLock<Document>>>>,
-  removing_documents: Arc<DashMap<Uuid, Arc<RwLock<Document>>>>,
+  pub(crate) collab_builder: Weak<AppFlowyCollabBuilder>,
+  pub(crate) documents: Arc<DashMap<Uuid, HyperDocumentCacheEntry>>,
+  pub(crate) removing_documents: Arc<DashMap<Uuid, HyperDocumentCacheEntry>>,
+  pub(crate) document_epoch: AtomicU64,
+  pub(crate) document_publication_gate: Arc<Mutex<()>>,
   cloud_service: Arc<dyn DocumentCloudService>,
   storage_service: Weak<dyn StorageService>,
   snapshot_service: Arc<dyn DocumentSnapshotService>,
@@ -80,6 +86,8 @@ impl DocumentManager {
       collab_builder,
       documents: Arc::new(Default::default()),
       removing_documents: Arc::new(Default::default()),
+      document_epoch: AtomicU64::new(0),
+      document_publication_gate: Arc::new(Mutex::new(())),
       cloud_service,
       storage_service,
       snapshot_service,
@@ -113,9 +121,20 @@ impl DocumentManager {
 
   pub async fn initialize(&self, _uid: i64) -> FlowyResult<()> {
     trace!("initialize document manager");
+    self.invalidate_document_context();
+    Ok(())
+  }
+
+  /// Invalidate cache ownership synchronously at the start of an owner change,
+  /// including close_db, before asynchronous workspace initialization runs.
+  pub fn invalidate_document_context(&self) {
+    let _publication = self
+      .document_publication_gate
+      .lock()
+      .unwrap_or_else(std::sync::PoisonError::into_inner);
+    self.document_epoch.fetch_add(1, Ordering::SeqCst);
     self.documents.clear();
     self.removing_documents.clear();
-    Ok(())
   }
 
   #[instrument(
@@ -220,11 +239,7 @@ impl DocumentManager {
 
   /// Return a document instance if the document is already opened.
   pub async fn editable_document(&self, doc_id: &Uuid) -> FlowyResult<Arc<RwLock<Document>>> {
-    if let Some(doc) = self.documents.get(doc_id).map(|item| item.value().clone()) {
-      return Ok(doc);
-    }
-
-    if let Some(doc) = self.restore_document_from_removing(doc_id) {
+    if let Some(doc) = self.hyper_cached_document(doc_id)? {
       return Ok(doc);
     }
 
@@ -240,11 +255,19 @@ impl DocumentManager {
     doc_id: &Uuid,
     enable_sync: bool,
   ) -> FlowyResult<Arc<RwLock<Document>>> {
-    let uid = self.user_service.user_id()?;
-    let mut doc_state = self.persistence()?.into_data_source();
+    let context = HyperDocumentContext::capture(self)?;
+    let uid = context.uid;
+    let mut doc_state =
+      CollabPersistenceImpl::new(context.db.clone(), uid, context.workspace_id).into_data_source();
     // If the document does not exist in local disk, try get the doc state from the cloud. This happens
     // When user_device_a create a document and user_device_b open the document.
-    if !self.is_doc_exist(doc_id).await? {
+    let exists = context
+      .db
+      .upgrade()
+      .ok_or_else(FlowyError::ref_drop)?
+      .read_txn()
+      .is_exist(uid, &context.workspace_id.to_string(), &doc_id.to_string());
+    if !exists {
       info!(
         "document {} not found in local disk, try to get the doc state from the cloud",
         doc_id
@@ -252,9 +275,10 @@ impl DocumentManager {
       doc_state = DataSource::DocStateV1(
         self
           .cloud_service
-          .get_document_doc_state(doc_id, &self.user_service.workspace_id()?)
+          .get_document_doc_state(doc_id, &context.workspace_id)
           .await?,
       );
+      context.check(self)?;
 
       // the doc_state should not be empty if remote return the doc state without error.
       if doc_state.is_empty() {
@@ -271,36 +295,173 @@ impl DocumentManager {
       doc_id,
       self.user_service.workspace_id()
     );
-    let result = self
-      .collab_for_document(uid, doc_id, doc_state, enable_sync)
-      .await;
-    match result {
-      Ok(document) => {
-        // Only push the document to the cache if the sync is enabled.
-        if enable_sync {
-          {
-            let mut lock = document.write().await;
-            subscribe_document_changed(doc_id, &mut lock);
-            subscribe_document_snapshot_state(&lock);
-            subscribe_document_sync_state(&lock);
-          }
-          self.documents.insert(*doc_id, document.clone());
-        }
-        Ok(document)
-      },
-      Err(err) => {
-        if err.is_invalid_data() {
-          self.delete_document(doc_id).await?;
-        }
-        return Err(err);
-      },
+    context.check(self)?;
+    if !enable_sync {
+      // Ordinary data reads remain detached and do not enable cloud sync.
+      let document = self
+        .collab_for_document(uid, doc_id, doc_state, false)
+        .await?;
+      context.check(self)?;
+      return Ok(document);
     }
+
+    // Prepare without plugins running, then publish under the lifecycle gate.
+    // This also gives copied-body retries proof of a cache entry's physical owner.
+    let builder = self.collab_builder()?;
+    let object = builder.collab_object(&context.workspace_id, uid, doc_id, CollabType::Document)?;
+    let mut collab = builder
+      .build_collab(&object, &context.db, doc_state)
+      .await?;
+    context.check(self)?;
+    collab.enable_undo_redo();
+    let document = Arc::new(RwLock::new(Document::open(collab).map_err(internal_error)?));
+    let _publication = self.document_publication_gate.lock().map_err(|_| {
+      FlowyError::internal().with_context("The document publication lock is unavailable.")
+    })?;
+    context.check(self)?;
+    if let Some(current) = self.hyper_cached_document_in_context(doc_id, &context)? {
+      return Ok(current.document);
+    }
+    hyper_subscribe_prepared_document(doc_id, &document)?;
+    let document = builder
+      .finalize(
+        object,
+        CollabBuilderConfig::default().sync_enable(true),
+        document,
+      )
+      .map_err(|error| {
+        tracing::warn!(phase = "hyper_document_builder_finalize", document_id = %doc_id, error = %error, "Document initialization failed");
+        FlowyError::internal().with_context("The document is busy. Reopen it to try again. Your saved content was kept.")
+      })?;
+    context.check(self)?;
+    self.documents.insert(
+      *doc_id,
+      HyperDocumentCacheEntry {
+        context,
+        document: document.clone(),
+      },
+    );
+    Ok(document)
   }
 
   pub async fn get_document_data(&self, doc_id: &Uuid) -> FlowyResult<DocumentData> {
     let document = self.get_document(doc_id).await?;
     let document = document.read().await;
+    crate::hyper_duplicate::hyper_validate_document_text(&document)?;
     document.get_document_data().map_err(internal_error)
+  }
+
+  pub async fn get_document_data_for_duplicate(&self, doc_id: &Uuid) -> FlowyResult<DocumentData> {
+    let uid = self.user_service.user_id()?;
+    let workspace = self.user_service.workspace_id()?;
+    let db = self
+      .user_service
+      .collab_db(uid)?
+      .upgrade()
+      .ok_or_else(FlowyError::ref_drop)?;
+    let source = self
+      .snapshot_for_duplicate(uid, workspace, &db, doc_id, true)
+      .await?
+      .ok_or_else(FlowyError::record_not_found)?;
+    let collab = Collab::new_with_source(
+      CollabOrigin::Empty,
+      &doc_id.to_string(),
+      DataSource::DocStateV1(source.doc_state.to_vec()),
+      vec![],
+      false,
+    )
+    .map_err(internal_error)?;
+    crate::hyper_duplicate::hyper_validate_document_pb_copy(&collab)?;
+    Document::open(collab)
+      .map_err(internal_error)?
+      .get_document_data()
+      .map_err(internal_error)
+  }
+
+  /// Snapshot a copy source without default creation, repair, deletion or plugins.
+  /// Existing open edits take precedence over the persisted snapshot.
+  pub async fn snapshot_for_duplicate(
+    &self,
+    uid: i64,
+    workspace: Uuid,
+    db: &Arc<CollabKVDB>,
+    doc_id: &Uuid,
+    required: bool,
+  ) -> FlowyResult<Option<EncodedCollab>> {
+    let check = || -> FlowyResult<()> {
+      if self.user_service.user_id()? != uid
+        || self.user_service.workspace_id()? != workspace
+        || !self
+          .user_service
+          .collab_db(uid)?
+          .upgrade()
+          .is_some_and(|active| Arc::ptr_eq(&active, db))
+      {
+        return Err(
+          FlowyError::invalid_data().with_context("The document owner changed while copying."),
+        );
+      }
+      Ok(())
+    };
+    check()?;
+    let opened = self.hyper_cached_document(doc_id)?;
+    if let Some(opened) = opened {
+      let opened = opened.read().await;
+      check()?;
+      crate::hyper_duplicate::hyper_validate_document_text_encoding(&opened)?;
+      return opened
+        .encode_collab_v1(|value| CollabType::Document.validate_require_data(value))
+        .map(Some)
+        .map_err(internal_error);
+    }
+    let local = {
+      let read = db.read_txn();
+      if read.is_exist(uid, &workspace.to_string(), &doc_id.to_string()) {
+        let mut value = Collab::new(uid, &doc_id.to_string(), "duplicate-read", vec![], false);
+        read
+          .load_doc_with_txn(
+            uid,
+            &workspace.to_string(),
+            &doc_id.to_string(),
+            &mut value.context.transact_mut(),
+          )
+          .map_err(internal_error)?;
+        Some(value)
+      } else {
+        None
+      }
+    };
+    let value = match local {
+      Some(value) => value,
+      None if !required => return Ok(None),
+      None => {
+        let state = self
+          .cloud_service
+          .get_document_doc_state(doc_id, &workspace)
+          .await?;
+        check()?;
+        if state.is_empty() {
+          return Err(
+            FlowyError::record_not_found()
+              .with_context("The source row document is missing. No empty copy was created."),
+          );
+        }
+        Collab::new_with_source(
+          CollabOrigin::Empty,
+          &doc_id.to_string(),
+          DataSource::DocStateV1(state),
+          vec![],
+          false,
+        )
+        .map_err(internal_error)?
+      },
+    };
+    check()?;
+    crate::hyper_duplicate::hyper_validate_document_text_encoding(&value)?;
+    value
+      .encode_collab_v1(|value| CollabType::Document.validate_require_data(value))
+      .map(Some)
+      .map_err(internal_error)
   }
   pub async fn get_document_text(&self, doc_id: &Uuid) -> FlowyResult<String> {
     let document = self.get_document(doc_id).await?;
@@ -312,11 +473,7 @@ impl DocumentManager {
   /// Return a document instance.
   /// The returned document might or might not be able to sync with the cloud.
   async fn get_document(&self, doc_id: &Uuid) -> FlowyResult<Arc<RwLock<Document>>> {
-    if let Some(doc) = self.documents.get(doc_id).map(|item| item.value().clone()) {
-      return Ok(doc);
-    }
-
-    if let Some(doc) = self.restore_document_from_removing(doc_id) {
+    if let Some(doc) = self.hyper_cached_document(doc_id)? {
       return Ok(doc);
     }
 
@@ -325,12 +482,31 @@ impl DocumentManager {
   }
 
   pub async fn open_document(&self, doc_id: &Uuid) -> FlowyResult<()> {
-    if let Some(mutex_document) = self.restore_document_from_removing(doc_id) {
-      let lock = mutex_document.read().await;
-      lock.start_init_sync();
-    }
-
-    if self.documents.contains_key(doc_id) {
+    let context = HyperDocumentContext::capture(self)?;
+    let cached = {
+      let _publication = self.document_publication_gate.lock().map_err(|_| {
+        FlowyError::internal().with_context("The document publication lock is unavailable.")
+      })?;
+      context.check(self)?;
+      let active = self
+        .documents
+        .get(doc_id)
+        .is_some_and(|entry| entry.context.matches(&context));
+      self
+        .hyper_cached_document_in_context(doc_id, &context)?
+        .map(|entry| (entry.document, !active))
+    };
+    if let Some((mutex_document, restored)) = cached {
+      // Preserve the existing distinction: an active open is a no-op, while
+      // reopening a recently closed document restarts its existing sync plugin.
+      if restored {
+        let lock = mutex_document.read().await;
+        let _publication = self.document_publication_gate.lock().map_err(|_| {
+          FlowyError::internal().with_context("The document publication lock is unavailable.")
+        })?;
+        context.check(self)?;
+        lock.start_init_sync();
+      }
       return Ok(());
     }
 
@@ -339,22 +515,43 @@ impl DocumentManager {
   }
 
   pub async fn close_document(&self, doc_id: &Uuid) -> FlowyResult<()> {
-    if let Some((doc_id, document)) = self.documents.remove(doc_id) {
+    let context = HyperDocumentContext::capture(self)?;
+    let candidate = self.hyper_cached_document(doc_id)?;
+    if let Some(document) = candidate {
       {
         // clear the awareness state when close the document
         let mut lock = document.write().await;
+        context.check(self)?;
         lock.clean_awareness_local_state();
       }
-
-      let clone_doc_id = doc_id;
+      let _publication = self.document_publication_gate.lock().map_err(|_| {
+        FlowyError::internal().with_context("The document publication lock is unavailable.")
+      })?;
+      context.check(self)?;
+      let Some((id, entry)) = self.documents.remove_if(doc_id, |_, entry| {
+        Arc::ptr_eq(&entry.document, &document) && entry.context.matches(&context)
+      }) else {
+        return Ok(());
+      };
+      let clone_doc_id = id;
       trace!("move document to removing_documents: {}", doc_id);
-      self.removing_documents.insert(doc_id, document);
+      self.removing_documents.insert(id, entry);
 
       let weak_removing_documents = Arc::downgrade(&self.removing_documents);
+      let publication_gate = self.document_publication_gate.clone();
+      let weak_document = Arc::downgrade(&document);
       tokio::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(120)).await;
         if let Some(removing_documents) = weak_removing_documents.upgrade() {
-          if removing_documents.remove(&clone_doc_id).is_some() {
+          let Ok(_publication) = publication_gate.lock() else {
+            return;
+          };
+          if removing_documents
+            .remove_if(&clone_doc_id, |_, entry| {
+              Weak::ptr_eq(&Arc::downgrade(&entry.document), &weak_document)
+            })
+            .is_some()
+          {
             trace!("drop document from removing_documents: {}", clone_doc_id);
           }
         }
@@ -365,13 +562,20 @@ impl DocumentManager {
   }
 
   pub async fn delete_document(&self, doc_id: &Uuid) -> FlowyResult<()> {
-    let uid = self.user_service.user_id()?;
-    let workspace_id = self.user_service.workspace_id()?;
-    if let Some(db) = self.user_service.collab_db(uid)?.upgrade() {
-      db.delete_doc(uid, &workspace_id.to_string(), &doc_id.to_string())
-        .await?;
+    let context = HyperDocumentContext::capture(self)?;
+    let uid = context.uid;
+    let workspace_id = context.workspace_id;
+    if let Some(db) = context.db.upgrade() {
+      let _publication = self.document_publication_gate.lock().map_err(|_| {
+        FlowyError::internal().with_context("The document publication lock is unavailable.")
+      })?;
+      context.check(self)?;
+      db.with_write_txn(|write| {
+        write.delete_doc(uid, &workspace_id.to_string(), &doc_id.to_string())
+      })?;
       // When deleting a document, we need to remove it from the cache.
       self.documents.remove(doc_id);
+      self.removing_documents.remove(doc_id);
     }
     Ok(())
   }
@@ -453,6 +657,17 @@ impl DocumentManager {
     Ok(())
   }
 
+  pub async fn download_file_complete(
+    &self,
+    local_file_path: String,
+    url: String,
+  ) -> FlowyResult<()> {
+    self
+      .storage_service_upgrade()?
+      .download_object_complete(url, local_file_path)
+      .await
+  }
+
   pub async fn delete_file(&self, url: String) -> FlowyResult<()> {
     let storage_service = self.storage_service_upgrade()?;
     storage_service.delete_object(url).await?;
@@ -488,16 +703,6 @@ impl DocumentManager {
   #[cfg(debug_assertions)]
   pub fn get_file_storage_service(&self) -> &Weak<dyn StorageService> {
     &self.storage_service
-  }
-
-  fn restore_document_from_removing(&self, doc_id: &Uuid) -> Option<Arc<RwLock<Document>>> {
-    let (doc_id, doc) = self.removing_documents.remove(doc_id)?;
-    trace!(
-      "move document {} from removing_documents to documents",
-      doc_id
-    );
-    self.documents.insert(doc_id, doc.clone());
-    Some(doc)
   }
 }
 

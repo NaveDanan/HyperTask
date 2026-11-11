@@ -96,7 +96,7 @@ export function featureFlagDescription(flag: FeatureFlag): string {
   }
 }
 
-// The Flutter app initializes the flags in FeatureFlagTask on every runAppFlowy(); here they
+// The Flutter app initializes the flags in FeatureFlagTask on every runHyperTask(); here they
 // are read from the KV store on first use after each launch.
 let values: FeatureFlagMap = new Map();
 let initializedFor: number | null = null;

@@ -30,6 +30,7 @@ use flowy_folder_pub::cloud::{
 };
 use flowy_folder_pub::entities::PublishPayload;
 use flowy_search_pub::cloud::SearchCloudService;
+use flowy_server::hyper_history_sync::HyperHistorySyncPlugin;
 use flowy_server_pub::af_cloud_config::AFCloudConfiguration;
 use flowy_server_pub::guest_dto::{
   ListSharedViewResponse, RevokeSharedViewAccessRequest, ShareViewWithGuestRequest,
@@ -84,6 +85,21 @@ impl StorageCloudService for ServerProvider {
       .file_storage()
       .ok_or(FlowyError::internal())?;
     storage.get_object(url).await
+  }
+
+  async fn get_object_bounded(
+    &self,
+    url: String,
+    workspace_id: Uuid,
+    maximum_bytes: usize,
+  ) -> FlowyResult<ObjectValue> {
+    let storage = self
+      .get_server()?
+      .file_storage()
+      .ok_or(FlowyError::internal())?;
+    storage
+      .get_object_bounded(url, workspace_id, maximum_bytes)
+      .await
   }
 
   async fn get_object_url_v1(
@@ -650,7 +666,11 @@ impl CollabCloudPluginProvider for ServerProvider {
                   ws_connect_state,
                   Some(Duration::from_secs(60)),
                 );
-                plugins.push(Box::new(sync_plugin));
+                if collab_object.collab_type == CollabType::Document {
+                  plugins.push(Box::new(HyperHistorySyncPlugin::new(Box::new(sync_plugin))));
+                } else {
+                  plugins.push(Box::new(sync_plugin));
+                }
               } else {
                 error!(
                   "Failed to parse collab object id: {}",

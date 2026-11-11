@@ -34,6 +34,7 @@ use crate::services::sort::{Sort, SortChangeset, SortController};
 use collab_database::database::{gen_database_calculation_id, gen_database_sort_id, gen_row_id};
 use collab_database::entity::DatabaseView;
 use collab_database::fields::Field;
+use collab_database::fields::date_type_option::DateTypeOption;
 use collab_database::rows::{Cell, Cells, CreateRowParams, Row, RowCell, RowDetail, RowId};
 use collab_database::views::{DatabaseLayout, RowOrder};
 use dashmap::DashMap;
@@ -1042,6 +1043,22 @@ impl DatabaseViewEditor {
     let field_id = &old_field.id;
 
     if let Some(field) = self.delegate.get_field(field_id).await {
+      if FieldType::from(field.field_type) == FieldType::DateTime {
+        let before = old_field
+          .get_type_option::<DateTypeOption>(FieldType::DateTime)
+          .map(|option| option.timezone_id)
+          .unwrap_or_default();
+        let after = field
+          .get_type_option::<DateTypeOption>(FieldType::DateTime)
+          .map(|option| option.timezone_id)
+          .unwrap_or_default();
+        if before != after {
+          self
+            .filter_controller
+            .did_receive_field_timezone_changed(field_id)
+            .await;
+        }
+      }
       self
         .sort_controller
         .read()
@@ -1126,10 +1143,13 @@ impl DatabaseViewEditor {
       .unwrap_or_default()
       .into();
 
-    let timestamp = date_cell
-      .into_date_field_cell_data()
-      .unwrap_or_default()
-      .timestamp;
+    let date_data = date_cell.into_date_field_cell_data().unwrap_or_default();
+    let timestamp = date_data.timestamp;
+    let end_timestamp = if date_data.is_range {
+      date_data.end_timestamp.or(timestamp)
+    } else {
+      None
+    };
 
     let (_, row_detail) = self.delegate.get_row_detail(&self.view_id, &row_id).await?;
 
@@ -1138,6 +1158,8 @@ impl DatabaseViewEditor {
       date_field_id: date_field.id.clone(),
       title,
       timestamp,
+      end_timestamp,
+      include_time: date_data.include_time,
     })
   }
 
@@ -1166,9 +1188,15 @@ impl DatabaseViewEditor {
       let timestamp_cell =
         get_cell_for_row(self.delegate.clone(), &calendar_setting.field_id, &row.id).await;
 
-      let timestamp = timestamp_cell
+      let date_data = timestamp_cell
         .and_then(|cell| cell.into_date_field_cell_data())
-        .and_then(|cell_data| cell_data.timestamp);
+        .unwrap_or_default();
+      let timestamp = date_data.timestamp;
+      let end_timestamp = if date_data.is_range {
+        date_data.end_timestamp.or(timestamp)
+      } else {
+        None
+      };
 
       let title = primary_cell
         .and_then(|cell| cell.into_text_field_cell_data())
@@ -1181,6 +1209,8 @@ impl DatabaseViewEditor {
         date_field_id: calendar_setting.field_id.clone(),
         title,
         timestamp,
+        end_timestamp,
+        include_time: date_data.include_time,
       };
 
       events.push(event);

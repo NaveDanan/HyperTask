@@ -24,6 +24,7 @@ use tokio_stream::StreamExt;
 use tracing::{debug, error, event, info, instrument, warn};
 use uuid::Uuid;
 
+use super::hyper_awareness_lifecycle::HyperAwarenessLifecycle;
 use crate::entities::{AuthStateChangedPB, AuthStatePB, UserProfilePB, UserSettingPB};
 use crate::event_map::{AppLifeCycle, DefaultUserStatusCallback};
 use crate::migrations::document_empty_content::HistoricalEmptyDocumentMigration;
@@ -45,14 +46,14 @@ use flowy_user_pub::sql::*;
 pub struct UserManager {
   pub(crate) cloud_service: Weak<dyn UserCloudServiceProvider>,
   pub(crate) store_preferences: Arc<KVStorePreferences>,
-  pub(crate) user_awareness_by_workspace: DashMap<Uuid, Arc<RwLock<UserAwareness>>>,
+  pub(crate) user_awareness_by_workspace: Arc<DashMap<Uuid, Arc<RwLock<UserAwareness>>>>,
+  pub(crate) awareness_lifecycle: Arc<HyperAwarenessLifecycle>,
   pub app_life_cycle: RwLock<Arc<dyn AppLifeCycle>>,
   pub(crate) collab_builder: Weak<AppFlowyCollabBuilder>,
   pub(crate) collab_interact: RwLock<Arc<dyn UserReminder>>,
   pub(crate) user_workspace_service: Arc<dyn UserWorkspaceService>,
   pub(crate) authenticate_user: Arc<AuthenticateUser>,
   refresh_user_profile_since: AtomicI64,
-  pub(crate) is_loading_awareness: Arc<DashMap<Uuid, bool>>,
 }
 
 impl Drop for UserManager {
@@ -77,13 +78,13 @@ impl UserManager {
       cloud_service: cloud_services,
       store_preferences,
       user_awareness_by_workspace: Default::default(),
+      awareness_lifecycle: Default::default(),
       app_life_cycle: user_status_callback,
       collab_builder,
       collab_interact: RwLock::new(Arc::new(DefaultCollabInteract)),
       authenticate_user,
       refresh_user_profile_since,
       user_workspace_service,
-      is_loading_awareness: Arc::new(Default::default()),
     });
 
     let weak_user_manager = Arc::downgrade(&user_manager);
@@ -117,6 +118,7 @@ impl UserManager {
   }
 
   pub fn close_db(&self) {
+    self.begin_awareness_owner();
     if let Err(err) = self.authenticate_user.close_db() {
       error!("Close db failed: {:?}", err);
     }
@@ -139,6 +141,7 @@ impl UserManager {
     user_status_callback: C,
     collab_interact: I,
   ) -> Result<(), FlowyError> {
+    let awareness_epoch = self.begin_awareness_owner();
     let app_life_cycle = Arc::new(user_status_callback);
     *self.app_life_cycle.write().await = app_life_cycle.clone();
     *self.collab_interact.write().await = Arc::new(collab_interact);
@@ -297,6 +300,7 @@ impl UserManager {
           &session.user_uuid,
           &workspace_uuid,
           &workspace_type,
+          awareness_epoch,
         )
         .await;
 
@@ -370,6 +374,7 @@ impl UserManager {
     params: SignInParams,
     auth_type: AuthType,
   ) -> Result<UserProfile, FlowyError> {
+    let awareness_epoch = self.begin_awareness_owner();
     let cloud_service = self.cloud_service()?;
     cloud_service.set_server_auth_type(&auth_type, None)?;
 
@@ -391,6 +396,7 @@ impl UserManager {
         &session.user_uuid,
         &workspace_id,
         &user_profile.workspace_type,
+        awareness_epoch,
       )
       .await;
     self
@@ -425,6 +431,7 @@ impl UserManager {
     auth_type: AuthType,
     params: BoxAny,
   ) -> Result<UserProfile, FlowyError> {
+    let awareness_epoch = self.begin_awareness_owner();
     let cloud_service = self.cloud_service()?;
     cloud_service.set_server_auth_type(&auth_type, None)?;
 
@@ -432,7 +439,7 @@ impl UserManager {
     let response: AuthResponse = auth_service.sign_up(params).await?;
     let new_user_profile = UserProfile::from((&response, &auth_type));
     self
-      .continue_sign_up(&new_user_profile, response, &auth_type)
+      .continue_sign_up(&new_user_profile, response, &auth_type, awareness_epoch)
       .await?;
     Ok(new_user_profile)
   }
@@ -443,6 +450,7 @@ impl UserManager {
     new_user_profile: &UserProfile,
     response: AuthResponse,
     auth_type: &AuthType,
+    awareness_epoch: u64,
   ) -> FlowyResult<()> {
     let new_session = Session::from(&response);
     let workspace_id = Uuid::parse_str(&new_session.workspace_id)?;
@@ -456,6 +464,7 @@ impl UserManager {
         &new_session.user_uuid,
         &workspace_id,
         &new_user_profile.workspace_type,
+        awareness_epoch,
       )
       .await;
     let workspace_id = Uuid::parse_str(&new_session.workspace_id)?;
@@ -495,6 +504,7 @@ impl UserManager {
 
   #[tracing::instrument(level = "info", skip(self))]
   pub async fn sign_out(&self) -> Result<(), FlowyError> {
+    self.begin_awareness_owner();
     if let Ok(session) = self.get_session() {
       sign_out(
         &self.cloud_service()?,

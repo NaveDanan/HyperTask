@@ -27,11 +27,12 @@ import { Kbd } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { useHomeStore } from '../home/home-store';
+import { useAppStore } from '@/startup/app-store';
+import { hyperDocumentOwnerKey, hyperGetDocumentOwner, useHyperDocumentOwner, type HyperDocumentOwner } from '../document/HyperDocumentOwner';
+import { useWorkspaceStore } from '../sidebar/stores/workspace-store';
 import { toggleCommandPalette } from '../home/notifiers';
 import { tabsActions } from '../tabs/tabs-store';
 import { nameOrDefault } from '../view/view-ext';
-import { useCurrentWorkspace } from '../view-header/current-workspace';
 import { formatDate } from '../view-header/date-format';
 import { RawEmojiIcon, viewIcon } from '../view-header/ViewIcon';
 import { openTrash } from '../view-header/ViewTitleBar';
@@ -40,20 +41,23 @@ import {
   refreshCachedViews,
   searchChanged,
   useCommandPaletteStore,
-  workspaceChanged,
   type SearchResultItem,
 } from './command-palette-store';
 import { recentViews, resetRecentViews, useRecentViewsStore } from './recent-views-store';
-import { onelinePath, useViewAncestors } from './view-ancestor-cache';
+import { onelinePath, resetViewAncestors, useViewAncestors } from './view-ancestor-cache';
+import { hyperCaptureSearchOwner, hyperInvalidateSearchOwner } from './HyperSearchOwner';
 
 /** NavigationBlocExtension.navigateTo → ActionNavigationBloc → TabsBloc.openPlugin(view). */
-async function navigateTo(viewId: string) {
+async function navigateTo(viewId: string, owner: HyperDocumentOwner) {
+  const scope = hyperCaptureSearchOwner(owner);
+  if (!scope) return;
   const result = await FolderEventGetView({ value: viewId });
+  if (!scope.isCurrent()) return;
   if (!result.ok) {
     showToast({ message: tr('search.pageNotExist'), type: 'error' });
     return;
   }
-  tabsActions.openView(result.value);
+  tabsActions.openView(result.value, undefined, scope.isCurrent);
 }
 
 const RESULT_LAYOUT_ICONS: Record<string, LucideIcon> = {
@@ -209,9 +213,9 @@ function SearchCell({
 
 // ---- SearchField (widgets/search_field.dart) ------------------------------------------------
 
-function SearchField({ query }: { query: string | null }) {
+function SearchField({ query, owner }: { query: string | null; owner: HyperDocumentOwner }) {
   const { tr } = useTr();
-  const workspace = useCurrentWorkspace();
+  const workspace = useWorkspaceStore(s => s.currentWorkspace);
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(query ?? '');
   const [focused, setFocused] = useState(false);
@@ -231,7 +235,7 @@ function SearchField({ query }: { query: string | null }) {
         onBlur={() => setFocused(false)}
         onChange={(event) => {
           setValue(event.target.value);
-          searchChanged(event.target.value);
+          searchChanged(event.target.value, owner);
         }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowDown') {
@@ -348,13 +352,13 @@ function SectionTitle({ children }: { children: ReactNode }) {
 
 // ---- RecentViewsList (widgets/recent_views_list.dart) ---------------------------------------
 
-function RecentViewsList({ hidePreview, onSelected }: { hidePreview: boolean; onSelected: () => void }) {
+function RecentViewsList({ hidePreview, onSelected, owner }: { hidePreview: boolean; onSelected: () => void; owner: HyperDocumentOwner }) {
   const { tr } = useTr();
   const views = useRecentViewsStore((s) => s.views);
   const [hovered, setHovered] = useState<ViewPB | null>(null);
   useEffect(() => {
-    void recentViews();
-  }, []);
+    void recentViews(owner);
+  }, [owner]);
   const recent = useMemo(() => {
     const seen = new Set<string>();
     return views.flatMap((v) => (v.item && !seen.has(v.item.id) && seen.add(v.item.id) ? [v.item] : []));
@@ -371,7 +375,7 @@ function RecentViewsList({ hidePreview, onSelected }: { hidePreview: boolean; on
             onHover={() => setHovered(view)}
             onSelect={() => {
               onSelected();
-              void navigateTo(view.id);
+              void navigateTo(view.id, owner);
             }}
           >
             <span className="flex size-4 shrink-0 items-center justify-center">
@@ -387,7 +391,7 @@ function RecentViewsList({ hidePreview, onSelected }: { hidePreview: boolean; on
           key={hovered.id}
           view={hovered}
           onViewOpened={() => {
-            void navigateTo(hovered.id);
+            void navigateTo(hovered.id, owner);
             onSelected();
           }}
         />
@@ -404,6 +408,7 @@ function SearchResultList({
   query,
   hidePreview,
   onSelected,
+  owner,
 }: {
   cachedViews: Map<string, ViewPB>;
   resultItems: SearchResultItem[];
@@ -411,6 +416,7 @@ function SearchResultList({
   query: string | null;
   hidePreview: boolean;
   onSelected: () => void;
+  owner: HyperDocumentOwner;
 }) {
   const { tr } = useTr();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -418,7 +424,7 @@ function SearchResultList({
   const items = cachedViews.size > 0 ? resultItems.filter((item) => cachedViews.has(item.id)) : resultItems;
   const open = (id: string) => {
     onSelected();
-    void navigateTo(id);
+    void navigateTo(id, owner);
   };
   const hoveredView = hoveredId ? cachedViews.get(hoveredId) : undefined;
   return (
@@ -458,7 +464,7 @@ function SearchResultList({
 }
 
 /** NoSearchResultsHint: with a link to the Trash. */
-function NoSearchResultsHint({ onClose }: { onClose: () => void }) {
+function NoSearchResultsHint({ onClose, owner }: { onClose: () => void; owner: HyperDocumentOwner }) {
   const { tr } = useTr();
   return (
     <Empty className="min-h-40 py-10">
@@ -473,8 +479,10 @@ function NoSearchResultsHint({ onClose }: { onClose: () => void }) {
             type="button"
             className="underline underline-offset-2 hover:text-foreground focus-visible:outline-ring"
             onClick={() => {
+              const scope = hyperCaptureSearchOwner(owner);
+              if (!scope) return;
               onClose();
-              openTrash();
+              if (scope.isCurrent()) openTrash();
             }}
           >
             {tr('trash.text')}
@@ -497,8 +505,9 @@ function useWindowSize() {
   return size;
 }
 
-function CommandPaletteModal({ close }: { close: () => void }) {
+function CommandPaletteModal({ close, owner }: { close: () => void; owner: HyperDocumentOwner }) {
   const state = useStore(useCommandPaletteStore);
+  const currentOwner = useHyperDocumentOwner();
   const { width: windowWidth } = useWindowSize();
   // Preserve the existing viewport threshold for enabling hover previews.
   const width = Math.min(960, Math.max(572, windowWidth * 0.7));
@@ -506,6 +515,7 @@ function CommandPaletteModal({ close }: { close: () => void }) {
   const noQuery = !state.query;
   const hasResult = state.combinedResponseItems.size > 0;
   const searching = state.searching;
+  if (!owner.isCurrent() || hyperDocumentOwnerKey(currentOwner) !== hyperDocumentOwnerKey(owner) || state.ownerKey && state.ownerKey !== hyperDocumentOwnerKey(owner)) return null;
 
   return (
     <div
@@ -517,8 +527,8 @@ function CommandPaletteModal({ close }: { close: () => void }) {
       <div
         className="command-palette fixed top-[12vh] left-1/2 z-50 flex max-h-[min(36rem,76vh)] w-[min(40rem,calc(100vw-3rem))] -translate-x-1/2 flex-col overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/10 animate-in fade-in-0 zoom-in-95 duration-100 md:has-data-[search-preview]:w-[min(56rem,calc(100vw-3rem))]"
       >
-        <SearchField query={state.query} />
-        {noQuery && <RecentViewsList hidePreview={hidePreview} onSelected={close} />}
+        <SearchField query={state.query} owner={owner} />
+        {noQuery && <RecentViewsList hidePreview={hidePreview} onSelected={close} owner={owner} />}
         {hasResult && !noQuery ? (
           <SearchResultList
             cachedViews={state.cachedViews}
@@ -527,9 +537,10 @@ function CommandPaletteModal({ close }: { close: () => void }) {
             query={state.query}
             hidePreview={hidePreview}
             onSelected={close}
+            owner={owner}
           />
         ) : (
-          !noQuery && !searching && <NoSearchResultsHint onClose={close} />
+          !noQuery && !searching && <NoSearchResultsHint onClose={close} owner={owner} />
         )}
         {!noQuery && searching && !hasResult && (
           <div className="flex min-h-40 flex-1 items-center justify-center py-10">
@@ -549,36 +560,45 @@ function CommandPaletteModal({ close }: { close: () => void }) {
 /** CommandPalette (workspace/presentation/command_palette/command_palette.dart): Mod+P toggles it. */
 export function CommandPaletteHost() {
   const closeRef = useRef<(() => void) | null>(null);
-  const workspaceId = useHomeStore((s) => s.workspaceSetting?.workspaceId);
-
-  useEffect(
-    () =>
-      toggleCommandPalette.on(() => {
+  useEffect(() => {
+    const signature = () => JSON.stringify([hyperDocumentOwnerKey(hyperGetDocumentOwner()), useAppStore.getState().launchId]);
+    let previous = signature();
+    const reset = () => {
+      hyperInvalidateSearchOwner();
+      const close = closeRef.current;
+      closeRef.current = null;
+      close?.();
+      clearSearch();
+      resetRecentViews();
+      resetViewAncestors();
+    };
+    const changed = () => {
+      const next = signature();
+      if (next !== previous) { previous = next; reset(); }
+    };
+    reset();
+    // Synchronous subscriptions also invalidate an A → B → A change within one render.
+    const stopWorkspace = useWorkspaceStore.subscribe(changed);
+    const stopApp = useAppStore.subscribe(changed);
+    const stopToggle = toggleCommandPalette.on(() => {
         if (closeRef.current) {
-          closeRef.current();
+          const close = closeRef.current;
+          closeRef.current = null;
+          close();
           return;
         }
-        void refreshCachedViews();
-        closeRef.current = showDialog((close) => <CommandPaletteModal close={close} />, {
+        const owner = hyperGetDocumentOwner();
+        if (!owner?.isCurrent()) return;
+        void refreshCachedViews(owner);
+        const closeDialog = showDialog((close) => <CommandPaletteModal key={hyperDocumentOwnerKey(owner)} close={close} owner={owner} />, {
           barrierColor: 'transparent',
           onClosed: () => {
-            closeRef.current = null;
+            if (closeRef.current === closeDialog) closeRef.current = null;
           },
         });
-      }),
-    [],
-  );
-
-  // CommandPaletteEvent.workspaceChanged and CachedRecentService.reset() on a workspace switch.
-  const previousWorkspace = useRef(workspaceId);
-  useEffect(() => {
-    if (previousWorkspace.current && workspaceId && previousWorkspace.current !== workspaceId) {
-      workspaceChanged();
-      resetRecentViews();
-    }
-    previousWorkspace.current = workspaceId;
-  }, [workspaceId]);
-
-  useEffect(() => () => closeRef.current?.(), []);
+        closeRef.current = closeDialog;
+    });
+    return () => { stopToggle(); stopWorkspace(); stopApp(); reset(); };
+  }, []);
   return null;
 }

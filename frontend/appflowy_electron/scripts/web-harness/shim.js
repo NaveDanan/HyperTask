@@ -60,6 +60,7 @@
       setZoomFactor: (factor) => (document.body.style.zoom = String(factor)),
       registerDeepLinkScheme: () => {},
       onDeepLink: () => () => {},
+      getStartup: async () => ({ enabled: false, available: false, reason: 'Available in the installed desktop app.' }),
     }),
     clipboard: { writeText: (text) => void navigator.clipboard?.writeText(text).catch(() => {}), readText: async () => '' },
     window: {

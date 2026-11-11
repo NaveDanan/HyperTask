@@ -2,10 +2,13 @@ use crate::entities::{DateFilterConditionPB, DateFilterPB};
 use crate::services::cell::insert_date_cell;
 use crate::services::filter::PreFillCellsWithFilter;
 
+use super::hyper_date_timezone::HyperDateTimezone;
+use crate::entities::FieldType;
 use bytes::Bytes;
-use chrono::{Duration, Local, NaiveDate, TimeZone};
+use chrono::{DateTime, Duration, Local, NaiveDate, TimeZone};
 use collab_database::fields::Field;
 use collab_database::fields::date_type_option::DateCellData;
+use collab_database::fields::date_type_option::DateTypeOption;
 use collab_database::rows::Cell;
 use collab_database::template::timestamp_parse::TimestampCellData;
 use flowy_error::{FlowyResult, internal_error};
@@ -18,6 +21,9 @@ impl DateFilterPB {
   /// the condition. For example, `start` and `end` timestamps for
   /// `DateFilterConditionPB::DateStartsBetween`.
   pub fn is_visible(&self, cell_data: &DateCellData) -> Option<bool> {
+    if self.use_field_timezone {
+      return self.is_visible_in_timezone(cell_data, "");
+    }
     let strategy = self.get_strategy()?;
 
     let timestamp = if self.condition.is_filter_on_start_timestamp() {
@@ -27,6 +33,26 @@ impl DateFilterPB {
     };
 
     Some(strategy.filter(timestamp))
+  }
+
+  pub fn is_visible_in_timezone(
+    &self,
+    cell_data: &DateCellData,
+    timezone_id: &str,
+  ) -> Option<bool> {
+    if !self.use_field_timezone {
+      return self.is_visible(cell_data);
+    }
+    let timestamp = if self.condition.is_filter_on_start_timestamp() {
+      cell_data.timestamp
+    } else {
+      cell_data.end_timestamp.or(cell_data.timestamp)
+    };
+    Some(
+      self
+        .get_strategy()?
+        .filter_zoned(timestamp, HyperDateTimezone::new(timezone_id)),
+    )
   }
 
   pub fn is_timestamp_cell_data_visible(&self, cell_data: &TimestampCellData) -> Option<bool> {
@@ -90,6 +116,29 @@ enum DateFilterStrategy {
 }
 
 impl DateFilterStrategy {
+  fn filter_zoned(self, timestamp: Option<i64>, zone: HyperDateTimezone) -> bool {
+    let cell = timestamp.and_then(|value| zone.date(value));
+    let logical = |timestamp| DateTime::from_timestamp(timestamp, 0).map(|date| date.date_naive());
+    let compare = |expected, predicate: fn(NaiveDate, NaiveDate) -> bool| {
+      cell
+        .zip(logical(expected))
+        .is_some_and(|(actual, expected)| predicate(actual, expected))
+    };
+    match self {
+      Self::On(expected) => compare(expected, |actual, expected| actual == expected),
+      Self::Before(expected) => compare(expected, |actual, expected| actual < expected),
+      Self::After(expected) => compare(expected, |actual, expected| actual > expected),
+      Self::OnOrBefore(expected) => compare(expected, |actual, expected| actual <= expected),
+      Self::OnOrAfter(expected) => compare(expected, |actual, expected| actual >= expected),
+      Self::DateBetween { start, end } => cell
+        .zip(logical(start))
+        .zip(logical(end))
+        .is_some_and(|((actual, start), end)| actual >= start && actual <= end),
+      Self::Empty => cell.is_none(),
+      Self::NotEmpty => cell.is_some(),
+    }
+  }
+
   fn filter(self, cell_data: Option<i64>) -> bool {
     match self {
       DateFilterStrategy::On(expected_timestamp) => cell_data.is_some_and(|timestamp| {
@@ -137,6 +186,9 @@ impl DateFilterStrategy {
 
 impl PreFillCellsWithFilter for DateFilterPB {
   fn get_compliant_cell(&self, field: &Field) -> Option<Cell> {
+    if self.use_field_timezone {
+      return self.get_zoned_compliant_cell(field);
+    }
     let start_timestamp = match self.condition {
       DateFilterConditionPB::DateStartsOn
       | DateFilterConditionPB::DateStartsOnOrBefore
@@ -184,6 +236,50 @@ impl PreFillCellsWithFilter for DateFilterPB {
   }
 }
 
+impl DateFilterPB {
+  fn get_zoned_compliant_cell(&self, field: &Field) -> Option<Cell> {
+    use DateFilterConditionPB::*;
+    let option = field
+      .get_type_option::<DateTypeOption>(FieldType::DateTime)
+      .unwrap_or_default();
+    let zone = HyperDateTimezone::new(&option.timezone_id);
+    let logical = |value| DateTime::from_timestamp(value, 0).map(|date| date.date_naive());
+    let (mut day, direction, limit) = match self.condition {
+      DateStartsOn | DateEndsOn => (logical(self.timestamp?)?, 0, None),
+      DateStartsBefore | DateEndsBefore => (logical(self.timestamp?)?.pred_opt()?, -1, None),
+      DateStartsAfter | DateEndsAfter => (logical(self.timestamp?)?.succ_opt()?, 1, None),
+      DateStartsOnOrBefore | DateEndsOnOrBefore => (logical(self.timestamp?)?, -1, None),
+      DateStartsOnOrAfter | DateEndsOnOrAfter => (logical(self.timestamp?)?, 1, None),
+      DateStartsBetween | DateEndsBetween => (logical(self.start?)?, 1, Some(logical(self.end?)?)),
+      DateStartIsNotEmpty | DateEndIsNotEmpty => {
+        (zone.date(chrono::Utc::now().timestamp())?, 1, None)
+      },
+      DateStartIsEmpty | DateEndIsEmpty => return None,
+    };
+    // IANA's skipped dates are at most a day; the bound also protects malformed metadata.
+    for _ in 0..7 {
+      if limit.is_some_and(|end| day > end) {
+        return None;
+      }
+      if let Some(timestamp) = zone.first_timestamp_on(day) {
+        if self.is_visible_in_timezone(
+          &DateCellData::from_timestamp(timestamp),
+          &option.timezone_id,
+        ) == Some(true)
+        {
+          return Some(insert_date_cell(timestamp, None, None, field));
+        }
+      }
+      day = match direction {
+        -1 => day.pred_opt()?,
+        1 => day.succ_opt()?,
+        _ => return None,
+      };
+    }
+    None
+  }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct DateCellChangeset {
   pub timestamp: Option<i64>,
@@ -219,6 +315,7 @@ mod tests {
   #[test]
   fn date_filter_is_test() {
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsOn,
       timestamp: Some(1668387885),
       end: None,
@@ -237,6 +334,7 @@ mod tests {
     }
 
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsOn,
       timestamp: None,
       end: None,
@@ -258,6 +356,7 @@ mod tests {
   #[test]
   fn date_filter_before_test() {
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsBefore,
       timestamp: Some(1668387885),
       start: None,
@@ -278,6 +377,7 @@ mod tests {
   #[test]
   fn date_filter_before_or_on_test() {
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsOnOrBefore,
       timestamp: Some(1668387885),
       start: None,
@@ -297,6 +397,7 @@ mod tests {
   #[test]
   fn date_filter_after_test() {
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsAfter,
       timestamp: Some(1668387885),
       start: None,
@@ -318,6 +419,7 @@ mod tests {
   #[test]
   fn date_filter_within_test() {
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsBetween,
       start: Some(1668272685), // 11/13
       end: Some(1668618285),   // 11/17
@@ -338,6 +440,7 @@ mod tests {
     }
 
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsBetween,
       start: None,
       end: Some(1668618285), // 11/17
@@ -361,6 +464,7 @@ mod tests {
   #[test]
   fn date_filter_is_empty_test() {
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartIsEmpty,
       start: None,
       end: None,
@@ -378,6 +482,7 @@ mod tests {
   #[test]
   fn date_filter_end_test() {
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateEndsOnOrBefore,
       timestamp: Some(1668359085), // 11/14
       end: None,
@@ -401,6 +506,7 @@ mod tests {
     }
 
     let filter = DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateEndsOnOrBefore,
       timestamp: None,
       start: None,
@@ -601,4 +707,141 @@ mod tests {
   //     );
   //   }
   // }
+}
+
+#[cfg(test)]
+mod hyper_zoned_tests {
+  use super::*;
+  use crate::services::field::FieldBuilder;
+  use chrono::{TimeZone, Utc};
+  use chrono_tz::{America::New_York, Asia::Kathmandu};
+  fn token(y: i32, m: u32, d: u32) -> i64 {
+    Utc
+      .with_ymd_and_hms(y, m, d, 0, 0, 0)
+      .single()
+      .unwrap()
+      .timestamp()
+  }
+  fn on(day: i64) -> DateFilterPB {
+    DateFilterPB {
+      condition: DateFilterConditionPB::DateStartsOn,
+      timestamp: Some(day),
+      use_field_timezone: true,
+      ..Default::default()
+    }
+  }
+  #[test]
+  fn hyper_zoned_filter_keeps_logical_day_across_offsets_and_dst_folds() {
+    let filter = on(token(2026, 11, 11));
+    let ny = New_York
+      .with_ymd_and_hms(2026, 11, 11, 23, 59, 0)
+      .single()
+      .unwrap()
+      .timestamp();
+    assert_eq!(
+      filter.is_visible_in_timezone(&DateCellData::from_timestamp(ny), "America/New_York"),
+      Some(true)
+    );
+    assert_eq!(
+      filter.is_visible_in_timezone(&DateCellData::from_timestamp(ny), "UTC"),
+      Some(false)
+    );
+    let ktm = Kathmandu
+      .with_ymd_and_hms(2026, 11, 11, 0, 1, 0)
+      .single()
+      .unwrap()
+      .timestamp();
+    assert_eq!(
+      filter.is_visible_in_timezone(&DateCellData::from_timestamp(ktm), "Asia/Kathmandu"),
+      Some(true)
+    );
+    let fold = New_York.with_ymd_and_hms(2026, 11, 1, 1, 30, 0);
+    for instant in [fold.earliest().unwrap(), fold.latest().unwrap()] {
+      assert_eq!(
+        on(token(2026, 11, 1)).is_visible_in_timezone(
+          &DateCellData::from_timestamp(instant.timestamp()),
+          "America/New_York"
+        ),
+        Some(true)
+      );
+    }
+  }
+  #[test]
+  fn hyper_zoned_filter_end_and_between_use_zoned_cells_but_utc_criteria() {
+    let source = DateCellData {
+      timestamp: Some(token(2026, 11, 1)),
+      end_timestamp: Some(
+        New_York
+          .with_ymd_and_hms(2026, 11, 30, 23, 59, 0)
+          .single()
+          .unwrap()
+          .timestamp(),
+      ),
+      is_range: true,
+      ..Default::default()
+    };
+    let filter = DateFilterPB {
+      condition: DateFilterConditionPB::DateEndsBetween,
+      start: Some(token(2026, 11, 1)),
+      end: Some(token(2026, 11, 30)),
+      use_field_timezone: true,
+      ..Default::default()
+    };
+    assert_eq!(
+      filter.is_visible_in_timezone(&source, "America/New_York"),
+      Some(true)
+    );
+    assert_eq!(filter.is_visible_in_timezone(&source, "UTC"), Some(false));
+    let legacy = DateFilterPB {
+      use_field_timezone: false,
+      ..filter
+    };
+    assert_eq!(
+      legacy.is_visible_in_timezone(&source, "America/New_York"),
+      legacy.is_visible(&source)
+    );
+  }
+  #[test]
+  fn hyper_zoned_filter_prefill_is_compliant_across_gaps_and_skipped_dates() {
+    let option = DateTypeOption {
+      timezone_id: "America/New_York".into(),
+      ..Default::default()
+    };
+    let field = FieldBuilder::new(FieldType::DateTime, option).build();
+    for condition in [
+      DateFilterConditionPB::DateStartsOn,
+      DateFilterConditionPB::DateStartsBefore,
+      DateFilterConditionPB::DateStartsAfter,
+      DateFilterConditionPB::DateStartsOnOrBefore,
+      DateFilterConditionPB::DateStartsOnOrAfter,
+    ] {
+      let filter = DateFilterPB {
+        condition,
+        ..on(token(2026, 3, 8))
+      };
+      let cell = filter.get_compliant_cell(&field).unwrap();
+      assert_eq!(
+        filter.is_visible_in_timezone(&DateCellData::from(&cell), "America/New_York"),
+        Some(true)
+      );
+    }
+    let field = FieldBuilder::new(
+      FieldType::DateTime,
+      DateTypeOption {
+        timezone_id: "Pacific/Apia".into(),
+        ..Default::default()
+      },
+    )
+    .build();
+    assert!(on(token(2011, 12, 30)).get_compliant_cell(&field).is_none());
+    let filter = DateFilterPB {
+      condition: DateFilterConditionPB::DateStartsAfter,
+      ..on(token(2011, 12, 29))
+    };
+    let cell = filter.get_compliant_cell(&field).unwrap();
+    assert_eq!(
+      filter.is_visible_in_timezone(&DateCellData::from(&cell), "Pacific/Apia"),
+      Some(true)
+    );
+  }
 }

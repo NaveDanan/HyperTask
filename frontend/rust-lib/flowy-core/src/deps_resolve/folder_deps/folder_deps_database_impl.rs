@@ -4,10 +4,10 @@ use collab::entity::EncodedCollab;
 use collab_entity::CollabType;
 use collab_folder::{View, ViewLayout};
 use collab_plugins::local_storage::kv::KVTransactionDB;
+use flowy_database2::DatabaseManager;
 use flowy_database2::entities::DatabaseLayoutPB;
 use flowy_database2::services::share::csv::CSVFormat;
 use flowy_database2::template::{make_default_board, make_default_calendar, make_default_grid};
-use flowy_database2::DatabaseManager;
 use flowy_error::FlowyError;
 use flowy_folder::entities::{CreateViewParams, ViewLayoutPB};
 use flowy_folder::manager::FolderUser;
@@ -183,11 +183,14 @@ impl FolderOperationHandler for DatabaseFolderOperation {
         ViewData::DuplicateData(data) => {
           let duplicated_view_id =
             String::from_utf8(data.to_vec()).map_err(|_| FlowyError::invalid_data())?;
-          let encoded_collab = self
+          self
             .database_manager()?
             .duplicate_database(&duplicated_view_id, &params.view_id.to_string())
             .await?;
-          Ok(Some(encoded_collab))
+          // Committed root/rows/bodies now initialize their actual sync plugins
+          // before ACK. Returning a snapshot here would replay it through the
+          // folder's later batch HTTP upload after newer edits may have arrived.
+          Ok(None)
         },
         ViewData::Data(data) => {
           let encoded_collab = self

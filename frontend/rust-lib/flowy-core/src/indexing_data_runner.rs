@@ -4,6 +4,7 @@ use crate::indexed_data_consumer::{
   EmbeddingsInstantConsumerImpl, SearchFullIndexConsumer, SearchInstantIndexImpl,
 };
 use flowy_folder::manager::FolderManager;
+use flowy_search::services::manager::HyperSearchOwner;
 use flowy_search_pub::tantivy_state::DocumentTantivyState;
 use flowy_search_pub::tantivy_state_init::get_or_init_document_tantivy_state;
 use flowy_user::services::entities::{UserConfig, UserPaths};
@@ -12,7 +13,7 @@ use std::sync::{Arc, Weak};
 use std::time::Duration;
 use tokio::sync::RwLock;
 use tokio::time::timeout;
-use tracing::{error, info, instrument, warn};
+use tracing::{error, warn};
 use uuid::Uuid;
 
 impl AppLifeCycleImpl {
@@ -49,84 +50,67 @@ impl AppLifeCycleImpl {
     }
   }
 
-  #[instrument(skip_all)]
   pub(crate) async fn start_instant_indexed_data_provider(
     &self,
     user_id: i64,
     workspace_id: &Uuid,
     workspace_type: &WorkspaceType,
     _user_config: &UserConfig,
-    user_paths: &UserPaths,
+    _user_paths: &UserPaths,
+    owner: HyperSearchOwner,
   ) {
-    let instant_indexed_data_provider = self.instant_indexed_data_writer.clone();
+    if !self.index_owner_current(&owner) || !owner.matches(user_id, workspace_id) {
+      return;
+    }
+    let Some(writer) = self.instant_indexed_data_writer.clone() else {
+      return;
+    };
     let runtime = self.runtime.clone();
-    let workspace_id_cloned = *workspace_id;
-    let workspace_type_cloned = *workspace_type;
-    let user_paths = user_paths.clone();
-    let folder_manager = self.folder_manager.clone();
-    let weak_logged_user = Arc::downgrade(&self.logged_user);
-
+    let folder = self.folder_manager.clone();
+    let search = self.search_manager.clone();
+    let user = Arc::downgrade(&self.logged_user);
+    let local = workspace_type.is_local();
+    let gate = owner.clone();
     self.runtime.spawn(async move {
-      if !Self::wait_for_folder_ready(&folder_manager).await {
-        return;
-      }
-
-      info!(
-        "[Indexing] Starting instant indexed data provider for workspace: {:?}",
-        workspace_id_cloned
-      );
-
-      if let Some(instant_indexed_data_provider) = instant_indexed_data_provider {
-        instant_indexed_data_provider.clear_consumers().await;
-
-        // Add embedding consumer when workspace type is local
+      let operation = async {
+        if !Self::wait_for_folder_ready(&folder).await || !owner.wait_ready().await {
+          return Ok(());
+        }
+        if !hyper_index_owner_current(&owner, &user) {
+          return Ok(());
+        }
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        if local {
+          writer
+            .register_consumer_when(
+              Box::new(EmbeddingsInstantConsumerImpl::new(owner.clone())),
+              || owner.is_current(),
+            )
+            .await;
+        }
+        if let Some(state) = search
+          .upgrade()
+          .and_then(|search| search.index_state(&owner))
         {
-          if workspace_type_cloned.is_local() {
-            instant_indexed_data_provider
-              .register_consumer(Box::new(EmbeddingsInstantConsumerImpl::new()))
-              .await;
+          let consumer =
+            SearchInstantIndexImpl::new(owner.clone(), state, folder, user.clone()).await?;
+          if !hyper_index_owner_current(&owner, &user) {
+            return Ok(());
           }
+          consumer.refresh_search_index();
+          writer
+            .register_consumer_when(Box::new(consumer), || owner.is_current())
+            .await;
         }
-
-        match SearchInstantIndexImpl::new(
-          &workspace_id_cloned,
-          user_paths.tanvity_index_path(user_id),
-          folder_manager,
-          weak_logged_user,
-        )
-        .await
-        {
-          Ok(consumer) => {
-            consumer.refresh_search_index();
-            instant_indexed_data_provider
-              .register_consumer(Box::new(consumer))
-              .await;
-          },
-          Err(err) => error!(
-            "[Indexing] Failed to create SearchInstantIndexImpl: {:?}",
-            err
-          ),
-        }
-
-        if instant_indexed_data_provider.num_consumers().await > 0 {
-          info!(
-            "[Indexing] instant indexed data provider with {} consumers for workspace: {:?}",
-            instant_indexed_data_provider.num_consumers().await,
-            workspace_id_cloned
-          );
-          if let Err(err) = instant_indexed_data_provider
+        if hyper_index_owner_current(&owner, &user) && writer.num_consumers().await > 0 {
+          writer
             .spawn_instant_indexed_provider(&runtime.inner)
-            .await
-          {
-            error!(
-              "[Indexing] Failed to spawn instant indexed data provider: {:?}",
-              err
-            );
-          }
+            .await?;
         }
-      } else {
-        info!("[Indexing] No instant indexed data provider to start");
+        Ok::<_, flowy_error::FlowyError>(())
+      };
+      if let Some(Err(error)) = gate.run_if_current(operation).await {
+        error!("[Indexing] Instant startup failed: {}", error);
       }
     });
   }
@@ -136,100 +120,113 @@ impl AppLifeCycleImpl {
     uid: i64,
     workspace_id: &Uuid,
     user_paths: &UserPaths,
-  ) -> Option<Weak<RwLock<DocumentTantivyState>>> {
-    let data_path = user_paths.tanvity_index_path(uid);
-    let state = get_or_init_document_tantivy_state(*workspace_id, data_path).ok();
-    state.map(|state| Arc::downgrade(&state))
+    owner: &HyperSearchOwner,
+  ) -> Option<Arc<RwLock<DocumentTantivyState>>> {
+    if !owner.matches(uid, workspace_id) || !self.index_owner_current(owner) {
+      return None;
+    }
+    let state =
+      match get_or_init_document_tantivy_state(*workspace_id, user_paths.tanvity_index_path(uid)) {
+        Ok(state) => state,
+        Err(error) => {
+          error!(
+            "[Indexing] Current owner's local index could not open: {}",
+            error
+          );
+          return None;
+        },
+      };
+    (owner.is_current() && self.index_owner_current(owner)).then_some(state)
   }
 
-  #[instrument(skip(self, _user_config, user_paths))]
   pub(crate) async fn start_full_indexed_data_provider(
     &self,
     uid: i64,
     workspace_id: &Uuid,
     workspace_type: &WorkspaceType,
     _user_config: &UserConfig,
-    user_paths: &UserPaths,
+    _user_paths: &UserPaths,
+    owner: HyperSearchOwner,
   ) {
-    let folder_manager = self.folder_manager.clone();
-    let logged_user = self.logged_user.clone();
-    let full_indexed_data_writer = self.full_indexed_data_writer.clone();
-    let workspace_id_cloned = *workspace_id;
-    let workspace_type_cloned = *workspace_type;
-    let user_paths = user_paths.clone();
-    let full_indexed_finish_sender = self.full_indexed_finish_sender.clone();
-    full_indexed_finish_sender.send_replace(false);
-
+    if !self.index_owner_current(&owner) || !owner.matches(uid, workspace_id) {
+      return;
+    }
+    let folder = self.folder_manager.clone();
+    let user = Arc::downgrade(&self.logged_user);
+    let search = self.search_manager.clone();
+    let published = self.full_indexed_data_writer.clone();
+    let local = workspace_type.is_local();
+    let finished = self.full_indexed_finish_sender.clone();
+    finished.send_replace(false);
+    let gate = owner.clone();
     self.runtime.spawn(async move {
-      if !Self::wait_for_folder_ready(&folder_manager).await {
-        return;
-      }
-
-      info!(
-        "[Indexing] Starting full indexed data provider for workspace: {:?}",
-        workspace_id_cloned
-      );
-
-      let new_full_indexed_data_writer = FullIndexedDataWriter::new(
-        workspace_id_cloned,
-        folder_manager,
-        Arc::downgrade(&logged_user),
-      );
-      #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-      {
-        if workspace_type_cloned.is_local() {
-          new_full_indexed_data_writer
+      let operation = async {
+        if !Self::wait_for_folder_ready(&folder).await || !owner.wait_ready().await {
+          return Ok(());
+        }
+        if !hyper_index_owner_current(&owner, &user) {
+          return Ok(());
+        }
+        let writer = FullIndexedDataWriter::new(owner.clone(), folder, user.clone());
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+        if local {
+          writer
             .register_full_indexed_consumer(Box::new(
-              crate::indexed_data_consumer::EmbeddingFullIndexConsumer,
+              crate::indexed_data_consumer::EmbeddingFullIndexConsumer(owner.clone()),
             ))
             .await;
         }
-      }
-
-      match SearchFullIndexConsumer::new(&workspace_id_cloned, user_paths.tanvity_index_path(uid)) {
-        Ok(consumer) => {
-          new_full_indexed_data_writer
-            .register_full_indexed_consumer(Box::new(consumer))
-            .await;
-        },
-        Err(err) => error!(
-          "[Indexing] Failed to create SearchFullIndexConsumer: {:?}",
-          err
-        ),
-      }
-
-      if new_full_indexed_data_writer.num_consumers().await > 0 {
-        info!(
-          "[Indexing] full indexed data provider with {} consumers for workspace: {:?}",
-          new_full_indexed_data_writer.num_consumers().await,
-          workspace_id_cloned
-        );
-        match new_full_indexed_data_writer
-          .full_index_unindexed_documents()
-          .await
+        if let Some(state) = search
+          .upgrade()
+          .and_then(|search| search.index_state(&owner))
         {
-          Ok(()) => {
-            info!("[Indexing] full index succeeded");
-          },
-          Err(err) => {
-            error!("[Indexing] full index failed {:?}", err);
-          },
+          writer
+            .register_full_indexed_consumer(Box::new(SearchFullIndexConsumer::new(
+              owner.clone(),
+              state,
+            )))
+            .await;
         }
-        full_indexed_finish_sender.send_replace(true);
-        info!(
-          "[Indexing] {} full indexed data provider stopped",
-          workspace_id_cloned
-        );
-      }
-
-      if let Some(writer) = full_indexed_data_writer.upgrade() {
-        let old = writer.write().await.replace(new_full_indexed_data_writer);
-        if let Some(old) = old {
-          old.cancel_indexing();
+        if writer.num_consumers().await > 0 {
+          if let Err(error) = writer.full_index_unindexed_documents().await {
+            error!("[Indexing] Full index failed: {}", error);
+          }
         }
-      } else {
-        info!("[Indexing] No full indexed data provider to start");
+        if !hyper_index_owner_current(&owner, &user) {
+          return Ok(());
+        }
+        finished.send_replace(true);
+        if let Some(published) = published.upgrade() {
+          let mut current = published.write().await;
+          if !hyper_index_owner_current(&owner, &user) {
+            return Ok(());
+          }
+          if let Some(previous) = current.replace(writer) {
+            previous.cancel_indexing();
+          }
+        }
+        Ok::<_, flowy_error::FlowyError>(())
+      };
+      if let Some(Err(error)) = gate.run_if_current(operation).await {
+        error!("[Indexing] Full startup failed: {}", error);
       }
     });
   }
+
+  fn index_owner_current(&self, owner: &HyperSearchOwner) -> bool {
+    owner.is_current()
+      && self.logged_user.user_id().ok() == Some(owner.uid())
+      && self.logged_user.workspace_id().ok() == Some(owner.workspace_id())
+  }
+}
+
+fn hyper_index_owner_current(
+  owner: &HyperSearchOwner,
+  user: &Weak<dyn flowy_server::af_cloud::define::LoggedUser>,
+) -> bool {
+  user.upgrade().is_some_and(|user| {
+    owner.is_current()
+      && user.user_id().ok() == Some(owner.uid())
+      && user.workspace_id().ok() == Some(owner.workspace_id())
+  })
 }

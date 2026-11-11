@@ -16,7 +16,7 @@ import { SettingsPageHeader, SettingsSection, SettingsGroup, SettingsRow } from 
 import { useTr, tr } from '@/i18n';
 import { useAppStore } from '@/startup/app-store';
 import { KVKeys, KeyValueStorage } from '@/startup/kv';
-import { runAppFlowy } from '@/startup/launcher';
+import { runHyperTask } from '@/startup/HyperLauncher';
 import { Tooltip, showConfirmDialog, showSimpleAFDialog, showToast } from '@/ui';
 import type { SettingsPageProps } from '../page-props';
 import { featureFlags } from '../pages/feature-flags';
@@ -133,7 +133,7 @@ export function ManageDataPage({ workspace, closeDialog }: SettingsPageProps) {
         async () => {
           await KeyValueStorage.set(KVKeys.pathLocation, defaultDataDirectory());
           closeDialog();
-          void runAppFlowy({ isAnon: true });
+          void runHyperTask({ isAnon: true });
         },
       ],
       secondaryAction: [tr('button.cancel'), () => {}],

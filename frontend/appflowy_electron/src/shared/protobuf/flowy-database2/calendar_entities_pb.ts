@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file calendar_entities.proto.
  */
 export const file_calendar_entities: GenFile = /*@__PURE__*/
-  fileDesc("ChdjYWxlbmRhcl9lbnRpdGllcy5wcm90byKeAQoXQ2FsZW5kYXJMYXlvdXRTZXR0aW5nUEISEAoIZmllbGRfaWQYASABKAkSJAoJbGF5b3V0X3R5GAIgASgOMhEuQ2FsZW5kYXJMYXlvdXRQQhIZChFmaXJzdF9kYXlfb2Zfd2VlaxgDIAEoBRIVCg1zaG93X3dlZWtlbmRzGAQgASgIEhkKEXNob3dfd2Vla19udW1iZXJzGAUgASgIIikKFkNhbGVuZGFyRXZlbnRSZXF1ZXN0UEISDwoHdmlld19pZBgBIAEoCSJ+Cg9DYWxlbmRhckV2ZW50UEISHAoIcm93X21ldGEYASABKAsyCi5Sb3dNZXRhUEISFQoNZGF0ZV9maWVsZF9pZBgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgl0aW1lc3RhbXAYBCABKANIAEISChBvbmVfb2ZfdGltZXN0YW1wIjoKF1JlcGVhdGVkQ2FsZW5kYXJFdmVudFBCEh8KBWl0ZW1zGAEgAygLMhAuQ2FsZW5kYXJFdmVudFBCIkYKE01vdmVDYWxlbmRhckV2ZW50UEISHAoJY2VsbF9wYXRoGAEgASgLMgkuQ2VsbElkUEISEQoJdGltZXN0YW1wGAIgASgDIjYKFU5vRGF0ZUNhbGVuZGFyRXZlbnRQQhIOCgZyb3dfaWQYASABKAkSDQoFdGl0bGUYAiABKAkiRgodUmVwZWF0ZWROb0RhdGVDYWxlbmRhckV2ZW50UEISJQoFaXRlbXMYASADKAsyFi5Ob0RhdGVDYWxlbmRhckV2ZW50UEIqQgoQQ2FsZW5kYXJMYXlvdXRQQhIPCgtNb250aExheW91dBAAEg4KCldlZWtMYXlvdXQQARINCglEYXlMYXlvdXQQAmIGcHJvdG8z", [file_row_entities, file_cell_entities]);
+  fileDesc("ChdjYWxlbmRhcl9lbnRpdGllcy5wcm90byKeAQoXQ2FsZW5kYXJMYXlvdXRTZXR0aW5nUEISEAoIZmllbGRfaWQYASABKAkSJAoJbGF5b3V0X3R5GAIgASgOMhEuQ2FsZW5kYXJMYXlvdXRQQhIZChFmaXJzdF9kYXlfb2Zfd2VlaxgDIAEoBRIVCg1zaG93X3dlZWtlbmRzGAQgASgIEhkKEXNob3dfd2Vla19udW1iZXJzGAUgASgIIikKFkNhbGVuZGFyRXZlbnRSZXF1ZXN0UEISDwoHdmlld19pZBgBIAEoCSLFAQoPQ2FsZW5kYXJFdmVudFBCEhwKCHJvd19tZXRhGAEgASgLMgouUm93TWV0YVBCEhUKDWRhdGVfZmllbGRfaWQYAiABKAkSDQoFdGl0bGUYAyABKAkSEwoJdGltZXN0YW1wGAQgASgDSAASFwoNZW5kX3RpbWVzdGFtcBgFIAEoA0gBEhQKDGluY2x1ZGVfdGltZRgGIAEoCEISChBvbmVfb2ZfdGltZXN0YW1wQhYKFG9uZV9vZl9lbmRfdGltZXN0YW1wIjoKF1JlcGVhdGVkQ2FsZW5kYXJFdmVudFBCEh8KBWl0ZW1zGAEgAygLMhAuQ2FsZW5kYXJFdmVudFBCIncKE01vdmVDYWxlbmRhckV2ZW50UEISHAoJY2VsbF9wYXRoGAEgASgLMgkuQ2VsbElkUEISEQoJdGltZXN0YW1wGAIgASgDEhcKDWVuZF90aW1lc3RhbXAYAyABKANIAEIWChRvbmVfb2ZfZW5kX3RpbWVzdGFtcCI2ChVOb0RhdGVDYWxlbmRhckV2ZW50UEISDgoGcm93X2lkGAEgASgJEg0KBXRpdGxlGAIgASgJIkYKHVJlcGVhdGVkTm9EYXRlQ2FsZW5kYXJFdmVudFBCEiUKBWl0ZW1zGAEgAygLMhYuTm9EYXRlQ2FsZW5kYXJFdmVudFBCKkIKEENhbGVuZGFyTGF5b3V0UEISDwoLTW9udGhMYXlvdXQQABIOCgpXZWVrTGF5b3V0EAESDQoJRGF5TGF5b3V0EAJiBnByb3RvMw", [file_row_entities, file_cell_entities]);
 
 /**
  * @generated from message CalendarLayoutSettingPB
@@ -99,6 +99,22 @@ export type CalendarEventPB = Message<"CalendarEventPB"> & {
     value: bigint;
     case: "timestamp";
   } | { case: undefined; value?: undefined };
+
+  /**
+   * @generated from oneof CalendarEventPB.one_of_end_timestamp
+   */
+  oneOfEndTimestamp: {
+    /**
+     * @generated from field: int64 end_timestamp = 5;
+     */
+    value: bigint;
+    case: "endTimestamp";
+  } | { case: undefined; value?: undefined };
+
+  /**
+   * @generated from field: bool include_time = 6;
+   */
+  includeTime: boolean;
 };
 
 /**
@@ -138,6 +154,17 @@ export type MoveCalendarEventPB = Message<"MoveCalendarEventPB"> & {
    * @generated from field: int64 timestamp = 2;
    */
   timestamp: bigint;
+
+  /**
+   * @generated from oneof MoveCalendarEventPB.one_of_end_timestamp
+   */
+  oneOfEndTimestamp: {
+    /**
+     * @generated from field: int64 end_timestamp = 3;
+     */
+    value: bigint;
+    case: "endTimestamp";
+  } | { case: undefined; value?: undefined };
 };
 
 /**

@@ -1,7 +1,7 @@
 import { SettingsGroup, SettingsRow, SettingsSection } from '@/components/app/settings-layout';
 import { Button } from '@/components/ui/button';
 import { useTr } from '@/i18n';
-import { runAppFlowy } from '@/startup/launcher';
+import { runHyperTask } from '@/startup/HyperLauncher';
 import { showToast } from '@/ui';
 import { LanguageDropdown } from '../settings/LanguageDropdown';
 import { SelfHostedSettingsView } from '../settings/SelfHostedSettingsView';
@@ -19,7 +19,7 @@ export function SimpleSettingsDialog({ close }: { close: () => void }) {
       </SettingsSection>
       <SelfHostedSettingsView restartApp={() => {
         close();
-        void runAppFlowy();
+        void runHyperTask();
       }} />
       <SettingsSection title={tr('settings.mobile.support')} className="pb-0">
         <SettingsGroup>

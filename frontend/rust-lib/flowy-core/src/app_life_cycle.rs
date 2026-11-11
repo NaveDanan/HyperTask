@@ -8,15 +8,14 @@ use crate::server_layer::ServerProvider;
 use collab_entity::CollabType;
 use collab_integrate::collab_builder::AppFlowyCollabBuilder;
 use collab_integrate::instant_indexed_data_provider::InstantIndexedDataWriter;
-use collab_plugins::local_storage::kv::doc::CollabKVAction;
 use collab_plugins::local_storage::kv::KVTransactionDB;
+use collab_plugins::local_storage::kv::doc::CollabKVAction;
 use flowy_ai::ai_manager::AIManager;
 use flowy_database2::DatabaseManager;
 use flowy_document::manager::DocumentManager;
 use flowy_error::{FlowyError, FlowyResult};
 use flowy_folder::manager::{FolderInitDataSource, FolderManager};
-use flowy_search::services::manager::SearchManager;
-use flowy_search_pub::tantivy_state_init::close_document_tantivy_state;
+use flowy_search::services::manager::{HyperSearchOwner, SearchManager};
 use flowy_server::af_cloud::define::LoggedUser;
 use flowy_storage::manager::StorageManager;
 use flowy_user::event_map::AppLifeCycle;
@@ -49,6 +48,30 @@ pub(crate) struct AppLifeCycleImpl {
 }
 
 impl AppLifeCycleImpl {
+  async fn begin_search_owner(
+    &self,
+    uid: i64,
+    workspace_id: &Uuid,
+  ) -> FlowyResult<HyperSearchOwner> {
+    self.database_manager()?.invalidate_duplicate_operations();
+    self.document_manager()?.invalidate_document_context();
+    self.storage_manager()?.invalidate_download_operations();
+    let owner = self.search_manager()?.begin_context(uid, workspace_id);
+    if let Some(writer) = &self.instant_indexed_data_writer {
+      writer
+        .activate_owner(uid, *workspace_id, || owner.is_current())
+        .await;
+    }
+    if let Some(writers) = self.full_indexed_data_writer.upgrade() {
+      let mut current = writers.write().await;
+      if owner.is_current() {
+        if let Some(previous) = current.take() {
+          previous.cancel_indexing();
+        }
+      }
+    }
+    Ok(owner)
+  }
   pub(crate) fn user_manager(&self) -> Result<Arc<UserManager>, FlowyError> {
     self.user_manager.upgrade().ok_or_else(FlowyError::ref_drop)
   }
@@ -148,79 +171,99 @@ impl AppLifeCycle for AppLifeCycleImpl {
     user_paths: &UserPaths,
     workspace_type: &WorkspaceType,
   ) -> FlowyResult<()> {
-    if let Some(cloud_config) = cloud_config {
-      self
-        .server_provider()?
-        .set_enable_sync(user_id, cloud_config.enable_sync);
-      if cloud_config.enable_encrypt {
+    let search_owner = self.begin_search_owner(user_id, workspace_id).await?;
+    let owner_for_work = search_owner.clone();
+    search_owner
+      .run_if_current(async {
+        if let Some(cloud_config) = cloud_config {
+          self
+            .server_provider()?
+            .set_enable_sync(user_id, cloud_config.enable_sync);
+          if cloud_config.enable_encrypt {
+            self
+              .server_provider()?
+              .set_encrypt_secret(cloud_config.encrypt_secret.clone());
+          }
+        }
+
         self
-          .server_provider()?
-          .set_encrypt_secret(cloud_config.encrypt_secret.clone());
-      }
-    }
+          .folder_manager()?
+          .initialize(
+            user_id,
+            workspace_id,
+            FolderInitDataSource::LocalDisk {
+              create_if_not_exist: false,
+            },
+          )
+          .await?;
+        self
+          .database_manager()?
+          .initialize(user_id, workspace_type == &WorkspaceType::Local)
+          .await?;
+        self.document_manager()?.initialize(user_id).await?;
 
-    self
-      .folder_manager()?
-      .initialize(
-        user_id,
-        workspace_id,
-        FolderInitDataSource::LocalDisk {
-          create_if_not_exist: false,
-        },
-      )
-      .await?;
-    self
-      .database_manager()?
-      .initialize(user_id, workspace_type == &WorkspaceType::Local)
-      .await?;
-    self.document_manager()?.initialize(user_id).await?;
+        let cloned_ai_manager = self.ai_manager()?;
+        let server_provider = self.server_provider()?;
+        self
+          .start_full_indexed_data_provider(
+            user_id,
+            workspace_id,
+            workspace_type,
+            user_config,
+            user_paths,
+            owner_for_work.clone(),
+          )
+          .await;
 
-    let cloned_ai_manager = self.ai_manager()?;
-    let server_provider = self.server_provider()?;
-    self
-      .start_full_indexed_data_provider(
-        user_id,
-        workspace_id,
-        workspace_type,
-        user_config,
-        user_paths,
-      )
-      .await;
+        self
+          .start_instant_indexed_data_provider(
+            user_id,
+            workspace_id,
+            workspace_type,
+            user_config,
+            user_paths,
+            owner_for_work.clone(),
+          )
+          .await;
 
-    self
-      .start_instant_indexed_data_provider(
-        user_id,
-        workspace_id,
-        workspace_type,
-        user_config,
-        user_paths,
-      )
-      .await;
+        // do not change the order of this function
+        let tanvity_state = self
+          .create_tanvity_state_if_not_exists(user_id, workspace_id, user_paths, &owner_for_work)
+          .await;
+        self
+          .search_manager()?
+          .on_launch_if_authenticated(owner_for_work.clone(), tanvity_state.clone())
+          .await;
 
-    // do not change the order of this function
-    let tanvity_state = self
-      .create_tanvity_state_if_not_exists(user_id, workspace_id, user_paths)
-      .await;
-    self
-      .search_manager()?
-      .on_launch_if_authenticated(workspace_id, tanvity_state.clone())
-      .await;
+        let workspace_id = *workspace_id;
+        let tanvity_state = tanvity_state.as_ref().map(Arc::downgrade);
+        let background_owner = owner_for_work.clone();
+        self.runtime.spawn(async move {
+          background_owner
+            .run_if_current(async {
+              server_provider
+                .on_launch_if_authenticated(tanvity_state)
+                .await;
 
-    let workspace_id = *workspace_id;
-    self.runtime.spawn(async move {
-      server_provider
-        .on_launch_if_authenticated(tanvity_state)
-        .await;
+              if let Err(err) = cloned_ai_manager
+                .on_launch_if_authenticated(&workspace_id)
+                .await
+              {
+                error!("Failed to initialize AIManager: {:?}", err);
+              }
+            })
+            .await
+        });
 
-      if let Err(err) = cloned_ai_manager
-        .on_launch_if_authenticated(&workspace_id)
-        .await
-      {
-        error!("Failed to initialize AIManager: {:?}", err);
-      }
-    });
-
-    Ok(())
+        Ok(())
+      })
+      .await
+      .unwrap_or_else(|| {
+        Err(
+          FlowyError::invalid_data()
+            .with_context("The search owner changed during initialization."),
+        )
+      })
   }
 
   #[instrument(skip_all)]
@@ -232,69 +275,89 @@ impl AppLifeCycle for AppLifeCycleImpl {
     user_paths: &UserPaths,
     workspace_type: &WorkspaceType,
   ) -> FlowyResult<()> {
-    event!(
-      tracing::Level::TRACE,
-      "Notify did sign in: latest_workspace: {:?}, device_id: {}",
-      workspace_id,
-      user_config.device_id,
-    );
+    let search_owner = self.begin_search_owner(user_id, workspace_id).await?;
+    let owner_for_work = search_owner.clone();
+    search_owner
+      .run_if_current(async {
+        event!(
+          tracing::Level::TRACE,
+          "Notify did sign in: latest_workspace: {:?}, device_id: {}",
+          workspace_id,
+          user_config.device_id,
+        );
 
-    let data_source = self
-      .folder_init_data_source(user_id, workspace_id, workspace_type)
-      .await?;
-    self
-      .folder_manager()?
-      .initialize_after_sign_in(user_id, data_source)
-      .await?;
-    self
-      .database_manager()?
-      .initialize_after_sign_in(user_id, workspace_type.is_local())
-      .await?;
-    self
-      .document_manager()?
-      .initialize_after_sign_in(user_id)
-      .await?;
+        let data_source = self
+          .folder_init_data_source(user_id, workspace_id, workspace_type)
+          .await?;
+        self
+          .folder_manager()?
+          .initialize_after_sign_in(user_id, data_source)
+          .await?;
+        self
+          .database_manager()?
+          .initialize_after_sign_in(user_id, workspace_type.is_local())
+          .await?;
+        self
+          .document_manager()?
+          .initialize_after_sign_in(user_id)
+          .await?;
 
-    self
-      .start_full_indexed_data_provider(
-        user_id,
-        workspace_id,
-        workspace_type,
-        user_config,
-        user_paths,
-      )
-      .await;
+        self
+          .start_full_indexed_data_provider(
+            user_id,
+            workspace_id,
+            workspace_type,
+            user_config,
+            user_paths,
+            owner_for_work.clone(),
+          )
+          .await;
 
-    self
-      .start_instant_indexed_data_provider(
-        user_id,
-        workspace_id,
-        workspace_type,
-        user_config,
-        user_paths,
-      )
-      .await;
+        self
+          .start_instant_indexed_data_provider(
+            user_id,
+            workspace_id,
+            workspace_type,
+            user_config,
+            user_paths,
+            owner_for_work.clone(),
+          )
+          .await;
 
-    let server_provider = self.server_provider()?;
-    let tanvity_state = self
-      .create_tanvity_state_if_not_exists(user_id, workspace_id, user_paths)
-      .await;
-    self
-      .search_manager()?
-      .initialize_after_sign_in(workspace_id, tanvity_state.clone())
-      .await;
+        let server_provider = self.server_provider()?;
+        let tanvity_state = self
+          .create_tanvity_state_if_not_exists(user_id, workspace_id, user_paths, &owner_for_work)
+          .await;
+        self
+          .search_manager()?
+          .initialize_after_sign_in(owner_for_work.clone(), tanvity_state.clone())
+          .await;
 
-    let ai_manager = self.ai_manager()?;
-    let cloned_workspace_id = *workspace_id;
-    self.runtime.spawn(async move {
-      server_provider.on_sign_in(tanvity_state).await;
-      ai_manager
-        .initialize_after_sign_in(&cloned_workspace_id)
-        .await?;
-      Ok::<_, FlowyError>(())
-    });
+        let ai_manager = self.ai_manager()?;
+        let cloned_workspace_id = *workspace_id;
+        let tanvity_state = tanvity_state.as_ref().map(Arc::downgrade);
+        let background_owner = owner_for_work.clone();
+        self.runtime.spawn(async move {
+          background_owner
+            .run_if_current(async {
+              server_provider.on_sign_in(tanvity_state).await;
+              ai_manager
+                .initialize_after_sign_in(&cloned_workspace_id)
+                .await?;
+              Ok::<_, FlowyError>(())
+            })
+            .await
+        });
 
-    Ok(())
+        Ok(())
+      })
+      .await
+      .unwrap_or_else(|| {
+        Err(
+          FlowyError::invalid_data()
+            .with_context("The search owner changed during initialization."),
+        )
+      })
   }
 
   #[instrument(skip_all)]
@@ -307,89 +370,117 @@ impl AppLifeCycle for AppLifeCycleImpl {
     user_paths: &UserPaths,
     workspace_type: &WorkspaceType,
   ) -> FlowyResult<()> {
-    event!(
-      tracing::Level::TRACE,
-      "Notify did sign up: is new: {} user_workspace: {:?}, device_id: {}",
-      is_new_user,
-      workspace_id,
-      user_config.device_id,
-    );
-    let server_provider = self.server_provider()?;
-    let data_source = self
-      .folder_init_data_source(user_profile.uid, workspace_id, workspace_type)
+    let search_owner = self
+      .begin_search_owner(user_profile.uid, workspace_id)
       .await?;
+    let owner_for_work = search_owner.clone();
+    search_owner
+      .run_if_current(async {
+        event!(
+          tracing::Level::TRACE,
+          "Notify did sign up: is new: {} user_workspace: {:?}, device_id: {}",
+          is_new_user,
+          workspace_id,
+          user_config.device_id,
+        );
+        let server_provider = self.server_provider()?;
+        let data_source = self
+          .folder_init_data_source(user_profile.uid, workspace_id, workspace_type)
+          .await?;
 
-    self
-      .folder_manager()?
-      .initialize_after_sign_up(
-        user_profile.uid,
-        &user_profile.token,
-        is_new_user,
-        data_source,
-        workspace_id,
-      )
+        self
+          .folder_manager()?
+          .initialize_after_sign_up(
+            user_profile.uid,
+            &user_profile.token,
+            is_new_user,
+            data_source,
+            workspace_id,
+          )
+          .await
+          .context("FolderManager error")?;
+
+        self
+          .database_manager()?
+          .initialize_after_sign_up(user_profile.uid, workspace_type.is_local())
+          .await
+          .context("DatabaseManager error")?;
+
+        self
+          .document_manager()?
+          .initialize_after_sign_up(user_profile.uid)
+          .await
+          .context("DocumentManager error")?;
+
+        self
+          .start_full_indexed_data_provider(
+            user_profile.uid,
+            workspace_id,
+            workspace_type,
+            user_config,
+            user_paths,
+            owner_for_work.clone(),
+          )
+          .await;
+        self
+          .start_instant_indexed_data_provider(
+            user_profile.uid,
+            workspace_id,
+            workspace_type,
+            user_config,
+            user_paths,
+            owner_for_work.clone(),
+          )
+          .await;
+
+        let tanvity_state = self
+          .create_tanvity_state_if_not_exists(
+            user_profile.uid,
+            workspace_id,
+            user_paths,
+            &owner_for_work,
+          )
+          .await;
+        self
+          .search_manager()?
+          .initialize_after_sign_up(owner_for_work.clone(), tanvity_state.clone())
+          .await;
+
+        let ai_manager = self.ai_manager()?;
+        let cloned_workspace_id = *workspace_id;
+        let tanvity_state = tanvity_state.as_ref().map(Arc::downgrade);
+        let background_owner = owner_for_work.clone();
+        self.runtime.spawn(async move {
+          background_owner
+            .run_if_current(async {
+              server_provider.on_sign_in(tanvity_state).await;
+              ai_manager
+                .initialize_after_sign_up(&cloned_workspace_id)
+                .await?;
+              Ok::<_, FlowyError>(())
+            })
+            .await
+        });
+
+        Ok(())
+      })
       .await
-      .context("FolderManager error")?;
-
-    self
-      .database_manager()?
-      .initialize_after_sign_up(user_profile.uid, workspace_type.is_local())
-      .await
-      .context("DatabaseManager error")?;
-
-    self
-      .document_manager()?
-      .initialize_after_sign_up(user_profile.uid)
-      .await
-      .context("DocumentManager error")?;
-
-    self
-      .start_full_indexed_data_provider(
-        user_profile.uid,
-        workspace_id,
-        workspace_type,
-        user_config,
-        user_paths,
-      )
-      .await;
-    self
-      .start_instant_indexed_data_provider(
-        user_profile.uid,
-        workspace_id,
-        workspace_type,
-        user_config,
-        user_paths,
-      )
-      .await;
-
-    let tanvity_state = self
-      .create_tanvity_state_if_not_exists(user_profile.uid, workspace_id, user_paths)
-      .await;
-    self
-      .search_manager()?
-      .initialize_after_sign_up(workspace_id, tanvity_state.clone())
-      .await;
-
-    let ai_manager = self.ai_manager()?;
-    let cloned_workspace_id = *workspace_id;
-    self.runtime.spawn(async move {
-      server_provider.on_sign_in(tanvity_state).await;
-      ai_manager
-        .initialize_after_sign_up(&cloned_workspace_id)
-        .await?;
-      Ok::<_, FlowyError>(())
-    });
-
-    Ok(())
+      .unwrap_or_else(|| {
+        Err(
+          FlowyError::invalid_data()
+            .with_context("The search owner changed during initialization."),
+        )
+      })
   }
 
   async fn on_token_expired(&self, _token: &str, user_id: i64) -> FlowyResult<()> {
+    self.search_manager()?.invalidate_context();
     self.folder_manager()?.clear(user_id).await;
     Ok(())
   }
 
   async fn on_workspace_closed(&self, workspace_id: &Uuid) -> FlowyResult<()> {
-    close_document_tantivy_state(workspace_id);
+    self.search_manager()?.close_workspace(workspace_id);
     Ok(())
   }
 
@@ -403,67 +494,87 @@ impl AppLifeCycle for AppLifeCycleImpl {
     user_config: &UserConfig,
     user_paths: &UserPaths,
   ) -> FlowyResult<()> {
-    let data_source = self
-      .folder_init_data_source(user_id, workspace_id, workspace_type)
-      .await?;
+    let search_owner = self.begin_search_owner(user_id, workspace_id).await?;
+    let owner_for_work = search_owner.clone();
+    search_owner
+      .run_if_current(async {
+        let data_source = self
+          .folder_init_data_source(user_id, workspace_id, workspace_type)
+          .await?;
 
-    self
-      .folder_manager()?
-      .initialize_after_open_workspace(user_id, data_source)
-      .await?;
-    self
-      .database_manager()?
-      .initialize_after_open_workspace(user_id, workspace_type.is_local())
-      .await?;
-    self
-      .document_manager()?
-      .initialize_after_open_workspace(user_id)
-      .await?;
+        self
+          .folder_manager()?
+          .initialize_after_open_workspace(user_id, data_source)
+          .await?;
+        self
+          .database_manager()?
+          .initialize_after_open_workspace(user_id, workspace_type.is_local())
+          .await?;
+        self
+          .document_manager()?
+          .initialize_after_open_workspace(user_id)
+          .await?;
 
-    self
-      .storage_manager()?
-      .initialize_after_open_workspace(workspace_id)
-      .await;
+        self
+          .storage_manager()?
+          .initialize_after_open_workspace(workspace_id)
+          .await;
 
-    let tanvity_state = self
-      .create_tanvity_state_if_not_exists(user_id, workspace_id, user_paths)
-      .await;
-    self
-      .search_manager()?
-      .initialize_after_open_workspace(workspace_id, tanvity_state.clone())
-      .await;
+        let tanvity_state = self
+          .create_tanvity_state_if_not_exists(user_id, workspace_id, user_paths, &owner_for_work)
+          .await;
+        self
+          .search_manager()?
+          .initialize_after_open_workspace(owner_for_work.clone(), tanvity_state.clone())
+          .await;
 
-    let server_provider = self.server_provider()?;
-    let cloned_workspace_id = *workspace_id;
-    let ai_manager = self.ai_manager()?;
-    self.runtime.spawn(async move {
-      server_provider.on_workspace_opened(tanvity_state).await;
-      ai_manager
-        .initialize_after_open_workspace(&cloned_workspace_id)
-        .await?;
-      Ok::<_, FlowyError>(())
-    });
+        let server_provider = self.server_provider()?;
+        let cloned_workspace_id = *workspace_id;
+        let ai_manager = self.ai_manager()?;
+        let tanvity_state = tanvity_state.as_ref().map(Arc::downgrade);
+        let background_owner = owner_for_work.clone();
+        self.runtime.spawn(async move {
+          background_owner
+            .run_if_current(async {
+              server_provider.on_workspace_opened(tanvity_state).await;
+              ai_manager
+                .initialize_after_open_workspace(&cloned_workspace_id)
+                .await?;
+              Ok::<_, FlowyError>(())
+            })
+            .await
+        });
 
-    self
-      .start_full_indexed_data_provider(
-        user_id,
-        workspace_id,
-        workspace_type,
-        user_config,
-        user_paths,
-      )
-      .await;
-    self
-      .start_instant_indexed_data_provider(
-        user_id,
-        workspace_id,
-        workspace_type,
-        user_config,
-        user_paths,
-      )
-      .await;
+        self
+          .start_full_indexed_data_provider(
+            user_id,
+            workspace_id,
+            workspace_type,
+            user_config,
+            user_paths,
+            owner_for_work.clone(),
+          )
+          .await;
+        self
+          .start_instant_indexed_data_provider(
+            user_id,
+            workspace_id,
+            workspace_type,
+            user_config,
+            user_paths,
+            owner_for_work.clone(),
+          )
+          .await;
 
-    Ok(())
+        Ok(())
+      })
+      .await
+      .unwrap_or_else(|| {
+        Err(
+          FlowyError::invalid_data()
+            .with_context("The search owner changed during initialization."),
+        )
+      })
   }
 
   async fn on_workspace_deleted(&self, user_id: i64, workspace_id: &Uuid) -> FlowyResult<()> {

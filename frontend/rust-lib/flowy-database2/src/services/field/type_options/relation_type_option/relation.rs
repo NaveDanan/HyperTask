@@ -74,8 +74,14 @@ impl TypeOptionCellDataCompare for RelationTypeOption {
 }
 
 impl TypeOptionCellDataFilter for RelationTypeOption {
-  fn apply_filter(&self, _filter: &RelationFilterPB, _cell_data: &RelationCellData) -> bool {
-    true
+  fn apply_filter(&self, filter: &RelationFilterPB, cell_data: &RelationCellData) -> bool {
+    match filter.condition {
+      0 => cell_data.row_ids.is_empty(),
+      1 => !cell_data.row_ids.is_empty(),
+      // Preserve the prior visibility of unsupported saved conditions. Their
+      // controls remain read-only until the app understands the operator.
+      _ => true,
+    }
   }
 }
 
@@ -84,5 +90,40 @@ impl TypeOptionTransform for RelationTypeOption {}
 impl CellDataProtobufEncoder for RelationTypeOption {
   fn protobuf_encode(&self, cell_data: RelationCellData) -> RelationCellDataPB {
     cell_data.into()
+  }
+}
+
+#[cfg(test)]
+mod hyper_presence_tests {
+  use super::*;
+  use crate::services::filter::ParseFilterData;
+
+  #[test]
+  fn hyper_presence_relation_uses_stored_references_instead_of_visible_titles() {
+    let option = RelationTypeOption::default();
+    let empty = RelationCellData::default();
+    let linked = RelationCellData {
+      row_ids: vec!["unavailable-related-row".to_string().into()],
+    };
+    for (condition, empty_visible, linked_visible) in [(0, true, false), (1, false, true)] {
+      let filter = RelationFilterPB::parse(condition, String::new());
+      assert_eq!(filter.condition, i64::from(condition));
+      assert_eq!(option.apply_filter(&filter, &empty), empty_visible);
+      assert_eq!(option.apply_filter(&filter, &linked), linked_visible);
+    }
+  }
+
+  #[test]
+  fn hyper_presence_relation_preserves_unknown_conditions_without_reinterpreting_them() {
+    let option = RelationTypeOption::default();
+    let filter = RelationFilterPB::parse(255, String::new());
+    assert_eq!(filter.condition, 255);
+    assert!(option.apply_filter(&filter, &RelationCellData::default()));
+    assert!(option.apply_filter(
+      &filter,
+      &RelationCellData {
+        row_ids: vec!["stored-reference".to_string().into()],
+      }
+    ));
   }
 }

@@ -6,7 +6,7 @@ import { RepeatedCalculationsPBSchema, type RepeatedCalculationsPB } from '@shar
 import { CalendarEventPBSchema, CalendarEventRequestPBSchema, MoveCalendarEventPBSchema, RepeatedCalendarEventPBSchema, RepeatedNoDateCalendarEventPBSchema, type CalendarEventPB, type RepeatedCalendarEventPB, type RepeatedNoDateCalendarEventPB } from '@shared/protobuf/flowy-database2/calendar_entities_pb';
 import { CellChangesetPBSchema, CellIdPBSchema, CellPBSchema, CreateSelectOptionPayloadPBSchema, type CellPB } from '@shared/protobuf/flowy-database2/cell_entities_pb';
 import { ChecklistCellDataChangesetPBSchema } from '@shared/protobuf/flowy-database2/checklist_entities_pb';
-import { CreateDatabaseViewPayloadPBSchema, CustomPromptDatabaseConfigPBSchema, DatabaseGroupIdPBSchema, DatabaseIdPBSchema, DatabaseLayoutMetaPBSchema, DatabasePBSchema, DatabaseViewIdPBSchema, MoveFieldPayloadPBSchema, MoveGroupRowPayloadPBSchema, MoveRowPayloadPBSchema, RemoveCoverPayloadPBSchema, RepeatedCustomPromptPBSchema, RepeatedDatabaseDescriptionPBSchema, RepeatedDatabaseIdPBSchema, RepeatedDatabaseSnapshotPBSchema, type CustomPromptDatabaseConfigPB, type DatabaseIdPB, type DatabasePB, type DatabaseViewIdPB, type RepeatedCustomPromptPB, type RepeatedDatabaseDescriptionPB, type RepeatedDatabaseIdPB, type RepeatedDatabaseSnapshotPB } from '@shared/protobuf/flowy-database2/database_entities_pb';
+import { CreateDatabaseViewPayloadPBSchema, CustomPromptDatabaseConfigPBSchema, DatabaseGroupIdPBSchema, DatabaseIdPBSchema, DatabaseLayoutMetaPBSchema, DatabasePBSchema, DatabaseViewIdPBSchema, HyperRowActivityAckPBSchema, HyperUpdateRowActivityPBSchema, MoveFieldPayloadPBSchema, MoveGroupRowPayloadPBSchema, MoveRowPayloadPBSchema, RemoveCoverPayloadPBSchema, RepeatedCustomPromptPBSchema, RepeatedDatabaseDescriptionPBSchema, RepeatedDatabaseIdPBSchema, RepeatedDatabaseSnapshotPBSchema, type CustomPromptDatabaseConfigPB, type DatabaseIdPB, type DatabasePB, type DatabaseViewIdPB, type HyperRowActivityAckPB, type RepeatedCustomPromptPB, type RepeatedDatabaseDescriptionPB, type RepeatedDatabaseIdPB, type RepeatedDatabaseSnapshotPB } from '@shared/protobuf/flowy-database2/database_entities_pb';
 import { DateCellChangesetPBSchema } from '@shared/protobuf/flowy-database2/date_entities_pb';
 import { ClearFieldPayloadPBSchema, CreateFieldPayloadPBSchema, DeleteFieldPayloadPBSchema, DuplicateFieldPayloadPBSchema, FieldChangesetPBSchema, FieldPBSchema, GetFieldPayloadPBSchema, RepeatedFieldPBSchema, TypeOptionChangesetPBSchema, UpdateFieldTypePayloadPBSchema, type FieldPB, type RepeatedFieldPB } from '@shared/protobuf/flowy-database2/field_entities_pb';
 import { FieldIdsPBSchema, FieldSettingsChangesetPBSchema, RepeatedFieldSettingsPBSchema, type RepeatedFieldSettingsPB } from '@shared/protobuf/flowy-database2/field_settings_entities_pb';
@@ -14,7 +14,7 @@ import { MoveGroupPayloadPBSchema } from '@shared/protobuf/flowy-database2/group
 import { CreateGroupPayloadPBSchema, DeleteGroupPayloadPBSchema, GroupByFieldPayloadPBSchema, GroupPBSchema, RepeatedGroupPBSchema, UpdateGroupPBSchema, type GroupPB, type RepeatedGroupPB } from '@shared/protobuf/flowy-database2/group_pb';
 import { MediaCellChangesetPBSchema, RenameMediaChangesetPBSchema } from '@shared/protobuf/flowy-database2/media_entities_pb';
 import { GetRelatedRowDataPBSchema, RelationCellChangesetPBSchema, RepeatedRelatedRowDataPBSchema, type RepeatedRelatedRowDataPB } from '@shared/protobuf/flowy-database2/relation_entities_pb';
-import { CreateRowPayloadPBSchema, DatabaseViewRowIdPBSchema, OptionalRowPBSchema, RepeatedRowIdPBSchema, RepeatedRowMetaPBSchema, RowMetaPBSchema, SummaryRowPBSchema, TranslateRowPBSchema, UpdateRowMetaChangesetPBSchema, type OptionalRowPB, type RepeatedRowMetaPB, type RowMetaPB } from '@shared/protobuf/flowy-database2/row_entities_pb';
+import { CreateRowPayloadPBSchema, DatabaseViewRowIdPBSchema, HyperDuplicateRowPayloadPBSchema, OptionalRowPBSchema, RepeatedRowIdPBSchema, RepeatedRowMetaPBSchema, RowMetaPBSchema, SummaryRowPBSchema, TranslateRowPBSchema, UpdateRowMetaChangesetPBSchema, type OptionalRowPB, type RepeatedRowMetaPB, type RowMetaPB } from '@shared/protobuf/flowy-database2/row_entities_pb';
 import { RepeatedSelectOptionPayloadSchema, SelectOptionCellChangesetPBSchema, SelectOptionPBSchema, type SelectOptionPB } from '@shared/protobuf/flowy-database2/select_option_entities_pb';
 import { DatabaseLayoutSettingPBSchema, DatabaseSettingChangesetPBSchema, DatabaseViewSettingPBSchema, LayoutSettingChangesetPBSchema, type DatabaseLayoutSettingPB, type DatabaseViewSettingPB } from '@shared/protobuf/flowy-database2/setting_entities_pb';
 import { DatabaseExportDataPBSchema, type DatabaseExportDataPB } from '@shared/protobuf/flowy-database2/share_entities_pb';
@@ -117,8 +117,8 @@ export function DatabaseEventDeleteRows(payload: MessageInitShape<typeof Repeate
   return request('DeleteRows', toBinary(RepeatedRowIdPBSchema, create(RepeatedRowIdPBSchema, payload)));
 }
 
-export function DatabaseEventDuplicateRow(payload: MessageInitShape<typeof DatabaseViewRowIdPBSchema>): Promise<FlowyResult<void>> {
-  return request('DuplicateRow', toBinary(DatabaseViewRowIdPBSchema, create(DatabaseViewRowIdPBSchema, payload)));
+export function DatabaseEventDuplicateRow(payload: MessageInitShape<typeof HyperDuplicateRowPayloadPBSchema>): Promise<FlowyResult<RowMetaPB>> {
+  return request('DuplicateRow', toBinary(HyperDuplicateRowPayloadPBSchema, create(HyperDuplicateRowPayloadPBSchema, payload)), RowMetaPBSchema);
 }
 
 export function DatabaseEventMoveRow(payload: MessageInitShape<typeof MoveRowPayloadPBSchema>): Promise<FlowyResult<void>> {
@@ -291,6 +291,10 @@ export function DatabaseEventGetAllRows(payload: MessageInitShape<typeof Databas
 
 export function DatabaseEventExportRawDatabaseData(payload: MessageInitShape<typeof DatabaseViewIdPBSchema>): Promise<FlowyResult<DatabaseExportDataPB>> {
   return request('ExportRawDatabaseData', toBinary(DatabaseViewIdPBSchema, create(DatabaseViewIdPBSchema, payload)), DatabaseExportDataPBSchema);
+}
+
+export function DatabaseEventHyperUpdateRowActivity(payload: MessageInitShape<typeof HyperUpdateRowActivityPBSchema>): Promise<FlowyResult<HyperRowActivityAckPB>> {
+  return request('HyperUpdateRowActivity', toBinary(HyperUpdateRowActivityPBSchema, create(HyperUpdateRowActivityPBSchema, payload)), HyperRowActivityAckPBSchema);
 }
 
 export function DatabaseEventUpdateMediaCell(payload: MessageInitShape<typeof MediaCellChangesetPBSchema>): Promise<FlowyResult<void>> {

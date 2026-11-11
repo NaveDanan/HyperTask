@@ -6,6 +6,8 @@ import { FolderEventCreateView } from '@/backend/events';
 import type { FlowyResult } from '@/backend/dispatch';
 import { KVKeys, KeyValueStorage } from '@/startup/kv';
 import { ViewBackendService } from '@/features/view/view-service';
+import { hyperGetDocumentOwner, hyperDocumentOwnerKey } from '@/features/document/HyperDocumentOwner';
+import { hyperCaptureDuplicateOwner, hyperDocumentDuplicates } from '@/features/document-duplicate/HyperDocumentDuplicateBackend';
 import {
   SpacePermission,
   ViewExtKeys,
@@ -117,12 +119,14 @@ function spaceActionsFor(store: StoreApi<SpaceState>) {
     iconColor,
     permission,
     viewId,
+    setAsCurrent = true,
   }: {
     name: string;
     icon: string;
     iconColor: string;
     permission: SpacePermission;
     viewId?: string;
+    setAsCurrent?: boolean;
   }): Promise<ViewPB | null> {
     const extra = {
       [ViewExtKeys.isSpace]: true,
@@ -139,7 +143,7 @@ function spaceActionsFor(store: StoreApi<SpaceState>) {
         case: 'section',
         value: permission === SpacePermission.publicToAll ? ViewSectionPB.Public : ViewSectionPB.Private,
       },
-      setAsCurrent: true,
+      setAsCurrent,
       oneOfExtra: { case: 'extra', value: JSON.stringify(extra) },
       ...(viewId ? { oneOfViewId: { case: 'viewId', value: viewId } } : null),
     });
@@ -248,12 +252,14 @@ function spaceActionsFor(store: StoreApi<SpaceState>) {
     },
 
     /** open: remember the space, reload its pages, and (desktop) ask to open its first page. */
-    async open(space: ViewPB, afterOpen?: () => void) {
+    async open(space: ViewPB, afterOpen?: () => void, isCurrent: () => boolean = () => true) {
       const gen = generation;
+      if (!isCurrent()) return;
       await KeyValueStorage.set(KVKeys.lastOpenedSpaceId, space.id);
+      if (!isCurrent()) return;
       const isExpanded = getSpaceExpandStatus(space);
       const views = await ViewBackendService.getChildViews(space.id);
-      if (gen !== generation) return;
+      if (gen !== generation || !isCurrent()) return;
       const currentSpace = views.ok ? { ...space, childViews: views.value } : space;
       set({ currentSpace, isExpanded });
       set({ lastCreatedPage: currentSpace.childViews[0] ?? createMessage(ViewPBSchema, {}) });
@@ -285,10 +291,11 @@ function spaceActionsFor(store: StoreApi<SpaceState>) {
       else set({ createPageResult: result });
     },
 
-    async didReceiveSpaceUpdate() {
+    async didReceiveSpaceUpdate(isCurrent: () => boolean = () => true) {
       const gen = generation;
+      if (!isCurrent()) return;
       const spaces = await getSpaces();
-      if (gen !== generation) return;
+      if (gen !== generation || !isCurrent()) return;
       set({ spaces, currentSpace: getLastOpened(spaces) });
     },
 
@@ -307,31 +314,41 @@ function spaceActionsFor(store: StoreApi<SpaceState>) {
 
     async duplicate(space?: ViewPB | null) {
       const source = space ?? get().currentSpace;
-      if (!source) return;
+      const owner = hyperCaptureDuplicateOwner();
+      if (!source || !owner || get().isDuplicatingSpace || workspaceId !== owner.workspaceId) return;
       const gen = generation;
+      const key = hyperDocumentOwnerKey(owner);
+      const current = () => gen === generation && owner.isCurrent() && hyperDocumentOwnerKey(hyperGetDocumentOwner()) === key;
       set({ isDuplicatingSpace: true });
-      const newSpace = await createSpace({
-        name: `${source.name} (copy)`,
-        icon: spaceIcon(source) || builtInSpaceIcons[0],
-        iconColor: spaceIconColor(source) || builtInSpaceColors[0],
-        permission: spacePermission(source),
-      });
-      if (newSpace) {
-        for (const view of source.childViews) {
-          await ViewBackendService.duplicate({
-            view,
-            openAfterDuplicate: true,
-            syncAfterDuplicate: true,
-            includeChildren: true,
-            parentViewId: newSpace.id,
-            suffix: '',
-          });
+      try {
+        await hyperDocumentDuplicates.preflight(source.id, owner);
+        if (!current()) return;
+        const latest = await ViewBackendService.getView(source.id);
+        if (!current() || !latest.ok) return;
+        const newSpace = await createSpace({
+          name: `${latest.value.name} (copy)`,
+          icon: spaceIcon(latest.value) || builtInSpaceIcons[0],
+          iconColor: spaceIconColor(latest.value) || builtInSpaceColors[0],
+          permission: spacePermission(latest.value),
+          setAsCurrent: false,
+        });
+        if (!current() || !newSpace) return;
+        for (const view of latest.value.childViews.filter(view => view.layout !== ViewLayoutPB.Chat)) {
+          if (!current()) return;
+          const result = await ViewBackendService.duplicate({ view, owner, openAfterDuplicate: false, syncAfterDuplicate: true, includeChildren: true, parentViewId: newSpace.id, suffix: '' });
+          // A failed or uncertain child copy has a retained recovery. Do not replay it or
+          // continue copying unrelated children while that result is unresolved.
+          if (!current() || !result.ok) return;
         }
-        if (gen !== generation) return;
-        void actions.didReceiveSpaceUpdate();
-        void actions.open(newSpace);
+        if (!current()) return;
+        await actions.didReceiveSpaceUpdate(current);
+        if (!current()) return;
+        await actions.open(newSpace, undefined, current);
+      } catch {
+        // Preflight exposes the actionable error through the owner-scoped recovery UI.
+      } finally {
+        if (gen === generation) set({ isDuplicatingSpace: false });
       }
-      if (gen === generation) set({ isDuplicatingSpace: false });
     },
   };
   return actions;

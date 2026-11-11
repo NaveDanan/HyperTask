@@ -425,6 +425,19 @@ pub struct DatabaseViewRowIdPB {
   pub group_id: Option<String>,
 }
 
+/// DuplicateRow keeps its legacy wire fields and adds an optional retry identity.
+#[derive(Debug, Default, Clone, ProtoBuf)]
+pub struct HyperDuplicateRowPayloadPB {
+  #[pb(index = 1)]
+  pub view_id: String,
+  #[pb(index = 2)]
+  pub row_id: String,
+  #[pb(index = 3, one_of)]
+  pub group_id: Option<String>,
+  #[pb(index = 4, one_of)]
+  pub operation_id: Option<String>,
+}
+
 pub struct RowIdParams {
   pub view_id: String,
   pub row_id: RowId,

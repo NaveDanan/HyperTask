@@ -3,8 +3,8 @@ import { validateEndpoint } from '@shared/openai-endpoint';
 import { AIEventGetLocalAISetting, AIEventUpdateLocalAISetting } from '@/backend/events';
 
 // OpenAIEndpointSettings (lib/ai/service/openai_endpoint_settings.dart) [CUSTOM]. The settings
-// file is `<appSupport>/local_ai/openai-endpoint.json`; the API key is stored only as base64
-// of a raw Windows DPAPI blob (the Rust core decrypts it per request).
+// file is `<appSupport>/local_ai/openai-endpoint.json`. Existing Windows DPAPI blobs remain
+// compatible; Linux/macOS use the versioned envelope protected by native secure storage.
 
 export const openAIConfigPrefix = 'openai+file:';
 
@@ -13,7 +13,7 @@ export interface OpenAIEndpointSettings {
   model: string;
   embeddingModel: string;
   imageModel: string;
-  /** DPAPI-protected key (base64), never the plaintext. */
+  /** Platform-protected credential, never the plaintext. */
   protectedKey: string;
   enabled: boolean;
 }
@@ -110,10 +110,10 @@ export async function saveEndpointSettings(settings: OpenAIEndpointSettings): Pr
 }
 
 /** testConnection(): runs in the main process (no redirects, 30 s timeouts). */
-export async function testEndpointConnection(settings: OpenAIEndpointSettings): Promise<void> {
+export async function testEndpointConnection(settings: OpenAIEndpointSettings, apiKey?: string): Promise<void> {
   validateEndpointSettings(settings);
   unwrapIpc(
-    await window.appflowy.aiEndpoint.test({ baseUrl: settings.baseUrl, model: settings.model, protectedKey: settings.protectedKey }),
+    await window.appflowy.aiEndpoint.test({ baseUrl: settings.baseUrl, model: settings.model, protectedKey: settings.protectedKey, ...(apiKey !== undefined ? { apiKey } : {}) }),
   );
 }
 

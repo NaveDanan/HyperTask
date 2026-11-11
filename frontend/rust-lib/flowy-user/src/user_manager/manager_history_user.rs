@@ -78,6 +78,7 @@ impl UserManager {
         ErrorCode::RecordNotFound,
         "Anon user not found",
       ))?;
+    self.begin_awareness_owner();
     self.authenticate_user.set_session(Some(anon_session))?;
     Ok(())
   }

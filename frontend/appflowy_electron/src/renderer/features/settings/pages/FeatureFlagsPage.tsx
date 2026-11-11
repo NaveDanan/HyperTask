@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { runAppFlowy } from '@/startup/launcher';
+import { runHyperTask } from '@/startup/HyperLauncher';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import type { SettingsPageProps } from '../page-props';
@@ -15,7 +15,7 @@ export function FeatureFlagsPage(_: SettingsPageProps) {
       <SettingsSection><SettingsGroup>
         {flags.map((flag) => <FeatureFlagItem key={flag} flag={flag} />)}
         <SettingsRow label="Restart the app to apply changes" control={
-          <Button variant="outline" size="sm" onClick={() => void runAppFlowy()}>Restart the app to apply changes</Button>
+          <Button variant="outline" size="sm" onClick={() => void runHyperTask()}>Restart the app to apply changes</Button>
         } />
       </SettingsGroup></SettingsSection>
     </>

@@ -1,0 +1,112 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import { build } from 'rolldown';
+import { describe, expect, it } from 'vitest';
+
+const root = path.resolve(__dirname, '..');
+const resolvePackage = createRequire(path.join(root, 'package.json')).resolve;
+const executable = path.join(root, 'node_modules/electron/dist', process.platform === 'win32' ? 'electron.exe' : process.platform === 'darwin' ? 'Electron.app/Contents/MacOS/Electron' : 'electron');
+const available = fs.existsSync(executable) && (process.platform !== 'linux' || Boolean(process.env.DISPLAY));
+
+(available ? describe : describe.skip)('Hyper canvas image interactions in Electron', () => {
+  it('renders managed images, persists edits, embeds SVG/PNG and rejects missing or stale-owner previews', async () => {
+    const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'hyper-canvas-images-'));
+    try {
+      const storage = path.join(temporary, 'storage'), artifacts = path.join(storage, 'ai_generated_images');
+      fs.mkdirSync(artifacts, { recursive: true });
+      const source = path.join(artifacts, 'generated.png');
+      fs.writeFileSync(source, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAAFElEQVR4nGN0i8pjYGBgYmBgQFAAFDYBFAyUwTgAAAAASUVORK5CYII=', 'base64'));
+      const i18n = path.join(temporary, 'i18n.ts'), entry = path.join(temporary, 'entry.tsx');
+      fs.writeFileSync(i18n, 'export const tr=key=>key;export const useTr=()=>({tr});');
+      fs.writeFileSync(entry, `
+        import React from 'react';import{createRoot}from'react-dom/client';import{createStore}from'zustand';
+        import{create}from'@bufbuild/protobuf';import{DocumentDataPBSchema}from'@shared/protobuf/flowy-document/entities_pb';
+        import{HyperWhiteboard}from'@/features/whiteboard/HyperWhiteboard';
+        import{hyperInsertCanvasElement,hyperReadCanvas,hyperCanvasLabel}from'@/features/whiteboard/HyperWhiteboardModel';
+        window.hyperCanvasImageChecks=(async()=>{
+          const assert=(condition,message)=>{if(!condition)throw Error(message)};
+          const wait=async(test,label)=>{const end=Date.now()+6000;while(!await test()){if(Date.now()>end)throw Error('Timed out: '+label+' '+document.body.textContent.slice(-500));await new Promise(resolve=>setTimeout(resolve,10));}};
+          const fixture=window.fixture,imported=await fixture.image();
+          const initial=create(DocumentDataPBSchema,{pageId:'root',blocks:{root:{id:'root',ty:'page',data:'{}',childrenId:'children'}},meta:{childrenMap:{children:{children:[]}}}});
+          const inserted=hyperInsertCanvasElement(initial,'image',{x:10,y:20,width:120,height:180},{imagePath:imported.path,alt:'Generated sketch'});
+          const store=createStore(()=>({document:inserted.document,status:'ready',error:null,historyPending:false}));
+          let owned=true,saves=0;const writes=[],exports=[];
+          const session={store,isCurrentOwner:()=>owned,change:build=>{assert(owned,'lost owner cannot edit');const result=build(store.getState().document);writes.push(result.actions);store.setState({document:result.document});return result},history:async()=>{},flush:async()=>{assert(owned,'lost owner cannot flush')}};
+          window.appflowy={assets:{previewUrl:fixture.preview,inlineUrl:fixture.inline},dialog:{saveFile:async options=>{saves++;return options.defaultPath}},fs:{writeText:async(path,content)=>exports.push({path,content}),writeBytes:async(path,content)=>exports.push({path,content})}};
+          const host=document.createElement('div');document.body.append(host);const app=createRoot(host);
+          const mount=async(editable=true,key='main')=>{app.render(<HyperWhiteboard key={key} session={session} editable={editable}/>);await new Promise(resolve=>requestAnimationFrame(resolve));};
+          const button=name=>[...host.querySelectorAll('button')].find(button=>button.getAttribute('aria-label')===name||button.textContent===name);
+          const elements=()=>hyperReadCanvas(store.getState().document).elements;
+          const select=()=>host.querySelector('aside button').click();
+          const image=()=>host.querySelector('image');
+          const nativeInput=(input,value)=>{Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input),'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));};
+          await mount();await wait(()=>image()?.getAttribute('href')===imported.previewUrl,'managed SVG image');
+          assert(!host.innerHTML.includes(imported.path),'absolute attachment path does not reach markup');
+          const decoded=new Image();decoded.src=imported.previewUrl;await decoded.decode();assert(decoded.naturalWidth===2&&decoded.naturalHeight===3,'managed protocol returns real raster pixels');
+          select();await wait(()=>host.querySelector('textarea'),'image properties');
+          nativeInput(host.querySelector('textarea'),'A <generated> & edited sketch');
+          await wait(()=>elements()[0].alt==='A <generated> & edited sketch','image alt edit');
+          const svg=()=>host.querySelector('svg[role="application"]');svg().focus();
+          svg().dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',shiftKey:true,bubbles:true,cancelable:true}));
+          await wait(()=>elements()[0].x===20,'image keyboard move');
+          nativeInput(host.querySelector('input[type="number"]'),'160');await wait(()=>elements()[0].width===160,'image resize');
+          assert(elements()[0].imagePath===imported.path,'move and resize keep attachment');
+          const snapshot=structuredClone(store.getState().document);await mount(true,'reopen');await wait(()=>image(),'reopened image');
+          assert(hyperCanvasLabel(elements()[0],snapshot)==='A <generated> & edited sketch','alt survives remount');
+          button('Export SVG').click();await wait(()=>exports.length===1,'SVG export');
+          assert(exports[0].content.includes('href="data:image/png;base64,'),'SVG embeds image bytes');assert(!exports[0].content.includes(imported.path),'SVG omits local paths');
+          assert(exports[0].content.includes('A &lt;generated&gt; &amp; edited sketch'),'SVG escapes image alt');
+          await wait(()=>!button('Export PNG').disabled,'PNG ready');button('Export PNG').click();await wait(()=>exports.length===2,'PNG export');
+          const bitmap=await createImageBitmap(new Blob([exports[1].content],{type:'image/png'}));
+          const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;const context=canvas.getContext('2d');context.drawImage(bitmap,0,0);
+          const center=[...context.getImageData(Math.floor(bitmap.width/2),Math.floor(bitmap.height/2),1,1).data];bitmap.close();
+          assert(center.slice(0,3).join(',')==='70,90,110','PNG contains generated image pixels rather than a placeholder');
+          await mount(false);await wait(()=>button('Rectangle').disabled,'read-only canvas');select();await wait(()=>host.querySelector('textarea')?.disabled,'read-only image properties');
+          const before=JSON.stringify(store.getState().document);svg().focus();for(const key of ['ArrowRight','Delete'])svg().dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true,cancelable:true}));
+          await new Promise(resolve=>setTimeout(resolve,30));assert(JSON.stringify(store.getState().document)===before,'read-only blocks image mutation');assert(!button('Zoom in').disabled,'read-only navigation remains available');
+          await mount(true);await wait(()=>!button('Rectangle').disabled,'editable again');select();await wait(()=>host.querySelector('textarea')&&!host.querySelector('textarea').disabled,'editable properties');svg().focus();svg().dispatchEvent(new KeyboardEvent('keydown',{key:'Delete',bubbles:true,cancelable:true}));
+          await wait(()=>elements().length===0,'image element deleted');assert(await fixture.exists(imported.path),'deleting canvas image retains managed file');
+          store.setState({document:snapshot});await fixture.remove(imported.path);await mount(true,'missing');await wait(()=>host.querySelector('[data-image-state="error"]'),'missing image visible');
+          assert(!image()&&host.textContent.includes('Image unavailable'),'missing asset has explicit placeholder');
+          button('Export SVG').click();await wait(()=>host.textContent.includes('Restore its managed attachment'),'missing image aborts export');assert(exports.length===2&&saves===2,'missing images cannot silently disappear or open save dialog');
+          await fixture.image();await fixture.delay();await mount(true,'slow');await wait(()=>fixture.held(),'preview waiting');owned=false;await fixture.release();
+          await wait(()=>host.querySelector('[data-image-state="error"]'),'stale owner response rejected');assert(!image(),'late reply cannot reveal previous owner image');
+          assert(writes.length>=4,'image actions reached document session');app.unmount();return 'Hyper canvas image interaction passed';
+        })();
+      `);
+      const renderer = await build({ input: entry, onwarn(warning, handler) { if (warning.code !== 'MODULE_LEVEL_DIRECTIVE') handler(warning); }, plugins: [{ name: 'hyper-canvas-images', resolveId(source) {
+        if (source.endsWith('/i18n')) return i18n;
+        if (['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom/client', 'zustand', '@bufbuild/protobuf'].includes(source)) return resolvePackage(source);
+        return null;
+      } }], resolve: { alias: { '@/i18n': i18n, '@': path.join(root, 'src/renderer'), '@shared': path.join(root, 'src/shared') } }, transform: { define: { 'process.env.NODE_ENV': JSON.stringify('production') } }, output: { format: 'iife' }, write: false });
+      const code = renderer.output.find(chunk => chunk.type === 'chunk'); if (code?.type !== 'chunk') throw new Error('No canvas image test bundle');
+      fs.writeFileSync(path.join(temporary, 'checks.js'), code.code + '\nwindow.hyperCanvasImageChecks');
+      fs.writeFileSync(path.join(temporary, 'index.html'), '<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\' \'unsafe-eval\'; style-src \'self\' \'unsafe-inline\'; img-src appflowy-file: blob: data:"><body></body>');
+      const preload = path.join(temporary, 'preload.cjs');
+      fs.writeFileSync(preload, `const{contextBridge,ipcRenderer}=require('electron');contextBridge.exposeInMainWorld('fixture',Object.fromEntries(['image','preview','inline','remove','exists','delay','held','release'].map(name=>[name,(...args)=>ipcRenderer.invoke(name,...args)])));`);
+      const main = path.join(temporary, 'main.ts');
+      fs.writeFileSync(main, `
+        import{app,BrowserWindow,ipcMain}from'electron';import fs from'node:fs/promises';
+        import{HyperAssets}from${JSON.stringify(path.join(root, 'src/main/HyperAssets.ts'))};
+        import{HyperGeneratedImages}from${JSON.stringify(path.join(root, 'src/main/HyperGeneratedImages.ts'))};
+        import{hyperRegisterAssetScheme,hyperHandleAssetProtocol}from${JSON.stringify(path.join(root, 'src/main/HyperAssetProtocol.ts'))};
+        hyperRegisterAssetScheme();const assets=new HyperAssets(()=>${JSON.stringify(storage)});
+        const images=new HyperGeneratedImages({applicationRoot:()=>${JSON.stringify(storage)},importImage:(bytes,info)=>assets.importGeneratedImage(bytes,info)});
+        let delayed=false,held=false,release;ipcMain.handle('image',()=>images.importUrl(${JSON.stringify(pathToFileURL(source).href)}));
+        ipcMain.handle('preview',async(_,source)=>{if(delayed)await new Promise(resolve=>{held=true;release=resolve});return assets.previewUrl(source)});
+        ipcMain.handle('inline',(_,source)=>assets.inlineUrl(source));ipcMain.handle('remove',(_,source)=>fs.unlink(source));
+        ipcMain.handle('exists',async(_,source)=>{try{await fs.access(source);return true}catch{return false}});
+        ipcMain.handle('delay',()=>{delayed=true});ipcMain.handle('held',()=>held);ipcMain.handle('release',()=>{delayed=false;held=false;release?.()});
+        app.whenReady().then(async()=>{hyperHandleAssetProtocol(assets);const win=new BrowserWindow({show:false,webPreferences:{preload:${JSON.stringify(preload)},sandbox:true,contextIsolation:true,nodeIntegration:false}});await win.loadFile(${JSON.stringify(path.join(temporary, 'index.html'))});try{console.log(await win.webContents.executeJavaScript(await fs.readFile(${JSON.stringify(path.join(temporary, 'checks.js'))},'utf8')));app.exit(0)}catch(error){console.error(error.stack);app.exit(1)}});
+      `);
+      await build({ input: main, platform: 'node', external: ['electron', /^node:/], output: { file: path.join(temporary, 'main.cjs'), format: 'cjs' } });
+      const { stdout } = await promisify(execFile)(executable, ['--no-sandbox', `--user-data-dir=${path.join(temporary, 'profile')}`, path.join(temporary, 'main.cjs')], { timeout: 60_000, env: { ...process.env, ELECTRON_RUN_AS_NODE: '' } });
+      expect(stdout).toContain('Hyper canvas image interaction passed');
+    } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
+  }, 120_000);
+});

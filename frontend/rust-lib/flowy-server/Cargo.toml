@@ -18,6 +18,7 @@ tokio = { workspace = true, features = ["sync"] }
 lazy_static = "1.4.0"
 bytes = { workspace = true, features = ["serde"] }
 anyhow.workspace = true
+reqwest = { version = "=0.12.15", features = ["stream"] }
 arc-swap.workspace = true
 uuid.workspace = true
 collab = { workspace = true }

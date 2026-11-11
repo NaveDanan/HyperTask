@@ -11,8 +11,8 @@ export interface SettingsPageProps {
   role: AFRolePB | null;
   /** dismissDialog: pops the settings dialog. */
   closeDialog: () => void;
-  /** didLogout: pops the dialog and runs runAppFlowy(). */
+  /** didLogout: pops the dialog and runs runHyperTask(). */
   didLogout: () => void;
-  /** restartApp: pops the dialog and runs runAppFlowy(). */
+  /** restartApp: pops the dialog and runs runHyperTask(). */
   restartApp: () => void;
 }

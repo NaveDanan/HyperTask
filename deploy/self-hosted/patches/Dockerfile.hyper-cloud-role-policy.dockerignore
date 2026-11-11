@@ -1,0 +1,6 @@
+# This file is copied beside the prepared context's .hyper-build/Dockerfile.
+# It overrides the upstream ignore file so the source verifier sees the full pinned tree.
+.git
+target
+**/target
+**/__pycache__

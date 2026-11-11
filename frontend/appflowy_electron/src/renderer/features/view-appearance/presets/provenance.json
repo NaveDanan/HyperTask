@@ -1,0 +1,50 @@
+{
+  "repository": "https://github.com/AppFlowy-IO/AppFlowy",
+  "commit": "8fcee27d9bd93aad4ee0191d5d8d915d6a9a4e93",
+  "license": "AGPL-3.0",
+  "notice": "Unmodified AppFlowy bundled cover assets. The source tree contains no separate license notice for this directory; the repository AGPL-3.0 license is preserved alongside these assets.",
+  "files": [
+    {
+      "id": "1",
+      "file": "m_cover_image_1.png",
+      "source": "frontend/appflowy_flutter/assets/images/built_in_cover_images/m_cover_image_1.png",
+      "sha256": "881e78a755b206e25be0b68d4ed2bafe964b96c78a662d78d4627df7ce4fa0e0",
+      "bytes": 2297203
+    },
+    {
+      "id": "2",
+      "file": "m_cover_image_2.png",
+      "source": "frontend/appflowy_flutter/assets/images/built_in_cover_images/m_cover_image_2.png",
+      "sha256": "b796c52acc0ef77a66f3e992c4b046a5c7a5f82ee7d034ab2f488e10e1c575ea",
+      "bytes": 748199
+    },
+    {
+      "id": "3",
+      "file": "m_cover_image_3.png",
+      "source": "frontend/appflowy_flutter/assets/images/built_in_cover_images/m_cover_image_3.png",
+      "sha256": "5b0453dac728a04c587b2435da66d4b05cbe79eb0261c36a73b5805536361c3f",
+      "bytes": 476092
+    },
+    {
+      "id": "4",
+      "file": "m_cover_image_4.png",
+      "source": "frontend/appflowy_flutter/assets/images/built_in_cover_images/m_cover_image_4.png",
+      "sha256": "9c3829de3f9a1e80a4fb4f352402315608040d35f8c78829264c49aa9d8890cf",
+      "bytes": 538501
+    },
+    {
+      "id": "5",
+      "file": "m_cover_image_5.png",
+      "source": "frontend/appflowy_flutter/assets/images/built_in_cover_images/m_cover_image_5.png",
+      "sha256": "6a932b3d779e69b58df953be5dee55aaf5b0abfdc451722ce8e71ea5030d4fce",
+      "bytes": 300038
+    },
+    {
+      "id": "6",
+      "file": "m_cover_image_6.png",
+      "source": "frontend/appflowy_flutter/assets/images/built_in_cover_images/m_cover_image_6.png",
+      "sha256": "ed63f4f57c1ffc3ebc2a3e761696df81a0cf3fa9aa7270ae8bf4ba2a197929e1",
+      "bytes": 783289
+    }
+  ]
+}

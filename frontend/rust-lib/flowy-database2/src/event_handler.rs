@@ -12,11 +12,13 @@ use crate::entities::*;
 use crate::manager::DatabaseManager;
 use crate::services::field::checklist_filter::ChecklistCellChangeset;
 use crate::services::field::date_filter::DateCellChangeset;
+use crate::services::field::date_type_option::hyper_calendar_move::hyper_calendar_move;
 use crate::services::field::{
   RelationCellChangeset, SelectOptionCellChangeset, TypeOptionCellExt, type_option_data_from_pb,
 };
 use crate::services::group::GroupChangeset;
 use crate::services::share::csv::CSVFormat;
+use collab_database::fields::date_type_option::{DateCellData, DateTypeOption};
 
 fn upgrade_manager(
   database_manager: AFPluginState<Weak<DatabaseManager>>,
@@ -288,6 +290,15 @@ pub(crate) async fn update_field_type_option_handler(
   if let Some(old_field) = database_editor.get_field(&params.field_id).await {
     let field_type = FieldType::from(old_field.field_type);
     let type_option_data = type_option_data_from_pb(params.type_option_data, &field_type)?;
+    if field_type == FieldType::DateTime {
+      let option = DateTypeOption::from(type_option_data.clone());
+      if !option.timezone_id.is_empty() && option.timezone_id.parse::<chrono_tz::Tz>().is_err() {
+        return Err(FlowyError::new(
+          flowy_error::ErrorCode::InvalidParams,
+          "This timezone is not supported by the core",
+        ));
+      }
+    }
     database_editor
       .update_field_type_option(&params.field_id, type_option_data, old_field)
       .await?;
@@ -421,7 +432,9 @@ pub(crate) async fn init_row_handler(
   let database_editor = manager
     .get_database_editor_with_view_id(&params.view_id)
     .await?;
-  database_editor.init_database_row(&params.row_id).await?;
+  database_editor
+    .hyper_init_visible_row(&params.view_id, &params.row_id)
+    .await?;
   Ok(())
 }
 
@@ -455,7 +468,7 @@ pub(crate) async fn update_row_meta_handler(
   let row_id = RowId::from(params.id.clone());
   database_editor
     .update_row_meta(&row_id.clone(), params)
-    .await;
+    .await?;
   Ok(())
 }
 
@@ -480,18 +493,40 @@ pub(crate) async fn delete_rows_handler(
 
 #[tracing::instrument(level = "debug", skip(data, manager), err)]
 pub(crate) async fn duplicate_row_handler(
-  data: AFPluginData<DatabaseViewRowIdPB>,
+  data: AFPluginData<HyperDuplicateRowPayloadPB>,
   manager: AFPluginState<Weak<DatabaseManager>>,
-) -> Result<(), FlowyError> {
+) -> DataResult<RowMetaPB, FlowyError> {
   let manager = upgrade_manager(manager)?;
-  let params: RowIdParams = data.into_inner().try_into()?;
-  let database_editor = manager
-    .get_database_editor_with_view_id(&params.view_id)
-    .await?;
-  database_editor
-    .duplicate_row(&params.view_id, &params.row_id)
-    .await?;
-  Ok(())
+  let data = data.into_inner();
+  let params: RowIdParams = DatabaseViewRowIdPB {
+    view_id: data.view_id,
+    row_id: data.row_id,
+    group_id: data.group_id,
+  }
+  .try_into()?;
+  let scope = manager.hyper_duplicate_scope()?;
+  let row = scope
+    .run_if_current(async {
+      manager
+        .hyper_validate_row_copy_source(&scope, &params.view_id)
+        .await?;
+      let database_editor = manager
+        .get_database_editor_with_view_id(&params.view_id)
+        .await?;
+      scope.check()?;
+      if !database_editor.hyper_duplicate_context_matches(&scope) {
+        return Err(FlowyError::invalid_data().with_context("The database copy owner changed."));
+      }
+      database_editor
+        .duplicate_row_with_operation(
+          &params.view_id,
+          &params.row_id,
+          data.operation_id.as_deref(),
+        )
+        .await
+    })
+    .await??;
+  data_result_ok(row)
 }
 
 #[tracing::instrument(level = "debug", skip(data, manager), err)]
@@ -530,7 +565,7 @@ pub(crate) async fn remove_cover_handler(
 
   database_editor
     .update_row_meta(&params.row_id, update_row_changeset)
-    .await;
+    .await?;
 
   Ok(())
 }
@@ -965,10 +1000,10 @@ pub(crate) async fn get_no_date_calendar_events_handler(
   let database_editor = manager
     .get_database_editor_with_view_id(&params.view_id)
     .await?;
-  let _events = database_editor
+  let events = database_editor
     .get_all_no_date_calendar_events(&params.view_id)
-    .await;
-  todo!()
+    .await?;
+  data_result_ok(RepeatedNoDateCalendarEventPB { items: events })
 }
 
 #[tracing::instrument(level = "debug", skip(data, manager), err)]
@@ -998,13 +1033,37 @@ pub(crate) async fn move_calendar_event_handler(
   let manager = upgrade_manager(manager)?;
   let data = data.into_inner();
   let cell_id: CellIdParams = data.cell_path.try_into()?;
-  let cell_changeset = DateCellChangeset {
-    timestamp: Some(data.timestamp),
-    ..Default::default()
-  };
   let database_editor = manager
     .get_database_editor_with_view_id(&cell_id.view_id)
     .await?;
+  let field = database_editor
+    .get_field(&cell_id.field_id)
+    .await
+    .ok_or_else(FlowyError::record_not_found)?;
+  if FieldType::from(field.field_type) != FieldType::DateTime {
+    return Err(FlowyError::new(
+      flowy_error::ErrorCode::FieldInvalidOperation,
+      "Calendar moves require a date field",
+    ));
+  }
+  database_editor
+    .get_row_meta(&cell_id.view_id, &cell_id.row_id)
+    .await
+    .ok_or_else(FlowyError::record_not_found)?;
+  let cell = database_editor
+    .get_cell(&cell_id.field_id, &cell_id.row_id)
+    .await
+    .unwrap_or_default();
+  let existing = DateCellData::from(&cell);
+  let options = field
+    .get_type_option::<DateTypeOption>(FieldType::DateTime)
+    .unwrap_or_default();
+  let cell_changeset = hyper_calendar_move(
+    &existing,
+    &options.timezone_id,
+    data.timestamp,
+    data.end_timestamp,
+  )?;
   database_editor
     .update_cell_with_changeset(
       &cell_id.view_id,
@@ -1447,4 +1506,13 @@ pub(crate) async fn test_custom_prompt_database_configuration_handler(
     .await?;
 
   data_result_ok(configuration)
+}
+
+#[tracing::instrument(level = "debug", skip_all, err)]
+pub(crate) async fn hyper_update_row_activity_handler(
+  data: AFPluginData<HyperUpdateRowActivityPB>,
+  manager: AFPluginState<Weak<DatabaseManager>>,
+) -> DataResult<HyperRowActivityAckPB, FlowyError> {
+  let manager = upgrade_manager(manager)?;
+  data_result_ok(manager.hyper_update_row_activity(data.into_inner()).await?)
 }

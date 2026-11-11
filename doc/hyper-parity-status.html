@@ -1,0 +1,46 @@
+<section id="hyper-parity-status" aria-label="HyperTask feature status and roadmap">
+  <style>
+    #hyper-parity-status .modules { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; margin:16px 0 24px; }
+    #hyper-parity-status h3 { margin:0 0 8px; }
+    #hyper-parity-status p { margin:6px 0; }
+    #hyper-parity-status .state { color:var(--muted-foreground); }
+    #hyper-parity-status .route { list-style:none; margin:0; padding:0; }
+    #hyper-parity-status .route li { display:grid; grid-template-columns:28px minmax(0,1fr); gap:12px; padding:10px 0; }
+    #hyper-parity-status .route li + li { border-top:1px solid var(--border); }
+    #hyper-parity-status .step { color:var(--muted-foreground); }
+    #hyper-parity-status .connection { text-align:center; margin:16px 0; color:var(--muted-foreground); }
+    @media(max-width:560px) { #hyper-parity-status .modules { grid-template-columns:1fr; gap:14px; } }
+  </style>
+  <h2>Feature status</h2>
+  <p>Full feature parity is not complete.</p>
+  <div class="modules" role="group" aria-label="Three feature areas, each partly implemented">
+    <article>
+      <h3>Hyper Datasets</h3>
+      <p>Grid, board, calendar and row pages</p>
+      <p class="state">Partial · native checks pass</p>
+    </article>
+    <article>
+      <h3>Hyper AI Chat</h3>
+      <p>Streaming, context, model discovery and saved default</p>
+      <p class="state">Partial · local test provider checked</p>
+    </article>
+    <article>
+      <h3>Hyper Organization</h3>
+      <p>All docs, tags, collections and journals</p>
+      <p class="state">Partial · local/core checks pass</p>
+    </article>
+  </div>
+  <div class="connection" role="img" aria-label="The renderer sends events through Electron to the Rust core and workspace storage">
+    Renderer → Electron → Rust core → Workspace storage
+  </div>
+  <p>Latest full checkpoint: <span class="tabular-nums">1,627</span> tests passed in <span class="tabular-nums">265</span> files.</p>
+  <p>This check includes inline math, Markdown text, calendar week start, Time filters and filter groups.</p>
+  <hr>
+  <h2>Roadmap</h2>
+  <ol class="route">
+    <li><span class="step">1</span><div><h3>Verified · filter groups</h3><p>Child deletion, source preservation and All/Any controls pass native and interface checks.</p></div></li>
+    <li><span class="step">2</span><div><h3>Verified · whole app</h3><p>Core build, saved data, permissions, keyboard use and restart pass. The dev app is open.</p></div></li>
+    <li><span class="step">3</span><div><h3>Deliver this checkpoint</h3><p>Create a new branch. Commit all source changes. Push the branch and open a PR.</p></div></li>
+    <li><span class="step">4</span><div><h3>Continue feature parity</h3><p>Time-cell editing, remaining database tools, live cursors, diagrams, real AI providers, mobile and admin tools.</p></div></li>
+  </ol>
+</section>

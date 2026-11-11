@@ -45,6 +45,19 @@ pub enum CollabPluginProviderType {
   AppFlowyCloud,
 }
 
+/// An exclusive preparation for one exact collab instance. Only the builder can
+/// construct it, so finalization cannot accidentally pair another Arc's guard.
+pub struct HyperPreparedCollab<'a, T> {
+  collab: &'a Arc<RwLock<T>>,
+  write: tokio::sync::RwLockWriteGuard<'a, T>,
+}
+
+impl<T> HyperPreparedCollab<'_, T> {
+  pub fn value(&self) -> &T {
+    &self.write
+  }
+}
+
 pub enum CollabPluginProviderContext {
   Local,
   AppFlowyCloud {
@@ -310,8 +323,51 @@ impl AppFlowyCollabBuilder {
   where
     T: BorrowMut<Collab> + Send + Sync + 'static,
   {
+    // Preserve the existing synchronous API and its queue/try-lock ordering.
+    self.queue_collab_embed(&object, &collab);
+    let mut write_collab = collab.try_write()?;
+    self.initialize_locked_collab(object, build_config, &collab, &mut *write_collab)?;
+    drop(write_collab);
+    Ok(collab)
+  }
+
+  /// Wait outside any synchronous publication gate. Callers revalidate their
+  /// owner/revision after this await, then consume the token without relocking.
+  pub async fn prepare_finalization<'a, T>(
+    &self,
+    collab: &'a Arc<RwLock<T>>,
+  ) -> HyperPreparedCollab<'a, T>
+  where
+    T: BorrowMut<Collab> + Send + Sync + 'static,
+  {
+    HyperPreparedCollab {
+      collab,
+      write: collab.write().await,
+    }
+  }
+
+  pub fn finalize_prepared<T>(
+    &self,
+    object: CollabObject,
+    build_config: CollabBuilderConfig,
+    prepared: HyperPreparedCollab<'_, T>,
+  ) -> Result<Arc<RwLock<T>>, Error>
+  where
+    T: BorrowMut<Collab> + Send + Sync + 'static,
+  {
+    let HyperPreparedCollab { collab, mut write } = prepared;
+    self.queue_collab_embed(&object, collab);
+    self.initialize_locked_collab(object, build_config, collab, &mut *write)?;
+    drop(write);
+    Ok(collab.clone())
+  }
+
+  fn queue_collab_embed<T>(&self, object: &CollabObject, collab: &Arc<RwLock<T>>)
+  where
+    T: BorrowMut<Collab> + Send + Sync + 'static,
+  {
     let cloned_object = object.clone();
-    let weak_collab = Arc::downgrade(&collab);
+    let weak_collab = Arc::downgrade(collab);
     let weak_embedding_writer = self.embeddings_writer.clone();
     tokio::spawn(async move {
       if let Some(embedding_writer) = weak_embedding_writer.and_then(|w| w.upgrade()) {
@@ -320,12 +376,22 @@ impl AppFlowyCollabBuilder {
           .await;
       }
     });
+  }
 
-    let mut write_collab = collab.try_write()?;
-    let has_cloud_plugin = write_collab.borrow().has_cloud_plugin();
+  fn initialize_locked_collab<T>(
+    &self,
+    object: CollabObject,
+    build_config: CollabBuilderConfig,
+    collab: &Arc<RwLock<T>>,
+    write_collab: &mut T,
+  ) -> Result<(), Error>
+  where
+    T: BorrowMut<Collab> + Send + Sync + 'static,
+  {
+    let collab_value = <T as std::borrow::Borrow<Collab>>::borrow(write_collab);
+    let has_cloud_plugin = collab_value.has_cloud_plugin();
     if has_cloud_plugin {
-      drop(write_collab);
-      return Ok(collab);
+      return Ok(());
     }
 
     if build_config.sync_enable {
@@ -337,7 +403,7 @@ impl AppFlowyCollabBuilder {
       let _enter = span.enter();
       match provider_type {
         CollabPluginProviderType::AppFlowyCloud => {
-          let local_collab = Arc::downgrade(&collab);
+          let local_collab = Arc::downgrade(collab);
           let plugins = plugin_provider.get_plugins(CollabPluginProviderContext::AppFlowyCloud {
             uid: object.uid,
             collab_object: object,
@@ -346,16 +412,15 @@ impl AppFlowyCollabBuilder {
 
           // at the moment when we get the lock, the collab object is not yet exposed outside
           for plugin in plugins {
-            write_collab.borrow().add_plugin(plugin);
+            collab_value.add_plugin(plugin);
           }
         },
         CollabPluginProviderType::Local => {},
       }
     }
 
-    (*write_collab).borrow_mut().initialize();
-    drop(write_collab);
-    Ok(collab)
+    write_collab.borrow_mut().initialize();
+    Ok(())
   }
 
   /// Remove all updates in disk and write the final state vector to disk.
