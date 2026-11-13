@@ -139,7 +139,7 @@ The [browser regression](../scripts/HyperOpenBotBaseline.browser.test.mjs) repro
 HYPER_OPENBOT_TEST_CLIENT_ROOT=/absolute/path/to/OpenBot node --test scripts/HyperOpenBotBaseline.browser.test.mjs
 ```
 
-Use `PLAYWRIGHT_BROWSERS_PATH` for a private browser cache, or `HYPER_OPENBOT_TEST_BROWSER` for a specific Chromium executable. This one browser test passed locally with Playwright core 1.62.1 and system Chrome 156.0.8078.47, with no skips. It uses a DOM fixture and establishes no live OpenBot, Intelligence or provider acceptance.
+Use `PLAYWRIGHT_BROWSERS_PATH` for a private browser cache, or `HYPER_OPENBOT_TEST_BROWSER` for a specific Chromium executable. This one browser test passed locally with Playwright core 1.62.1 and system Chrome 156.0.8078.47, with no skips. It also passed on the prepared baseline host with Node 22.23.5 and pinned Chromium 151.0.7922.34, revision 1234. The corrected runner is staged there from commit `a2860f3`, with its path and verified hash in the preparation manifest. These checks use a DOM fixture and establish no live OpenBot, Intelligence or provider acceptance.
 
 ## Acceptance evidence
 

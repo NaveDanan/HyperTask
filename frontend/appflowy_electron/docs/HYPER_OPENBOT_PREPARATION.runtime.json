@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-13T17:38:03Z",
+  "recordedAt": "2026-11-13T17:43:36Z",
   "status": "prepared_accounts_required",
   "evidenceScope": "Observed preparation only. No live application acceptance or reproducible rebuild is claimed.",
   "source": {
@@ -134,11 +134,23 @@
     "selection": "Retained reference only; matching-source local harness is now built."
   },
   "runner": {
-    "commit": "c2dff15f9dd7c9e934bc1e46c376e2fda6189b39",
-    "sha256": "6e1a0fd3073e063d8fde831110d4d0aa36831a390cee19a4a3a0dc138857ddb1",
+    "commit": "a2860f3a4c417336fdc5706b380a4279e3a96787",
+    "sha256": "fa64b3fb2b5b45a66c6c987acfd3446341b4c1b6016ff62a0adf1263f1380f6d",
+    "path": "/home/naved/.local/share/hypertask-openbot-baseline/evidence/runner-a2860f3/HyperOpenBotBaseline.mjs",
+    "directoryMode": "0700",
+    "fileMode": "0600",
+    "syntax": "pass",
     "help": "pass",
     "liveExecution": "not_run",
-    "replacementNeeded": "Use the PR transcript-row comparison fix before live acceptance; this records the earlier runner prepared on the host."
+    "browserRegression": {
+      "result": "pass",
+      "testCount": 1,
+      "skipped": 0,
+      "node": "22.23.5",
+      "chromium": "151.0.7922.34",
+      "chromiumRevision": 1234,
+      "scope": "DOM fixture only; no live application or provider acceptance"
+    }
   },
   "accountState": {
     "copilotkit": "signed_in",
