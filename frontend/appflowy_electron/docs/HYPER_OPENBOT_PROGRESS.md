@@ -11,9 +11,9 @@ Updated: 2026-11-13.
 - Preserve HyperTask's design system, existing workflows, data paths, credentials and AppFlowy protocol compatibility.
 - Record source pins, validation, review findings, PR links and merge commits here as each step finishes. Do not record secrets.
 
-## Current step: issue #3
+## Completed: issue #3
 
-Status: audit delivered in [PR #9](https://github.com/NaveDanan/HyperTask/pull/9); awaiting Codex review and merge. No runtime changes and no merge yet.
+Status: [PR #9](https://github.com/NaveDanan/HyperTask/pull/9) merged as `1b7c23f7c8ff18b08b60f3371b8f90120708f744`. Issue #3 is closed and its epic checkbox is complete. The merged audit changes no runtime behavior.
 
 - HyperTask main inspected at `2a5bbd3c5027f3b121d3ef010d806fca0f03bcb9`.
 - PR #1 inspected at `5b58eb5f164f932d631c0eb013bfce15a516a134`. It contains one commit changing 731 files, with 92,476 insertions and 2,424 deletions.
@@ -24,17 +24,27 @@ Status: audit delivered in [PR #9](https://github.com/NaveDanan/HyperTask/pull/9
 - OpenBot source pin: `f8af37ab73e96784f174a11104505a965e722cab`. This is a research pin, not a tested release. Keep original Intelligence in phase 1.
 - Read-only environment checks found Bun 1.3.11, below upstream's documented 1.4+ requirement, and no Docker executable. Local Intelligence platform support, entitlement, images and model credentials remain unverified. Resolve them during #4; no live streaming or persistence acceptance is claimed.
 - Follow-up primary-documentation check clarified that the Intelligence CLI accepts Linux with rootful Docker, although runtime evaluation there is outside the supported preview. A licensed local Kubernetes/k3d path is also documented. Neither has been provisioned or validated; the audit distinguishes these paths from the supported macOS preview.
-- Review checkpoint: Codex code and security reviews completed without findings on `6337aca`. CodeRabbit requested clearer dependency-authorization wording. The audit now states that it adds no packages or blanket exception and that #5 must document exact required imports/dependencies against the redesign constraints; no new permission gate is inferred from the tracking epic. Request a fresh Codex review after this correction.
+- Final reviewed head: `da27fac526701addab852d8e303ce9694eb77933`. Codex code and security reviews completed without findings. CodeRabbit independently confirmed the dependency-authorization wording correction and resolved its thread. The correctness check passed; the remaining check completed neutral. The audit adds no packages or blanket exception, and #5 must document exact required imports/dependencies against the redesign constraints.
 - Read-only capacity check: the current host has 8 logical CPUs, 7.4 GiB total RAM and about 5.1 GiB free disk. Original Intelligence local evaluation documents at least 12 GiB RAM and 40 GiB free disk, so Docker installation alone is insufficient. Candidate linked hosts are being checked read-only; no baseline services have been provisioned.
 - Completed separate upstream research and standards/spec inspections with GPT-6.1 Terra, high effort, priority tier. Findings were checked against source before consolidation. No runtime tests were performed for this audit.
 - Validation: all 67 local documentation and immutable source links resolve against the corresponding pinned checkouts; staged `git diff --check` passed. Changes are limited to this record, the architecture note and a status-document link.
+
+## Current step: issue #4
+
+Status: original-service baseline preparation in progress, after the #3 merge. No live send/stream/persistence/restart acceptance yet, and no PR for #4 yet. HyperTask runtime and user data remain unchanged.
+
+- Working branch `hyper/openbot-local-baseline` starts from the verified #9 merge.
+- The current Linux host cannot meet the original Intelligence local-evaluation RAM/disk requirements. Read-only linked-host preflights found a Windows/WSL candidate with 31.9 GiB RAM and more than 140 GiB free on each checked drive. Ubuntu is registered under WSL2; Docker Desktop, CLI and Compose are installed. Guest allocation and engine readiness require verification before provisioning.
+- The linked MMEMS host has Docker/Compose and 15 GiB RAM but only 28 GiB free on root and 23 GiB on Docker's filesystem. Its existing Kubernetes cluster is not a provisioned baseline; capacity and entitlement remain unverified. No workloads were created there.
+- A separate OpenBot baseline project was cloned and registered on the Windows host at `D:\pythonprojects\HyperTask-OpenBot-baseline`. This is isolated from existing HyperTask workspaces. Preserve the audited upstream pin and source files; keep configuration/secrets outside tracked files.
+- Next: establish the original-service deployment path and tool/runtime pins, verify resources and health, configure one real model, then exercise the original client through send/stream/save/restart/reopen. Record exact results and limitations. Do not close #4 or start #5 on a mock, managed-Intelligence substitution or unverified setup.
 
 ## Queue
 
 | Issue | Deliverable | State |
 | --- | --- | --- |
-| [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | PR #9 awaiting review/merge |
-| [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Waiting for #3 merge |
+| [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | Merged in PR #9 |
+| [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | In progress |
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | Waiting for #4 |
 | [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | Waiting for #5 |
 | [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Waiting for #6 |
