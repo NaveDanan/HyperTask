@@ -31,7 +31,7 @@ Status: [PR #9](https://github.com/NaveDanan/HyperTask/pull/9) merged as `1b7c23
 
 ## Current step: issue #4
 
-Status: original-service baseline preparation in progress, after the #3 merge. No live send/stream/persistence/restart acceptance yet, and no PR for #4 yet. HyperTask runtime and user data remain unchanged.
+Status: original-service baseline preparation in progress in [draft PR #10](https://github.com/NaveDanan/HyperTask/pull/10), after the #3 merge. No live send/stream/persistence/restart acceptance yet. HyperTask runtime and user data remain unchanged.
 
 - Working branch `hyper/openbot-local-baseline` starts from the verified #9 merge.
 - The current Linux host cannot meet the original Intelligence local-evaluation RAM/disk requirements. Read-only linked-host preflights found a Windows/WSL candidate with 31.9 GiB RAM and more than 140 GiB free on each checked drive. Ubuntu is registered under WSL2; Docker Desktop, CLI and Compose are installed. Guest allocation and engine readiness require verification before provisioning.
@@ -40,13 +40,14 @@ Status: original-service baseline preparation in progress, after the #3 merge. N
 - Next: establish the original-service deployment path and tool/runtime pins, verify resources and health, configure one real model, then exercise the original client through send/stream/save/restart/reopen. Record exact results and limitations. Do not close #4 or start #5 on a mock, managed-Intelligence substitution or unverified setup.
 - [HYPER_OPENBOT_BASELINE.md](HYPER_OPENBOT_BASELINE.md) drafts the original-client procedure and evidence requirements. Source inspection confirmed upstream e2e defaults to aimock replay, while the smoke suite does not prove live chat or restart. Neither may substitute for this issue's live proof. The guide's acceptance rows remain explicitly pending.
 - Upstream lifecycle inspection found host API exposure and cleanup operations outside Compose project scoping. The provisioning task must verify loopback listeners and owned processes/containers, and preserve both OpenBot and Intelligence data during restart.
+- Procedure validation: all 23 local and immutable source links in the baseline guide/progress record resolve; `git diff --check` passed. These documentation checks do not satisfy live baseline acceptance. PR #10 remains draft until runtime evidence and current-head Codex review are complete.
 
 ## Queue
 
 | Issue | Deliverable | State |
 | --- | --- | --- |
 | [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | Merged in PR #9 |
-| [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | In progress |
+| [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Draft PR #10; live evidence pending |
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | Waiting for #4 |
 | [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | Waiting for #5 |
 | [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Waiting for #6 |
