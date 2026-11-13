@@ -2,6 +2,8 @@
 
 Milestone 1 (foundation and app shell) is in place. The document editor, databases and AI chat are later milestones; their pages open with a placeholder body, while their tabs, headers and menus are real.
 
+The planned OpenBot integration is tracked in [epic #2](https://github.com/NaveDanan/HyperTask/issues/2). The [baseline audit](HYPER_OPENBOT_AUDIT.md) records the architecture and PR #1 reuse decision; the [progress record](HYPER_OPENBOT_PROGRESS.md) tracks review and delivery. This planning work does not implement chat or change the capabilities listed below.
+
 ## Done
 
 **Local tools**
