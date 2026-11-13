@@ -75,11 +75,19 @@ After CopilotKit sign-in, the account holder must read and accept its local eval
 
 [HyperOpenBotAccountSetup.sh](../scripts/HyperOpenBotAccountSetup.sh) prepares only that human terms step. It selects the existing private baseline tools/daemon, invokes the exact pinned `npx --prefer-offline --yes copilotkit@4.34.0 local accept-terms` command, and leaves the agreement choice to the person. It captures no credentials, automatically submits no consent, and creates no application stack. Run it in an interactive Ubuntu terminal on the prepared Windows host after its installation there. `bash -n` and its help check passed; it was not run end-to-end by the agent.
 
-The helper is installed at `/home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh`, with its hash recorded in the preparation manifest. After sign-in, run:
+The prepared helper, account session and private Docker daemon belong to Windows computer `NAVED`, in its `Ubuntu` WSL 2 distro as user `naved`. Open your own PowerShell terminal on that Windows computer and run:
+
+```powershell
+wsl.exe --distribution Ubuntu --user naved --exec bash /home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh
+```
+
+The exact PowerShell launch route passed `--help`; the installed helper also passed `bash -n`, and its hash matches the preparation manifest. The agreement was not run by the agent. If your terminal is already inside that computer's Ubuntu distro as `naved`, use:
 
 ```sh
 bash /home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh
 ```
+
+A HyperTask checkout on another machine has its own filesystem. A `no such file or directory` error there means the command needs to run on the prepared Windows host; copying the helper alone would not provide that host's tools or account session.
 
 After the person's action, verify `onboard local-terms --json` reports acceptance for the actual signed-in user/organization before provisioning. A typed acknowledgment alone is not that verification. Sign-in and terms completion still do not prove model access, license issuance, service health or any live acceptance row below.
 
