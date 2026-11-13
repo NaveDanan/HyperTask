@@ -13,7 +13,7 @@ Updated: 2026-11-13.
 
 ## Current step: issue #3
 
-Status: audit written; preparing its documentation-only PR and Codex review. No runtime changes and no merge yet.
+Status: audit delivered in [PR #9](https://github.com/NaveDanan/HyperTask/pull/9); awaiting Codex review and merge. No runtime changes and no merge yet.
 
 - HyperTask main inspected at `2a5bbd3c5027f3b121d3ef010d806fca0f03bcb9`.
 - PR #1 inspected at `5b58eb5f164f932d631c0eb013bfce15a516a134`. It contains one commit changing 731 files, with 92,476 insertions and 2,424 deletions.
@@ -30,7 +30,7 @@ Status: audit written; preparing its documentation-only PR and Codex review. No 
 
 | Issue | Deliverable | State |
 | --- | --- | --- |
-| [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | In progress |
+| [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | PR #9 awaiting review/merge |
 | [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Waiting for #3 merge |
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | Waiting for #4 |
 | [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | Waiting for #5 |
