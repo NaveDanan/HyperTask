@@ -1,0 +1,102 @@
+# Hyper OpenBot local baseline
+
+Tracking: [issue #4](https://github.com/NaveDanan/HyperTask/issues/4), following the merged [baseline audit](HYPER_OPENBOT_AUDIT.md). Updated 2026-11-13.
+
+Status: preparation in progress. This document records the source-backed procedure and required evidence. It does not claim a running stack, working model, streamed reply or durable conversation. Runtime pins and measured results must be added after provisioning and execution. [Progress](HYPER_OPENBOT_PROGRESS.md) records the current delivery state.
+
+## Scope and source
+
+Run original OpenBot with original CopilotKit Intelligence in an isolated local test environment. Keep its server, runtime, agent, worker and persistence contracts intact. HyperTask's renderer, Rust core, credentials and workspace data are outside this baseline's write scope. A successful baseline is a prerequisite for embedding the chat in #5, not evidence that integration is already implemented.
+
+OpenBot source pin: `f8af37ab73e96784f174a11104505a965e722cab`. This remains a research pin until the live procedure succeeds. The source is MIT, copyright 2026 CopilotKit; preserve its notices. Intelligence images/services have separate entitlement requirements. See the pinned [license](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/LICENSE), [setup guide](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/README.md#source-setup) and [environment contract](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/.env.example).
+
+| Input | Required record | Current evidence |
+| --- | --- | --- |
+| OpenBot | Full source SHA and pristine tracked files | Source pin inspected; runtime validation pending |
+| Bun | Exact installed version compatible with the lockfile | Upstream package manager pins `1.4.3`; target installation pending |
+| CopilotKit CLI | Exact package version and installation source | Not established; do not use a floating CLI as the final reproducibility record |
+| Intelligence | Original release/chart version, image digests, API/gateway addresses and valid entitlement | Not established |
+| OpenBot images and PostgreSQL | Image IDs/digests or exact build inputs | Compose contains mutable tags; runtime identities must be captured |
+| Model and agent | Actual provider destination, model and Bot ID | Not configured or exercised |
+| Persistence | Test-specific volumes/data directories for both OpenBot and Intelligence | Not established |
+
+The [root package manifest](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/package.json) and [lockfile](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/bun.lock) pin source dependencies. They do not pin container images or prove that a model or Intelligence installation works.
+
+## Host and isolation
+
+The original local-evaluation guide documents at least 4 CPUs, 12 GiB RAM and 40 GiB free disk. Its supported preview is macOS/Docker Desktop; the CLI accepts Linux/rootful Docker while Linux runtime evaluation remains outside that supported preview. Windows native CLI operation is unsupported. A licensed original Kubernetes/k3d installation is a separate documented option. See [local evaluation](https://docs.copilotkit.ai/intelligence/self-hosting-local) and [self-hosting](https://docs.showcase.copilotkit.ai/intelligence/self-hosting), checked 2026-11-13.
+
+The current Linux development machine has insufficient RAM/disk and no Docker. A separate OpenBot project was cloned and registered at `D:\pythonprojects\HyperTask-OpenBot-baseline` on the linked Windows host. Its physical capacity is sufficient; WSL allocation, Docker engine readiness, supported deployment path and service resources still require verification. Do not confuse installed Docker client tooling with a working daemon or a healthy stack.
+
+Use a unique test deployment identity, ports, configuration and persistence. Verify actual listeners remain loopback-only, including the host side of WSL/Docker forwarding. Never reuse HyperTask's support directory or native chat databases. Preserve volumes and configuration during the restart test. Do not delete existing containers, disks or user files to make room.
+
+The original [Compose file](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/docker-compose.yml) separates the database network from agent computers and supports a containerized `openbot` profile with server/worker services. Keep those boundaries. Record the selected profile/services and the resolved project identity; do not merely assume a directory name isolates every upstream resource.
+
+## Configuration and secret handling
+
+Use upstream configuration without editing its source. Keep private configuration and credentials untracked. Record variable names and sanitized addresses, never credential values or full expanded Compose configuration. The test deployment must point to original **local** Intelligence; the managed URLs in `.env.example` do not satisfy this issue.
+
+| Concern | Upstream settings | Required verification |
+| --- | --- | --- |
+| Intelligence | `INTELLIGENCE_API_URL`, `INTELLIGENCE_GATEWAY_WS_URL`, `CPK_INTELLIGENCE_API_KEY`; deployment-specific `COPILOTKIT_LICENSE_TOKEN` | Local API/gateway identity, entitlement and health; no silent managed fallback |
+| Model | `BOT_PROVIDER`, `BOT_MODEL` and the selected provider credential/configuration | Real endpoint and actual model answer; no replay or fake key acceptance |
+| OpenBot data/vault | `DATABASE_URL`, `KEY_ENCRYPTION_KEY` | Isolated PostgreSQL and non-public test vault key retained across restart |
+| Agent/computer/worker | `COMPUTER_TOKEN`, `SUPERVISOR_TOKEN`, `MANAGED_AGENT_TOKEN`, `AGENT_TOOL_TOKEN`, `WORKER_SHARED_SECRET` as required by the selected services | Generated private values scoped to this deployment; server-side authorization retained |
+| Identity/origin | `OPENBOT_SINGLE_USER`, `TRUSTED_ORIGINS`, and Better Auth settings where applicable | Same actor/session throughout; loopback-only single-user mode; no arbitrary-origin bypass |
+| Ports | `APP_PORT`, `PORT`/`SERVER_PORT`, `POSTGRES_PORT` and selected agent/computer/supervisor ports | Actual listener addresses, collisions and service identity, not just an HTTP 200 |
+
+OpenBot's provider uses `credentials="include"`; keep the original session behavior. Do not treat a random bearer token as a substitute for a Better Auth session. Single-user mode uses its own access checks. Intelligence runtime keys and model keys remain server-side. The [provider](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/app/src/lib/copilot/provider.tsx) and [server mounting/guards](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/server/src/app.ts) define these contracts.
+
+## Startup, shutdown and recovery
+
+The selected deployment's exact tested commands, tool paths, ports, health responses and data locations are not established yet. Capture them during provisioning before treating this as a reproducible runbook.
+
+The source setup documents `bash scripts/start.sh` and `bash scripts/stop.sh`. Inspect their ownership behavior before using them on a shared host:
+
+- The start script runs host API/worker/app processes as well as Compose services. A host API listener must be checked for non-loopback exposure.
+- The stop script matches some workers by command pattern and finds supervisor computers using a shared label. A Compose project name alone does not scope every cleanup action in that script.
+- In an isolated containerized deployment, record the exact original services and project-scoped lifecycle commands instead. Preserve volumes for normal stop/start; do not use volume deletion as recovery.
+
+These constraints come from the pinned [start script](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/scripts/start.sh) and [stop script](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/scripts/stop.sh). They do not authorize modifying unrelated OpenBot installations. Original Intelligence has its own lifecycle and persistent data, which must also be identified and retained.
+
+If startup fails, retain sanitized failure logs and the exact failed stage. Resume the same installation where supported; do not reset its data, replace Intelligence or label an unavailable service as an empty conversation. Never include session cookies, license values, model keys, one-time sign-in links or secret-bearing network captures in evidence.
+
+## Live conversation and restart procedure
+
+Use the original OpenBot browser app/reference client against the selected original deployment and a real provider. Keep the same person, deployment, Bot and conversation across the test. Use disposable content with a unique baseline token. A plain-text request avoids needing browser/tool actions or policy changes for this first proof.
+
+1. Select one available Bot and send the unique prompt through the original composer. The upstream helpers use the `Message` textbox and `Send message` button. A new conversation opens at `/channel/<channelId>`; record its actual ID and the prompt.
+2. Observe the answer while it arrives. Record ordered live `RUN_STARTED`, at least two nonempty `TEXT_MESSAGE_CONTENT` deltas for the same answer, and `RUN_FINISHED`, with observation times and run/message IDs where present. Join the deltas in order and compare the result with the original transcript. A final answer, stored event list or replay is insufficient to prove incremental arrival. If buffering produces only one observed delta, record the limitation and repeat a suitable live prompt before claiming streaming verified.
+3. With the same original session, read `GET /api/channels/<channelId>` and retain `channel.id`, `channel.threadId` and `channel.agentIds`. Stored events from `GET /api/copilotkit/threads/<threadId>/events` can corroborate the run after they settle; they do not replace the live observation.
+4. Read `GET /api/copilotkit/threads/<encodedThreadId>/messages?agentId=<encodedBotId>`. Record the HTTP status and authoritative user/assistant message IDs, roles and text. Verify the prompt and full answer agree with the UI and assembled stream. Missing, malformed or unreadable history fails this check; it is not a successful empty result.
+5. Stop and start the same original OpenBot and Intelligence deployment using the recorded, scoped procedure, preserving both sets of stores/configuration. Record UTC times, commands, exit statuses and persistent-store identities. A browser reload alone does not establish process-restart durability.
+6. Reauthenticate as the same person if needed, reopen the same channel, and repeat channel and authoritative history reads. Require the same thread and Bot mapping and the same saved prompt/answer with matching message IDs where returned. Confirm the original UI displays them. Do not send a replacement message to manufacture readback.
+
+The original creation contract is `POST /api/channels` with `{"agentIds":["<botId>"]}`, returning HTTP 201 and `{channel: ...}`. The app binds its CopilotKit agent to that channel's thread and invokes the original run path. Prefer exercising that app rather than building a partial replacement chat client. Source references: [channel mutations](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/app/src/lib/channels/mutations.ts), [chat helpers](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/e2e/journeys/chat.ts), [core-loop journey](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/e2e/journeys/core-loop.journey.ts), [history reader](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/app/src/lib/copilot/thread-messages.ts) and [channel chat](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/app/src/components/channels/channel-chat.tsx).
+
+## What upstream tests prove
+
+| Test path | Useful coverage | Limit for this baseline |
+| --- | --- | --- |
+| `bun run test:smoke` | Running deployment capabilities, licensing/agent visibility, computer/policy/audit actions | Does not prove live model chat, incremental response or restart durability. Some cases change policy and browse an external site; plain-chat acceptance does not need those actions. Running smoke files without their opt-in skips them. |
+| `bun run test:e2e` | Original browser journeys and UI contracts in an isolated harness | Uses strict aimock replay and dummy model keys by default. A replay pass is not real-provider acceptance. |
+| `bun run test:e2e:record` | Live provider-backed recording of the original journeys | Uses its own fresh stack/proxy and writes fixtures. It does not automatically prove this deployment's persistence across restart. |
+| Health/configuration checks | Service identity and prerequisites | A configured endpoint, HTTP 200 or licensed runtime alone is not a completed conversation. |
+
+See the pinned [smoke suite](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/tests/smoke/journey.test.ts), [e2e guide](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/e2e/README.md), [stack harness](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/e2e/harness/stack.ts) and [aimock modes](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/e2e/harness/aimock.ts). Report skips, replay mode and failures explicitly.
+
+## Acceptance evidence
+
+All rows below are unverified. Replace them only with actual observed results and sanitized evidence references.
+
+| Requirement | Evidence needed | State |
+| --- | --- | --- |
+| Original local services | Source/runtime/image pins, local Intelligence identity and health | Pending |
+| One real agent/model | Provider destination, Bot/model IDs and a genuine completed run | Pending |
+| Incremental delivery | Timestamped live deltas and assembled answer matching the UI | Pending |
+| Authoritative saved history | Before-restart channel/thread mapping and saved user/assistant messages | Pending |
+| Restart durability | Actual service stop/start with retained stores and matching post-restart history/UI | Pending |
+| Reproducible operation | Exact setup/start/stop/recovery commands, ports, configuration names and limitations | Pending |
+| Isolation | Loopback listeners, scoped resources and unchanged upstream source/HyperTask data | Pending |
+
+Do not close #4, merge a PR as completed baseline work, or begin #5 until the actual acceptance evidence, review and merge gates are satisfied. If platform, entitlement or model access blocks execution, record the completed setup and precise blocker while leaving the issue incomplete.

@@ -38,6 +38,8 @@ Status: original-service baseline preparation in progress, after the #3 merge. N
 - The linked MMEMS host has Docker/Compose and 15 GiB RAM but only 28 GiB free on root and 23 GiB on Docker's filesystem. Its existing Kubernetes cluster is not a provisioned baseline; capacity and entitlement remain unverified. No workloads were created there.
 - A separate OpenBot baseline project was cloned and registered on the Windows host at `D:\pythonprojects\HyperTask-OpenBot-baseline`. This is isolated from existing HyperTask workspaces. Preserve the audited upstream pin and source files; keep configuration/secrets outside tracked files.
 - Next: establish the original-service deployment path and tool/runtime pins, verify resources and health, configure one real model, then exercise the original client through send/stream/save/restart/reopen. Record exact results and limitations. Do not close #4 or start #5 on a mock, managed-Intelligence substitution or unverified setup.
+- [HYPER_OPENBOT_BASELINE.md](HYPER_OPENBOT_BASELINE.md) drafts the original-client procedure and evidence requirements. Source inspection confirmed upstream e2e defaults to aimock replay, while the smoke suite does not prove live chat or restart. Neither may substitute for this issue's live proof. The guide's acceptance rows remain explicitly pending.
+- Upstream lifecycle inspection found host API exposure and cleanup operations outside Compose project scoping. The provisioning task must verify loopback listeners and owned processes/containers, and preserve both OpenBot and Intelligence data during restart.
 
 ## Queue
 
