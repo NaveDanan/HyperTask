@@ -117,6 +117,8 @@ async function run({ phase, options, origin }) {
   try {
     try { browser = await chromium.launch(); } catch { fail('Prerequisite missing: Playwright Chromium is unavailable'); }
     const context = await browser.newContext(options['storage-state'] ? { storageState: options['storage-state'] } : {});
+    context.setDefaultTimeout(30_000);
+    context.setDefaultNavigationTimeout(30_000);
     const page = await context.newPage();
     await page.goto(origin, { waitUntil: 'domcontentloaded' });
     if (new URL(page.url()).origin !== origin) fail('App redirected away from the loopback origin');
