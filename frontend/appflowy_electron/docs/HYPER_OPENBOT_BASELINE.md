@@ -13,12 +13,14 @@ OpenBot source pin: `f8af37ab73e96784f174a11104505a965e722cab`. This remains a r
 | Input | Required record | Current evidence |
 | --- | --- | --- |
 | OpenBot | Full source SHA and pristine tracked files | Source pin inspected; runtime validation pending |
-| Bun | Exact installed version compatible with the lockfile | Upstream package manager pins `1.4.3`; target installation pending |
-| CopilotKit CLI | Exact package version and installation source | Not established; do not use a floating CLI as the final reproducibility record |
+| Bun | Exact installed version compatible with the lockfile | `1.4.3` installed in a baseline-specific Ubuntu user directory; frozen dependency installation is incomplete |
+| CopilotKit CLI | Exact package version and installation source | `4.34.0` installed in the isolated tools directory; its first engine check rejected Docker Desktop presented from Linux |
 | Intelligence | Original release/chart version, image digests, API/gateway addresses and valid entitlement | Not established |
 | OpenBot images and PostgreSQL | Image IDs/digests or exact build inputs | Compose contains mutable tags; runtime identities must be captured |
 | Model and agent | Actual provider destination, model and Bot ID | Not configured or exercised |
 | Persistence | Test-specific volumes/data directories for both OpenBot and Intelligence | Not established |
+
+Node.js `22.23.5` was also installed in the baseline-specific Ubuntu tools directory. These are installed tool versions, not proof of a working runtime. Exact download checksums and commands will be consolidated from the provisioning record before reproducibility is claimed.
 
 The [root package manifest](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/package.json) and [lockfile](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/bun.lock) pin source dependencies. They do not pin container images or prove that a model or Intelligence installation works.
 
@@ -27,6 +29,8 @@ The [root package manifest](https://github.com/CopilotKit/OpenBot/blob/f8af37ab7
 The original local-evaluation guide documents at least 4 CPUs, 12 GiB RAM and 40 GiB free disk. Its supported preview is macOS/Docker Desktop; the CLI accepts Linux/rootful Docker while Linux runtime evaluation remains outside that supported preview. Windows native CLI operation is unsupported. A licensed original Kubernetes/k3d installation is a separate documented option. See [local evaluation](https://docs.copilotkit.ai/intelligence/self-hosting-local) and [self-hosting](https://docs.showcase.copilotkit.ai/intelligence/self-hosting), checked 2026-11-13.
 
 The current Linux development machine has insufficient RAM/disk and no Docker. A separate OpenBot project was cloned and registered at `D:\pythonprojects\HyperTask-OpenBot-baseline` on the linked Windows host. Its physical capacity is sufficient; WSL allocation, Docker engine readiness, supported deployment path and service resources still require verification. Do not confuse installed Docker client tooling with a working daemon or a healthy stack.
+
+The pinned [Windows/WSL development instructions](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/docs/development.md#windows-wsl-2) require Docker Engine and Compose inside Ubuntu and a source directory in the Ubuntu home filesystem. The first attempt started Docker Desktop but found no native Ubuntu engine/socket; CopilotKit rejected that Desktop engine when invoked from Linux. No OpenBot/Intelligence services, containers, volumes or clusters were created. Follow-up work is establishing the documented WSL-native engine path without patching upstream checks. An original CLI-managed disposable local cluster is part of this isolated baseline's scope; existing shared clusters remain outside it.
 
 Use a unique test deployment identity, ports, configuration and persistence. Verify actual listeners remain loopback-only, including the host side of WSL/Docker forwarding. Never reuse HyperTask's support directory or native chat databases. Preserve volumes and configuration during the restart test. Do not delete existing containers, disks or user files to make room.
 
@@ -84,6 +88,32 @@ The original creation contract is `POST /api/channels` with `{"agentIds":["<botI
 | Health/configuration checks | Service identity and prerequisites | A configured endpoint, HTTP 200 or licensed runtime alone is not a completed conversation. |
 
 See the pinned [smoke suite](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/tests/smoke/journey.test.ts), [e2e guide](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/e2e/README.md), [stack harness](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/e2e/harness/stack.ts) and [aimock modes](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/e2e/harness/aimock.ts). Report skips, replay mode and failures explicitly.
+
+## Focused original-client runner
+
+[HyperOpenBotBaseline.mjs](../scripts/HyperOpenBotBaseline.mjs) drives the original app using the Playwright installation in an existing OpenBot checkout. It adds no HyperTask package dependency and starts no runtime services. The operator must supply an actual running local stack, configured Bot and the same original session where sign-in is required.
+
+Run the `before` phase from the directory containing the runner, using an absolute source root and new output path:
+
+```sh
+node HyperOpenBotBaseline.mjs before --url http://127.0.0.1:3010 --client-root /absolute/path/to/OpenBot --bot-id ACTUAL_BOT_ID --output /private/test-evidence/before.json
+```
+
+Perform and record the actual scoped restart of **both** OpenBot and Intelligence with their stores preserved. Then run:
+
+```sh
+node HyperOpenBotBaseline.mjs after --url http://127.0.0.1:3010 --client-root /absolute/path/to/OpenBot --before /private/test-evidence/before.json --output /private/test-evidence/after.json
+```
+
+Use the tested app port rather than the example port above. A signed-in deployment can use `--storage-state /private/path/session.json`; this is an existing private Playwright session file, never a committed artifact. The output parent directory must already exist. Output files are exclusively created with private permissions; a failed attempt may leave an empty file, so use a new path when retrying. A nonzero exit or empty artifact is not acceptance.
+
+The runner ties live events to the original client's submitted run/user message, a fresh channel and the resulting saved assistant message. It requires multiple distinct delivery observations and rejects unavailable/malformed history, wrong identity, incomplete runs and post-finish events. It compares authoritative message IDs and text again in the `after` phase without resending.
+
+Transport parsing covers direct AG-UI frames and Phoenix v2 `ag_ui_event` frames, matching CopilotKit core `1.85.0` from the source lockfile. Inspection used its [exact npm artifact](https://registry.npmjs.org/@copilotkit/core/-/core-1.85.0.tgz), verified against the lockfile's SHA-512 integrity. Join replies, batched event histories, unknown envelopes and binary payloads do not establish streaming proof. Gateway topics and authentication fields are not written to the evidence. Other transport modes remain unverified until exercised against the actual runtime.
+
+Artifacts explicitly state that provider authenticity and service restart are **not verified by the runner**. The `after` artifact labels its stream events as copied from the before capture. A successful pair of commands verifies narrow original-client observations; independent deployment/provider and real lifecycle evidence remains required for #4.
+
+The focused [runner tests](../scripts/HyperOpenBotBaseline.test.mjs) check envelope handling, distinct delivery/run boundaries, history failures and artifact field filtering. Run them with `node --test scripts/HyperOpenBotBaseline.test.mjs` from `frontend/appflowy_electron`. Five tests passed locally, with no skips; `--help` also passed. These unit tests are not a live runtime test.
 
 ## Acceptance evidence
 
