@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-13T17:17:16.805639+00:00",
+  "recordedAt": "2026-11-13T17:38:03Z",
   "status": "prepared_accounts_required",
   "evidenceScope": "Observed preparation only. No live application acceptance or reproducible rebuild is claimed.",
   "source": {
@@ -31,14 +31,13 @@
     "linuxIntelligenceRuntimeSupport": "Accepted CLI engine path; outside the supported macOS preview; application runtime not validated."
   },
   "paths": {
-    "source": "/mnt/d/pythonprojects/HyperTask-OpenBot-baseline",
+    "source": "/home/naved/HyperTask-OpenBot-baseline",
     "tools": "/home/naved/.local/share/hypertask-openbot-baseline",
     "dockerData": "/home/naved/.local/share/hypertask-openbot-baseline/docker/data",
     "dockerSocket": "/home/naved/.local/share/hypertask-openbot-baseline/docker/run/docker.sock",
     "dockerConfig": "/home/naved/.local/share/hypertask-openbot-baseline/docker/config",
     "browserCache": "/home/naved/.local/share/hypertask-openbot-baseline/playwright",
-    "nextWorkingSource": "/home/naved/HyperTask-OpenBot-baseline",
-    "nextWorkingSourceState": "Cloned and registered through T3; exact pin/dependency install to be checked before use. Prior measured builds/install used source under /mnt/d."
+    "previousPreparationSource": "/mnt/d/pythonprojects/HyperTask-OpenBot-baseline"
   },
   "tools": {
     "bun": {
@@ -94,8 +93,15 @@
   "dependencyInstall": {
     "command": "bun install --frozen-lockfile",
     "result": "pass",
-    "packageCount": 891,
-    "elapsedSeconds": 527.37
+    "source": "/home/naved/HyperTask-OpenBot-baseline",
+    "packageCount": 1366,
+    "elapsedSeconds": 3.13,
+    "previousInstall": {
+      "source": "/mnt/d/pythonprojects/HyperTask-OpenBot-baseline",
+      "result": "pass",
+      "packageCount": 891,
+      "elapsedSeconds": 527.37
+    }
   },
   "images": [
     {
@@ -109,6 +115,14 @@
     {
       "tag": "hypertask-openbot-baseline-supervisor:f8af37ab",
       "localImageId": "sha256:05fa50a811e3389cde0cb10b4c7ef98145edc66f3d22a399599e5ea272a929c0"
+    },
+    {
+      "tag": "hypertask-openbot-baseline-langgraph-agui:f8af37ab",
+      "localImageId": "sha256:cc12a24f739a7b42a907c29babf90453989e7e7823c88dc2549e34a2edf2d14c",
+      "sourceCommit": "f8af37ab73e96784f174a11104505a965e722cab",
+      "resolvedBase": "python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
+      "resolvedPythonPackageCount": 70,
+      "privatePythonFreezeSha256": "9aee2c52640945761d11cad7f8fb136e21cb26ce30fc77fb3135c2ada571e448"
     }
   ],
   "pulledHarness": {
@@ -116,21 +130,25 @@
     "release": "v1.0.1",
     "sourceCommit": "380826f41b6379a87ab54f0ae2675ce82a40b832",
     "releaseManifestSha256": "fd07e80e71491628a7ea036a7c18495b45547f3d985ac5ed9b57e4f09af1fb0d",
-    "compatibility": "not_verified; source differs from audited checkout"
+    "compatibility": "not_verified; source differs from audited checkout",
+    "selection": "Retained reference only; matching-source local harness is now built."
   },
   "runner": {
     "commit": "c2dff15f9dd7c9e934bc1e46c376e2fda6189b39",
     "sha256": "6e1a0fd3073e063d8fde831110d4d0aa36831a390cee19a4a3a0dc138857ddb1",
     "help": "pass",
-    "liveExecution": "not_run"
+    "liveExecution": "not_run",
+    "replacementNeeded": "Use the PR transcript-row comparison fix before live acceptance; this records the earlier runner prepared on the host."
   },
   "accountState": {
-    "copilotkit": "signed_out",
+    "copilotkit": "signed_in",
     "localEvaluationTermsAccepted": false,
     "chatgptOauthStore": "absent",
     "modelAuthChoice": "ChatGPT OAuth; no API key",
     "earlierPrivateCards": "timed_out_without_completion",
-    "humanTermsCommand": "npx --prefer-offline --yes copilotkit@4.34.0 local accept-terms"
+    "humanTermsCommand": "npx --prefer-offline --yes copilotkit@4.34.0 local accept-terms",
+    "observedAt": "2026-11-13T17:37:51Z",
+    "latestPrivateCards": "CopilotKit device sign-in verified by official status. Existing ChatGPT approval remains pending without an auth store."
   },
   "applicationState": {
     "openbotServicesStarted": false,
@@ -156,5 +174,14 @@
     "Actual tested application/Intelligence start/stop/recovery commands do not exist yet.",
     "No license/entitlement or model access has been established.",
     "This preparation record must not close issue #4 or unlock issue #5."
-  ]
+  ],
+  "humanTermsHelper": {
+    "sourceCommit": "cf3caf77452e943b3ea20955bff4cccbccfcdd6d",
+    "path": "/home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh",
+    "sha256": "767b847b3a48cd452f10633f86f75194cc8282865b6211e68099753edad55423",
+    "mode": "0700",
+    "syntax": "pass",
+    "help": "pass",
+    "agreementRunByAgent": false
+  }
 }

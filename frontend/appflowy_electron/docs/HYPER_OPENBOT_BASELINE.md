@@ -2,7 +2,7 @@
 
 Tracking: [issue #4](https://github.com/NaveDanan/HyperTask/issues/4), following the merged [baseline audit](HYPER_OPENBOT_AUDIT.md). Updated 2026-11-13.
 
-Status: tool/dependency/browser preparation and three original OpenBot image builds succeeded. Account sign-in and human evaluation-terms acceptance remain outstanding; the application/Intelligence stack is not live. [The preparation record](HYPER_OPENBOT_PREPARATION.runtime.json) captures measured pins, image IDs and limits. It is not live acceptance. [Progress](HYPER_OPENBOT_PROGRESS.md) records delivery state.
+Status: tool/dependency/browser preparation and four original OpenBot image builds succeeded, including the matching-source LangGraph agent. CopilotKit sign-in is verified; human evaluation-terms acceptance and ChatGPT OAuth remain outstanding. The application/Intelligence stack is not live. [The preparation record](HYPER_OPENBOT_PREPARATION.runtime.json) captures measured pins, image IDs and limits. It is not live acceptance. [Progress](HYPER_OPENBOT_PROGRESS.md) records delivery state.
 
 ## Scope and source
 
@@ -67,15 +67,15 @@ If startup fails, retain sanitized failure logs and the exact failed stage. Resu
 
 ## Account-only prerequisites
 
-The selected model route is ChatGPT OAuth, with no OpenAI API key. The original [OpenBot model configuration](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/docs/configuration.md) supports its ChatGPT sign-in store through the LangGraph harness. The pulled official harness has a different source commit from the audited checkout; its compatibility remains unverified. Prefer building the original harness from the pinned source and recording resolved dependencies before the live test.
+The selected model route is ChatGPT OAuth, with no OpenAI API key. The original [OpenBot model configuration](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/docs/configuration.md) supports its ChatGPT sign-in store through the LangGraph harness. The matching-source harness is now built from the native pinned checkout, with its resolved Python base digest and dependency-list hash recorded. The previously pulled release harness has a different source commit and remains an unverified reference. Neither build nor sign-in alone proves a live provider call.
 
-Two sign-ins remain separate. CopilotKit's device authorization can be approved from any device using the private card for the owned CLI request. ChatGPT's original flow returns to a loopback callback on the Windows baseline host, so approve that private card in a browser on that host. Earlier cards timed out without completing either sign-in. Never paste account tokens into chat or reuse an unrelated pending approval.
+Two sign-ins remain separate. CopilotKit's device authorization can be approved from any device using the private card for the owned CLI request. Its latest actual session check confirms sign-in. ChatGPT's original flow returns to a loopback callback on the Windows baseline host, so approve that private card in a browser on that host. The owned flow is running but has not produced its auth store. Earlier cards timed out; fresh owned flows replaced them only after their processes exited. Never paste account tokens into chat or reuse an unrelated pending approval.
 
 After CopilotKit sign-in, the account holder must read and accept its local evaluation agreement in their own terminal. The installed `copilotkit@4.34.0` setup prompt at `onboarding/prompts/deployment/local-evaluation.md` explicitly says "Never accept the agreement yourself." The CLI enforces this boundary; the agent must not bypass it or submit acceptance for the user.
 
 [HyperOpenBotAccountSetup.sh](../scripts/HyperOpenBotAccountSetup.sh) prepares only that human terms step. It selects the existing private baseline tools/daemon, invokes the exact pinned `npx --prefer-offline --yes copilotkit@4.34.0 local accept-terms` command, and leaves the agreement choice to the person. It captures no credentials, automatically submits no consent, and creates no application stack. Run it in an interactive Ubuntu terminal on the prepared Windows host after its installation there. `bash -n` and its help check passed; it was not run end-to-end by the agent.
 
-The eventual private helper path is `/home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh`. After sign-in, run:
+The helper is installed at `/home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh`, with its hash recorded in the preparation manifest. After sign-in, run:
 
 ```sh
 bash /home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh
@@ -125,13 +125,21 @@ node HyperOpenBotBaseline.mjs after --url http://127.0.0.1:3010 --client-root /a
 
 Use the tested app port rather than the example port above. A signed-in deployment can use `--storage-state /private/path/session.json`; this is an existing private Playwright session file, never a committed artifact. The output parent directory must already exist. Output files are exclusively created with private permissions; a failed attempt may leave an empty file, so use a new path when retrying. A nonzero exit or empty artifact is not acceptance.
 
-The runner ties live events to the original client's submitted run/user message, a fresh channel and the resulting saved assistant message. It requires multiple distinct delivery observations and rejects unavailable/malformed history, wrong identity, incomplete runs and post-finish events. It compares authoritative message IDs and text again in the `after` phase without resending.
+The runner ties live events to the original client's submitted run/user message, a fresh channel and the resulting saved assistant message. It requires multiple distinct delivery observations and rejects unavailable/malformed history, wrong identity, incomplete runs and post-finish events. It locates original transcript rows by message ID and compares their rendered text with whitespace folded, so paragraph elements do not break the UI check. Stream-to-history comparisons still require exact text. It compares authoritative message IDs and text again in the `after` phase without resending. A model response whose formatting changes its visible text may still fail this plain-text baseline.
 
 Transport parsing covers direct AG-UI frames and Phoenix v2 `ag_ui_event` frames, matching CopilotKit core `1.85.0` from the source lockfile. Inspection used its [exact npm artifact](https://registry.npmjs.org/@copilotkit/core/-/core-1.85.0.tgz), verified against the lockfile's SHA-512 integrity. Join replies, batched event histories, unknown envelopes and binary payloads do not establish streaming proof. Gateway topics and authentication fields are not written to the evidence. Other transport modes remain unverified until exercised against the actual runtime.
 
 Artifacts explicitly state that provider authenticity and service restart are **not verified by the runner**. The `after` artifact labels its stream events as copied from the before capture. A successful pair of commands verifies narrow original-client observations; independent deployment/provider and real lifecycle evidence remains required for #4.
 
 The focused [runner tests](../scripts/HyperOpenBotBaseline.test.mjs) check envelope handling, distinct delivery/run boundaries, history failures and artifact field filtering. Run them with `node --test scripts/HyperOpenBotBaseline.test.mjs` from `frontend/appflowy_electron`. Five tests passed locally, with no skips; `--help` also passed. These unit tests are not a live runtime test.
+
+The [browser regression](../scripts/HyperOpenBotBaseline.browser.test.mjs) reproduces the old whole-reply locator failure using separate paragraph elements. It checks the corrected message-ID lookup, full text, hidden/missing rows and delayed rendering. Run it against an existing original-client Playwright installation:
+
+```sh
+HYPER_OPENBOT_TEST_CLIENT_ROOT=/absolute/path/to/OpenBot node --test scripts/HyperOpenBotBaseline.browser.test.mjs
+```
+
+Use `PLAYWRIGHT_BROWSERS_PATH` for a private browser cache, or `HYPER_OPENBOT_TEST_BROWSER` for a specific Chromium executable. This one browser test passed locally with Playwright core 1.62.1 and system Chrome 156.0.8078.47, with no skips. It uses a DOM fixture and establishes no live OpenBot, Intelligence or provider acceptance.
 
 ## Acceptance evidence
 

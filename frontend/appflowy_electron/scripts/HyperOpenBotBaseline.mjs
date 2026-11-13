@@ -73,6 +73,22 @@ export function historyPair(status, body, prompt, answer, expected) {
   return { user, assistant };
 }
 
+// The original transcript identifies each row by its saved message ID. Markdown
+// paragraphs live in separate elements, so getByText cannot match a whole reply.
+export async function waitForTranscriptMessage(log, messageId, text, timeout = 30000) {
+  if (!id(messageId) || typeof text !== 'string' || !text.trim()) fail('Invalid transcript message');
+  const normalize = value => value.replace(/\s+/g, ' ').trim();
+  const row = log.locator(`[data-message-id="${messageId}"]`);
+  const deadline = Date.now() + timeout;
+  await row.waitFor({ state: 'visible', timeout });
+  while (Date.now() < deadline) {
+    const actual = await row.innerText({ timeout: Math.max(1, deadline - Date.now()) });
+    if (normalize(actual) === normalize(text) && await row.isVisible()) return;
+    await log.page().waitForTimeout(Math.min(100, Math.max(1, deadline - Date.now())));
+  }
+  fail('Original transcript message does not display the expected text');
+}
+
 export function artifact(data) {
   return { version: 1, phase: data.phase, observedAt: data.observedAt, limits: { stream: data.phase === 'before' ? 'live_observation' : 'copied_from_before', providerAuthenticity: 'not_verified', serviceRestart: 'not_verified' }, channelId: data.channelId, threadId: data.threadId, botId: data.botId, runId: data.runId, prompt: data.prompt, answer: data.answer, messages: { user: { id: data.messages.user.id, role: 'user', text: data.prompt }, assistant: { id: data.messages.assistant.id, role: 'assistant', text: data.answer } }, statuses: { channel: data.statuses.channel, messages: data.statuses.messages }, events: data.events.map(e => { const o = { type: e.type, delivery: e.delivery, at: e.at }; for (const k of ['threadId', 'runId', 'messageId', 'delta']) if (e[k] !== undefined) o[k] = e[k]; return o; }) };
 }
@@ -163,8 +179,8 @@ async function run({ phase, options, origin }) {
       const proof = proveStream(events, threadId, runId); answer = proof.answer;
       await page.getByRole('button', { name: 'Stop the Bot' }).waitFor({ state: 'hidden', timeout: 120000 });
     } else { runId = before.runId; events = before.events; }
-    await log.getByText(prompt, { exact: true }).first().waitFor({ state: 'visible', timeout: 30000 });
-    await log.getByText(answer, { exact: true }).first().waitFor({ state: 'visible', timeout: 30000 });
+    await waitForTranscriptMessage(log, before?.messages.user.id ?? userMessageId, prompt);
+    await waitForTranscriptMessage(log, proveStream(events, threadId, runId).messageId, answer);
     const channel = await json('get', `/api/channels/${encodeURIComponent(channelId)}`);
     const c = channel.value?.channel;
     if (channel.status !== 200 || c?.id !== channelId || c?.threadId !== threadId || !Array.isArray(c.agentIds) || c.agentIds.length !== 1 || c.agentIds[0] !== botId) fail('Channel mapping unavailable or changed');
