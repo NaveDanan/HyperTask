@@ -21,7 +21,7 @@ import { argbToCss, findSvgContent, useIconGroups } from './icon-groups';
 import { SharedSectionType, isEditable as accessIsEditable, type PageAccessLevelState } from './page-access-level-store';
 import { RenameViewPopover } from './RenameViewPopover';
 import { RawEmojiIcon, SvgString, viewIcon } from './ViewIcon';
-import { listenView } from './view-listener';
+import { useHyperAppearanceView } from '../view-appearance/HyperViewAppearanceView';
 import { usePageAccessLevel, useViewScope } from './view-scope';
 import { createViewTitleBarStore } from './view-title-bar-store';
 import { FlowySvgs, type FlowySvgName } from '@/icons/flowy-svgs';
@@ -163,17 +163,9 @@ function BreadcrumbSpaceIcon({ space }: { space: ViewPB }) {
 /** ViewTitle + ViewTitleBloc: one crumb, live-updated from DidUpdateView. */
 export function ViewTitle({ view, editable, onUpdated }: { view: ViewPB; editable: boolean; onUpdated: () => void }) {
   const { tr } = useTr();
-  const [current, setCurrent] = useState(view);
-  useEffect(() => {
-    setCurrent(view);
-    return listenView(view.id, {
-      onViewUpdated: (updated) => {
-        setCurrent(updated);
-        onUpdated();
-      },
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
+  const current = useHyperAppearanceView(view);
+  useEffect(() => { if (current) onUpdated(); }, [current]);
+  if (!current) return <span className="inline-block h-4 w-12" aria-busy="true" />;
 
   const icon = viewIcon(current);
   const name = current.name || view.name;
@@ -197,7 +189,7 @@ export function ViewTitle({ view, editable, onUpdated }: { view: ViewPB; editabl
   return (
     <div className="flex">
       <AppFlowyPopover constraints={{ maxWidth: 300, maxHeight: 44 }} direction="bottomWithLeftAligned" offset={{ x: 0, y: 6 }}
-        popup={() => <RenameViewPopover view={view} name={view.name} icon={icon} />}>
+        popup={() => <RenameViewPopover view={current} name={current.name} icon={icon} />}>
         <Button variant="ghost" size="sm" className={buttonClass}>{iconAndName()}</Button>
       </AppFlowyPopover>
     </div>

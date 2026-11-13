@@ -3,6 +3,7 @@ pub use collab_folder::ViewLayout;
 pub mod entities;
 pub mod event_handler;
 pub mod event_map;
+mod hyper_duplicate;
 pub mod manager;
 pub mod notification;
 pub mod protobuf;

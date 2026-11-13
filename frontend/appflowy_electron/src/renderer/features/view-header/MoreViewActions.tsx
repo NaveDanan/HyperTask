@@ -18,6 +18,7 @@ import { MovePageMenu } from './MovePageMenu';
 import { isReadOnly, viewIsLocked } from './page-access-level-store';
 import { containPublishedPage, deleteView, duplicateView } from './view-service';
 import { usePageAccessLevel, useViewScope } from './view-scope';
+import { hyperCaptureSearchOwner } from '../search/HyperSearchOwner';
 
 const isDocument = (view: ViewPB) => view.layout === ViewLayoutPB.Document;
 const isDatabase = (view: ViewPB) =>
@@ -144,16 +145,19 @@ function MoreViewActionsMenu({
   const serverWorkspace = workspaceType === WorkspaceTypePB.ServerW;
 
   const onDelete = async () => {
-    const [published] = await containPublishedPage(view);
+    const scope = hyperCaptureSearchOwner();
+    if (!scope) return;
+    const [published] = await containPublishedPage(view, scope);
+    if (!scope.isCurrent()) return;
     close();
     if (published) {
       showConfirmDeletionDialog({
         name: nameOrDefault(view),
         description: tr('publish.containsPublishedPage'),
-        onConfirm: () => void deleteView(view),
+        onConfirm: () => { if (scope.isCurrent()) void deleteView(view, scope); },
       });
     } else {
-      void deleteView(view);
+      void deleteView(view, scope);
     }
   };
 

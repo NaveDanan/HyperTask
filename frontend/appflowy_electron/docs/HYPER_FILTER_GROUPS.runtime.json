@@ -1,0 +1,62 @@
+{
+  "state": "passed",
+  "core": {
+    "sha256": "cfdcdd33ef1af0f2feb655484f7ae421393df0cf9bf156585a0f8d1c8dca1a89",
+    "bytes": 530149816,
+    "file_reader": true,
+    "event_bindings": 230,
+    "protocol_changes": false
+  },
+  "native_tests": {
+    "focused_core": 11,
+    "focused_database": 60,
+    "full_database_library": 102,
+    "new_group_regressions": 5,
+    "counting": "Sets overlap; not an aggregate."
+  },
+  "desktop_tests": {
+    "model_service_and_related_regressions": 55,
+    "electron_typed_wire_controls": 1,
+    "actual_public_event_core_restart": 1,
+    "actual_page_preload_core_restart": 1
+  },
+  "checked_behavior": [
+    "insertion preserves the original criterion",
+    "All/Any changes are separate single writes",
+    "nested leaf and subtree removal preserves siblings and stable IDs",
+    "authoritative row membership",
+    "keyboard focus",
+    "fresh native locks",
+    "owner generation and source/field/path guards",
+    "unsupported data kept unchanged",
+    "uncertain replies retain recovery without replay",
+    "physical core restart"
+  ],
+  "original_regression": {
+    "state": "failed before fix on 48d88b4c9cf7bc7d79dec2401cbecfa9be18288f13838a79a895a854ccdc1932",
+    "symptom": "Nested DeleteFilter acknowledged without removing the child.",
+    "original_public_event_fixture_passes_unchanged": true
+  },
+  "limits": {
+    "nodes": 128,
+    "group_levels": 3,
+    "criterion_bytes": 8192,
+    "total_criterion_bytes": 65536
+  },
+  "remaining": [
+    "direct creation of date criteria within groups",
+    "move and ungroup controls",
+    "broader self-hosted and concurrent-client checks"
+  ],
+  "prior_server_evidence": "HYPER_DATASET_SYNC.runtime.json retains 34 stages for its original 48d88b4c binary.",
+  "final_desktop_checkpoint": {
+    "tests": 1627,
+    "files": 265,
+    "failed": 0,
+    "skipped": 0,
+    "typescript_projects_passed": 3,
+    "isolated_production_build": "passed",
+    "frozen_source_files": 895,
+    "source_manifest_unchanged": true
+  }
+}

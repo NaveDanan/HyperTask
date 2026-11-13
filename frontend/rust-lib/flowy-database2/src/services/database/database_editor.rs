@@ -58,6 +58,18 @@ use uuid::Uuid;
 
 type OpenDatabaseResult = oneshot::Sender<FlowyResult<DatabasePB>>;
 
+#[derive(Clone)]
+struct HyperFinalizedRow {
+  generation: u64,
+  row: Weak<RwLock<DatabaseRow>>,
+}
+
+#[derive(Default)]
+struct HyperRowSyncState {
+  next: u64,
+  current: HashMap<String, HyperFinalizedRow>,
+}
+
 pub struct DatabaseEditor {
   database_id: Uuid,
   pub(crate) database: Arc<RwLock<Database>>,
@@ -71,7 +83,20 @@ pub struct DatabaseEditor {
   #[allow(dead_code)]
   database_cancellation: Arc<RwLock<Option<CancellationToken>>>,
   un_finalized_rows_cancellation: Arc<ArcSwapOption<CancellationToken>>,
-  finalized_rows: Arc<moka::future::Cache<String, Weak<RwLock<DatabaseRow>>>>,
+  finalized_rows: Arc<moka::future::Cache<String, HyperFinalizedRow>>,
+  row_initialization: Arc<tokio::sync::Mutex<()>>,
+  row_sync_state: Arc<std::sync::Mutex<HyperRowSyncState>>,
+  pub(crate) row_activities: Arc<crate::hyper_row_activity::HyperRowActivities>,
+  open_pipeline: tokio::sync::Mutex<()>,
+  #[cfg(test)]
+  row_cleanup_pending: Arc<std::sync::atomic::AtomicUsize>,
+  #[cfg(test)]
+  row_cleanup_finished: Arc<tokio::sync::Notify>,
+  creation_gate: Arc<std::sync::Mutex<()>>,
+  hyper_duplicate_context: std::sync::RwLock<(
+    crate::hyper_duplicate::HyperDatabaseDuplicateScope,
+    Option<Arc<dyn crate::hyper_duplicate::HyperDatabaseDuplicateHook>>,
+  )>,
 }
 
 impl DatabaseEditor {
@@ -81,12 +106,63 @@ impl DatabaseEditor {
     task_scheduler: Arc<TokioRwLock<TaskDispatcher>>,
     collab_builder: Arc<AppFlowyCollabBuilder>,
   ) -> FlowyResult<Arc<Self>> {
-    let finalized_rows: moka::future::Cache<String, Weak<RwLock<DatabaseRow>>> =
-      moka::future::Cache::builder()
+    let scope = crate::hyper_duplicate::user_scope(user.clone())?;
+    Self::new_scoped(
+      user,
+      database,
+      task_scheduler,
+      collab_builder,
+      scope,
+      Default::default(),
+    )
+    .await
+  }
+
+  pub(crate) async fn new_scoped(
+    user: Arc<dyn DatabaseUser>,
+    database: Arc<RwLock<Database>>,
+    task_scheduler: Arc<TokioRwLock<TaskDispatcher>>,
+    collab_builder: Arc<AppFlowyCollabBuilder>,
+    duplicate_scope: crate::hyper_duplicate::HyperDatabaseDuplicateScope,
+    creation_gate: Arc<std::sync::Mutex<()>>,
+  ) -> FlowyResult<Arc<Self>> {
+    duplicate_scope.check()?;
+    let row_initialization = Arc::new(tokio::sync::Mutex::new(()));
+    let row_activities = Arc::new(crate::hyper_row_activity::HyperRowActivities::default());
+    let row_sync_state = Arc::new(std::sync::Mutex::new(HyperRowSyncState::default()));
+    let row_cleanup_pending = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let row_cleanup_finished = Arc::new(tokio::sync::Notify::new());
+    let cleanup_initialization = row_initialization.clone();
+    let cleanup_activities = row_activities.clone();
+    let cleanup_state = row_sync_state.clone();
+    let cleanup_pending = row_cleanup_pending.clone();
+    let cleanup_finished = row_cleanup_finished.clone();
+    let finalized_rows: moka::future::Cache<String, HyperFinalizedRow> =
+      moka::future::Cache::<String, HyperFinalizedRow>::builder()
         .max_capacity(50)
-        .async_eviction_listener(|key, value, _| {
+        .async_eviction_listener(move |key, value, cause| {
+          let initialization = cleanup_initialization.clone();
+          let activities = cleanup_activities.clone();
+          let state = cleanup_state.clone();
+          let pending = cleanup_pending.clone();
+          let finished = cleanup_finished.clone();
           Box::pin(async move {
-            database_row_evict_listener(key, value).await;
+            // Cache maintenance can run inside insert(). Do not make it wait for
+            // the initializer holding its lock; enqueue owner-checked cleanup.
+            pending.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            tokio::spawn(async move {
+              cleanup_finalized_row(
+                key.as_str(),
+                value,
+                cause,
+                &initialization,
+                &state,
+                &activities,
+              )
+              .await;
+              pending.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+              finished.notify_waiters();
+            });
           })
         })
         .build();
@@ -120,19 +196,26 @@ impl DatabaseEditor {
     );
 
     let database_id = Uuid::from_str(&database_id)?;
-    let collab_object = collab_builder.collab_object(
-      &user.workspace_id()?,
-      user.user_id()?,
-      &database_id,
-      CollabType::Database,
-    )?;
-
-    let database = collab_builder.finalize(
-      collab_object,
-      CollabBuilderConfig::default(),
-      database.clone(),
-    )?;
+    {
+      let _creation = creation_gate
+        .lock()
+        .map_err(|_| crate::hyper_creation::interrupted())?;
+      duplicate_scope.check()?;
+      let collab_object = collab_builder.collab_object(
+        &duplicate_scope.workspace_id,
+        duplicate_scope.uid,
+        &database_id,
+        CollabType::Database,
+      )?;
+      collab_builder.finalize(
+        collab_object,
+        CollabBuilderConfig::default(),
+        database.clone(),
+      )?;
+      duplicate_scope.check()?;
+    }
     let this = Arc::new(Self {
+      hyper_duplicate_context: std::sync::RwLock::new((duplicate_scope, None)),
       database_id,
       user,
       database,
@@ -144,6 +227,15 @@ impl DatabaseEditor {
       database_cancellation,
       un_finalized_rows_cancellation: Arc::new(Default::default()),
       finalized_rows: Arc::new(finalized_rows),
+      row_initialization,
+      row_sync_state,
+      row_activities,
+      open_pipeline: tokio::sync::Mutex::new(()),
+      #[cfg(test)]
+      row_cleanup_pending,
+      #[cfg(test)]
+      row_cleanup_finished,
+      creation_gate,
     });
     observe_block_event(&database_id, &this).await;
     observe_view_change(&database_id, &this).await;
@@ -158,6 +250,11 @@ impl DatabaseEditor {
   }
 
   pub async fn close_view(&self, view_id: &str) {
+    {
+      let _initialization = self.row_initialization.lock().await;
+      let _ = self.row_activities.retire(view_id);
+      let _ = self.retain_released_rows().await;
+    }
     self.database_views.remove_view(view_id).await;
   }
 
@@ -179,6 +276,11 @@ impl DatabaseEditor {
 
   #[tracing::instrument(level = "debug", skip_all)]
   pub async fn close_all_views(&self) {
+    {
+      let _initialization = self.row_initialization.lock().await;
+      self.row_activities.clear();
+      let _ = self.retain_released_rows().await;
+    }
     for view in self.database_views.editors().await {
       view.close().await;
     }
@@ -579,34 +681,70 @@ impl DatabaseEditor {
   }
 
   pub async fn duplicate_row(&self, view_id: &str, row_id: &RowId) -> FlowyResult<()> {
-    let mut database = self.database.write().await;
-    let params = database
-      .duplicate_row(row_id)
+    self
+      .duplicate_row_with_operation(view_id, row_id, None)
       .await
-      .ok_or_else(|| FlowyError::internal().with_context("error while copying row"))?;
-    let (index, row_order) = database.create_row_in_view(view_id, params).await?;
+      .map(|_| ())
+  }
 
-    let row_meta = database.get_row_meta(row_id).await;
-    if let Some(row_meta) = row_meta {
-      database
-        .update_row_meta(&row_order.id, |meta_update| {
-          meta_update
-            .insert_cover_if_not_none(row_meta.cover)
-            .insert_icon_if_not_none(row_meta.icon_url)
-            .update_is_document_empty_if_not_none(Some(row_meta.is_document_empty))
-            .update_attachment_count_if_not_none(Some(row_meta.attachment_count));
-        })
-        .await;
-    }
+  pub async fn duplicate_row_with_operation(
+    &self,
+    view_id: &str,
+    row_id: &RowId,
+    operation_id: Option<&str>,
+  ) -> FlowyResult<RowMetaPB> {
+    let (scope, hook) = self.hyper_duplicate_context.read().unwrap().clone();
+    let result = scope
+      .run_if_current(crate::hyper_duplicate::duplicate_single_row(
+        &self.database,
+        scope.clone(),
+        hook.clone(),
+        view_id,
+        row_id,
+        operation_id,
+      ))
+      .await??;
+    scope
+      .run_if_current(async {
+        let copied: RowId = result.id.clone().into();
+        self
+          .init_database_row_guarded(&copied, None, Some(view_id.to_string()))
+          .await?;
+        if let (Some(hook), Some(document)) = (hook, result.document_id.clone()) {
+          hook
+            .initialize_committed(
+              scope.clone(),
+              vec![crate::hyper_duplicate::HyperCopiedBody {
+                document_id: Uuid::parse_str(&document)?,
+                required: result.is_document_empty == Some(false),
+              }],
+            )
+            .await?;
+        }
+        scope.check()?;
+        Ok(result)
+      })
+      .await?
+  }
 
-    drop(database);
+  pub(crate) fn set_hyper_duplicate_context(
+    &self,
+    scope: crate::hyper_duplicate::HyperDatabaseDuplicateScope,
+    hook: Option<Arc<dyn crate::hyper_duplicate::HyperDatabaseDuplicateHook>>,
+  ) {
+    *self.hyper_duplicate_context.write().unwrap() = (scope, hook);
+  }
 
-    trace!(
-      "duplicate row: {:?} at index:{}, new row:{:?}",
-      row_id, index, row_order
-    );
-
-    Ok(())
+  pub(crate) fn hyper_duplicate_context_matches(
+    &self,
+    scope: &crate::hyper_duplicate::HyperDatabaseDuplicateScope,
+  ) -> bool {
+    let captured = self.hyper_duplicate_context.read().unwrap();
+    captured.0.uid == scope.uid
+      && captured.0.workspace_id == scope.workspace_id
+      && Arc::ptr_eq(&captured.0.db, &scope.db)
+      && captured.0.check().is_ok()
+      && scope.check().is_ok()
   }
 
   #[tracing::instrument(level = "trace", skip_all, err)]
@@ -680,19 +818,26 @@ impl DatabaseEditor {
   }
 
   pub async fn create_row(&self, params: CreateRowPayloadPB) -> FlowyResult<Option<RowDetail>> {
+    let scope = self.hyper_duplicate_context.read().unwrap().0.clone();
+    scope.check()?;
     let view_editor = self
       .database_views
       .get_or_init_view_editor(&params.view_id)
       .await?;
 
     let params = view_editor.v_will_create_row(params).await?;
+    scope.check()?;
 
     let mut database = self.database.write().await;
+    scope.check()?;
     let (index, row_order) = database
       .create_row_in_view(&view_editor.view_id, params)
       .await?;
-    let row_detail = database.get_row_detail(&row_order.id).await;
     drop(database);
+    scope.check()?;
+    let initialized = self.init_database_row(&row_order.id).await?;
+    let row_detail = initialized.read().await.get_row_detail();
+    scope.check()?;
 
     trace!("[Database]: did create row: {} at {}", row_order.id, index);
     if let Some(row_detail) = row_detail {
@@ -791,47 +936,349 @@ impl DatabaseEditor {
   }
 
   pub async fn init_database_row(&self, row_id: &RowId) -> FlowyResult<Arc<RwLock<DatabaseRow>>> {
+    self.init_database_row_guarded(row_id, None, None).await
+  }
+
+  pub async fn hyper_init_visible_row(&self, view: &str, row_id: &RowId) -> FlowyResult<()> {
+    let scope = self.hyper_duplicate_context.read().unwrap().0.clone();
+    scope
+      .run_if_current(async {
+        self
+          .init_database_row_guarded(row_id, None, Some(view.to_string()))
+          .await?;
+        Ok(())
+      })
+      .await?
+  }
+
+  pub(crate) async fn hyper_update_row_activity(
+    &self,
+    payload: HyperUpdateRowActivityPB,
+  ) -> FlowyResult<HyperRowActivityAckPB> {
+    use crate::hyper_row_activity::{HyperRowRequest, MAX_ACTIVITY_ROWS};
+    use std::collections::HashSet;
+    Uuid::parse_str(&payload.view_id)?;
+    let view = payload.view_id.clone();
+    let context = Uuid::parse_str(&payload.context_id)?;
+    let activity = Uuid::parse_str(&payload.activity_id)?;
+    if payload.revision == 0
+      || payload.row_ids.len() > MAX_ACTIVITY_ROWS
+      || (payload.close_activity && !payload.row_ids.is_empty())
+    {
+      return Err(
+        FlowyError::invalid_data()
+          .with_context("The dataset reader request is too large or has an invalid revision."),
+      );
+    }
+    let rows = payload
+      .row_ids
+      .iter()
+      .map(|id| Uuid::parse_str(id).map(|_| RowId::from(id.clone())))
+      .collect::<Result<HashSet<_>, _>>()?;
+    let scope = self.hyper_duplicate_context.read().unwrap().0.clone();
+    scope
+      .run_if_current(async {
+        scope.check()?;
+        if payload.close_activity {
+          let ack = self
+            .row_activities
+            .close(view, context, activity, payload.revision)?;
+          let _initialization = self.row_initialization.lock().await;
+          scope.check()?;
+          self.retain_released_rows().await?;
+          return Ok(ack);
+        }
+        // Invalid membership must not reserve a higher revision and cancel an
+        // otherwise valid in-flight activation. Empty releases need no row I/O.
+        let mut cached = HashMap::new();
+        if !rows.is_empty() {
+          let database = self.database.read().await;
+          scope.check()?;
+          if database.get_view(&view).is_none() {
+            return Err(FlowyError::record_not_found());
+          }
+          for id in &rows {
+            if !database.contains_row(&view, id) {
+              return Err(
+                FlowyError::record_not_found()
+                  .with_context("A requested row is no longer in this view."),
+              );
+            }
+            if let Some(row) = database.get_database_row(id).await {
+              {
+                let value = row.read().await;
+                scope.check()?;
+                let value = value.get_row().ok_or_else(FlowyError::record_not_found)?;
+                if value.id != *id || value.database_id != self.database_id.to_string() {
+                  return Err(FlowyError::invalid_data().with_context(
+                    "The row does not belong to this dataset. Existing data was kept.",
+                  ));
+                }
+              }
+              cached.insert(id.clone(), row);
+            }
+            scope.check()?;
+          }
+          drop(database);
+        }
+        scope.check()?;
+        let request = match self.row_activities.begin(
+          view.clone(),
+          context,
+          activity,
+          payload.revision,
+          rows,
+        )? {
+          HyperRowRequest::Ack(ack) => return Ok(ack),
+          HyperRowRequest::Current(request) => request,
+        };
+        let validation = async {
+          let _initialization = self.row_initialization.lock().await;
+          scope.check()?;
+          self.row_activities.accept(&request, cached)?;
+          self.retain_released_rows().await?;
+          Ok::<_, FlowyError>(())
+        }
+        .await;
+        if let Err(error) = validation {
+          self.row_activities.validation_failed(&request);
+          if let Ok(ack) = self.row_activities.latest(&request) {
+            if ack.revision > request.revision {
+              return Ok(ack);
+            }
+          }
+          return Err(error);
+        }
+        let mut work = futures::stream::iter(request.rows.iter().cloned().map(|id| {
+          let request = request.clone();
+          let view = view.clone();
+          async move {
+            self
+              .init_database_row_guarded(&id, Some(request), Some(view))
+              .await
+          }
+        }))
+        .buffer_unordered(4);
+        while let Some(result) = work.next().await {
+          if let Err(error) = result {
+            if let Ok(ack) = self.row_activities.latest(&request) {
+              if ack.revision > request.revision {
+                return Ok(ack);
+              }
+            }
+            return Err(error);
+          }
+        }
+        scope.check()?;
+        self.row_activities.finish(&request)?;
+        {
+          let _initialization = self.row_initialization.lock().await;
+          self.retain_released_rows().await?;
+        }
+        self.row_activities.latest(&request)
+      })
+      .await?
+  }
+
+  // Caller holds row_initialization so pin publication and eviction are coherent.
+  async fn retain_released_rows(&self) -> FlowyResult<()> {
+    for (id, row) in self.row_activities.take_inactive()? {
+      if self
+        .row_activities
+        .pinned(id.as_str(), &Arc::downgrade(&row))
+      {
+        continue;
+      }
+      if let Some(current) = self.finalized_rows.get(id.as_str()).await {
+        if Weak::ptr_eq(&current.row, &Arc::downgrade(&row)) {
+          continue;
+        }
+        row
+          .write()
+          .await
+          .remove_plugins_for_types(vec![CollabPluginType::CloudStorage]);
+        continue;
+      }
+      let entry = {
+        let mut state = self
+          .row_sync_state
+          .lock()
+          .map_err(|_| crate::hyper_row_activity::changed())?;
+        state.next = state
+          .next
+          .checked_add(1)
+          .ok_or_else(crate::hyper_row_activity::changed)?;
+        let entry = HyperFinalizedRow {
+          generation: state.next,
+          row: Arc::downgrade(&row),
+        };
+        state.current.insert(id.to_string(), entry.clone());
+        entry
+      };
+      self.finalized_rows.insert(id.to_string(), entry).await;
+    }
+    Ok(())
+  }
+
+  async fn init_database_row_guarded(
+    &self,
+    row_id: &RowId,
+    request: Option<crate::hyper_row_activity::HyperRowReservation>,
+    view: Option<String>,
+  ) -> FlowyResult<Arc<RwLock<DatabaseRow>>> {
+    let scope = self.hyper_duplicate_context.read().unwrap().0.clone();
+    let check = || -> FlowyResult<()> {
+      scope.check()?;
+      if request
+        .as_ref()
+        .is_some_and(|request| !self.row_activities.current(request, None))
+      {
+        return Err(crate::hyper_row_activity::changed());
+      }
+      Ok(())
+    };
+    check()?;
+    let _initialization = self.row_initialization.lock().await;
+    check()?;
     if let Some(is_loading) = self.is_loading_rows.load_full() {
       let mut rx = is_loading.subscribe();
       trace!("[Database]: wait for loading rows when trying to init database row");
       let _ = tokio::time::timeout(Duration::from_secs(10), rx.recv()).await;
+      check()?;
     }
 
     debug!("[Database]: Init database row: {}", row_id);
     let collab_builder = self.collab_builder()?;
-    let database_row = self
-      .database
-      .read()
-      .await
+    let database = self.database.read().await;
+    check()?;
+    if view
+      .as_ref()
+      .is_some_and(|view| !database.contains_row(view, row_id))
+    {
+      return Err(FlowyError::record_not_found());
+    }
+    let database_row = database
       .get_or_init_database_row(row_id)
       .await
       .ok_or_else(|| {
         FlowyError::record_not_found()
           .with_context(format!("The row:{} in database not found", row_id))
       })?;
+    if view
+      .as_ref()
+      .is_some_and(|view| !database.contains_row(view, row_id))
+    {
+      return Err(FlowyError::record_not_found());
+    }
+    drop(database);
+    {
+      let data = database_row.read().await;
+      check()?;
+      let row = data.get_row().ok_or_else(FlowyError::record_not_found)?;
+      if row.id != *row_id || row.database_id != self.database_id.to_string() {
+        return Err(
+          FlowyError::invalid_data()
+            .with_context("The row does not belong to this dataset. Existing data was kept."),
+        );
+      }
+    }
+    if let Some(request) = &request {
+      self
+        .row_activities
+        .attach(request, row_id, database_row.clone())?;
+    }
 
-    let is_finalized = self.finalized_rows.get(row_id.as_str()).await.is_some();
+    check()?;
+    let is_finalized = self
+      .finalized_rows
+      .get(row_id.as_str())
+      .await
+      .is_some_and(|entry| {
+        entry
+          .row
+          .upgrade()
+          .is_some_and(|row| Arc::ptr_eq(&row, &database_row))
+          && self.row_sync_state.lock().ok().is_some_and(|state| {
+            state
+              .current
+              .get(row_id.as_str())
+              .is_some_and(|active| active.generation == entry.generation)
+          })
+      });
+    let is_finalized = is_finalized
+      || (self
+        .row_activities
+        .pinned(row_id.as_str(), &Arc::downgrade(&database_row))
+        && self.row_sync_state.lock().ok().is_some_and(|state| {
+          state
+            .current
+            .get(row_id.as_str())
+            .is_some_and(|entry| Weak::ptr_eq(&entry.row, &Arc::downgrade(&database_row)))
+        }));
+    check()?;
     if !is_finalized {
       trace!("[Database]: finalize database row: {}", row_id);
       let row_id = Uuid::from_str(row_id.as_str())?;
       let collab_object = collab_builder.collab_object(
-        &self.user.workspace_id()?,
-        self.user.user_id()?,
+        &scope.workspace_id,
+        scope.uid,
         &row_id,
         CollabType::DatabaseRow,
       )?;
 
-      if let Err(err) = collab_builder.finalize(
-        collab_object,
-        CollabBuilderConfig::default(),
-        database_row.clone(),
-      ) {
-        error!("Failed to init database row: {}", err);
+      {
+        // Keep the established Database -> row lock order. Holding this read
+        // guard prevents deletion/membership changes while an existing row
+        // reader finishes; never acquire it after taking the row write guard.
+        let database = self.database.read().await;
+        check()?;
+        if view
+          .as_ref()
+          .is_some_and(|view| !database.contains_row(view, &RowId::from(row_id.to_string())))
+        {
+          return Err(FlowyError::record_not_found());
+        }
+        let prepared = collab_builder.prepare_finalization(&database_row).await;
+        check()?;
+        let current = prepared
+          .value()
+          .get_row()
+          .ok_or_else(FlowyError::record_not_found)?;
+        if current.id.as_str() != row_id.to_string()
+          || current.database_id != self.database_id.to_string()
+        {
+          return Err(FlowyError::invalid_data().with_context(
+            "The row changed before live updates could start. Existing data was kept.",
+          ));
+        }
+        let _creation = self
+          .creation_gate
+          .lock()
+          .map_err(|_| crate::hyper_creation::interrupted())?;
+        check()?;
+        collab_builder
+          .finalize_prepared(collab_object, CollabBuilderConfig::default(), prepared)
+          .map_err(internal_error)?;
+        check()?;
       }
-      self
-        .finalized_rows
-        .insert(row_id.to_string(), Arc::downgrade(&database_row))
-        .await;
+      let entry = {
+        let mut state = self
+          .row_sync_state
+          .lock()
+          .map_err(|_| crate::hyper_creation::interrupted())?;
+        state.next = state
+          .next
+          .checked_add(1)
+          .ok_or_else(crate::hyper_creation::interrupted)?;
+        let entry = HyperFinalizedRow {
+          generation: state.next,
+          row: Arc::downgrade(&database_row),
+        };
+        state.current.insert(row_id.to_string(), entry.clone());
+        entry
+      };
+      self.finalized_rows.insert(row_id.to_string(), entry).await;
+      check()?;
     }
 
     Ok(database_row)
@@ -865,32 +1312,57 @@ impl DatabaseEditor {
   }
 
   #[tracing::instrument(level = "trace", skip_all)]
-  pub async fn update_row_meta(&self, row_id: &RowId, changeset: UpdateRowMetaParams) {
-    let mut database = self.database.write().await;
-    database
-      .update_row_meta(row_id, |meta_update| {
-        meta_update
-          .insert_cover_if_not_none(changeset.cover)
-          .insert_icon_if_not_none(changeset.icon_url)
-          .update_is_document_empty_if_not_none(changeset.is_document_empty)
-          .update_attachment_count_if_not_none(changeset.attachment_count);
+  pub async fn update_row_meta(
+    &self,
+    row_id: &RowId,
+    changeset: UpdateRowMetaParams,
+  ) -> FlowyResult<()> {
+    let scope = self.hyper_duplicate_context.read().unwrap().0.clone();
+    scope
+      .run_if_current(async {
+        {
+          let database = self.database.read().await;
+          scope.check()?;
+          if !database.contains_row(&changeset.view_id, row_id) {
+            return Err(FlowyError::record_not_found());
+          }
+        }
+        // Disk plugins ignore updates until initialization. Finalize before the first
+        // metadata edit so later persisted cell updates never reference missing clocks.
+        self.init_database_row(row_id).await?;
+        scope.check()?;
+        let mut database = self.database.write().await;
+        scope.check()?;
+        if !database.contains_row(&changeset.view_id, row_id) {
+          return Err(FlowyError::record_not_found());
+        }
+        database
+          .update_row_meta(row_id, |meta_update| {
+            meta_update
+              .insert_cover_if_not_none(changeset.cover)
+              .insert_icon_if_not_none(changeset.icon_url)
+              .update_is_document_empty_if_not_none(changeset.is_document_empty)
+              .update_attachment_count_if_not_none(changeset.attachment_count);
+          })
+          .await;
+        scope.check()?;
+        let row_detail = database.get_row_detail(row_id).await;
+        scope.check()?;
+        drop(database);
+        if let Some(row_detail) = row_detail {
+          let views = self.database_views.editors().await;
+          scope.check()?;
+          for view in views {
+            view.v_did_update_row_meta(row_id, &row_detail).await;
+            scope.check()?;
+          }
+          database_notification_builder(row_id.as_str(), DatabaseNotification::DidUpdateRowMeta)
+            .payload(RowMetaPB::from(row_detail))
+            .send();
+        }
+        Ok(())
       })
-      .await;
-
-    // Use the temporary row meta to get rid of the lock that not implement the `Send` or 'Sync' trait.
-    let row_detail = database.get_row_detail(row_id).await;
-    drop(database);
-
-    if let Some(row_detail) = row_detail {
-      for view in self.database_views.editors().await {
-        view.v_did_update_row_meta(row_id, &row_detail).await;
-      }
-
-      // Notifies the client that the row meta has been updated.
-      database_notification_builder(row_id.as_str(), DatabaseNotification::DidUpdateRowMeta)
-        .payload(RowMetaPB::from(row_detail))
-        .send();
-    }
+      .await?
   }
 
   pub async fn get_cell(&self, field_id: &str, row_id: &RowId) -> Option<Cell> {
@@ -1023,13 +1495,8 @@ impl DatabaseEditor {
   where
     F: FnOnce(RowUpdate),
   {
-    if self.finalized_rows.get(row_id.as_str()).await.is_none() {
-      info!(
-        "[Database Row]: row:{} is not finalized when editing, init it",
-        row_id
-      );
-      self.init_database_row(&row_id).await?;
-    }
+    // Validate both the current physical row and its sync lease before a write.
+    self.init_database_row(&row_id).await?;
     self.database.write().await.update_row(row_id, modify).await;
     Ok(())
   }
@@ -1144,7 +1611,7 @@ impl DatabaseEditor {
           None => new_count,
         };
 
-        self
+        if let Err(err) = self
           .update_row_meta(
             row_id,
             UpdateRowMetaParams {
@@ -1156,7 +1623,10 @@ impl DatabaseEditor {
               attachment_count: Some(new_attachment_count),
             },
           )
-          .await;
+          .await
+        {
+          warn!("Failed to update derived row attachment count: {}", err);
+        }
       }
     }
   }
@@ -1386,8 +1856,21 @@ impl DatabaseEditor {
     &self,
     view_id: &str,
   ) -> FlowyResult<Vec<NoDateCalendarEventPB>> {
-    let _database_view = self.database_views.get_or_init_view_editor(view_id).await?;
-    Ok(vec![])
+    let database_view = self.database_views.get_or_init_view_editor(view_id).await?;
+    let events = database_view
+      .v_get_all_calendar_events()
+      .await
+      .unwrap_or_default();
+    Ok(
+      events
+        .into_iter()
+        .filter(|event| event.timestamp.is_none())
+        .map(|event| NoDateCalendarEventPB {
+          row_id: event.row_meta.id,
+          title: event.title,
+        })
+        .collect(),
+    )
   }
 
   #[tracing::instrument(level = "trace", skip_all)]
@@ -1446,6 +1929,7 @@ impl DatabaseEditor {
     info!("[Database]: {} close", self.database_id);
     let token = CancellationToken::new();
     let cloned_finalized_rows = self.finalized_rows.clone();
+    let row_initialization = self.row_initialization.clone();
     self
       .un_finalized_rows_cancellation
       .store(Some(Arc::new(token.clone())));
@@ -1456,10 +1940,13 @@ impl DatabaseEditor {
       //    cancel the invalidation action and do nothing.
       select! {
         _ = tokio::time::sleep(Duration::from_secs(30)) => {
-          for (row_id, row) in cloned_finalized_rows.iter() {
-            remove_row_sync_plugin(row_id.as_str(), row).await;
-          }
+          // Serialize invalidation with reinitialization; delayed callbacks carry
+          // their old generation and cannot detach a newly reopened row.
+          let initialization = row_initialization.lock().await;
+          if token.is_cancelled() { return; }
           cloned_finalized_rows.invalidate_all();
+          drop(initialization);
+          cloned_finalized_rows.run_pending_tasks().await;
         },
         _ = token.cancelled() => {
           trace!("Invalidate action cancelled");
@@ -1484,6 +1971,14 @@ impl DatabaseEditor {
     view_id: &str,
     notify_finish: Option<tokio::sync::oneshot::Sender<()>>,
   ) -> FlowyResult<DatabasePB> {
+    let scope = self.hyper_duplicate_context.read().unwrap().0.clone();
+    scope.check()?;
+    let context = self.row_activities.open(view_id)?;
+    let _pipeline = self.open_pipeline.lock().await;
+    scope.check()?;
+    if !self.row_activities.matches(view_id, &context) {
+      return Err(crate::hyper_row_activity::changed());
+    }
     if let Some(un_finalized_rows_token) = self.un_finalized_rows_cancellation.load_full() {
       un_finalized_rows_token.cancel();
     }
@@ -1562,6 +2057,7 @@ impl DatabaseEditor {
         fields,
         rows: order_rows,
         layout_type: view_layout.into(),
+        row_activity_context: context.to_string(),
       });
       // Mark that the opening process is complete
       if let Some(tx) = self.is_loading_rows.load_full() {
@@ -1577,7 +2073,13 @@ impl DatabaseEditor {
 
     // Wait for the result or timeout after 60 seconds
     match tokio::time::timeout(Duration::from_secs(60), rx).await {
-      Ok(result) => result.map_err(internal_error)?,
+      Ok(result) => {
+        scope.check()?;
+        if !self.row_activities.matches(view_id, &context) {
+          return Err(crate::hyper_row_activity::changed());
+        }
+        result.map_err(internal_error)?
+      },
       Err(_) => Err(FlowyError::internal().with_context("Timeout while opening database view")),
     }
   }
@@ -2446,12 +2948,36 @@ fn notify_did_update_database_field(database: &Database, field_id: &str) -> Flow
   Ok(())
 }
 
-async fn database_row_evict_listener(key: Arc<String>, row: Weak<RwLock<DatabaseRow>>) {
-  remove_row_sync_plugin(key.as_str(), row).await
-}
-
-async fn remove_row_sync_plugin(row_id: &str, row: Weak<RwLock<DatabaseRow>>) {
-  if let Some(row) = row.upgrade() {
+async fn cleanup_finalized_row(
+  row_id: &str,
+  removed: HyperFinalizedRow,
+  cause: moka::notification::RemovalCause,
+  initialization: &tokio::sync::Mutex<()>,
+  state: &std::sync::Mutex<HyperRowSyncState>,
+  activities: &crate::hyper_row_activity::HyperRowActivities,
+) {
+  let _initialization = initialization.lock().await;
+  if activities.pinned(row_id, &removed.row) {
+    return;
+  }
+  {
+    let Ok(mut state) = state.lock() else {
+      return;
+    };
+    if let Some(active) = state.current.get(row_id) {
+      let same_instance = Weak::ptr_eq(&active.row, &removed.row);
+      if same_instance
+        && (active.generation != removed.generation
+          || cause == moka::notification::RemovalCause::Replaced)
+      {
+        return;
+      }
+      if active.generation == removed.generation {
+        state.current.remove(row_id);
+      }
+    }
+  }
+  if let Some(row) = removed.row.upgrade() {
     let should_remove = row.read().await.has_cloud_plugin();
     if should_remove {
       trace!("[Database]: un-finalize row: {}", row_id);
@@ -2462,3 +2988,195 @@ async fn remove_row_sync_plugin(row_id: &str, row: Weak<RwLock<DatabaseRow>>) {
     }
   }
 }
+
+#[cfg(test)]
+mod hyper_creation_cache_tests {
+  use super::*;
+  use crate::manager::hyper_creation_tests::Fixture;
+  use collab::core::collab::DataSource;
+  use collab_database::workspace_database::NoPersistenceDatabaseCollabService;
+
+  async fn drain(editor: &DatabaseEditor) {
+    editor.finalized_rows.run_pending_tasks().await;
+    tokio::time::timeout(Duration::from_secs(5), async {
+      loop {
+        let finished = editor.row_cleanup_finished.notified();
+        if editor
+          .row_cleanup_pending
+          .load(std::sync::atomic::Ordering::SeqCst)
+          == 0
+        {
+          break;
+        }
+        finished.await;
+      }
+    })
+    .await
+    .unwrap();
+  }
+
+  async fn source() -> (Fixture, Arc<DatabaseEditor>, Vec<RowId>) {
+    let fixture = Fixture::new(false).await;
+    let view = Uuid::new_v4().to_string();
+    let mut params = crate::template::make_default_grid(&view, "Cache rows");
+    let id = params.database_id.clone();
+    params.rows = (0..55)
+      .map(|_| collab_database::rows::CreateRowParams::new(Uuid::new_v4().to_string(), id.clone()))
+      .collect();
+    let ids = params
+      .rows
+      .iter()
+      .map(|row| row.id.clone())
+      .collect::<Vec<_>>();
+    fixture.manager.import_database(params).await.unwrap();
+    let editor = fixture
+      .manager
+      .get_database_editor_with_view_id(&view)
+      .await
+      .unwrap();
+    (fixture, editor, ids)
+  }
+
+  #[tokio::test]
+  async fn hyper_creation_size_eviction_and_late_cleanup_preserve_a_reinitialized_same_arc() {
+    let (fixture, editor, ids) = source().await;
+    let mut leases = HashMap::new();
+    for id in &ids {
+      editor.init_database_row(id).await.unwrap();
+      leases.insert(
+        id.to_string(),
+        editor
+          .row_sync_state
+          .lock()
+          .unwrap()
+          .current
+          .get(id.as_str())
+          .unwrap()
+          .clone(),
+      );
+    }
+    drain(&editor).await;
+    let mut active = 0;
+    let mut evicted = None;
+    for id in &ids {
+      let row = editor
+        .database
+        .read()
+        .await
+        .get_or_init_database_row(id)
+        .await
+        .unwrap();
+      if row.read().await.has_cloud_plugin() {
+        active += 1;
+      } else {
+        evicted = Some(id.clone());
+      }
+    }
+    assert!(
+      active <= 50,
+      "visited rows must retain the existing bounded cache policy"
+    );
+    let id = evicted.expect("55 visited rows must evict an entry from capacity50");
+    let row = editor.init_database_row(&id).await.unwrap();
+    let before = fixture.count(id.as_str());
+    cleanup_finalized_row(
+      id.as_str(),
+      leases.remove(id.as_str()).unwrap(),
+      moka::notification::RemovalCause::Size,
+      &editor.row_initialization,
+      &editor.row_sync_state,
+      &editor.row_activities,
+    )
+    .await;
+    drain(&editor).await;
+    assert!(row.read().await.has_cloud_plugin());
+    assert_eq!(fixture.count(id.as_str()), before);
+  }
+
+  #[tokio::test]
+  async fn hyper_creation_explicit_old_cleanup_cannot_remove_the_same_arc_after_reinit() {
+    let (_fixture, editor, ids) = source().await;
+    let id = &ids[0];
+    editor.init_database_row(id).await.unwrap();
+    let old = editor.finalized_rows.get(id.as_str()).await.unwrap();
+    editor.finalized_rows.invalidate(id.as_str()).await;
+    let row = editor.init_database_row(id).await.unwrap();
+    cleanup_finalized_row(
+      id.as_str(),
+      old,
+      moka::notification::RemovalCause::Explicit,
+      &editor.row_initialization,
+      &editor.row_sync_state,
+      &editor.row_activities,
+    )
+    .await;
+    drain(&editor).await;
+    assert!(row.read().await.has_cloud_plugin());
+  }
+
+  #[tokio::test]
+  async fn hyper_creation_replacement_with_another_arc_cleans_only_the_old_instance() {
+    let (fixture, editor, ids) = source().await;
+    let id = &ids[0];
+    let old_row = editor.init_database_row(id).await.unwrap();
+    let old = editor.finalized_rows.get(id.as_str()).await.unwrap();
+    let scope = editor.hyper_duplicate_context.read().unwrap().0.clone();
+    let data = old_row.read().await.encoded_collab().unwrap();
+    let object = fixture
+      .builder
+      .collab_object(
+        &scope.workspace_id,
+        scope.uid,
+        &Uuid::parse_str(id.as_str()).unwrap(),
+        CollabType::DatabaseRow,
+      )
+      .unwrap();
+    let collab = fixture
+      .builder
+      .build_collab(&object, &Arc::downgrade(&scope.db), DataSource::from(data))
+      .await
+      .unwrap();
+    let new_row = DatabaseRow::open(
+      id.clone(),
+      collab,
+      None,
+      Arc::new(NoPersistenceDatabaseCollabService),
+    )
+    .unwrap();
+    let new_row = fixture
+      .builder
+      .finalize(
+        object,
+        CollabBuilderConfig::default(),
+        Arc::new(RwLock::new(new_row)),
+      )
+      .unwrap();
+    {
+      let mut state = editor.row_sync_state.lock().unwrap();
+      state.next += 1;
+      let next = state.next;
+      state.current.insert(
+        id.to_string(),
+        HyperFinalizedRow {
+          generation: next,
+          row: Arc::downgrade(&new_row),
+        },
+      );
+    }
+    cleanup_finalized_row(
+      id.as_str(),
+      old,
+      moka::notification::RemovalCause::Replaced,
+      &editor.row_initialization,
+      &editor.row_sync_state,
+      &editor.row_activities,
+    )
+    .await;
+    assert!(!old_row.read().await.has_cloud_plugin());
+    assert!(new_row.read().await.has_cloud_plugin());
+  }
+}
+
+#[cfg(test)]
+#[path = "../../hyper_row_activity_tests.rs"]
+mod hyper_row_activity_tests;

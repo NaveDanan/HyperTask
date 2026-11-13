@@ -104,14 +104,106 @@ pub struct UploadedFilePB {
 }
 
 #[derive(Default, ProtoBuf, Validate)]
+#[validate(schema(function = "hyper_validate_download_destination"))]
 pub struct DownloadFilePB {
   #[pb(index = 1)]
   #[validate(url)]
   pub url: String,
 
   #[pb(index = 2)]
-  #[validate(custom(function = "required_valid_path"))]
   pub local_file_path: String,
+
+  /// Opt-in completed, bounded download. Unset preserves the legacy task acknowledgement.
+  #[pb(index = 3)]
+  pub wait_for_completion: bool,
+}
+
+fn hyper_validate_download_destination(
+  payload: &DownloadFilePB,
+) -> Result<(), validator::ValidationError> {
+  if !payload.wait_for_completion {
+    return required_valid_path(&payload.local_file_path);
+  }
+  // Completed downloads publish a new file atomically. Requiring the destination
+  // to exist here would conflict with the storage writer's no-clobber contract.
+  // The writer checks ownership and the destination again before publication.
+  let path = std::path::Path::new(&payload.local_file_path);
+  if !payload.local_file_path.contains('\0')
+    && path.is_absolute()
+    && path.file_name().is_some()
+    && path.parent().is_some_and(std::path::Path::is_dir)
+  {
+    Ok(())
+  } else {
+    Err(validator::ValidationError::new("invalid_path"))
+  }
+}
+
+#[cfg(test)]
+mod hyper_download_destination_tests {
+  use super::*;
+
+  fn payload(path: &std::path::Path, completed: bool) -> DownloadFilePB {
+    DownloadFilePB {
+      url: "https://server.example/api/file_storage/workspace/v1/blob/document/image.png".into(),
+      local_file_path: path.to_str().unwrap().into(),
+      wait_for_completion: completed,
+    }
+  }
+
+  #[test]
+  fn hyper_completed_download_accepts_new_destinations_without_creating_or_replacing_files() {
+    let root = tempfile::tempdir().unwrap();
+    let target = root.path().join("new-image.png");
+    assert!(payload(&target, true).validate().is_ok());
+    assert!(!target.exists());
+    std::fs::write(&target, b"retain previous file").unwrap();
+    assert!(payload(&target, true).validate().is_ok());
+    assert_eq!(std::fs::read(&target).unwrap(), b"retain previous file");
+  }
+
+  #[test]
+  fn hyper_completed_download_rejects_relative_missing_parent_and_invalid_url() {
+    let root = tempfile::tempdir().unwrap();
+    for path in [
+      std::path::PathBuf::new(),
+      "relative.png".into(),
+      root.path().join("missing/image.png"),
+    ] {
+      assert!(payload(&path, true).validate().is_err());
+    }
+    let parent_file = root.path().join("not-a-directory");
+    std::fs::write(&parent_file, b"retained").unwrap();
+    assert!(
+      payload(&parent_file.join("image.png"), true)
+        .validate()
+        .is_err()
+    );
+    let mut invalid = payload(&root.path().join("image.png"), true);
+    invalid.url = "not a URL".into();
+    assert!(invalid.validate().is_err());
+    invalid.url = "https://server.example/image.png".into();
+    invalid.local_file_path.push('\0');
+    assert!(invalid.validate().is_err());
+  }
+
+  #[test]
+  fn hyper_legacy_download_and_upload_keep_the_existing_path_requirement() {
+    let root = tempfile::tempdir().unwrap();
+    let target = root.path().join("source.png");
+    assert!(payload(&target, false).validate().is_err());
+    let mut upload = UploadFileParamsPB {
+      workspace_id: Uuid::new_v4().to_string(),
+      document_id: Uuid::new_v4().to_string(),
+      local_file_path: target.to_str().unwrap().into(),
+    };
+    assert!(upload.validate().is_err());
+    std::fs::write(&target, b"retained source").unwrap();
+    assert!(payload(&target, false).validate().is_ok());
+    assert!(upload.validate().is_ok());
+    upload.local_file_path = "relative.png".into();
+    assert!(upload.validate().is_err());
+  }
 }
 
 #[derive(Default, ProtoBuf, Validate)]

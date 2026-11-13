@@ -17,6 +17,36 @@ use tokio::time::interval;
 use tracing::{error, info, trace};
 use uuid::Uuid;
 
+#[derive(Clone, Eq, PartialEq)]
+struct HyperIndexOwner {
+  uid: i64,
+  workspace_id: Uuid,
+  revision: u64,
+}
+type HyperIndexOwnerState = tokio::sync::watch::Sender<Option<HyperIndexOwner>>;
+
+fn hyper_owner_snapshot(owner: &HyperIndexOwnerState) -> Option<HyperIndexOwner> {
+  owner.borrow().clone()
+}
+fn hyper_owner_current(owner: &HyperIndexOwnerState, expected: &Option<HyperIndexOwner>) -> bool {
+  hyper_owner_snapshot(owner) == *expected
+}
+async fn hyper_owner_run<F: std::future::Future>(
+  owner: &HyperIndexOwnerState,
+  expected: &Option<HyperIndexOwner>,
+  operation: F,
+) -> Option<F::Output> {
+  let mut changed = owner.subscribe();
+  if !hyper_owner_current(owner, expected) {
+    return None;
+  }
+  tokio::select! {
+    biased;
+    _ = changed.changed() => None,
+    value = operation => hyper_owner_current(owner, expected).then_some(value),
+  }
+}
+
 pub struct WriteObject {
   pub collab_object: CollabObject,
   pub collab: Weak<dyn CollabIndexedData>,
@@ -25,6 +55,7 @@ pub struct WriteObject {
 pub struct InstantIndexedDataWriter {
   collab_by_object: Arc<RwLock<HashMap<String, WriteObject>>>,
   consumers: Arc<RwLock<Vec<Box<dyn InstantIndexedDataConsumer>>>>,
+  owner: HyperIndexOwnerState,
 }
 
 impl Default for InstantIndexedDataWriter {
@@ -43,6 +74,7 @@ impl InstantIndexedDataWriter {
     InstantIndexedDataWriter {
       collab_by_object,
       consumers,
+      owner: tokio::sync::watch::channel(None).0,
     }
   }
 
@@ -52,120 +84,123 @@ impl InstantIndexedDataWriter {
   }
 
   pub async fn clear_consumers(&self) {
+    let owner = hyper_owner_snapshot(&self.owner);
     let mut consumers = self.consumers.write().await;
+    if !hyper_owner_current(&self.owner, &owner) {
+      return;
+    }
     consumers.clear();
     info!("[Indexing] Cleared all instant index consumers");
   }
 
   pub async fn register_consumer(&self, consumer: Box<dyn InstantIndexedDataConsumer>) {
+    self.register_consumer_when(consumer, || true).await;
+  }
+
+  pub async fn register_consumer_when(
+    &self,
+    consumer: Box<dyn InstantIndexedDataConsumer>,
+    is_current: impl Fn() -> bool,
+  ) {
+    let owner = hyper_owner_snapshot(&self.owner);
     info!(
       "[Indexing] Registering instant index consumer: {}",
       consumer.consumer_id()
     );
     let mut guard = self.consumers.write().await;
+    if !is_current() || !hyper_owner_current(&self.owner, &owner) {
+      return;
+    }
     guard.push(consumer);
   }
 
+  /// Change only derived indexing state; documents and persistence are untouched.
+  pub async fn activate_owner(&self, uid: i64, workspace_id: Uuid, is_current: impl Fn() -> bool) {
+    let mut expected = None;
+    self.owner.send_if_modified(|owner| {
+      if !is_current() {
+        return false;
+      }
+      let revision = owner
+        .as_ref()
+        .map_or(1, |value| value.revision.wrapping_add(1));
+      let next = HyperIndexOwner {
+        uid,
+        workspace_id,
+        revision,
+      };
+      *owner = Some(next.clone());
+      expected = Some(next);
+      true
+    });
+    if expected.is_none() {
+      return;
+    }
+    let mut queued = self.collab_by_object.write().await;
+    if !hyper_owner_current(&self.owner, &expected) {
+      return;
+    }
+    queued.clear();
+    drop(queued);
+    let mut consumers = self.consumers.write().await;
+    if hyper_owner_current(&self.owner, &expected) {
+      consumers.clear();
+    }
+  }
+
   pub async fn spawn_instant_indexed_provider(&self, runtime: &Runtime) -> FlowyResult<()> {
-    let weak_collab_by_object = Arc::downgrade(&self.collab_by_object);
-    let consumers_weak = Arc::downgrade(&self.consumers);
-    let interval_dur = Duration::from_secs(30);
-
+    let weak_objects = Arc::downgrade(&self.collab_by_object);
+    let weak_consumers = Arc::downgrade(&self.consumers);
+    let owner = self.owner.clone();
+    let expected = hyper_owner_snapshot(&owner);
     runtime.spawn(async move {
-      let mut ticker = interval(interval_dur);
+      if !hyper_owner_current(&owner, &expected) {
+        return;
+      }
+      let mut ticker = interval(Duration::from_secs(30));
       ticker.tick().await;
-
+      let mut changed = owner.subscribe();
+      if !hyper_owner_current(&owner, &expected) {
+        return;
+      }
       loop {
-        ticker.tick().await;
-
-        // Upgrade our state holders
-        let collab_by_object = match weak_collab_by_object.upgrade() {
-          Some(m) => m,
-          None => break, // provider dropped
+        tokio::select! { biased; _ = changed.changed() => break, _ = ticker.tick() => {} }
+        if !hyper_owner_current(&owner, &expected) {
+          break;
+        }
+        let (Some(objects), Some(consumers)) = (weak_objects.upgrade(), weak_consumers.upgrade())
+        else {
+          break;
         };
-        let consumers = match consumers_weak.upgrade() {
-          Some(c) => c,
-          None => break,
-        };
-
-        // Snapshot keys and consumers under read locks
-        let (object_ids, mut to_remove) = {
-          let guard = collab_by_object.read().await;
-          let keys: Vec<_> = guard.keys().cloned().collect();
-          (keys, Vec::new())
-        };
-        let guard = collab_by_object.read().await;
-        for id in object_ids {
-          // Check if the collab is still alive
-          match guard.get(&id) {
-            Some(wo) => {
-              if let Some(collab_rc) = wo.collab.upgrade() {
-                let data = collab_rc
-                  .get_unindexed_data(&wo.collab_object.collab_type)
-                  .await;
-
-                let consumers_guard = consumers.read().await;
-                for consumer in consumers_guard.iter() {
-                  let workspace_id = match Uuid::parse_str(&wo.collab_object.workspace_id) {
-                    Ok(id) => id,
-                    Err(err) => {
-                      error!(
-                        "Invalid workspace_id {}: {}",
-                        wo.collab_object.workspace_id, err
-                      );
-                      continue;
-                    },
-                  };
-                  let object_id = match Uuid::parse_str(&wo.collab_object.object_id) {
-                    Ok(id) => id,
-                    Err(err) => {
-                      error!("Invalid object_id {}: {}", wo.collab_object.object_id, err);
-                      continue;
-                    },
-                  };
-                  match consumer
-                    .consume_collab(
-                      &workspace_id,
-                      data.clone(),
-                      &object_id,
-                      wo.collab_object.collab_type,
-                    )
-                    .await
-                  {
-                    Ok(is_indexed) => {
-                      if is_indexed {
-                        trace!("[Indexing] {} consumed {}", consumer.consumer_id(), id);
-                      }
-                    },
-                    Err(err) => {
-                      error!(
-                        "Consumer {} failed on {}: {}",
-                        consumer.consumer_id(),
-                        id,
-                        err
-                      );
-                    },
-                  }
-                }
-              } else {
-                // Mark for removal if collab was dropped
-                to_remove.push(id);
-              }
-            },
-            None => continue,
+        let guard = objects.read().await;
+        if !hyper_owner_current(&owner, &expected) {
+          break;
+        }
+        let mut expired = Vec::new();
+        for (id, object) in guard.iter() {
+          if !hyper_consume_write_object(object, &consumers, &owner, &expected).await {
+            expired.push((id.clone(), object.collab.clone()));
+          }
+          if !hyper_owner_current(&owner, &expected) {
+            break;
           }
         }
-
-        if !to_remove.is_empty() {
-          let mut guard = collab_by_object.write().await;
-          guard.retain(|k, _| !to_remove.contains(k));
-          trace!("[Indexing] Removed {} stale entries", to_remove.len());
+        // Release the read guard before cleanup requests the same lock for writing.
+        drop(guard);
+        if !expired.is_empty() {
+          let mut queued = objects.write().await;
+          if !hyper_owner_current(&owner, &expected) {
+            break;
+          }
+          queued.retain(|id, object| {
+            !expired.iter().any(|(previous_id, previous)| {
+              id == previous_id && Weak::ptr_eq(&object.collab, previous)
+            })
+          });
         }
       }
-
       info!("[Indexing] Instant indexed data provider stopped");
     });
-
     Ok(())
   }
 
@@ -190,17 +225,33 @@ impl InstantIndexedDataWriter {
   }
 
   pub async fn index_unindexed_collab(&self, data: UnindexedCollab) -> FlowyResult<()> {
+    let owner = hyper_owner_snapshot(&self.owner);
+    if owner
+      .as_ref()
+      .is_some_and(|owner| owner.workspace_id != data.workspace_id)
+    {
+      return Ok(());
+    }
     let consumers_guard = self.consumers.read().await;
     for consumer in consumers_guard.iter() {
-      match consumer
-        .consume_collab(
+      if !hyper_owner_current(&self.owner, &owner) {
+        return Ok(());
+      }
+      let Some(result) = hyper_owner_run(
+        &self.owner,
+        &owner,
+        consumer.consume_collab(
           &data.workspace_id,
           data.data.clone(),
           &data.object_id,
           data.collab_type,
-        )
-        .await
-      {
+        ),
+      )
+      .await
+      else {
+        return Ok(());
+      };
+      match result {
         Ok(is_indexed) => {
           if is_indexed {
             trace!(
@@ -231,8 +282,16 @@ impl InstantIndexedDataWriter {
     if !self.support_collab_type(&collab_object.collab_type) {
       return;
     }
-
+    let owner = hyper_owner_snapshot(&self.owner);
+    if owner.as_ref().is_some_and(|owner| {
+      owner.uid != collab_object.uid || owner.workspace_id.to_string() != collab_object.workspace_id
+    }) {
+      return;
+    }
     let mut map = self.collab_by_object.write().await;
+    if !hyper_owner_current(&self.owner, &owner) {
+      return;
+    }
     map.insert(
       collab_object.object_id.clone(),
       WriteObject {
@@ -241,6 +300,78 @@ impl InstantIndexedDataWriter {
       },
     );
   }
+}
+
+#[cfg(test)]
+#[path = "hyper_index_owner_tests.rs"]
+mod hyper_index_owner_tests;
+
+async fn hyper_consume_write_object(
+  object: &WriteObject,
+  consumers: &Arc<RwLock<Vec<Box<dyn InstantIndexedDataConsumer>>>>,
+  owner: &HyperIndexOwnerState,
+  expected: &Option<HyperIndexOwner>,
+) -> bool {
+  if !hyper_owner_current(owner, expected) {
+    return false;
+  }
+  let Ok(workspace_id) = Uuid::parse_str(&object.collab_object.workspace_id) else {
+    return false;
+  };
+  if expected.as_ref().is_some_and(|owner| {
+    owner.uid != object.collab_object.uid || owner.workspace_id != workspace_id
+  }) {
+    return false;
+  }
+  let Some(collab) = object.collab.upgrade() else {
+    return false;
+  };
+  let Some(data) = hyper_owner_run(
+    owner,
+    expected,
+    collab.get_unindexed_data(&object.collab_object.collab_type),
+  )
+  .await
+  else {
+    return false;
+  };
+  let Some(consumers) = hyper_owner_run(owner, expected, consumers.read()).await else {
+    return false;
+  };
+  if !hyper_owner_current(owner, expected) {
+    return false;
+  }
+  let Ok(object_id) = Uuid::parse_str(&object.collab_object.object_id) else {
+    return false;
+  };
+  for consumer in consumers.iter() {
+    if !hyper_owner_current(owner, expected) {
+      return false;
+    }
+    let Some(result) = hyper_owner_run(
+      owner,
+      expected,
+      consumer.consume_collab(
+        &workspace_id,
+        data.clone(),
+        &object_id,
+        object.collab_object.collab_type,
+      ),
+    )
+    .await
+    else {
+      return false;
+    };
+    if let Err(error) = result {
+      error!(
+        "[Indexing] {} failed on {}: {}",
+        consumer.consumer_id(),
+        object_id,
+        error
+      );
+    }
+  }
+  true
 }
 
 pub fn unindexed_data_form_collab(

@@ -36,6 +36,7 @@ pub fn init(database_manager: Weak<DatabaseManager>) -> AFPlugin {
          .event(DatabaseEvent::CreateRow, create_row_handler)
          .event(DatabaseEvent::GetRow, get_row_handler)
          .event(DatabaseEvent::InitRow, init_row_handler)
+         .event(DatabaseEvent::HyperUpdateRowActivity, hyper_update_row_activity_handler)
          .event(DatabaseEvent::GetRowMeta, get_row_meta_handler)
          .event(DatabaseEvent::UpdateRowMeta, update_row_meta_handler)
          .event(DatabaseEvent::DeleteRows, delete_rows_handler)
@@ -235,7 +236,7 @@ pub enum DatabaseEvent {
   #[event(input = "RepeatedRowIdPB")]
   DeleteRows = 52,
 
-  #[event(input = "DatabaseViewRowIdPB")]
+  #[event(input = "HyperDuplicateRowPayloadPB", output = "RowMetaPB")]
   DuplicateRow = 53,
 
   #[event(input = "MoveRowPayloadPB")]
@@ -397,6 +398,9 @@ pub enum DatabaseEvent {
 
   #[event(input = "DatabaseViewIdPB", output = "DatabaseExportDataPB")]
   ExportRawDatabaseData = 178,
+
+  #[event(input = "HyperUpdateRowActivityPB", output = "HyperRowActivityAckPB")]
+  HyperUpdateRowActivity = 179,
 
   #[event(input = "MediaCellChangesetPB")]
   UpdateMediaCell = 200,

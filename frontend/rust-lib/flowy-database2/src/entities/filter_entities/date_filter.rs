@@ -20,6 +20,10 @@ pub struct DateFilterPB {
 
   #[pb(index = 4, one_of)]
   pub timestamp: Option<i64>,
+
+  /// Opt in to field-zoned cell days compared against UTC logical-day criteria.
+  #[pb(index = 5)]
+  pub use_field_timezone: bool,
 }
 
 #[derive(Deserialize, Serialize, Default, Clone, Debug)]
@@ -27,6 +31,13 @@ pub struct DateFilterContent {
   pub start: Option<i64>,
   pub end: Option<i64>,
   pub timestamp: Option<i64>,
+
+  #[serde(default, skip_serializing_if = "is_false")]
+  pub use_field_timezone: bool,
+}
+
+fn is_false(value: &bool) -> bool {
+  !*value
 }
 
 impl DateFilterContent {
@@ -126,6 +137,7 @@ impl ParseFilterData for DateFilterPB {
       date_filter.start = content.start;
       date_filter.end = content.end;
       date_filter.timestamp = content.timestamp;
+      date_filter.use_field_timezone = content.use_field_timezone;
     };
 
     date_filter
@@ -139,5 +151,25 @@ impl DateFilterPB {
     } else {
       Self::default()
     }
+  }
+}
+
+#[cfg(test)]
+mod hyper_policy_tests {
+  use super::*;
+  #[test]
+  fn hyper_date_filter_legacy_json_stays_canonical_and_opt_in_round_trips() {
+    let legacy = r#"{"start":null,"end":null,"timestamp":1794355200}"#;
+    let parsed = DateFilterContent::from_str(legacy).unwrap();
+    assert!(!parsed.use_field_timezone);
+    assert_eq!(parsed.to_json_string(), legacy);
+    let filter = DateFilterPB::parse(0, legacy.to_string());
+    assert!(!filter.use_field_timezone);
+    let enabled = DateFilterContent {
+      use_field_timezone: true,
+      ..parsed
+    }
+    .to_json_string();
+    assert!(DateFilterPB::parse(0, enabled).use_field_timezone);
   }
 }

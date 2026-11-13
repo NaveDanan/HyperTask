@@ -17,8 +17,7 @@ import {
 import { CalendarDays, FileText, Lock, MessageSquareText, MoreHorizontal, SquareKanban, Table2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavIconButton, TreeDisclosure, TreeRowActions, treeIndent, treeRowClass } from '@/components/app/nav';
-import { ViewBackendService } from '@/features/view/view-service';
-import { IconEmojiPicker } from '../icon-picker/IconEmojiPicker';
+import { HyperViewIconPicker } from '../../view-appearance/HyperViewIconPicker';
 import { sectionsActions } from '../stores/sections-store';
 import { sidebarSpace } from '../stores/space-store';
 import type { FolderSpaceType, IgnoreViewType } from '../stores/types';
@@ -374,14 +373,7 @@ function ViewIconButton({ view }: { view: ViewPB }) {
       constraints={{ maxWidth: 364, maxHeight: 356 }}
       margin={0}
       popup={(close) => (
-        <IconEmojiPicker
-          tabs={['emoji', 'icon', 'custom']}
-          initialType={iconData.type}
-          onSelected={(result) => {
-            void ViewBackendService.updateViewIcon(view, result.data);
-            if (!result.keepOpen) close();
-          }}
-        />
+        <HyperViewIconPicker view={view} onApplied={(keepOpen) => { if (!keepOpen) close(); }} />
       )}
     >
       <button

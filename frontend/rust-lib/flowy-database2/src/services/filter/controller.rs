@@ -148,6 +148,23 @@ impl FilterController {
     }
   }
 
+  pub async fn did_receive_field_timezone_changed(&self, field_id: &str) {
+    if self
+      .filters
+      .read()
+      .await
+      .iter()
+      .any(|filter| filter.uses_field_timezone(field_id))
+    {
+      self
+        .gen_task(
+          FilterEvent::FilterDidChanged,
+          QualityOfService::UserInteractive,
+        )
+        .await;
+    }
+  }
+
   #[tracing::instrument(level = "trace", skip(self))]
   pub async fn apply_changeset(&self, changeset: FilterChangeset) -> FilterChangesetNotificationPB {
     let mut filters = self.filters.write().await;
@@ -545,6 +562,93 @@ fn apply_filter(
 enum FilterEvent {
   FilterDidChanged,
   RowDidChanged(RowId),
+}
+
+#[cfg(test)]
+mod hyper_filter_group_deletion_tests {
+  use super::*;
+  use crate::entities::{FilterPB, NumberFilterConditionPB, TimeFilterPB};
+  use lib_infra::box_any::BoxAny;
+
+  fn leaf(id: &str, content: &str) -> Filter {
+    Filter {
+      id: id.into(),
+      inner: FilterInner::Data {
+        field_id: "minutes".into(),
+        field_type: FieldType::Time,
+        condition_and_content: BoxAny::new(TimeFilterPB {
+          condition: NumberFilterConditionPB::Equal,
+          content: content.into(),
+        }),
+      },
+    }
+  }
+  fn forest() -> Vec<Filter> {
+    vec![
+      Filter {
+        id: "root".into(),
+        inner: FilterInner::And {
+          children: vec![
+            leaf("root-sibling", "+00090"),
+            Filter {
+              id: "nested".into(),
+              inner: FilterInner::Or {
+                children: vec![
+                  leaf("direct-child", "-0"),
+                  Filter {
+                    id: "deep-group".into(),
+                    inner: FilterInner::And {
+                      children: vec![
+                        leaf("remove-deep", "9223372036854775807"),
+                        leaf("keep-deep", "-9223372036854775808"),
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      leaf("other-root", "9007199254740993"),
+    ]
+  }
+  fn snapshot(filters: &[Filter]) -> Vec<FilterPB> {
+    filters.iter().map(FilterPB::from).collect()
+  }
+
+  #[test]
+  fn hyper_filter_group_deletion_removes_only_a_deep_leaf_and_preserves_exact_other_data() {
+    let mut filters = forest();
+    let mut expected = snapshot(&filters);
+    expected[0].children[1].children[1].children.remove(0);
+    FilterController::delete_filter(&mut filters, "remove-deep");
+    assert_eq!(snapshot(&filters), expected);
+    FilterController::delete_filter(&mut filters, "remove-deep");
+    assert_eq!(snapshot(&filters), expected);
+  }
+
+  #[test]
+  fn hyper_filter_group_deletion_removes_nested_subtree_without_collapsing_or_rekeying_parent() {
+    let mut filters = forest();
+    let mut expected = snapshot(&filters);
+    expected[0].children.remove(1);
+    FilterController::delete_filter(&mut filters, "nested");
+    assert_eq!(snapshot(&filters), expected);
+    assert_eq!(filters[0].id, "root");
+  }
+
+  #[test]
+  fn hyper_filter_group_deletion_preserves_empty_group_and_other_roots() {
+    let mut filters = forest();
+    let mut expected = snapshot(&filters);
+    expected[0].children[1].children.clear();
+    FilterController::delete_filter(&mut filters, "direct-child");
+    FilterController::delete_filter(&mut filters, "deep-group");
+    assert_eq!(snapshot(&filters), expected);
+    FilterController::delete_filter(&mut filters, "root");
+    assert_eq!(snapshot(&filters), vec![expected[1].clone()]);
+  }
 }
 
 impl FilterEvent {

@@ -14,7 +14,7 @@ export type Route =
   | { name: 'fatal'; message: string };
 
 export interface AppState {
-  /** Incremented by every runAppFlowy(); the UI tree is keyed by it, like Flutter's restart. */
+  /** Incremented by every runHyperTask(); the UI tree is keyed by it, like Flutter's restart. */
   launchId: number;
   info: AppInfo | null;
   env: AppFlowyCloudSharedEnv | null;

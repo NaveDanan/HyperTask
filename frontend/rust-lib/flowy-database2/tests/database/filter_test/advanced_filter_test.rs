@@ -26,6 +26,7 @@ async fn create_advanced_filter_test() {
 
   let create_date_filter = || -> DateFilterPB {
     DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsAfter,
       timestamp: Some(1651366800),
       ..Default::default()
@@ -199,6 +200,7 @@ async fn create_advanced_filter_with_conversion_test() {
 
   let create_date_filter = || -> DateFilterPB {
     DateFilterPB {
+      use_field_timezone: false,
       condition: DateFilterConditionPB::DateStartsAfter,
       timestamp: Some(1651366800),
       ..Default::default()

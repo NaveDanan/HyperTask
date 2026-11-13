@@ -45,15 +45,23 @@ export function SidebarNewPageButton() {
 
 export function JiraButton() {
   const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:jira');
-  return <NavItem icon={<SquareCheckBig />} label="Jira" active={active}
-    onClick={() => tabsActions.openPlugin(localToolPlugin('jira'))} />;
+  return (
+    <Tooltip message="Jira">
+      <NavItem icon={<SquareCheckBig />} label="Jira" active={active}
+        onClick={() => tabsActions.openPlugin(localToolPlugin('jira'))} />
+    </Tooltip>
+  );
 }
 
 export function HyperTemplatesButton() {
   const { tr } = useTr();
   const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:templates');
-  return <NavItem icon={<LayoutTemplate />} label={tr('template.label')} active={active}
-    onClick={() => tabsActions.openPlugin(localToolPlugin('templates'))} />;
+  return (
+    <Tooltip message={tr('template.label')}>
+      <NavItem icon={<LayoutTemplate />} label={tr('template.label')} active={active}
+        onClick={() => tabsActions.openPlugin(localToolPlugin('templates'))} />
+    </Tooltip>
+  );
 }
 
 export function SidebarFooter(): ReactNode {
@@ -61,11 +69,13 @@ export function SidebarFooter(): ReactNode {
   const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.kind === 'trash');
   return (
     <div className="shrink-0 border-t border-sidebar-border py-2">
-      <NavItem icon={<Trash2 />} label={tr('trash.text')} active={active} onClick={() => {
-        // MenuSharedState.latestOpenView = null clears the tree selection.
-        useTabsStore.setState({ latestOpenView: null });
-        tabsActions.openPlugin(trashPlugin());
-      }} />
+      <Tooltip message={tr('trash.text')}>
+        <NavItem icon={<Trash2 />} label={tr('trash.text')} active={active} onClick={() => {
+          // MenuSharedState.latestOpenView = null clears the tree selection.
+          useTabsStore.setState({ latestOpenView: null });
+          tabsActions.openPlugin(trashPlugin());
+        }} />
+      </Tooltip>
     </div>
   );
 }

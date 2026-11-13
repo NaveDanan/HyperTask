@@ -289,6 +289,9 @@ impl Chat {
         },
       }
 
+      // The answer port identifies this request even when another account reuses a chat ID.
+      // Global notifications intentionally retain their upstream, chat-ID-only format.
+      let _ = answer_sink.send("finish:".to_string()).await;
       chat_notification_builder(chat_id, ChatNotification::FinishStreaming).send();
       trace!("[Chat] finish streaming");
 

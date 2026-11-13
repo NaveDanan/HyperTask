@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { FolderEventGetViewAncestors } from '@/backend/events';
 import { nameOrDefault } from '../view/view-ext';
+import { hyperDocumentOwnerKey, useHyperDocumentOwner, type HyperDocumentOwner } from '../document/HyperDocumentOwner';
+import { hyperCaptureSearchOwner } from './HyperSearchOwner';
 
 export interface ViewParent {
   id: string;
@@ -10,35 +12,52 @@ export interface ViewParent {
 }
 
 const cache = new Map<string, ViewParent[]>();
+let generation = 0;
 
-async function fetchAncestors(viewId: string): Promise<ViewParent[] | null> {
+export function resetViewAncestors() {
+  generation++;
+  cache.clear();
+}
+
+async function fetchAncestors(viewId: string, owner: HyperDocumentOwner): Promise<ViewParent[] | null> {
+  const scope = hyperCaptureSearchOwner(owner), captured = generation;
+  if (!scope) return null;
   const result = await FolderEventGetViewAncestors({ value: viewId });
-  if (!result.ok) return null;
+  if (!result.ok || !scope.isCurrent() || captured !== generation) return null;
   // Drop the workspace root (no parent) and the view itself.
   const ancestors = result.value.items
     .filter((e) => e.parentViewId !== '' && e.id !== viewId)
     .map((e) => ({ id: e.id, name: nameOrDefault(e) }));
-  cache.set(viewId, ancestors);
+  cache.set(JSON.stringify([scope.key, viewId]), ancestors);
   return ancestors;
 }
 
 /** { ancestors, isLoading }: cached value first, refreshed in the background. */
-export function useViewAncestors(viewId: string): { ancestors: ViewParent[]; isLoading: boolean } {
+export function useViewAncestors(viewId: string, expectedOwner?: HyperDocumentOwner): { ancestors: ViewParent[]; isLoading: boolean } {
+  const currentOwner = useHyperDocumentOwner();
+  const owner = expectedOwner ?? currentOwner;
+  const key = JSON.stringify([hyperDocumentOwnerKey(owner), viewId]);
   const [state, setState] = useState(() => {
-    const cached = cache.get(viewId);
-    return { ancestors: cached ?? [], isLoading: !cached };
+    const cached = owner?.isCurrent() ? cache.get(key) : undefined;
+    return { key, ancestors: cached ?? [], isLoading: !cached };
   });
   useEffect(() => {
+    const scope = hyperCaptureSearchOwner(owner);
+    if (!scope || hyperDocumentOwnerKey(currentOwner) !== scope.key) return;
     let active = true;
-    void fetchAncestors(viewId).then((ancestors) => {
-      if (active && ancestors) setState({ ancestors, isLoading: false });
-      else if (active) setState((s) => ({ ...s, isLoading: false }));
+    setState({ key, ancestors: cache.get(key) ?? [], isLoading: true });
+    void fetchAncestors(viewId, scope.owner).then((ancestors) => {
+      if (!active || !scope.isCurrent()) return;
+      setState({ key, ancestors: ancestors ?? cache.get(key) ?? [], isLoading: false });
+    }).catch(() => {
+      if (active && scope.isCurrent()) setState({ key, ancestors: cache.get(key) ?? [], isLoading: false });
     });
     return () => {
       active = false;
     };
-  }, [viewId]);
-  return state;
+  }, [viewId, key, owner, currentOwner]);
+  if (!owner?.isCurrent() || hyperDocumentOwnerKey(currentOwner) !== hyperDocumentOwnerKey(owner)) return { ancestors: [], isLoading: false };
+  return state.key === key ? state : { ancestors: cache.get(key) ?? [], isLoading: true };
 }
 
 /** buildOnelinePath: `first / ... / last` beyond two levels. */

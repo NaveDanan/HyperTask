@@ -1,14 +1,14 @@
 use chrono::{Days, Local};
 use collab_integrate::{CollabKVAction, CollabKVDB, PersistenceError};
 use collab_plugins::local_storage::kv::KVTransactionDB;
-use dashmap::mapref::entry::Entry;
 use dashmap::DashMap;
+use dashmap::mapref::entry::Entry;
 use flowy_error::FlowyError;
 use flowy_sqlite::ConnectionPool;
 use flowy_sqlite::{DBConnection, Database};
 use flowy_user_pub::entities::UserProfile;
 use flowy_user_pub::sql::select_user_profile;
-use lib_infra::file_util::{unzip_and_replace, zip_folder};
+use lib_infra::file_util::{is_completed_zip_backup, unzip_and_replace, zip_folder};
 use std::path::{Path, PathBuf};
 use std::sync::Weak;
 use std::{fs, io, sync::Arc};
@@ -47,13 +47,19 @@ impl UserDB {
       let zip_backup = CollabDBZipBackup::new(collab_db_path.clone(), history_folder);
       if collab_db_path.exists() {
         // Validate the existing collaboration database.
-        let result = self.open_collab_db(collab_db_path, uid);
-        let is_ok = validate_collab_db(result, uid, workspace_id);
+        let db = match self.open_collab_db(collab_db_path, uid) {
+          Ok(db) => db,
+          Err(err) => {
+            error!("Open collab db for backup failed: {:?}", err);
+            return;
+          },
+        };
+        let is_ok = validate_collab_db(Ok(db.clone()), uid, workspace_id);
         if is_ok {
           // If database is valid, update the shared map and initiate backup.
           // Asynchronous backup operation.
           tokio::spawn(async move {
-            if let Err(err) = tokio::task::spawn_blocking(move || zip_backup.backup()).await {
+            if let Err(err) = run_collab_backup(move || zip_backup.backup(&db)).await {
               error!("Backup of collab db failed: {:?}", err);
             }
           });
@@ -163,6 +169,15 @@ impl UserDB {
   }
 }
 
+async fn run_collab_backup(
+  operation: impl FnOnce() -> io::Result<()> + Send + 'static,
+) -> io::Result<()> {
+  // Observe both a failed blocking task and the operation's own io::Result.
+  tokio::task::spawn_blocking(operation)
+    .await
+    .map_err(|error| io::Error::new(io::ErrorKind::Other, format!("Backup task failed: {error}")))?
+}
+
 pub struct CollabDBZipBackup {
   collab_db_path: PathBuf,
   history_folder: PathBuf,
@@ -177,7 +192,7 @@ impl CollabDBZipBackup {
   }
 
   #[instrument(name = "backup_collab_db", skip_all, err)]
-  pub fn backup(&self) -> io::Result<()> {
+  pub fn backup(&self, db: &CollabKVDB) -> io::Result<()> {
     let file_name = match std::env::var("APP_VERSION") {
       Ok(version_num) => {
         format!("collab_db_{}_{}.zip", version_num, today_zip_timestamp())
@@ -189,15 +204,38 @@ impl CollabDBZipBackup {
 
     let today_zip_file = self.history_folder.join(file_name);
 
-    // Remove today's existing zip file if it exists
-    if !today_zip_file.exists() {
-      // Create a backup for today
+    self.backup_to(db, &today_zip_file, |source, destination| {
+      zip_folder(source, destination)
+    })
+  }
+
+  fn backup_to(
+    &self,
+    db: &CollabKVDB,
+    today_zip_file: &Path,
+    archive: impl FnOnce(&Path, &Path) -> io::Result<()>,
+  ) -> io::Result<()> {
+    // Existence alone is not success: older failures could leave a valid-looking
+    // partial ZIP. Preserve it until a new, fully completed replacement is ready.
+    if !is_completed_zip_backup(today_zip_file).unwrap_or(false) {
       event!(
         tracing::Level::INFO,
         "Backup collab db to {:?}",
         today_zip_file
       );
-      zip_folder(&self.collab_db_path, &today_zip_file)?;
+      let staging = tempfile::Builder::new()
+        .prefix(".HyperTask-collab-checkpoint-")
+        .tempdir_in(&self.history_folder)?;
+      let checkpoint = staging.path().join("collab_db");
+      db.create_logical_checkpoint(&checkpoint)
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
+      archive(&checkpoint, today_zip_file)?;
+      if !is_completed_zip_backup(today_zip_file)? {
+        return Err(io::Error::new(
+          io::ErrorKind::InvalidData,
+          "The backup ZIP did not complete.",
+        ));
+      }
     }
 
     // Clean up old backups
@@ -319,6 +357,152 @@ fn today_zip_timestamp() -> String {
 
 fn zip_time_format() -> &'static str {
   "%Y%m%d"
+}
+
+#[cfg(test)]
+mod hyper_backup_tests {
+  use super::*;
+  use collab_plugins::local_storage::kv::KVStore;
+  use std::io::Write;
+  use zip::ZipWriter;
+  use zip::write::FileOptions;
+
+  fn source_and_backup() -> (tempfile::TempDir, CollabKVDB, CollabDBZipBackup, PathBuf) {
+    let fixture = tempfile::tempdir().unwrap();
+    let source = fixture.path().join("collab_db");
+    let db = CollabKVDB::open(&source).unwrap();
+    db.with_write_txn(|txn| txn.insert(b"saved-key", b"before-checkpoint"))
+      .unwrap();
+    let history = fixture.path().join("history");
+    fs::create_dir(&history).unwrap();
+    let daily = history.join("collab_db_test_20261111.zip");
+    (fixture, db, CollabDBZipBackup::new(source, history), daily)
+  }
+
+  fn write_legacy_zip(path: &Path) {
+    let mut zip = ZipWriter::new(fs::File::create(path).unwrap());
+    zip
+      .start_file::<_, ()>("previous-backup", FileOptions::default())
+      .unwrap();
+    zip
+      .write_all(b"preserve the previous archive until replacement succeeds")
+      .unwrap();
+    zip.finish().unwrap();
+  }
+
+  #[test]
+  fn hyper_backup_uses_a_closed_checkpoint_while_source_writes_continue() {
+    let (fixture, db, backup, daily) = source_and_backup();
+    write_legacy_zip(&daily);
+    assert!(!is_completed_zip_backup(&daily).unwrap());
+    let mut archived = false;
+    backup
+      .backup_to(&db, &daily, |checkpoint, target| {
+        archived = true;
+        // Opening here proves the snapshot API has released every target DB handle.
+        let closed = CollabKVDB::open(checkpoint).unwrap();
+        assert_eq!(
+          closed.read_txn().get(b"saved-key").unwrap(),
+          Some(b"before-checkpoint".to_vec())
+        );
+        db.with_write_txn(|txn| txn.insert(b"saved-key", b"after-checkpoint"))
+          .unwrap();
+        assert_eq!(
+          closed.read_txn().get(b"saved-key").unwrap(),
+          Some(b"before-checkpoint".to_vec())
+        );
+        drop(closed);
+        zip_folder(checkpoint, target)
+      })
+      .unwrap();
+    assert!(archived);
+    assert!(is_completed_zip_backup(&daily).unwrap());
+    let restored_path = fixture.path().join("restored");
+    unzip_and_replace(&daily, &restored_path).unwrap();
+    let restored = CollabKVDB::open(&restored_path).unwrap();
+    assert_eq!(
+      restored.read_txn().get(b"saved-key").unwrap(),
+      Some(b"before-checkpoint".to_vec())
+    );
+    assert_eq!(
+      db.read_txn().get(b"saved-key").unwrap(),
+      Some(b"after-checkpoint".to_vec())
+    );
+    assert_eq!(fs::read_dir(&backup.history_folder).unwrap().count(), 1);
+    backup
+      .backup_to(&db, &daily, |_, _| {
+        panic!("A completed daily backup should be reused.")
+      })
+      .unwrap();
+  }
+
+  #[test]
+  fn hyper_backup_failed_zip_preserves_previous_unmarked_archive_and_cleans_checkpoint() {
+    let (_fixture, db, backup, daily) = source_and_backup();
+    write_legacy_zip(&daily);
+    let previous = fs::read(&daily).unwrap();
+    let mut attempted = false;
+    let error = backup
+      .backup_to(&db, &daily, |checkpoint, target| {
+        attempted = true;
+        fs::remove_dir_all(checkpoint)?;
+        zip_folder(checkpoint, target)
+      })
+      .unwrap_err();
+    assert!(
+      attempted,
+      "An old unmarked ZIP must not count as today's completed job."
+    );
+    assert_eq!(error.kind(), io::ErrorKind::NotFound);
+    assert_eq!(fs::read(&daily).unwrap(), previous);
+    assert!(!is_completed_zip_backup(&daily).unwrap());
+    assert_eq!(fs::read_dir(&backup.history_folder).unwrap().count(), 1);
+    assert_eq!(
+      db.read_txn().get(b"saved-key").unwrap(),
+      Some(b"before-checkpoint".to_vec())
+    );
+    backup
+      .backup_to(&db, &daily, |checkpoint, target| {
+        zip_folder(checkpoint, target)
+      })
+      .unwrap();
+    assert!(is_completed_zip_backup(&daily).unwrap());
+  }
+
+  #[test]
+  fn hyper_backup_failed_first_zip_leaves_no_completed_archive_or_staging_directory() {
+    let (_fixture, db, backup, daily) = source_and_backup();
+    let error = backup
+      .backup_to(&db, &daily, |checkpoint, target| {
+        fs::remove_dir_all(checkpoint)?;
+        zip_folder(checkpoint, target)
+      })
+      .unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::NotFound);
+    assert!(!daily.exists());
+    assert_eq!(fs::read_dir(&backup.history_folder).unwrap().count(), 0);
+  }
+
+  #[test]
+  fn hyper_backup_observes_inner_io_failures_and_panicked_blocking_tasks() {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+      .build()
+      .unwrap();
+    let inner = runtime
+      .block_on(run_collab_backup(|| {
+        Err(io::Error::new(
+          io::ErrorKind::NotFound,
+          "snapshot source disappeared",
+        ))
+      }))
+      .unwrap_err();
+    assert_eq!(inner.kind(), io::ErrorKind::NotFound);
+    let joined = runtime
+      .block_on(run_collab_backup(|| panic!("isolated backup task panic")))
+      .unwrap_err();
+    assert_eq!(joined.kind(), io::ErrorKind::Other);
+    assert!(joined.to_string().contains("Backup task failed"));
+  }
 }
 
 pub(crate) fn validate_collab_db(

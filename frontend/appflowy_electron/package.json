@@ -14,11 +14,12 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.integration.json",
     "test": "vitest run",
     "harness:compile": "tsc --ignoreConfig --outDir .cache/harness --rootDir src/main --module node16 --moduleResolution node16 --target es2022 --types node --skipLibCheck --esModuleInterop src/main/core/process.ts src/main/core/protocol.ts src/main/core/binary.ts src/main/prefs.ts src/main/device-id.ts || exit 0",
     "harness": "node scripts/web-harness/server.cjs",
-    "harness:shot": "node scripts/web-harness/screenshot.mjs"
+    "harness:shot": "node scripts/web-harness/screenshot.mjs",
+    "stage:identity": "node scripts/hyper-stage-identity.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -53,5 +54,6 @@
   },
   "allowScripts": {
     "electron@44.10.2": true
-  }
+  },
+  "desktopName": "io.github.navedanan.hypertask.desktop"
 }

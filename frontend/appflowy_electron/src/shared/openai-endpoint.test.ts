@@ -5,6 +5,7 @@ import {
   isEndpointVendorHost,
   parseCompletionBody,
   validateEndpoint,
+  validateEndpointBaseUrl, parseEndpointModelPage, safeEndpointModelPageUrl,
 } from './openai-endpoint';
 
 const URL_ERROR = 'Enter an absolute HTTP or HTTPS API base URL without credentials, query parameters, or fragments.';
@@ -57,6 +58,36 @@ describe('validateEndpoint', () => {
   it('requires a chat model after the URL checks', () => {
     expect(failure(() => validateEndpoint('https://ai.internal/v1', '   '))).toMatchObject({ kind: 'format', message: MODEL_ERROR });
     expect(failure(() => validateEndpoint('ftp://ai.internal', ''))?.message).toBe(URL_ERROR);
+  });
+});
+
+describe('endpoint model discovery pages', () => {
+  const base = 'http://localhost:8000/api/v1', current = `${base}/models`;
+  it('validates an endpoint without needing a selected model', () => {
+    expect(() => validateEndpointBaseUrl(base)).not.toThrow();
+    expect(() => validateEndpoint(base, '')).toThrow(MODEL_ERROR);
+    expect(() => validateEndpointBaseUrl('https://appflowy.cloud/v1')).toThrow(VENDOR_ERROR);
+  });
+  it('sorts/deduplicates all IDs and accepts a valid empty list', () => {
+    expect(parseEndpointModelPage('{"data":[{"id":"z"},{"id":"a"},{"id":"z"}]}', current, base)).toEqual({ models: ['a', 'z'], nextUrl: null });
+    expect(parseEndpointModelPage('{"object":"list","data":[]}', current, base)).toEqual({ models: [], nextUrl: null });
+  });
+  it('rejects malformed responses without including provider body or credentials in errors', () => {
+    for (const text of ['private-secret', '{}', '[]', '{"data":"private-secret"}', '{"data":[{"id":12}]}', '{"data":[{"id":""}]}', '{"data":[{"id":"line\\nbreak"}]}']) {
+      const error = failure(() => parseEndpointModelPage(text, current, base));
+      expect(error?.kind).toBe('format'); expect(error?.message).not.toContain('private-secret');
+    }
+  });
+  it('builds encoded cursor pagination preserving existing query options', () => {
+    expect(parseEndpointModelPage('{"data":[{"id":"model"}],"has_more":true,"last_id":"a/b?c"}', `${current}?limit=10`, base).nextUrl).toBe(`${current}?limit=10&after=a%2Fb%3Fc`);
+    expect(parseEndpointModelPage('{"data":[{"id":"last-model"}],"has_more":true}', current, base).nextUrl).toBe(`${current}?after=last-model`);
+    expect(() => parseEndpointModelPage('{"data":[],"has_more":true}', current, base)).toThrow('cursor');
+    expect(() => parseEndpointModelPage('{"data":[],"has_more":"yes"}', current, base)).toThrow('pagination');
+  });
+  it('accepts only safe next links to the configured models resource', () => {
+    expect(parseEndpointModelPage('{"data":[],"next":"?after=next"}', current, base).nextUrl).toBe(`${current}?after=next`);
+    expect(parseEndpointModelPage('{"data":[],"links":{"next":"/api/v1/models?page=2"}}', current, base).nextUrl).toBe(`${current}?page=2`);
+    for (const next of ['https://other.example/models', 'http://localhost:8000/admin', 'http://user:secret@localhost:8000/api/v1/models', 'file:///api/v1/models', '?after=a#fragment', '//other.example/api/v1/models']) expect(() => safeEndpointModelPageUrl(next, current, base)).toThrow('unsafe');
   });
 });
 

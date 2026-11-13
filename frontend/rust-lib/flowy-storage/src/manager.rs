@@ -46,6 +46,7 @@ pub struct StorageManager {
   uploader: Arc<FileUploader>,
   progress_notifiers: Arc<DashMap<String, ProgressNotifier>>,
   global_notifier: GlobalNotifier,
+  download_generations: watch::Sender<u64>,
 }
 
 impl Drop for StorageManager {
@@ -65,6 +66,7 @@ impl StorageManager {
       user_service.get_application_root_dir()
     ));
     let (global_notifier, _) = broadcast::channel(2000);
+    let (download_generations, _) = watch::channel(0);
     let temp_storage = Arc::new(FileTempStorage::new(temp_storage_path));
     let (notifier, notifier_rx) = watch::channel(Signal::Proceed);
     let task_queue = Arc::new(UploadTaskQueue::new(notifier));
@@ -77,6 +79,7 @@ impl StorageManager {
       is_exceed_storage_limit: is_exceed_storage_limit.clone(),
       progress_notifiers: progress_notifiers.clone(),
       global_notifier: global_notifier.clone(),
+      download_generations: download_generations.clone(),
     });
 
     let uploader = Arc::new(FileUploader::new(
@@ -131,7 +134,14 @@ impl StorageManager {
       uploader,
       progress_notifiers,
       global_notifier,
+      download_generations,
     }
+  }
+
+  pub fn invalidate_download_operations(&self) {
+    self
+      .download_generations
+      .send_modify(|value| *value = value.wrapping_add(1));
   }
 
   pub async fn register_file_progress_stream(&self, port: i64) {
@@ -181,6 +191,7 @@ impl StorageManager {
   }
 
   pub async fn initialize_after_open_workspace(&self, workspace_id: &Uuid) {
+    self.invalidate_download_operations();
     self.enable_storage_write_access();
 
     if let Err(err) = prepare_upload_task(self.uploader.clone(), self.user_service.clone()).await {
@@ -264,10 +275,26 @@ pub struct StorageServiceImpl {
   is_exceed_storage_limit: Arc<AtomicBool>,
   progress_notifiers: Arc<DashMap<String, ProgressNotifier>>,
   global_notifier: GlobalNotifier,
+  download_generations: watch::Sender<u64>,
 }
 
 #[async_trait]
 impl StorageService for StorageServiceImpl {
+  async fn download_object_complete(
+    &self,
+    url: String,
+    local_file_path: String,
+  ) -> FlowyResult<()> {
+    crate::hyper_download::hyper_download_complete(
+      self.cloud_service.clone(),
+      self.user_service.clone(),
+      self.download_generations.clone(),
+      url,
+      local_file_path,
+    )
+    .await
+  }
+
   async fn delete_object(&self, url: String) -> FlowyResult<()> {
     if let Some((workspace_id, parent_dir, file_id)) =
       self.cloud_service.parse_object_url_v1(&url).await

@@ -17,7 +17,7 @@ use std::path::Path;
 use std::sync::{Arc, Weak};
 
 use crate::openai_endpoint::{
-  EndpointConfig, LocalSource, context_message, retrieve_context, store_source,
+  EndpointConfig, LocalSource, context_message, retrieve_completion_context, retrieve_context, store_source,
 };
 use base64::Engine;
 use futures::StreamExt;
@@ -319,10 +319,10 @@ impl ChatCloudService for ChatServiceMiddleware {
     let endpoint = self.endpoint()?;
     let pointer = self.local_ai.get_local_ai_setting().ollama_server_url;
     let context = if let Some(metadata) = &params.metadata {
-      retrieve_context(
+      retrieve_completion_context(
         &pointer,
         &metadata.object_id.to_string(),
-        metadata.rag_ids.as_deref(),
+        metadata.rag_ids.as_deref().unwrap_or_default(),
         &params.text,
       )?
     } else {

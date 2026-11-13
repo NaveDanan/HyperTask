@@ -12,7 +12,7 @@ import { HyperLogo } from '@/ui/HyperLogo';
 import { languageName, supportedLocales, useI18nStore, useTr } from '@/i18n';
 import { useAppStore } from '@/startup/app-store';
 import { KVKeys, KeyValueStorage } from '@/startup/kv';
-import { openWorkspaceOrHandleError, runAppFlowy, signUpAsGuest } from '@/startup/launcher';
+import { openWorkspaceOrHandleError, runHyperTask, signUpAsGuest } from '@/startup/HyperLauncher';
 import { appearanceActions } from '@/theme/appearance-store';
 import type { FlowyError } from '@shared/protobuf/flowy-error/errors_pb';
 
@@ -59,9 +59,9 @@ export function SkipLogInScreen() {
 
   const go = async () => {
     if (anonExists) {
-      if ((await UserEventOpenAnonUser()).ok) await runAppFlowy();
+      if ((await UserEventOpenAnonUser()).ok) await runHyperTask();
     } else if (customized) {
-      await runAppFlowy({ isAnon: true });
+      await runHyperTask({ isAnon: true });
     } else {
       const result = await signUpAsGuest();
       if (result.ok) await openWorkspaceOrHandleError();
@@ -157,7 +157,7 @@ export function WorkspaceErrorScreen({ error }: { error: FlowyError }) {
           <EmptyContent>
             <Button size="lg" className="h-10 w-full" onClick={async () => {
               await UserEventSignOut();
-              await runAppFlowy();
+              await runHyperTask();
             }}>{tr('settings.menu.logout')}</Button>
           </EmptyContent>
         </Empty>
@@ -206,7 +206,7 @@ export function FatalScreen({ message }: { message: string }) {
             <EmptyMedia variant="icon" className="bg-destructive/10 text-destructive"><TriangleAlert className="size-5" /></EmptyMedia>
             <EmptyTitle className="w-full rounded-md bg-muted p-3 text-left font-mono text-xs font-normal break-words">{message}</EmptyTitle>
           </EmptyHeader>
-          <EmptyContent><Button size="lg" className="h-10 w-full" onClick={() => void runAppFlowy()}>Restart</Button></EmptyContent>
+          <EmptyContent><Button size="lg" className="h-10 w-full" onClick={() => void runHyperTask()}>Restart</Button></EmptyContent>
         </Empty>
       </div>
     </div>

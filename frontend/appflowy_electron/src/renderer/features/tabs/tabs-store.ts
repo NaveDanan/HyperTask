@@ -87,13 +87,15 @@ export function registerViewExpander(viewId: string, expander: ViewExpander): ()
 const isViewExpanded = (viewId: string) => [...(expanders.get(viewId) ?? [])].some((e) => e.isExpanded());
 
 /** _expandAncestors: persist every ancestor as expanded and expand the first registered one. */
-async function expandAncestors(view: ViewPB) {
+async function expandAncestors(view: ViewPB, isCurrent: () => boolean = () => true) {
+  if (!isCurrent()) return;
   if (isViewExpanded(view.parentViewId)) return;
   const expanded = KeyValueStorage.getJson<Record<string, boolean>>(KVKeys.expandedViews) ?? {};
   const ancestors = await FolderEventGetViewAncestors({ value: view.id });
-  if (!ancestors.ok) return;
+  if (!ancestors.ok || !isCurrent()) return;
   for (const ancestor of ancestors.value.items) expanded[ancestor.id] = true;
   await KeyValueStorage.set(KVKeys.expandedViews, JSON.stringify(expanded));
+  if (!isCurrent()) return;
   for (const ancestor of ancestors.value.items) {
     const candidates = [...(expanders.get(ancestor.id) ?? [])];
     const target = candidates.find((e) => !e.isExpanded());
@@ -104,7 +106,7 @@ async function expandAncestors(view: ViewPB) {
   }
 }
 
-let lastOpen: { pluginId: string; viewId?: string; at: number } | null = null;
+let lastOpen: { pluginId: string; viewId?: string; at: number; isCurrent?: () => boolean } | null = null;
 
 /** TabsBloc (workspace/application/tabs/tabs_bloc.dart) with its exact reducer rules. */
 export const tabsActions = {
@@ -172,10 +174,11 @@ export const tabsActions = {
   },
 
   /** openPlugin: select an existing tab, else replace the current tab's page (even when pinned). */
-  openPlugin(plugin: Plugin, view?: ViewPB, setLatest = true) {
+  openPlugin(plugin: Plugin, view?: ViewPB, setLatest = true, isCurrent: () => boolean = () => true) {
+    if (!isCurrent()) return;
     const now = Date.now();
-    if (lastOpen && lastOpen.pluginId === plugin.id && lastOpen.viewId === view?.id && now - lastOpen.at < 500) return;
-    lastOpen = { pluginId: plugin.id, viewId: view?.id, at: now };
+    if (lastOpen && (!lastOpen.isCurrent || lastOpen.isCurrent()) && lastOpen.pluginId === plugin.id && lastOpen.viewId === view?.id && now - lastOpen.at < 500) return;
+    lastOpen = { pluginId: plugin.id, viewId: view?.id, at: now, isCurrent };
 
     resetCurrentSecondary();
     const { tabs, currentIndex } = get();
@@ -189,7 +192,7 @@ export const tabsActions = {
     if (setLatest) {
       if (view && isSpace(view)) return;
       setLatestOpenView(view);
-      if (view) void expandAncestors(view);
+      if (view) void expandAncestors(view, isCurrent);
     }
   },
 
@@ -231,8 +234,8 @@ export const tabsActions = {
   openViewInNewTab(view: ViewPB) {
     tabsActions.openTab(viewPlugin(view), view);
   },
-  openView(view: ViewPB, args?: PluginArguments) {
-    tabsActions.openPlugin(viewPlugin(view, args), view);
+  openView(view: ViewPB, args?: PluginArguments, isCurrent?: () => boolean) {
+    tabsActions.openPlugin(viewPlugin(view, args), view, true, isCurrent);
   },
 
   /** Keeps tab titles/icons fresh when a view changes (ViewPluginNotifier.onViewUpdated). */

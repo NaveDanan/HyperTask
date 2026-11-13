@@ -29,7 +29,7 @@ import {
   usePopoverContainer,
   type PopoverController,
 } from '@/ui';
-import { runAppFlowy } from '@/startup/launcher';
+import { runHyperTask } from '@/startup/HyperLauncher';
 import { useDeepLinkStore } from '@/startup/deep-link';
 import { homeSettingActions, useHomeSettingStore } from '@/features/home/home-setting-store';
 import { tabsActions } from '@/features/tabs/tabs-store';
@@ -425,7 +425,7 @@ function WorkspaceMoreButton({ mutex: _mutex }: { mutex: PopoverMutex }) {
   const { tr } = useTr();
   return <MenuRow icon={<LogOut />} label={tr('button.logout')} onClick={async () => {
     await UserEventSignOut();
-    await runAppFlowy();
+    await runHyperTask();
   }} />;
 }
 

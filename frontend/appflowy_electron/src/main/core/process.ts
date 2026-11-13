@@ -39,7 +39,7 @@ export class CoreProcess extends EventEmitter<CoreProcessEvents> {
   private initWaiters: Array<(code: number) => void> = [];
   private closing = false;
 
-  constructor(private readonly binaryPath: string) {
+  constructor(private readonly binaryPath: string, private readonly childEnvironment?: () => NodeJS.ProcessEnv) {
     super();
   }
 
@@ -82,7 +82,7 @@ export class CoreProcess extends EventEmitter<CoreProcessEvents> {
     });
 
     this.child = spawn(this.binaryPath, [], {
-      env: { ...process.env, APPFLOWY_CORE_PORT: String(port), APPFLOWY_CORE_TOKEN: token },
+      env: { ...process.env, ...this.childEnvironment?.(), APPFLOWY_CORE_PORT: String(port), APPFLOWY_CORE_TOKEN: token },
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
     });
@@ -100,8 +100,13 @@ export class CoreProcess extends EventEmitter<CoreProcessEvents> {
   /** Sends the init_sdk configuration. Resolves with the core's return code (0 = success). */
   init(configuration: object): Promise<number> {
     return new Promise((resolve) => {
+      const frame = encodeFrame(Kind.Init, Buffer.from(JSON.stringify(configuration), 'utf8'));
+      if (!this.socket || this.socket.destroyed) { resolve(-1); return; }
+      // A replacement SDK cannot finish requests belonging to the old owner.
+      // Resolve them before native teardown, and never replay them into the new SDK.
+      this.retireRequests('AppFlowy SDK initialization retired this request');
       this.initWaiters.push(resolve);
-      this.write(encodeFrame(Kind.Init, Buffer.from(JSON.stringify(configuration), 'utf8')));
+      this.write(frame);
     });
   }
 
@@ -110,6 +115,10 @@ export class CoreProcess extends EventEmitter<CoreProcessEvents> {
     return new Promise((resolve) => {
       if (!this.socket || this.socket.destroyed) {
         resolve({ status: Status.Internal, payload: Buffer.from('AppFlowy core is not running') });
+        return;
+      }
+      if (this.initWaiters.length > 0) {
+        resolve({ status: Status.Internal, payload: Buffer.from('AppFlowy core is initializing') });
         return;
       }
       this.pending.set(id, resolve);
@@ -141,9 +150,10 @@ export class CoreProcess extends EventEmitter<CoreProcessEvents> {
           this.resolve(decodeResponse(frame.body));
           break;
         case Kind.Notification:
-          this.emit('notification', new Uint8Array(frame.body));
+          if (this.initWaiters.length === 0) this.emit('notification', new Uint8Array(frame.body));
           break;
         case Kind.PortMessage: {
+          if (this.initWaiters.length > 0) break;
           const { port, value } = decodePortMessage(frame.body);
           this.emit('portMessage', port, value);
           break;
@@ -177,10 +187,14 @@ export class CoreProcess extends EventEmitter<CoreProcessEvents> {
     resolve({ status: response.status, payload: response.payload });
   }
 
-  private failPending(message: string) {
+  private retireRequests(message: string) {
     const payload = Buffer.from(message);
     for (const resolve of this.pending.values()) resolve({ status: Status.Internal, payload });
     this.pending.clear();
+  }
+
+  private failPending(message: string) {
+    this.retireRequests(message);
     for (const waiter of this.initWaiters) waiter(-1);
     this.initWaiters = [];
   }

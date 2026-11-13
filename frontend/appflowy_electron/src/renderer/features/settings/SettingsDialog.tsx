@@ -6,7 +6,7 @@ import { NavItem } from '@/components/app/nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTr } from '@/i18n';
-import { runAppFlowy } from '@/startup/launcher';
+import { runHyperTask } from '@/startup/HyperLauncher';
 import { closeAllDialogs, showDialog } from '@/ui';
 import { loseFocus, openSettings } from '@/features/home/notifiers';
 import { AccountPage } from './account/AccountPage';
@@ -134,11 +134,11 @@ function SettingsDialog({ close }: { close: () => void }) {
     closeDialog: close,
     didLogout: () => {
       close();
-      void runAppFlowy();
+      void runHyperTask();
     },
     restartApp: () => {
       close();
-      void runAppFlowy();
+      void runHyperTask();
     },
   };
 
@@ -206,7 +206,7 @@ export function SettingsDialogHost({ user }: { user: UserProfilePB }) {
 
     return () => {
       off();
-      // runAppFlowy() rebuilds the whole tree in Flutter, dialogs stacked on settings included.
+      // runHyperTask() rebuilds the whole tree in Flutter, dialogs stacked on settings included.
       if (useSettingsDialogStore.getState().open) closeAllDialogs();
       else closeDialog?.();
       finish();

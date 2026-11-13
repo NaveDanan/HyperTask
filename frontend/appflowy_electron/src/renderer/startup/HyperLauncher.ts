@@ -82,7 +82,7 @@ function startAuthStateListener() {
         const state = fromBinary(AuthStateChangedPBSchema, result.value);
         if (state.state === AuthStatePB.InvalidAuth) {
           console.error(state.message);
-          void runAppFlowy();
+          void runHyperTask();
         }
       },
       'auth_state_change_notification',
@@ -91,10 +91,10 @@ function startAuthStateListener() {
 }
 
 /**
- * runAppFlowy(): the full (soft) restart the Flutter app performs on launch, sign-in,
+ * runHyperTask(): the full (soft) restart the Flutter app performs on launch, sign-in,
  * sign-out and server switches.
  */
-export async function runAppFlowy({ isAnon = false }: { isAnon?: boolean } = {}): Promise<void> {
+export async function runHyperTask({ isAnon = false }: { isAnon?: boolean } = {}): Promise<void> {
   disposers.forEach((dispose) => dispose());
   disposers = [];
   useAppStore.setState((state) => ({ launchId: state.launchId + 1, route: { name: 'launching' } }));
@@ -188,7 +188,7 @@ export function handleOpenWorkspaceError(error: FlowyError) {
         type: 'error',
         onDismissed: async () => {
           await UserEventSignOut();
-          await runAppFlowy();
+          await runHyperTask();
         },
       });
   }

@@ -1,0 +1,61 @@
+{
+  "name": "highlight.js",
+  "version": "11.11.1",
+  "license": "BSD-3-Clause",
+  "metadata": "https://registry.npmjs.org/highlight.js/11.11.1",
+  "tarball": "https://registry.npmjs.org/highlight.js/-/highlight.js-11.11.1.tgz",
+  "integrity": "sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==",
+  "tarballSha256": "fbc9443263e976583bd5640e550b77f84d8d7e19fc8408dfe53776a5bae7ed39",
+  "archiveBytes": 838069,
+  "files": {
+    "lib/core.js": {
+      "bytes": 75941,
+      "sha256": "e647525f110a3e00e31fc77f7e69104be85ce02534bb8263c1b2be2afe09ad1e"
+    },
+    "lib/languages/javascript.js": {
+      "bytes": 17751,
+      "sha256": "26621006809440240317c074a5e6681838b5be5c20fdcdee560e2d25448d85a9"
+    },
+    "lib/languages/typescript.js": {
+      "bytes": 21354,
+      "sha256": "ba351fb35bd479c4228d539ee4f4772286623f2be4134bc80f9e10285451790b"
+    },
+    "lib/languages/python.js": {
+      "bytes": 9185,
+      "sha256": "6fa85c05f6852e7f761b5c0cfdb3f75992704012bbde67197db2c22286fcd072"
+    },
+    "lib/languages/rust.js": {
+      "bytes": 6125,
+      "sha256": "a2a910ee925554795148043b6a895690d254e30e9d6a9351fe4b99b09f47853d"
+    },
+    "lib/languages/sql.js": {
+      "bytes": 11985,
+      "sha256": "a0cbca94463751a929701957153fd23552944f47c00da87605f2e0b1f27ff6fb"
+    },
+    "lib/languages/json.js": {
+      "bytes": 1338,
+      "sha256": "6923a3613029162eedb83f67fad8451183ce5df423a9aa37878b0efb8c54d6d1"
+    },
+    "lib/languages/css.js": {
+      "bytes": 18879,
+      "sha256": "2787cf1b1f53248434ea67921acc2ffdeb0192c0b95b84003f57b8c711c87040"
+    },
+    "lib/languages/xml.js": {
+      "bytes": 7002,
+      "sha256": "dcb9cd430937eb3b1416b385d9fcda72fa9233dcfe93bf0146235f6c3a2b6487"
+    },
+    "lib/languages/bash.js": {
+      "bytes": 6518,
+      "sha256": "134f86c16781d91ee183e4c5f479449e1c0d6b256f2f1db080fdd40252ac2b1c"
+    },
+    "lib/languages/markdown.js": {
+      "bytes": 5248,
+      "sha256": "76dfa64c3f05c1bc9c3036727fa69b9c6b6e6af003060ed9cc5bebf7ecec4fd9"
+    },
+    "LICENSE": {
+      "bytes": 1514,
+      "sha256": "6c081431591d9df696c82dc598fe1423765b8a299b200ed00b281afd0f64c490"
+    }
+  },
+  "note": "Original npm distribution bytes, copied unchanged. HyperCodeSyntax type declarations are authored adapters, not upstream package files."
+}

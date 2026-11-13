@@ -20,6 +20,9 @@ fn encode_value(value: HyperStreamValue) -> Vec<u8> {
 }
 
 fn send_stream(port: i64, value: HyperStreamValue) -> bool {
+  if !crate::SDK_READY.load(std::sync::atomic::Ordering::Acquire) {
+    return false;
+  }
   let value = encode_value(value);
   OUTBOX.get().is_some_and(|outbox| {
     outbox

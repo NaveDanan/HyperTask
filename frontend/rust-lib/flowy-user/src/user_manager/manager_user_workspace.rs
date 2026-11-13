@@ -144,6 +144,7 @@ impl UserManager {
     workspace_id: &Uuid,
     workspace_type: WorkspaceType,
   ) -> FlowyResult<()> {
+    let awareness_epoch = self.begin_awareness_owner();
     let current_workspace_id = self.workspace_id()?;
     if current_workspace_id != *workspace_id {
       match self
@@ -231,7 +232,13 @@ impl UserManager {
     }
 
     if let Err(err) = self
-      .initial_user_awareness(uid, &user_uuid, workspace_id, &workspace_type)
+      .initial_user_awareness(
+        uid,
+        &user_uuid,
+        workspace_id,
+        &workspace_type,
+        awareness_epoch,
+      )
       .await
     {
       error!(

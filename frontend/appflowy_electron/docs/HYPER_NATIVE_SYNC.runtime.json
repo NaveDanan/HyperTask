@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "checked_at_utc": "2026-11-11T09:11:36.795977+00:00",
+  "follow_up": "HYPER_DATASET_SYNC.runtime.json records later copied-object, row-activity and SDK replacement proofs. This file retains the earlier core and thumbnail/history evidence.",
+  "client_core": {
+    "sha256": "9a0b66e506851bb7c77b6cc93a5c7263fbbf10125f9f0510a49d95ceffcc1ca6",
+    "bytes": 211518096,
+    "platform": "linux/amd64",
+    "focused_native_tests": 113,
+    "full_database_library_tests": 78,
+    "event_bindings": 229
+  },
+  "server": {
+    "cloud_binary_sha256": "3aeb78168835416d63c6bfd86a792237ccdfc4939738bcbb286da5445039a32c",
+    "upstream_revision": "0311f6a9314da56e12d2b33d18c398dba1933240",
+    "role_patch_sha256": "702adf9270e76cab6c3837ddbfabc60921e7ee0fbfc64c7e7bf55ceba8696987",
+    "execution": "five verified non-root loopback processes",
+    "existing_deployment_used": false
+  },
+  "row_source_and_visible_reader": {
+    "initial_all_four_rows_without_creator_or_observer_InitRow": true,
+    "reader_activation": "Only after initial data was available, the visible observer used InitRow then metadata reads and a listener, matching upstream Flutter.",
+    "stages": [
+      {
+        "name": "same-owned-account-fresh-roots-one-signin-no-workspace-switch",
+        "status": "GREEN",
+        "seconds": 4.96,
+        "diagnostic": false
+      },
+      {
+        "name": "new-grid-all-three-initial-rows-and-added-row-are-remotely-readable",
+        "status": "GREEN",
+        "seconds": 11.764,
+        "diagnostic": false
+      },
+      {
+        "name": "observer-visible-reader-activation-after-no-init-four-row-control",
+        "status": "GREEN",
+        "seconds": 1.711,
+        "diagnostic": false
+      },
+      {
+        "name": "live-creator-cell-update-reaches-already-read-observer",
+        "status": "GREEN",
+        "seconds": 1.13,
+        "diagnostic": false
+      },
+      {
+        "name": "live-creator-metadata-update-reaches-already-read-observer",
+        "status": "GREEN",
+        "seconds": 1.48,
+        "diagnostic": false
+      },
+      {
+        "name": "fresh-cold-device-confirms-creator-cell-and-metadata-remotely-durable",
+        "status": "GREEN",
+        "seconds": 4.282,
+        "diagnostic": true
+      },
+      {
+        "name": "normal-observer-edit-reaches-creator-without-explicit-init",
+        "status": "GREEN",
+        "seconds": 1.482,
+        "diagnostic": false
+      },
+      {
+        "name": "normal-observer-metadata-edit-reaches-creator",
+        "status": "GREEN",
+        "seconds": 1.483,
+        "diagnostic": false
+      },
+      {
+        "name": "row-body-live-edits-bidirectional-using-normal-open-document",
+        "status": "GREEN",
+        "seconds": 5.261,
+        "diagnostic": false
+      },
+      {
+        "name": "fresh-cold-device-confirms-latest-row-and-body",
+        "status": "GREEN",
+        "seconds": 4.747,
+        "diagnostic": true
+      },
+      {
+        "name": "creator-restart-preserves-latest-four-rows-cell-meta-body",
+        "status": "GREEN",
+        "seconds": 0.735,
+        "diagnostic": false
+      },
+      {
+        "name": "earlier-visible-observer-restart-refreshes-latest-row",
+        "status": "GREEN",
+        "seconds": 2.582,
+        "diagnostic": true
+      }
+    ]
+  },
+  "thumbnail_and_document_history": {
+    "native_is_success_and_creator_state_asserted_before_observer": true,
+    "restart_comparison": "Canonical JSON object ordering only; field values and raster bytes remain exact.",
+    "stages": [
+      {
+        "name": "existing-account0-one-native-login-per-new-root",
+        "status": "GREEN",
+        "seconds": 6.086,
+        "diagnostic": false
+      },
+      {
+        "name": "production-guarded-bookmark-snapshot-cloud-upload-save",
+        "status": "GREEN",
+        "seconds": 50.68,
+        "diagnostic": false
+      },
+      {
+        "name": "fresh-B-exact-cloud-ref-and-readable-body",
+        "status": "GREEN",
+        "seconds": 1.069,
+        "diagnostic": false
+      },
+      {
+        "name": "B-strict-completed-download-exact-bytes",
+        "status": "GREEN",
+        "seconds": 0.624,
+        "diagnostic": false
+      },
+      {
+        "name": "thumbnail-remove-Undo-Redo-sync-without-file-deletion",
+        "status": "GREEN",
+        "seconds": 21.384,
+        "diagnostic": false
+      },
+      {
+        "name": "B-restart-without-relogin-retains-independent-saved-card-and-download",
+        "status": "GREEN",
+        "seconds": 1.376,
+        "diagnostic": false
+      },
+      {
+        "name": "fresh-cold-C-exact-native-cloud-card-after-history",
+        "status": "GREEN",
+        "seconds": 3.829,
+        "diagnostic": false
+      },
+      {
+        "name": "plain-text-native-Undo-Redo-two-client-control",
+        "status": "GREEN",
+        "seconds": 7.186,
+        "diagnostic": false
+      }
+    ]
+  },
+  "cleanup": {
+    "all_probe_cores_stopped": true,
+    "original_failing_reports_retained": true
+  },
+  "limits": [
+    "Renderer visible-row activation and active pinning above the legacy 50-row cache remain open.",
+    "Strict observer-first copied-object publication remains open.",
+    "No container, reverse-proxy, TLS or multi-replica claim.",
+    "These isolated tests do not use real workspaces or credentials."
+  ]
+}

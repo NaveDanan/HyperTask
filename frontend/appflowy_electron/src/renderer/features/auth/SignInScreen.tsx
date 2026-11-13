@@ -161,8 +161,8 @@ function AnonymousModeButton() {
         if (anon.ok) {
           const opened = await UserEventOpenAnonUser();
           if (opened.ok) {
-            const { runAppFlowy } = await import('@/startup/launcher');
-            await runAppFlowy();
+            const { runHyperTask } = await import('@/startup/HyperLauncher');
+            await runHyperTask();
           }
         } else {
           await signInActions.signInAsGuest();

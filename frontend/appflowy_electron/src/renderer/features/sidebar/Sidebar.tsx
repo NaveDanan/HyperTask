@@ -14,6 +14,7 @@ import { showLoading } from './components';
 import { SidebarFolder } from './folder/SidebarFolder';
 import { SidebarTopMenu, SidebarUser } from './header/SidebarHeader';
 import { JiraButton, HyperTemplatesButton, SidebarFooter, SidebarNewPageButton, SidebarSearchButton } from './SidebarButtons';
+import { HyperOrganizationButton } from '../organization/HyperOrganizationButton';
 import { SidebarSpace } from './space/SidebarSpace';
 import { useSpaceState } from './space/space-context';
 import { favoriteActions } from './stores/favorite-store';
@@ -129,6 +130,7 @@ function SidebarBody({ user }: { user: UserProfilePB }) {
         {role !== AFRolePB.Guest && <SidebarNewPageButton />}
         <JiraButton />
         <HyperTemplatesButton />
+        <HyperOrganizationButton />
       </div>
       <FolderOrSpace onScrolled={setScrolled} scrolled={scrolled} />
       {/* SpaceMigration and the app-update banner are unreachable in this checkout. */}

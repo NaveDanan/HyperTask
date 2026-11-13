@@ -18,6 +18,7 @@ use collab_database::workspace_database::{
 };
 use collab_entity::{CollabObject, CollabType, EncodedCollab};
 use collab_plugins::local_storage::kv::KVTransactionDB;
+use futures::FutureExt;
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -52,15 +53,29 @@ pub trait DatabaseUser: Send + Sync {
   fn workspace_database_object_id(&self) -> Result<Uuid, FlowyError>;
 }
 
+#[cfg(test)]
+#[path = "hyper_creation_tests.rs"]
+pub(crate) mod hyper_creation_tests;
+
 pub(crate) type DatabaseEditorMap = HashMap<String, Arc<DatabaseEditor>>;
 pub struct DatabaseManager {
-  user: Arc<dyn DatabaseUser>,
-  workspace_database_manager: ArcSwapOption<RwLock<WorkspaceDatabaseManager>>,
+  pub(crate) user: Arc<dyn DatabaseUser>,
+  pub(crate) workspace_database_manager: ArcSwapOption<RwLock<WorkspaceDatabaseManager>>,
+  pub(crate) duplicate_epoch: Arc<std::sync::atomic::AtomicU64>,
+  pub(crate) duplicate_changes: tokio::sync::watch::Sender<u64>,
+  pub(crate) duplicate_context:
+    Arc<std::sync::RwLock<Option<crate::hyper_duplicate::HyperDuplicateContext>>>,
+  pub(crate) duplicate_hook:
+    std::sync::RwLock<Option<Arc<dyn crate::hyper_duplicate::HyperDatabaseDuplicateHook>>>,
+  pub(crate) duplicate_serial: Mutex<()>,
+  pub(crate) creation_gate: Arc<std::sync::Mutex<()>>,
+  pub(crate) row_activity_registries:
+    std::sync::Mutex<Vec<Weak<crate::hyper_row_activity::HyperRowActivities>>>,
   task_scheduler: Arc<TokioRwLock<TaskDispatcher>>,
   pub(crate) editors: Mutex<DatabaseEditorMap>,
-  removing_editor: Arc<Mutex<HashMap<String, Arc<DatabaseEditor>>>>,
+  pub(crate) removing_editor: Arc<Mutex<HashMap<String, Arc<DatabaseEditor>>>>,
   collab_builder: Weak<AppFlowyCollabBuilder>,
-  cloud_service: Arc<dyn DatabaseCloudService>,
+  pub(crate) cloud_service: Arc<dyn DatabaseCloudService>,
   ai_service: Arc<dyn DatabaseAIService>,
 }
 
@@ -80,6 +95,13 @@ impl DatabaseManager {
   ) -> Self {
     Self {
       user: database_user,
+      duplicate_epoch: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+      duplicate_changes: tokio::sync::watch::channel(0).0,
+      duplicate_context: Default::default(),
+      duplicate_hook: Default::default(),
+      duplicate_serial: Mutex::new(()),
+      creation_gate: Default::default(),
+      row_activity_registries: Default::default(),
       workspace_database_manager: Default::default(),
       task_scheduler,
       editors: Default::default(),
@@ -90,12 +112,23 @@ impl DatabaseManager {
     }
   }
 
-  fn collab_builder(&self) -> FlowyResult<Arc<AppFlowyCollabBuilder>> {
+  pub(crate) fn collab_builder(&self) -> FlowyResult<Arc<AppFlowyCollabBuilder>> {
     self.collab_builder.upgrade().ok_or(FlowyError::ref_drop())
   }
 
   /// When initialize with new workspace, all the resources will be cleared.
   pub async fn initialize(&self, uid: i64, is_local_user: bool) -> FlowyResult<()> {
+    self.invalidate_duplicate_operations();
+    let epoch = self
+      .duplicate_epoch
+      .load(std::sync::atomic::Ordering::SeqCst);
+    let owner = crate::hyper_duplicate::user_scope(self.user.clone())?;
+    if owner.uid != uid {
+      return Err(
+        FlowyError::invalid_data()
+          .with_context("The database owner changed during initialization."),
+      );
+    }
     // 1. Clear all existing tasks
     self.task_scheduler.write().await.clear_task();
     // 2. Release all existing editors
@@ -114,9 +147,14 @@ impl DatabaseManager {
     let collab_db = self.user.collab_db(uid)?;
     let collab_service = WorkspaceDatabaseCollabServiceImpl::new(
       is_local_user,
-      self.user.clone(),
       self.collab_builder.clone(),
       self.cloud_service.clone(),
+      crate::hyper_creation::HyperDatabaseCreationOwner::capture(
+        self.user.clone(),
+        self.duplicate_epoch.clone(),
+        epoch,
+      )?
+      .with_changes(self.duplicate_changes.clone()),
     );
 
     let workspace_database_object_id = self.user.workspace_database_object_id()?;
@@ -137,9 +175,28 @@ impl DatabaseManager {
       collab_service,
     )?;
 
+    let mut stamp = self.duplicate_context.write().unwrap();
+    if self
+      .duplicate_epoch
+      .load(std::sync::atomic::Ordering::SeqCst)
+      != epoch
+      || owner.check().is_err()
+    {
+      return Err(
+        FlowyError::invalid_data()
+          .with_context("The database owner changed during initialization."),
+      );
+    }
     self
       .workspace_database_manager
-      .store(Some(workspace_database));
+      .store(Some(workspace_database.clone()));
+    *stamp = Some(crate::hyper_duplicate::HyperDuplicateContext {
+      epoch,
+      uid,
+      workspace_id: owner.workspace_id,
+      db: Arc::downgrade(&owner.db),
+      context: Arc::downgrade(&workspace_database),
+    });
     Ok(())
   }
 
@@ -174,6 +231,44 @@ impl DatabaseManager {
   ) -> FlowyResult<()> {
     self.initialize(user_id, is_local_user).await?;
     Ok(())
+  }
+
+  pub fn hyper_publication_gate(&self) -> Arc<std::sync::Mutex<()>> {
+    self.creation_gate.clone()
+  }
+
+  pub async fn hyper_update_row_activity(
+    &self,
+    payload: crate::entities::HyperUpdateRowActivityPB,
+  ) -> FlowyResult<crate::entities::HyperRowActivityAckPB> {
+    let context = Uuid::parse_str(&payload.context_id)?;
+    Uuid::parse_str(&payload.view_id)?;
+    Uuid::parse_str(&payload.activity_id)?;
+    if payload.revision == 0
+      || payload.row_ids.len() > crate::hyper_row_activity::MAX_ACTIVITY_ROWS
+      || (payload.close_activity && !payload.row_ids.is_empty())
+    {
+      return Err(FlowyError::invalid_data());
+    }
+    let editors = self
+      .editors
+      .lock()
+      .await
+      .values()
+      .cloned()
+      .collect::<Vec<_>>();
+    let editor = editors
+      .into_iter()
+      .find(|editor| editor.row_activities.matches(&payload.view_id, &context));
+    match editor {
+      Some(editor) => editor.hyper_update_row_activity(payload).await,
+      None if payload.close_activity => Ok(crate::entities::HyperRowActivityAckPB {
+        context_id: payload.context_id,
+        activity_id: payload.activity_id,
+        revision: payload.revision,
+      }),
+      None => Err(crate::hyper_row_activity::changed()),
+    }
   }
 
   pub async fn get_all_databases_meta(&self) -> Vec<DatabaseMeta> {
@@ -276,6 +371,7 @@ impl DatabaseManager {
 
   #[instrument(level = "trace", skip_all, err)]
   pub async fn open_database(&self, database_id: &str) -> FlowyResult<Arc<DatabaseEditor>> {
+    let duplicate_scope = self.hyper_duplicate_scope()?;
     let workspace_database = self.workspace_database()?;
     if let Some(database_editor) = self.removing_editor.lock().await.remove(database_id) {
       self
@@ -292,13 +388,27 @@ impl DatabaseManager {
     // The workaround is to add a retry mechanism to attempt fetching the database again.
     let database = open_database_with_retry(workspace_database, database_id).await?;
     let collab_builder = self.collab_builder()?;
-    let editor = DatabaseEditor::new(
+    let editor = DatabaseEditor::new_scoped(
       self.user.clone(),
       database,
       self.task_scheduler.clone(),
       collab_builder,
+      duplicate_scope.clone(),
+      self.creation_gate.clone(),
     )
     .await?;
+
+    duplicate_scope.check()?;
+    {
+      let mut registries = self
+        .row_activity_registries
+        .lock()
+        .map_err(|_| crate::hyper_row_activity::changed())?;
+      registries.retain(|entry| entry.strong_count() > 0);
+      registries.push(Arc::downgrade(&editor.row_activities));
+    }
+    editor
+      .set_hyper_duplicate_context(duplicate_scope, self.duplicate_hook.read().unwrap().clone());
 
     self
       .editors
@@ -420,10 +530,9 @@ impl DatabaseManager {
       new_database_view_id,
     );
 
-    let lock = self.workspace_database()?;
-    let mut wdb = lock.write().await;
-    let database = wdb.create_database(create_database_params).await?;
-    drop(wdb);
+    let database = self
+      .create_complete_database(create_database_params)
+      .await?;
 
     let encoded_collab = database
       .read()
@@ -441,19 +550,9 @@ impl DatabaseManager {
     database_view_id: &str,
     new_database_view_id: &str,
   ) -> FlowyResult<EncodedCollab> {
-    let lock = self.workspace_database()?;
-    let mut wdb = lock.write().await;
-    let database = wdb
-      .duplicate_database(database_view_id, new_database_view_id)
-      .await?;
-    drop(wdb);
-
-    let encoded_collab = database
-      .read()
+    self
+      .hyper_duplicate_database(database_view_id, new_database_view_id)
       .await
-      .encode_collab_v1(|collab| CollabType::Database.validate_require_data(collab))
-      .map_err(|err| FlowyError::internal().with_context(err))?;
-    Ok(encoded_collab)
   }
 
   pub async fn import_database(
@@ -467,12 +566,50 @@ impl DatabaseManager {
       );
     }
 
-    let lock = self.workspace_database()?;
-    let mut wdb = lock.write().await;
-    let database = wdb.create_database(params).await?;
-    drop(wdb);
+    self.create_complete_database(params).await
+  }
 
-    Ok(database)
+  async fn create_complete_database(
+    &self,
+    params: CreateDatabaseParams,
+  ) -> FlowyResult<Arc<RwLock<Database>>> {
+    let scope = self.hyper_duplicate_scope()?;
+    let database_id = params.database_id.clone();
+    let rows = params
+      .rows
+      .iter()
+      .map(|row| row.id.clone())
+      .collect::<Vec<_>>();
+    crate::hyper_creation::validate_new_ids(&database_id, &rows)?;
+    let context = scope
+      .context
+      .clone()
+      .ok_or_else(crate::hyper_creation::interrupted)?;
+    let builder = self.collab_builder()?;
+    scope
+      .run_if_current(async {
+        let mut workspace = context.write().await;
+        scope.check()?;
+        // Upstream unwraps a fallible constructor and ignores individual row failures.
+        // Preserve any committed data and report failure instead of ACKing an incomplete view.
+        let database = std::panic::AssertUnwindSafe(workspace.create_database(params))
+          .catch_unwind()
+          .await
+          .map_err(|_| crate::hyper_creation::interrupted())??;
+        scope.check()?;
+        crate::hyper_creation::finalize_created_database(
+          &scope,
+          &self.creation_gate,
+          &builder,
+          &database,
+          &database_id,
+          &rows,
+        )
+        .await?;
+        scope.check()?;
+        Ok(database)
+      })
+      .await?
   }
 
   /// A linked view is a view that is linked to existing database.
@@ -724,7 +861,8 @@ impl DatabaseManager {
 
 struct WorkspaceDatabaseCollabServiceImpl {
   is_local_user: bool,
-  user: Arc<dyn DatabaseUser>,
+  owner: crate::hyper_creation::HyperDatabaseCreationOwner,
+  row_reads: crate::hyper_row_read::HyperRowReadFallback,
   collab_builder: Weak<AppFlowyCollabBuilder>,
   persistence: Arc<dyn DatabaseCollabPersistenceService>,
   cloud_service: Arc<dyn DatabaseCloudService>,
@@ -733,14 +871,17 @@ struct WorkspaceDatabaseCollabServiceImpl {
 impl WorkspaceDatabaseCollabServiceImpl {
   fn new(
     is_local_user: bool,
-    user: Arc<dyn DatabaseUser>,
     collab_builder: Weak<AppFlowyCollabBuilder>,
     cloud_service: Arc<dyn DatabaseCloudService>,
+    owner: crate::hyper_creation::HyperDatabaseCreationOwner,
   ) -> Self {
-    let persistence = DatabasePersistenceImpl { user: user.clone() };
+    let persistence = DatabasePersistenceImpl {
+      owner: owner.clone(),
+    };
     Self {
       is_local_user,
-      user,
+      owner,
+      row_reads: Default::default(),
       collab_builder,
       persistence: Arc::new(persistence),
       cloud_service,
@@ -759,16 +900,21 @@ impl WorkspaceDatabaseCollabServiceImpl {
     object_id: &Uuid,
     object_ty: CollabType,
   ) -> Result<Option<EncodedCollab>, DatabaseError> {
-    let workspace_id = self
-      .user
-      .workspace_id()
+    self
+      .owner
+      .check()
       .map_err(|e| DatabaseError::Internal(e.into()))?;
+    let workspace_id = self.owner.workspace;
     trace!("[Database]: fetch {}:{} from remote", object_id, object_ty);
     let encode_collab = self
       .cloud_service
       .get_database_encode_collab(object_id, object_ty, &workspace_id)
       .await
       .map_err(|err| DatabaseError::Internal(err.into()))?;
+    self
+      .owner
+      .check()
+      .map_err(|e| DatabaseError::Internal(e.into()))?;
     Ok(encode_collab)
   }
 
@@ -777,33 +923,25 @@ impl WorkspaceDatabaseCollabServiceImpl {
     object_ids: Vec<Uuid>,
     object_ty: CollabType,
   ) -> Result<EncodeCollabByOid, DatabaseError> {
-    let workspace_id = self
-      .user
-      .workspace_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
     let updates = self
-      .cloud_service
-      .batch_get_database_encode_collab(object_ids, object_ty, &workspace_id)
+      .row_reads
+      .read(&self.owner, &self.cloud_service, object_ids, object_ty)
       .await
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
-
+      .map_err(|error| DatabaseError::Internal(error.into()))?;
     Ok(
       updates
         .into_iter()
-        .map(|(k, v)| (k.to_string(), v))
+        .map(|(id, value)| (id.to_string(), value))
         .collect(),
     )
   }
 
   fn collab_db(&self) -> Result<Weak<CollabKVDB>, DatabaseError> {
-    let uid = self
-      .user
-      .user_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
     self
-      .user
-      .collab_db(uid)
-      .map_err(|err| DatabaseError::Internal(err.into()))
+      .owner
+      .check()
+      .map_err(|e| DatabaseError::Internal(e.into()))?;
+    Ok(self.owner.db.clone())
   }
 
   fn build_collab_object(
@@ -811,14 +949,12 @@ impl WorkspaceDatabaseCollabServiceImpl {
     object_id: &Uuid,
     object_type: CollabType,
   ) -> Result<CollabObject, DatabaseError> {
-    let uid = self
-      .user
-      .user_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
-    let workspace_id = self
-      .user
-      .workspace_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
+    self
+      .owner
+      .check()
+      .map_err(|e| DatabaseError::Internal(e.into()))?;
+    let uid = self.owner.uid;
+    let workspace_id = self.owner.workspace;
     let object = self
       .collab_builder()?
       .collab_object(&workspace_id, uid, object_id, object_type)
@@ -838,6 +974,10 @@ impl DatabaseCollabService for WorkspaceDatabaseCollabServiceImpl {
     collab_type: CollabType,
     encoded_collab: Option<(EncodedCollab, bool)>,
   ) -> Result<Collab, DatabaseError> {
+    self
+      .owner
+      .check()
+      .map_err(|e| DatabaseError::Internal(e.into()))?;
     let object_id = Uuid::parse_str(object_id)?;
     let object = self.build_collab_object(&object_id, collab_type)?;
     let data_source = if self
@@ -893,7 +1033,7 @@ impl DatabaseCollabService for WorkspaceDatabaseCollabServiceImpl {
             },
           }
         },
-        Some((encoded_collab, _)) => {
+        Some((encoded_collab, is_new)) => {
           info!(
             "build collab: {}:{} with new encode collab, {} bytes",
             collab_type,
@@ -904,22 +1044,14 @@ impl DatabaseCollabService for WorkspaceDatabaseCollabServiceImpl {
             .persistence
             .save_collab(object_id.to_string().as_str(), encoded_collab.clone())?;
 
-          // TODO(nathan): cover database rows and other database collab type
-          if matches!(collab_type, CollabType::Database) {
-            if let Ok(workspace_id) = self.user.workspace_id() {
-              let cloned_encoded_collab = encoded_collab.clone();
-              let cloud_service = self.cloud_service.clone();
-              tokio::spawn(async move {
-                let _ = cloud_service
-                  .create_database_encode_collab(
-                    &object_id,
-                    collab_type,
-                    &workspace_id,
-                    cloned_encoded_collab,
-                  )
-                  .await;
-              });
-            }
+          // `true` is a constructor, `false` is a fetched snapshot. Neither is a
+          // safe HTTP upsert: a root is still incomplete here, and fetched data
+          // may be older than remote edits. Native creation finalizes the actual
+          // completed root and row Arcs through the existing CRDT sync plugins.
+          if is_new && !matches!(collab_type, CollabType::Database | CollabType::DatabaseRow) {
+            return Err(DatabaseError::Internal(anyhow!(
+              "Unsupported new database object type"
+            )));
           }
           encoded_collab.into()
         },
@@ -931,6 +1063,10 @@ impl DatabaseCollabService for WorkspaceDatabaseCollabServiceImpl {
       .collab_builder()?
       .build_collab(&object, &collab_db, data_source)
       .await?;
+    self
+      .owner
+      .check()
+      .map_err(|e| DatabaseError::Internal(e.into()))?;
     Ok(collab)
   }
 
@@ -939,6 +1075,10 @@ impl DatabaseCollabService for WorkspaceDatabaseCollabServiceImpl {
     mut object_ids: Vec<String>,
     collab_type: CollabType,
   ) -> Result<EncodeCollabByOid, DatabaseError> {
+    self
+      .owner
+      .check()
+      .map_err(|e| DatabaseError::Internal(e.into()))?;
     if object_ids.is_empty() {
       return Ok(EncodeCollabByOid::new());
     }
@@ -983,6 +1123,10 @@ impl DatabaseCollabService for WorkspaceDatabaseCollabServiceImpl {
       }
     }
 
+    self
+      .owner
+      .check()
+      .map_err(|e| DatabaseError::Internal(e.into()))?;
     Ok(encoded_collab_by_id)
   }
 
@@ -992,97 +1136,84 @@ impl DatabaseCollabService for WorkspaceDatabaseCollabServiceImpl {
 }
 
 pub struct DatabasePersistenceImpl {
-  user: Arc<dyn DatabaseUser>,
+  owner: crate::hyper_creation::HyperDatabaseCreationOwner,
 }
 
 impl DatabasePersistenceImpl {
-  fn workspace_id(&self) -> Result<Uuid, DatabaseError> {
-    let workspace_id = self
-      .user
-      .workspace_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
-    Ok(workspace_id)
+  fn database(&self) -> Result<Arc<CollabKVDB>, DatabaseError> {
+    self
+      .owner
+      .check()
+      .map_err(|error| DatabaseError::Internal(error.into()))?;
+    self
+      .owner
+      .db
+      .upgrade()
+      .ok_or_else(|| DatabaseError::Internal(anyhow!("The dataset database was closed")))
+  }
+
+  fn check(&self) -> Result<(), DatabaseError> {
+    self
+      .owner
+      .check()
+      .map_err(|error| DatabaseError::Internal(error.into()))
   }
 }
 
 impl DatabaseCollabPersistenceService for DatabasePersistenceImpl {
   fn load_collab(&self, collab: &mut Collab) {
-    let result = self
-      .user
-      .user_id()
-      .map(|uid| (uid, self.user.collab_db(uid).map(|weak| weak.upgrade())));
-
-    if let Ok(workspace_id) = self.user.workspace_id() {
-      if let Ok((uid, Ok(Some(collab_db)))) = result {
-        let object_id = collab.object_id().to_string();
-        let db_read = collab_db.read_txn();
-        if !db_read.is_exist(uid, workspace_id.to_string().as_str(), &object_id) {
-          trace!(
-            "[Database]: collab:{} not exist in local storage",
-            object_id
-          );
-          return;
-        }
-
-        trace!("[Database]: start loading collab:{} from disk", object_id);
-        let mut txn = collab.transact_mut();
-        match db_read.load_doc_with_txn(
-          uid,
-          workspace_id.to_string().as_str(),
-          &object_id,
-          &mut txn,
-        ) {
-          Ok(update_count) => {
-            trace!(
-              "[Database]: did load collab:{}, update_count:{}",
-              object_id, update_count
-            );
-          },
-          Err(err) => {
-            if !err.is_record_not_found() {
-              error!("[Database]: load collab:{} failed:{}", object_id, err);
-            }
-          },
-        }
+    let result = (|| -> Result<(), DatabaseError> {
+      let db = self.database()?;
+      let read = db.read_txn();
+      let workspace = self.owner.workspace.to_string();
+      let id = collab.object_id().to_string();
+      if !read.is_exist(self.owner.uid, &workspace, &id) {
+        return Ok(());
       }
+      self.check()?;
+      read
+        .load_doc_with_txn(self.owner.uid, &workspace, &id, &mut collab.transact_mut())
+        .map_err(|error| DatabaseError::Internal(error.into()))?;
+      self.check()
+    })();
+    if let Err(error) = result {
+      error!("The captured dataset could not be loaded: {}", error);
     }
   }
 
   fn get_encoded_collab(&self, object_id: &str, collab_type: CollabType) -> Option<EncodedCollab> {
-    let workspace_id = self.user.workspace_id().ok()?.to_string();
-    let uid = self.user.user_id().ok()?;
-    let db = self.user.collab_db(uid).ok()?.upgrade()?;
-    let read_txn = db.read_txn();
-    if !read_txn.is_exist(uid, workspace_id.as_str(), object_id) {
+    let db = self.database().ok()?;
+    let read = db.read_txn();
+    let workspace = self.owner.workspace.to_string();
+    if !read.is_exist(self.owner.uid, &workspace, object_id) {
       return None;
     }
-
     let mut collab = Collab::new_with_origin(CollabOrigin::Empty, object_id, vec![], false);
-    let mut txn = collab.transact_mut();
-    let _ = read_txn.load_doc_with_txn(uid, workspace_id.as_str(), object_id, &mut txn);
-    drop(txn);
-
+    read
+      .load_doc_with_txn(
+        self.owner.uid,
+        &workspace,
+        object_id,
+        &mut collab.transact_mut(),
+      )
+      .ok()?;
+    self.check().ok()?;
     collab
       .encode_collab_v1(|collab| collab_type.validate_require_data(collab))
       .ok()
   }
 
   fn delete_collab(&self, object_id: &str) -> Result<(), DatabaseError> {
-    let workspace_id = self.workspace_id()?.to_string();
-    let uid = self
-      .user
-      .user_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
-    if let Ok(Some(collab_db)) = self.user.collab_db(uid).map(|weak| weak.upgrade()) {
-      let write_txn = collab_db.write_txn();
-      write_txn
-        .delete_doc(uid, workspace_id.as_str(), object_id)
-        .unwrap();
-      write_txn
-        .commit_transaction()
-        .map_err(|err| DatabaseError::Internal(anyhow!("failed to commit transaction: {}", err)))?;
-    }
-    Ok(())
+    let db = self.database()?;
+    let write = db.write_txn();
+    write
+      .delete_doc(self.owner.uid, &self.owner.workspace.to_string(), object_id)
+      .map_err(|error| DatabaseError::Internal(error.into()))?;
+    self.check()?;
+    write
+      .commit_transaction()
+      .map_err(|error| DatabaseError::Internal(error.into()))?;
+    self.check()
   }
 
   fn save_collab(
@@ -1090,83 +1221,41 @@ impl DatabaseCollabPersistenceService for DatabasePersistenceImpl {
     object_id: &str,
     encoded_collab: EncodedCollab,
   ) -> Result<(), DatabaseError> {
-    let workspace_id = self.workspace_id()?.to_string();
-    let uid = self
-      .user
-      .user_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
-    if let Ok(Some(collab_db)) = self.user.collab_db(uid).map(|weak| weak.upgrade()) {
-      let write_txn = collab_db.write_txn();
-      write_txn
-        .flush_doc(
-          uid,
-          workspace_id.as_str(),
-          object_id,
-          encoded_collab.state_vector.to_vec(),
-          encoded_collab.doc_state.to_vec(),
-        )
-        .map_err(|err| DatabaseError::Internal(anyhow!("failed to flush doc: {}", err)))?;
-      write_txn
-        .commit_transaction()
-        .map_err(|err| DatabaseError::Internal(anyhow!("failed to commit transaction: {}", err)))?;
-    }
-    Ok(())
+    self.flush_collabs(vec![(object_id.to_string(), encoded_collab)])
   }
 
   fn is_collab_exist(&self, object_id: &str) -> bool {
-    match self.user.workspace_id() {
-      Ok(workspace_id) => {
-        match self
-          .user
-          .user_id()
-          .map_err(|err| DatabaseError::Internal(err.into()))
-        {
-          Ok(uid) => {
-            if let Ok(Some(collab_db)) = self.user.collab_db(uid).map(|weak| weak.upgrade()) {
-              let read_txn = collab_db.read_txn();
-              return read_txn.is_exist(uid, workspace_id.to_string().as_str(), object_id);
-            }
-            false
-          },
-          Err(_) => false,
-        }
-      },
-      Err(_) => false,
-    }
+    let Ok(db) = self.database() else {
+      return false;
+    };
+    let read = db.read_txn();
+    read.is_exist(self.owner.uid, &self.owner.workspace.to_string(), object_id)
+      && self.check().is_ok()
   }
 
   fn flush_collabs(
     &self,
     encoded_collabs: Vec<(String, EncodedCollab)>,
   ) -> Result<(), DatabaseError> {
-    let uid = self
-      .user
-      .user_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?;
-    let workspace_id = self
-      .user
-      .workspace_id()
-      .map_err(|err| DatabaseError::Internal(err.into()))?
-      .to_string();
-
-    if let Ok(Some(collab_db)) = self.user.collab_db(uid).map(|weak| weak.upgrade()) {
-      let write_txn = collab_db.write_txn();
-      for (object_id, encode_collab) in encoded_collabs {
-        write_txn
-          .flush_doc(
-            uid,
-            &workspace_id,
-            &object_id,
-            encode_collab.state_vector.to_vec(),
-            encode_collab.doc_state.to_vec(),
-          )
-          .map_err(|err| DatabaseError::Internal(anyhow!("failed to flush doc: {}", err)))?;
-      }
-      write_txn
-        .commit_transaction()
-        .map_err(|err| DatabaseError::Internal(anyhow!("failed to commit transaction: {}", err)))?;
+    let db = self.database()?;
+    let write = db.write_txn();
+    let workspace = self.owner.workspace.to_string();
+    for (id, encoded) in encoded_collabs {
+      write
+        .flush_doc(
+          self.owner.uid,
+          &workspace,
+          &id,
+          encoded.state_vector.to_vec(),
+          encoded.doc_state.to_vec(),
+        )
+        .map_err(|error| DatabaseError::Internal(error.into()))?;
     }
-    Ok(())
+    self.check()?;
+    write
+      .commit_transaction()
+      .map_err(|error| DatabaseError::Internal(error.into()))?;
+    self.check()
   }
 }
 async fn open_database_with_retry(

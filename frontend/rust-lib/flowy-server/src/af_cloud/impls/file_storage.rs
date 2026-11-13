@@ -6,6 +6,13 @@ use flowy_storage_pub::storage::{CompletedPartRequest, CreateUploadResponse, Upl
 use lib_infra::async_trait::async_trait;
 use uuid::Uuid;
 
+#[path = "hyper_bounded_download.rs"]
+mod hyper_bounded_download;
+
+#[cfg(test)]
+#[path = "hyper_authenticated_preview_tests.rs"]
+mod hyper_authenticated_preview_tests;
+
 pub struct AFCloudFileStorageServiceImpl<T> {
   pub client: T,
 
@@ -53,6 +60,27 @@ where
       raw: raw.into(),
       mime,
     })
+  }
+
+  async fn get_object_bounded(
+    &self,
+    url: String,
+    workspace_id: Uuid,
+    maximum_bytes: usize,
+  ) -> FlowyResult<ObjectValue> {
+    let client = self.client.try_get_client()?;
+    let request = client
+      .http_client_with_auth(reqwest::Method::GET, &url)
+      .await?
+      .build()
+      .map_err(|_| FlowyError::internal().with_context("Invalid attachment request"))?;
+    hyper_bounded_download::hyper_download_cloud_object(
+      request,
+      client.base_url(),
+      workspace_id,
+      maximum_bytes,
+    )
+    .await
   }
 
   async fn get_object_url_v1(

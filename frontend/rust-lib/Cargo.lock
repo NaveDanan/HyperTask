@@ -1146,9 +1146,9 @@ dependencies = [
 [[package]]
 name = "collab-plugins"
 version = "0.2.0"
-source = "git+https://github.com/AppFlowy-IO/AppFlowy-Collab?rev=4dfccef#4dfccefb9e4fd35240107b93fb4b5966295b452e"
 dependencies = [
  "anyhow",
+ "assert-json-diff",
  "async-stream",
  "async-trait",
  "bincode",
@@ -1162,20 +1162,25 @@ dependencies = [
  "indexed_db_futures",
  "js-sys",
  "lazy_static",
+ "rand 0.8.5",
  "rocksdb",
  "serde",
  "serde_json",
  "similar 2.2.1",
  "smallvec",
+ "tempfile",
  "thiserror 1.0.64",
  "tokio",
  "tokio-retry",
  "tokio-stream",
+ "tokio-util",
  "tracing",
+ "tracing-subscriber",
  "tracing-wasm",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasm-bindgen-test",
  "web-sys",
  "yrs",
 ]
@@ -1471,7 +1476,7 @@ dependencies = [
  "cssparser-macros",
  "dtoa-short",
  "itoa",
- "phf 0.8.0",
+ "phf 0.11.2",
  "smallvec",
 ]
 
@@ -2178,6 +2183,7 @@ dependencies = [
 name = "flowy-ai"
 version = "0.1.0"
 dependencies = [
+ "aes-gcm",
  "anyhow",
  "arc-swap",
  "async-stream",
@@ -2354,7 +2360,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "chrono-tz 0.8.3",
+ "chrono-tz 0.10.0",
  "collab",
  "collab-database",
  "collab-entity",
@@ -2659,6 +2665,7 @@ dependencies = [
  "lazy_static",
  "lib-infra",
  "rand 0.8.5",
+ "reqwest 0.12.15",
  "semver",
  "serde",
  "serde_json",
@@ -2814,12 +2821,14 @@ dependencies = [
  "serde_json",
  "strum 0.25.0",
  "strum_macros 0.25.2",
+ "tempfile",
  "tokio",
  "tokio-stream",
  "tracing",
  "unicode-segmentation",
  "uuid",
  "validator 0.18.1",
+ "zip 2.2.0",
 ]
 
 [[package]]
@@ -4570,6 +4579,16 @@ checksum = "f7c44f8e672c00fe5308fa235f821cb4198414e1c77935c1ab6948d3fd78550e"
 dependencies = [
  "mime",
  "unicase",
+]
+
+[[package]]
+name = "minicov"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3aa3aa12b448ac225b3102217d1ac5cc717908f02722926524b0599c933c7a0"
+dependencies = [
+ "cc",
+ "walkdir",
 ]
 
 [[package]]
@@ -8447,12 +8466,13 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-futures"
-version = "0.4.40"
+version = "0.4.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bde2032aeb86bdfaecc8b261eef3cba735cc426c1f3a3416d1e0791be95fc461"
+checksum = "555d470ec0bc3bb57890405e5d4322cc9ea83cebb085523ced7be4144dac1e61"
 dependencies = [
  "cfg-if",
  "js-sys",
+ "once_cell",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -8490,6 +8510,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-bindgen-test"
+version = "0.3.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66c8d5e33ca3b6d9fa3b4676d774c5778031d27a578c2b007f905acf816152c3"
+dependencies = [
+ "js-sys",
+ "minicov",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-bindgen-test-macro",
+]
+
+[[package]]
+name = "wasm-bindgen-test-macro"
+version = "0.3.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17d5042cc5fa009658f9a7333ef24291b1291a25b6382dd68862a7f3b969f69b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.94",
+]
+
+[[package]]
 name = "wasm-streams"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8519,9 +8563,9 @@ dependencies = [
 
 [[package]]
 name = "web-sys"
-version = "0.3.64"
+version = "0.3.77"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b85cbef8c220a6abc02aefd892dfc0fc23afb1c6a426316ec33253a3877249b"
+checksum = "33b6dd2ef9186f1f2072e409e99cd22a975331a6b3591b12c764e0e55c60d5d2"
 dependencies = [
  "js-sys",
  "wasm-bindgen",

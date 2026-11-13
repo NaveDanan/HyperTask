@@ -38,6 +38,15 @@ impl DocumentTantivyState {
       })?;
     }
 
+    let index_path = fs::canonicalize(index_path)?;
+    Self::new_at_index_path(workspace_id, path, index_path)
+  }
+
+  pub(crate) fn new_at_index_path(
+    workspace_id: &Uuid,
+    path: PathBuf,
+    index_path: PathBuf,
+  ) -> FlowyResult<Self> {
     let schema = LocalSearchTantivySchema::new();
     let dir = MmapDirectory::open(&index_path)?;
     let index = Index::open_or_create(dir, schema.0.clone())?;

@@ -12,6 +12,8 @@ import {
 } from '@shared/protobuf/flowy-search/result_pb';
 import { FolderEventGetAllViews, SearchEventStreamSearch } from '@/backend/events';
 import { openReceivePort, portBytes, type ReceivePort } from '@/backend/ports';
+import { hyperGetDocumentOwner, type HyperDocumentOwner } from '../document/HyperDocumentOwner';
+import { hyperCaptureSearchOwner, hyperInvalidateSearchOwner, type HyperSearchOwnerScope } from './HyperSearchOwner';
 
 /** SearchResultItem: a server or local hit. */
 export interface SearchResultItem {
@@ -23,6 +25,7 @@ export interface SearchResultItem {
 }
 
 export interface CommandPaletteState {
+  ownerKey: string;
   /** null when the field is empty. */
   query: string | null;
   serverResponseItems: SearchResponseItemPB[];
@@ -36,6 +39,7 @@ export interface CommandPaletteState {
 }
 
 const initialState = (): CommandPaletteState => ({
+  ownerKey: '',
   query: null,
   serverResponseItems: [],
   localResponseItems: [],
@@ -91,7 +95,7 @@ interface ResultsChanged {
 /** CommandPaletteEvent.resultsChanged: ignored unless it belongs to the active search. */
 export function resultsChanged(event: ResultsChanged) {
   const state = get();
-  if (state.searchId !== event.searchId) return;
+  if (state.searchId !== event.searchId || !activeScope?.isCurrent()) return;
   const serverItems = event.serverItems ?? state.serverResponseItems;
   const localItems = event.localItems ?? state.localResponseItems;
   set({
@@ -106,6 +110,7 @@ export function resultsChanged(event: ResultsChanged) {
 
 /** SearchResponseStream._onResultsChanged for one SearchStatePB of the stream `searchId`. */
 export function handleSearchState(searchId: string, state: SearchStatePB) {
+  if (state.searchId !== searchId) return;
   if (state.oneOfResponse.case !== 'response') {
     // onFinished
     resultsChanged({ searchId, searching: false, generatingAIOverview: false });
@@ -137,14 +142,35 @@ export function handleSearchState(searchId: string, state: SearchStatePB) {
 }
 
 let debounce: ReturnType<typeof setTimeout> | undefined;
-let activeQuery: string | null = null;
+let activeScope: HyperSearchOwnerScope | null = null;
 let stream: ReceivePort | null = null;
+let lastSearchId = 0n;
+let cachedViewsRevision = 0;
+
+function invalidateSearch() {
+  clearTimeout(debounce);
+  stream?.close();
+  stream = null;
+  activeScope = null;
+}
+
+function captureOwner(owner: HyperDocumentOwner | null) {
+  const scope = hyperCaptureSearchOwner(owner);
+  if (!scope) return null;
+  if (get().ownerKey !== scope.key) {
+    clearSearch();
+    set({ ownerKey: scope.key });
+  }
+  return scope;
+}
 
 /** CommandPaletteEvent.performSearch. */
-export function performSearch(search: string) {
+export function performSearch(search: string, owner: HyperDocumentOwner | null = hyperGetDocumentOwner()) {
   if (search === '') {
+    invalidateSearch();
     set({
       query: null,
+      searchId: null,
       searching: false,
       serverResponseItems: [],
       localResponseItems: [],
@@ -154,11 +180,16 @@ export function performSearch(search: string) {
     });
     return;
   }
-  activeQuery = search;
-  // SearchBackendService.performSearch: a new stream (searchId = now in ms) per query.
-  const searchId = String(Date.now());
+  const scope = captureOwner(owner);
+  if (!scope) return;
+  // The native search manager orders numeric IDs. Keep them increasing even for
+  // requests in one millisecond or after the system clock moves backwards.
+  const now = BigInt(Date.now());
+  const searchId = (lastSearchId = now > lastSearchId ? now : lastSearchId + 1n).toString();
   stream?.close();
+  activeScope = scope;
   stream = openReceivePort((value) => {
+    if (!scope.isCurrent()) return;
     const bytes = portBytes(value);
     if (!bytes) return;
     try {
@@ -169,7 +200,7 @@ export function performSearch(search: string) {
   });
   set({ query: search, searching: true, searchId });
   void SearchEventStreamSearch({ search, searchId, streamPort: stream.port }).then((result) => {
-    if (!result.ok && activeQuery === search) {
+    if (!result.ok && scope.isCurrent() && get().searchId === searchId) {
       console.error('Search error', result.error);
       resultsChanged({ searchId, searching: false, generatingAIOverview: false });
     }
@@ -177,46 +208,39 @@ export function performSearch(search: string) {
 }
 
 /** CommandPaletteEvent.searchChanged: debounced 300 ms. */
-export function searchChanged(search: string) {
+export function searchChanged(search: string, owner: HyperDocumentOwner | null = hyperGetDocumentOwner()) {
   clearTimeout(debounce);
-  debounce = setTimeout(() => performSearch(search), 300);
+  const scope = captureOwner(owner);
+  if (!scope) return;
+  debounce = setTimeout(() => { if (scope.isCurrent()) performSearch(search, scope.owner); }, 300);
 }
 
 /** CommandPaletteEvent.clearSearch: back to the initial state (the cached views too). */
 export function clearSearch() {
-  clearTimeout(debounce);
-  stream?.close();
-  stream = null;
-  activeQuery = null;
+  invalidateSearch();
+  cachedViewsRevision++;
   set(initialState());
 }
 
 /** refreshCachedViews: all views, to filter stale results and resolve icons. */
-export async function refreshCachedViews() {
+export async function refreshCachedViews(owner: HyperDocumentOwner | null = hyperGetDocumentOwner()) {
+  const scope = captureOwner(owner);
+  if (!scope) return;
+  const revision = ++cachedViewsRevision;
   const result = await FolderEventGetAllViews();
-  if (!result.ok) return;
+  if (!result.ok || !scope.isCurrent() || revision !== cachedViewsRevision || get().ownerKey !== scope.key) return;
   set({ cachedViews: new Map(result.value.items.map((v) => [v.id, v])) });
 }
 
 /** CommandPaletteEvent.workspaceChanged. */
-export function workspaceChanged() {
-  set({
-    query: '',
-    serverResponseItems: [],
-    localResponseItems: [],
-    combinedResponseItems: new Map(),
-    resultSummaries: [],
-    searching: false,
-    generatingAIOverview: false,
-  });
-  void refreshCachedViews();
+export function workspaceChanged(owner: HyperDocumentOwner | null = hyperGetDocumentOwner()) {
+  hyperInvalidateSearchOwner();
+  clearSearch();
+  set({ query: '' });
+  void refreshCachedViews(owner);
 }
 
 /** For tests. */
 export function resetCommandPalette() {
-  clearTimeout(debounce);
-  stream?.close();
-  stream = null;
-  activeQuery = null;
-  set(initialState());
+  clearSearch();
 }

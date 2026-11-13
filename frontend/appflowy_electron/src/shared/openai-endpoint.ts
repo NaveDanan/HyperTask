@@ -65,7 +65,7 @@ export function isEndpointVendorHost(host: string): boolean {
 }
 
 /** OpenAIEndpointSettings.validate(): throws an EndpointError of kind 'format'. */
-export function validateEndpoint(baseUrl: string, model: string): void {
+export function validateEndpointBaseUrl(baseUrl: string): void {
   const uri = parseEndpointUri(baseUrl);
   if (
     uri === null ||
@@ -83,9 +83,48 @@ export function validateEndpoint(baseUrl: string, model: string): void {
   if (isEndpointVendorHost(uri.host)) {
     throw new EndpointError('format', 'AppFlowy hosted services are disabled. Use your own AI endpoint.');
   }
+}
+
+export function validateEndpoint(baseUrl: string, model: string): void {
+  validateEndpointBaseUrl(baseUrl);
   if (model.trim() === '') {
     throw new EndpointError('format', "Enter the endpoint's chat model ID.");
   }
+}
+
+export interface EndpointModelPage { models: string[]; nextUrl: string | null }
+/** Validate each page without echoing a provider body, which could contain credentials. */
+export function parseEndpointModelPage(text: string, currentUrl: string, baseUrl: string): EndpointModelPage {
+  let raw: unknown;
+  try { raw = JSON.parse(text); } catch { throw new EndpointError('format', 'The models endpoint did not return valid JSON.'); }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !Array.isArray((raw as Record<string, unknown>).data)) throw new EndpointError('format', 'The models endpoint must return an object with a data array.');
+  const body = raw as Record<string, unknown>;
+  const models = (body.data as unknown[]).map(entry => {
+    const id = entry && typeof entry === 'object' && !Array.isArray(entry) ? (entry as Record<string, unknown>).id : undefined;
+    if (typeof id !== 'string' || !id.trim() || id.length > 1024 || /[\u0000-\u001f\u007f]/.test(id)) throw new EndpointError('format', 'The models endpoint returned an invalid model ID.');
+    return id;
+  });
+  if (body.has_more !== undefined && typeof body.has_more !== 'boolean') throw new EndpointError('format', 'The models endpoint returned invalid pagination.');
+  const explicit = body.next ?? (body.links && typeof body.links === 'object' && !Array.isArray(body.links) ? (body.links as Record<string, unknown>).next : undefined);
+  let nextUrl: string | null = null;
+  if (explicit !== undefined && explicit !== null && explicit !== '') {
+    if (typeof explicit !== 'string') throw new EndpointError('format', 'The models endpoint returned invalid pagination.');
+    nextUrl = safeEndpointModelPageUrl(explicit, currentUrl, baseUrl);
+  } else if (body.has_more === true) {
+    const cursor = body.last_id ?? models.at(-1);
+    if (typeof cursor !== 'string' || !cursor || cursor.length > 1024 || /[\u0000-\u001f\u007f]/.test(cursor)) throw new EndpointError('format', 'The models endpoint did not provide a valid next-page cursor.');
+    const url = new URL(currentUrl); url.searchParams.set('after', cursor); nextUrl = url.href;
+  }
+  return { models: [...new Set(models)].sort(), nextUrl };
+}
+
+/** A server-provided next link may only address the configured models resource. */
+export function safeEndpointModelPageUrl(next: string, currentUrl: string, baseUrl: string): string {
+  const first = new URL(endpointApiUrl(baseUrl, 'models'));
+  let url: URL;
+  try { url = new URL(next, currentUrl); } catch { throw new EndpointError('format', 'The models endpoint returned an invalid next-page URL.'); }
+  if (url.origin !== first.origin || url.pathname.replace(/\/+$/, '') !== first.pathname.replace(/\/+$/, '') || url.username || url.password || url.hash || url.href.length > 8192) throw new EndpointError('state', 'The models endpoint returned an unsafe next-page URL. Credentials were not forwarded.');
+  return url.href;
 }
 
 /** apiUri(resource): trailing slashes of the base URL are dropped. */
@@ -108,7 +147,8 @@ export const unreachableMessage = 'Cannot reach the endpoint. Check the network 
  * not an object, or `choices` not a list → a TypeError ('other'); no choices → FormatException.
  */
 export function parseCompletionBody(text: string): void {
-  const body: unknown = JSON.parse(text);
+  let body: unknown;
+  try { body = JSON.parse(text); } catch { throw new SyntaxError('The endpoint did not return valid JSON.'); }
   if (body === null || typeof body !== 'object' || Array.isArray(body)) {
     throw new EndpointError('other', 'The endpoint response is not a JSON object.');
   }

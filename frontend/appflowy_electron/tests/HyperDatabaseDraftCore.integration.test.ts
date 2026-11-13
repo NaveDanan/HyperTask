@@ -1,0 +1,60 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { create, fromBinary, toBinary, type DescMessage, type MessageInitShape } from '@bufbuild/protobuf';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import { FlowyErrorSchema } from '@shared/protobuf/flowy-error/errors_pb';
+import { CreateViewPayloadPBSchema, RepeatedViewPBSchema, ViewLayoutPB, ViewPBSchema } from '@shared/protobuf/flowy-folder/view_pb';
+import { GetWorkspaceViewPBSchema, WorkspaceLatestPBSchema } from '@shared/protobuf/flowy-folder/workspace_pb';
+import { SignUpPayloadPBSchema } from '@shared/protobuf/flowy-user/auth_pb';
+import { UserProfilePBSchema } from '@shared/protobuf/flowy-user/user_profile_pb';
+import { AuthTypePB } from '@shared/protobuf/flowy-user/workspace_pb';
+import { FieldType } from '@shared/protobuf/flowy-database2/field_entities_pb';
+import { HyperDatabaseRepository } from '../src/renderer/features/database/HyperDatabaseRepository';
+import { HyperDatabaseDraftController, type HyperDatabaseDraftLease } from '../src/renderer/features/database/HyperDatabaseDraft';
+import { hyperExecuteDatabaseDraft, hyperReadDatabaseDraft } from '../src/renderer/features/database/HyperDatabaseDraftBackend';
+import { hyperDecodeCell } from '../src/renderer/features/database/HyperDatabaseCells';
+import { CoreProcess } from '../src/main/core/process';
+import { coreBinaryPath } from '../src/main/core/binary';
+
+const binary = coreBinaryPath(path.resolve(__dirname, '..'), false);
+(fs.existsSync(binary) ? describe : describe.skip)('Hyper retained drafts against the real Rust core', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hyper-database-draft-core-'));
+  const core = new CoreProcess(binary), repository = new HyperDatabaseRepository();
+  async function call<O extends DescMessage>(event: string, output: O, input?: [DescMessage, object]) {
+    const reply = await core.request(event, input ? toBinary(input[0], create(input[0], input[1] as MessageInitShape<DescMessage>)) : new Uint8Array());
+    if (reply.status !== 0) throw Error(event + ': ' + fromBinary(FlowyErrorSchema, reply.payload).msg);
+    return fromBinary(output, reply.payload);
+  }
+  afterAll(async () => { await core.stop(); fs.rmSync(directory, { recursive: true, force: true }); vi.unstubAllGlobals(); });
+  it('checks the real view, field and source cell before recovering a detached draft and refuses hidden fields and external edits', async () => {
+    await core.start(() => {});
+    expect(await core.init({ root: directory, app_version: '0.11.4', custom_app_path: directory, origin_app_path: directory, device_id: 'hyper-draft-test', platform: process.platform, authenticator_type: 0, appflowy_cloud_config: { base_url: '', ws_base_url: '', gotrue_url: '' }, envs: {} })).toBe(0);
+    vi.stubGlobal('window', { appflowy: { core: { request: (event: string, payload: Uint8Array) => core.request(event, payload) } } });
+    const user = await call('SignUp', UserProfilePBSchema, [SignUpPayloadPBSchema, { email: 'anon@appflowy.io', name: 'Draft fixture', password: 'Guest!@123456', authType: AuthTypePB.Local, deviceId: 'hyper-draft-test' }]);
+    const workspace = await call('GetCurrentWorkspaceSetting', WorkspaceLatestPBSchema);
+    const roots = await call('ReadWorkspaceViews', RepeatedViewPBSchema, [GetWorkspaceViewPBSchema, { value: workspace.workspaceId }]);
+    const view = await call('CreateView', ViewPBSchema, [CreateViewPayloadPBSchema, { parentViewId: roots.items[0].id, name: 'Retained draft fixture', layout: ViewLayoutPB.Grid, setAsCurrent: false }]);
+    const snapshot = await repository.load(view.id), field = await repository.createField(view.id, 'Notes', FieldType.RichText), row = await repository.createRow(view.id);
+    await repository.updateText(view.id, row.id, field.id, 'Original');
+    const owner = { workspaceId: workspace.workspaceId, actorId: String(user.id), contextKey: directory, isCurrent: () => true };
+    const controller = new HyperDatabaseDraftController(owner, snapshot.database.id, row.id, field);
+    let writable = true;
+    const lease: HyperDatabaseDraftLease = { repository, viewId: view.id, current: () => writable, saved: () => {}, read: target => hyperReadDatabaseDraft(repository, view.id, target), execute: (mutation, prepared, check, sent) => hyperExecuteDatabaseDraft(repository, mutation, prepared, check, sent) };
+    const detach = controller.attach(lease); await controller.load(repository, view.id, field); controller.edit('Recovered from an evicted editor'); detach();
+    expect(await controller.retry(lease)).toBe(true);
+    expect(hyperDecodeCell(field, await repository.cell(view.id, row.id, field.id)).text).toBe('Recovered from an evicted editor');
+    controller.edit('Keep while hidden'); await repository.fieldVisibility(view.id, field.id, false);
+    expect(await controller.retry(lease)).toBe(false); expect(controller.getSnapshot().issue).toBe('unavailable'); expect(controller.copyText()).toBe('Keep while hidden');
+    await repository.fieldVisibility(view.id, field.id, true); writable = false; expect(await controller.retry(lease)).toBe(false); writable = true;
+    expect(await controller.retry(lease)).toBe(true);
+    controller.edit('Local conflicts with remote'); await repository.updateText(view.id, row.id, field.id, 'Saved externally');
+    expect(await controller.retry(lease)).toBe(false); expect(controller.getSnapshot().issue).toBe('changed'); expect(controller.copyText()).toBe('Local conflicts with remote');
+    expect(hyperDecodeCell(field, await repository.cell(view.id, row.id, field.id)).text).toBe('Saved externally');
+    const select = await repository.createField(view.id, 'Choice', FieldType.SingleSelect);
+    const selection = new HyperDatabaseDraftController(owner, snapshot.database.id, row.id, select);
+    selection.attach(lease); await selection.load(repository, view.id, select);
+    expect(await selection.runMutation(lease, { method: 'createSelectOption', args: [view.id, row.id, select.id, 'Created during save'] })).toBe(true);
+    expect(selection.pending).toBe(false); expect(selection.getSnapshot().value?.text).toBe('Created during save');
+  });
+});

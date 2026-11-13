@@ -46,6 +46,19 @@ pub trait StorageCloudService: Send + Sync {
   /// - `Ok(File)`: The returned file object.
   /// - `Err(Error)`: An error occurred during the operation.
   async fn get_object(&self, url: String) -> Result<ObjectValue, FlowyError>;
+
+  /// Authenticated previews must be bounded while reading, not after allocation.
+  async fn get_object_bounded(
+    &self,
+    _url: String,
+    _workspace_id: Uuid,
+    _maximum_bytes: usize,
+  ) -> FlowyResult<ObjectValue> {
+    Err(
+      FlowyError::internal()
+        .with_context("This storage provider does not support bounded downloads"),
+    )
+  }
   async fn get_object_url_v1(
     &self,
     workspace_id: &Uuid,

@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useStore } from 'zustand';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
-import { FolderEventGetView } from '@/backend/events';
+import { FolderEventGetView, FolderEventReadCurrentWorkspace } from '@/backend/events';
+import { DocumentEventGetDocumentData } from '@/backend/events/flowy-document';
+import { unwrap } from '@/backend/dispatch';
+import { hyperDocumentHasCanvas } from '../../document/HyperDocumentExport';
+import { hyperCopyDocumentExport, hyperInlineDocumentExport, hyperSaveDocumentExport, hyperValidateDocumentExport } from '../../document/HyperDocumentExportBundle';
+import { hyperResolveWhiteboardTheme } from '../../whiteboard/HyperWhiteboardExport';
+import { flushHyperDocument } from '../../document/HyperDocumentSession';
+import { nameOrDefault } from '../../view/view-ext';
+import { hyperGetDocumentOwner } from '../../document/HyperDocumentOwner';
 import { useTr } from '@/i18n';
+import { useAppStore } from '@/startup/app-store';
+import { useAppearanceStore } from '@/theme/appearance-store';
 import { CalendarDays, Check, Copy, FileCode, FileText, Globe, Link, SquareArrowOutUpRight, SquareKanban, Table2, type LucideIcon } from 'lucide-react';
 import { floatingSurfaceClass, MenuLabel } from '@/components/app/menu-row';
 import { Badge } from '@/components/reui/badge';
@@ -69,7 +79,7 @@ function ShareMenu({ tabs, store }: { tabs: ShareMenuTab[]; store: ShareStore })
         ))}
       </TabsList>
       <TabsContent key={selected} value={selected} className="p-4">
-        {selected === 'publish' ? <PublishTab store={store} /> : selected === 'exportAs' ? <ExportTab store={store} /> : <ShareTab store={store} />}
+        {selected === 'publish' ? <PublishTab store={store} /> : selected === 'exportAs' ? <HyperDocumentExportTab store={store} /> : <ShareTab store={store} />}
       </TabsContent>
     </Tabs>
   );
@@ -77,21 +87,74 @@ function ShareMenu({ tabs, store }: { tabs: ShareMenuTab[]; store: ShareStore })
 
 // ---- Export tab (plugins/shared/share/export_tab.dart) ------------------------------------
 
-function ExportButton({ title, icon: Icon, onTap }: { title: string; icon: LucideIcon; onTap: () => void }) {
+function ExportButton({ title, icon: Icon, onTap, disabled }: { title: string; icon: LucideIcon; onTap: () => void; disabled?: boolean }) {
   return (
-    <Button variant="outline" className="h-auto w-full justify-start gap-3 px-3 py-2.5" onClick={onTap}>
+    <Button variant="outline" className="h-auto w-full justify-start gap-3 px-3 py-2.5" disabled={disabled} onClick={onTap}>
       <span className="flex size-8 items-center justify-center rounded-md bg-muted"><Icon className="size-4 text-muted-foreground" /></span>
       <span className="text-sm font-medium">{title}</span>
     </Button>
   );
 }
 
-function ExportTab({ store }: { store: ShareStore }) {
+export function HyperDocumentExportTab({ store }: { store: ShareStore }) {
   const { tr } = useTr();
   const view = store.view;
 
-  // Document export needs the editor's document → HTML / Markdown encoders (document milestone).
-  const unsupported = () => showToast({ message: `${tr('settings.files.exportFileFail')}: Unimplemented` });
+  const [exporting, setExporting] = useState(false);
+  const exportDocument = async (format: 'html' | 'markdown' | 'clipboard' | 'pdf') => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const owner = hyperGetDocumentOwner();
+      if (!owner) throw new Error(tr('hyperDocument.readOnly'));
+      await flushHyperDocument(view.id, owner);
+      if (!owner.isCurrent()) throw new Error(tr('hyperDocument.readOnly'));
+      const document = unwrap(await DocumentEventGetDocumentData({ documentId: view.id }));
+      if (!owner.isCurrent()) throw new Error(tr('hyperDocument.readOnly'));
+      const title = store.getState().viewName;
+      const dateTime = useAppearanceStore.getState().dateTime;
+      const options = { dateFormat: dateTime.dateFormat, timeFormat: dateTime.timeFormat, ...(hyperDocumentHasCanvas(document) ? { canvas: hyperResolveWhiteboardTheme(window.document.documentElement) } : {}) };
+      // Validate all blocks before opening a dialog or creating any export files.
+      hyperValidateDocumentExport(document, format === 'html' || format === 'pdf' ? 'html' : 'markdown', title, options);
+      const workspaceId = store.getState().workspaceId;
+      const io = { assets: window.appflowy.assets, writeText: window.appflowy.assets.writeExportText, page: async (id: string) => {
+        if (unwrap(await FolderEventReadCurrentWorkspace()).id !== workspaceId) return { label: tr('hyperDocumentMentions.unavailable') };
+        const page = unwrap(await FolderEventGetView({ value: id }));
+        if (page.id !== id || unwrap(await FolderEventReadCurrentWorkspace()).id !== workspaceId) return { label: tr('hyperDocumentMentions.unavailable') };
+        const domain = useAppStore.getState().env?.appflowyCloudConfig.base_web_domain;
+        let url: string | undefined;
+        if (domain) try {
+          const base = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(domain) ? domain : `https://${domain}`);
+          if (['https:', 'http:'].includes(base.protocol) && !base.username && !base.password) {
+            base.pathname = `${base.pathname.replace(/\/$/, '')}/app/${encodeURIComponent(workspaceId)}/${encodeURIComponent(id)}`;
+            base.search = ''; base.hash = ''; url = base.href;
+          }
+        } catch { /* Preserve the label and page ID when no valid web URL is configured. */ }
+        return { label: nameOrDefault(page), ...(url ? { url } : {}) };
+      } };
+      if (format === 'clipboard') {
+        const text = await hyperCopyDocumentExport(document, title, options, io);
+        if (!owner.isCurrent()) throw new Error(tr('hyperDocument.readOnly'));
+        await window.appflowy.clipboard.writeText(text);
+      }
+      else {
+        const extension = format === 'html' ? 'html' : format === 'pdf' ? 'pdf' : 'md';
+        const path = await window.appflowy.dialog.saveFile({ defaultPath: `${toFileName(store.getState().viewName)}.${extension}`, filters: [{ name: format === 'html' ? 'HTML' : format === 'pdf' ? 'PDF' : 'Markdown', extensions: [extension] }] });
+        if (!path) return;
+        if (!owner.isCurrent()) throw new Error(tr('hyperDocument.readOnly'));
+        if (format === 'pdf') {
+          const html = await hyperInlineDocumentExport(document, 'html', title, options, io);
+          if (!owner.isCurrent()) throw new Error(tr('hyperDocument.readOnly'));
+          const bytes = await window.appflowy.documentExport.renderPdf(html);
+          if (!owner.isCurrent()) throw new Error(tr('hyperDocument.readOnly'));
+          await window.appflowy.assets.writeExportBytes(path, bytes);
+        } else await hyperSaveDocumentExport(document, format, title, path, options, io);
+      }
+      showToast({ message: tr(format === 'clipboard' ? 'message.copy.success' : 'settings.files.exportFileSuccess') });
+    } catch (error) {
+      showToast({ message: `${tr('settings.files.exportFileFail')}: ${(error as { msg?: string; message?: string })?.msg ?? (error as Error)?.message ?? String(error)}` });
+    } finally { setExporting(false); }
+  };
 
   const exportCSV = async () => {
     const path = await window.appflowy.dialog.saveFile({ title: '', defaultPath: `${toFileName(store.getState().viewName)}.csv` });
@@ -100,10 +163,11 @@ function ExportTab({ store }: { store: ShareStore }) {
 
   if (view.layout === ViewLayoutPB.Document) {
     return (
-      <div className="grid gap-2">
-        <ExportButton title={tr('shareAction.html')} icon={FileCode} onTap={unsupported} />
-        <ExportButton title={tr('shareAction.markdown')} icon={FileText} onTap={unsupported} />
-        <ExportButton title={tr('shareAction.clipboard')} icon={Copy} onTap={unsupported} />
+      <div className="grid gap-2" aria-busy={exporting}>
+        <ExportButton title={tr('shareAction.html')} icon={FileCode} disabled={exporting} onTap={() => void exportDocument('html')} />
+        <ExportButton title={tr('shareAction.markdown')} icon={FileText} disabled={exporting} onTap={() => void exportDocument('markdown')} />
+        <ExportButton title="PDF" icon={FileText} disabled={exporting} onTap={() => void exportDocument('pdf')} />
+        <ExportButton title={tr('shareAction.clipboard')} icon={Copy} disabled={exporting} onTap={() => void exportDocument('clipboard')} />
       </div>
     );
   }

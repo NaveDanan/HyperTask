@@ -1,5 +1,6 @@
 //! User-configured inference with no discovery or hosted fallback.
 use base64::{Engine, engine::general_purpose::STANDARD};
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::{Aead, Payload}};
 use flowy_ai_pub::cloud::{
   CompleteTextParams, CompletionStreamValue, CompletionType, QuestionStreamValue, ResponseFormat,
   StreamAnswer, StreamComplete,
@@ -14,6 +15,8 @@ use std::{
   time::Duration,
 };
 pub const CONFIG_PREFIX: &str = "openai+file:";
+const SECURE_CREDENTIAL_PREFIX: &str = "hypertask-safe-v1:";
+const CREDENTIAL_KEY_ENV: &str = "HYPERTASK_AI_CREDENTIAL_KEY";
 #[derive(Serialize, Deserialize, Clone)]
 pub struct EndpointConfig {
   pub base_url: String,
@@ -86,6 +89,15 @@ impl EndpointConfig {
   fn key(&self) -> FlowyResult<String> {
     if self.protected_key.is_empty() {
       return Ok(String::new());
+    }
+    if let Some(envelope) = self.protected_key.strip_prefix(SECURE_CREDENTIAL_PREFIX) {
+      let encoded_key = std::env::var(CREDENTIAL_KEY_ENV).map_err(|_| invalid(
+        "The saved AI credential is locked. Unlock your operating system keyring and restart HyperTask.",
+      ))?;
+      let mut key = STANDARD.decode(encoded_key).map_err(|_| invalid("The AI credential key is unavailable. Restart HyperTask."))?;
+      let result = decrypt_secure_credential(envelope, &key);
+      key.fill(0);
+      return result;
     }
     let bytes = STANDARD
       .decode(&self.protected_key)
@@ -380,6 +392,19 @@ impl EndpointConfig {
   }
 }
 
+fn decrypt_secure_credential(envelope: &str, key: &[u8]) -> FlowyResult<String> {
+  let failure = || invalid("The saved AI credential could not be unlocked. Re-enter the key in AI settings.");
+  let encrypted = STANDARD.decode(envelope).map_err(|_| failure())?;
+  if encrypted.len() < 28 { return Err(failure()); }
+  let cipher = Aes256Gcm::new_from_slice(key).map_err(|_| failure())?;
+  let mut plain = cipher.decrypt(Nonce::from_slice(&encrypted[..12]), Payload {
+    msg: &encrypted[12..], aad: SECURE_CREDENTIAL_PREFIX.as_bytes(),
+  }).map_err(|_| failure())?;
+  let result = std::str::from_utf8(&plain).map(str::to_owned).map_err(|_| failure());
+  plain.fill(0);
+  result
+}
+
 pub enum GeneratedImageResponse {
   Bytes(Vec<u8>),
   Url(String),
@@ -620,6 +645,30 @@ pub fn retrieve_context(
   ids: Option<&[String]>,
   query: &str,
 ) -> FlowyResult<String> {
+  retrieve_source_context(pointer, chat_id, ids, query, true)
+}
+
+/// Completion callers supply the exact source IDs they consent to include.
+/// Chat attachments retain their separate, existing automatic inclusion behavior.
+pub fn retrieve_completion_context(
+  pointer: &str,
+  object_id: &str,
+  ids: &[String],
+  query: &str,
+) -> FlowyResult<String> {
+  if ids.is_empty() {
+    return Ok(String::new());
+  }
+  retrieve_source_context(pointer, object_id, Some(ids), query, false)
+}
+
+fn retrieve_source_context(
+  pointer: &str,
+  chat_id: &str,
+  ids: Option<&[String]>,
+  query: &str,
+  include_attachments: bool,
+) -> FlowyResult<String> {
   let _guard = source_lock()
     .lock()
     .map_err(|_| invalid("AI source storage is busy. Retry."))?;
@@ -632,8 +681,7 @@ pub fn retrieve_context(
   if let Some(ids) = ids {
     sources.retain(|source| {
       ids.contains(&source.id)
-        || source.id.starts_with("file:")
-        || source.id.starts_with("attachment:")
+        || include_attachments && (source.id.starts_with("file:") || source.id.starts_with("attachment:"))
     });
   }
   let words: Vec<_> = query.split_whitespace().map(str::to_lowercase).collect();
@@ -725,6 +773,48 @@ fn unprotect_key(_bytes: &[u8]) -> FlowyResult<Vec<u8>> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  #[test]
+  fn completion_context_uses_only_explicit_sources_and_preserves_chat_attachments() {
+    let directory = tempfile::tempdir().unwrap();
+    let pointer = format!("{}{}", CONFIG_PREFIX, directory.path().join("endpoint.json").display());
+    let id = uuid::Uuid::new_v4().to_string();
+    for (source_id, text) in [
+      ("selected-page", "Selected page text"),
+      ("other-page", "Unselected page text"),
+      ("file:private", "Unselected file text"),
+      ("attachment:private", "Unselected attachment text"),
+    ] {
+      store_source(&pointer, &id, LocalSource { id: source_id.into(), name: source_id.into(), text: text.into() }).unwrap();
+    }
+    assert_eq!(retrieve_completion_context(&pointer, &id, &[], "text").unwrap(), "");
+    let selected = retrieve_completion_context(&pointer, &id, &["selected-page".into()], "text").unwrap();
+    assert!(selected.contains("Selected page text"));
+    assert!(!selected.contains("Unselected"));
+    let attachment = retrieve_completion_context(&pointer, &id, &["attachment:private".into()], "text").unwrap();
+    assert!(attachment.contains("Unselected attachment text"));
+    assert!(!attachment.contains("Unselected file text"));
+    assert!(!attachment.contains("Selected page text"));
+    let chat = retrieve_context(&pointer, &id, Some(&["selected-page".into()]), "text").unwrap();
+    assert!(chat.contains("Selected page text"));
+    assert!(chat.contains("Unselected file text"));
+    assert!(chat.contains("Unselected attachment text"));
+    assert!(!chat.contains("Unselected page text"));
+    // An unused damaged source index must not block a completion with no selected sources.
+    std::fs::write(sources_path(&pointer, &id).unwrap(), b"damaged index").unwrap();
+    assert_eq!(retrieve_completion_context(&pointer, &id, &[], "text").unwrap(), "");
+  }
+  #[test]
+  fn secure_credential_matches_electron_aes_gcm_envelope() {
+    let key: Vec<u8> = (0..32).collect();
+    let envelope = "AAECAwQFBgcICQoLI3e7drzIo2vkbPzuyMSvxFRKUKEn5q8D5OZn+tFwtMFIwJaQ7S8=";
+    assert_eq!(decrypt_secure_credential(envelope, &key).unwrap(), "dummy-api-key-שלום");
+    let mut tampered = STANDARD.decode(envelope).unwrap();
+    tampered[13] ^= 1;
+    assert!(decrypt_secure_credential(&STANDARD.encode(tampered), &key).is_err());
+    assert!(decrypt_secure_credential(envelope, &[0u8; 32]).is_err());
+    assert!(decrypt_secure_credential(envelope, &[0u8; 31]).is_err());
+    assert!(decrypt_secure_credential("broken", &key).is_err());
+  }
   #[test]
   fn fragmented_utf8_crlf_comments() {
     let input = "data: {\"choices\":[{\"delta\":{\"content\":\"שלום\"}}]}\r\n\r\n: comment\r\ndata: [DONE]\r\n\r\n";

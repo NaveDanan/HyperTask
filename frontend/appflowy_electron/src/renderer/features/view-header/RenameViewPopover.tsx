@@ -1,33 +1,38 @@
-import { create } from '@bufbuild/protobuf';
-import { useEffect, useRef } from 'react';
-import { ViewIconPBSchema, ViewIconTypePB } from '@shared/protobuf/flowy-folder/icon_pb';
+import { useEffect, useRef, useState } from 'react';
+import { ViewIconTypePB } from '@shared/protobuf/flowy-folder/icon_pb';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
-import { FolderEventUpdateView, FolderEventUpdateViewIcon } from '@/backend/events';
 import { CalendarDays, FileText, MessageSquareText, SquareKanban, Table2 } from 'lucide-react';
 import { floatingSurfaceClass } from '@/components/app/menu-row';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 import { AppFlowyPopover, usePopoverContainer } from '@/ui';
-import { IconEmojiPicker, type SelectedIcon } from './IconPicker';
+import { type SelectedIcon } from './IconPicker';
+import { HyperViewIconPicker } from '../view-appearance/HyperViewIconPicker';
+import { hyperUpdateViewIcon, hyperViewAppearance, type HyperAppearanceTarget } from '../view-appearance/HyperViewAppearanceService';
 import { RawEmojiIcon } from './ViewIcon';
 
-/** ViewBackendService.updateViewIcon (old custom-image cleanup is left to the document milestone). */
-export function updateViewIcon(viewId: string, icon: SelectedIcon) {
-  return FolderEventUpdateViewIcon({
-    viewId,
-    oneOfIcon: { case: 'icon', value: create(ViewIconPBSchema, { ty: icon.ty, value: icon.value }) },
-  });
+/** Guarded compatibility entrypoint; callers should pass the captured source view. */
+export async function updateViewIcon(view: ViewPB | string, icon: SelectedIcon, target?: HyperAppearanceTarget) {
+  if (typeof view === 'string') {
+    const scope = hyperViewAppearance.api.capture();
+    if (!scope) return { ok: false as const, error: new Error('The workspace changed.') };
+    const loaded = await hyperViewAppearance.api.view(view);
+    if (!scope.isCurrent()) return { ok: false as const, error: new Error('The workspace changed.') };
+    return hyperUpdateViewIcon(loaded, icon, hyperViewAppearance.capture(loaded, 'icon', () => scope.isCurrent(), undefined, scope.owner));
+  }
+  return hyperUpdateViewIcon(view, icon, target);
 }
 
 /** EmojiPickerButton (desktop): input addon opening the icon picker. */
 function EmojiPickerButton({
   icon,
-  layout,
+  view,
   onSubmitted,
 }: {
   icon: { ty: ViewIconTypePB; value: string } | undefined;
-  layout: ViewPB['layout'];
-  onSubmitted: (icon: SelectedIcon, close: () => void) => void;
+  view: ViewPB;
+  onSubmitted: (close: () => void) => void;
 }) {
+  const layout = view.layout;
   const showDefault = !icon || icon.value === '';
   const Icon = layout === ViewLayoutPB.Board ? SquareKanban : layout === ViewLayoutPB.Calendar ? CalendarDays : layout === ViewLayoutPB.Chat ? MessageSquareText : layout === ViewLayoutPB.Document ? FileText : Table2;
   return (
@@ -36,10 +41,7 @@ function EmojiPickerButton({
       offset={{ x: 0, y: 18 }}
       plain
       popup={(close) => (
-        <IconEmojiPicker
-          initialTab={icon?.ty === ViewIconTypePB.Icon ? 'icon' : 'emoji'}
-          onSelected={(selected) => onSubmitted(selected, close)}
-        />
+        <HyperViewIconPicker view={view} onApplied={keep => { if (!keep) onSubmitted(close); }} />
       )}
     >
       <InputGroupButton size="icon-xs">
@@ -62,6 +64,7 @@ export function RenameViewPopover({
   const popover = usePopoverContainer();
   const inputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef(name);
+  const [captured] = useState(() => { try { return hyperViewAppearance.capture(view, 'name'); } catch { return null; } });
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -73,7 +76,8 @@ export function RenameViewPopover({
   const save = (text: string) => {
     if (text === '' || text === name || text === savedRef.current) return false;
     savedRef.current = text;
-    void FolderEventUpdateView({ viewId: view.id, oneOfName: { case: 'name', value: text } });
+    if (!captured) return false;
+    void hyperViewAppearance.save(captured, text).catch(() => {});
     return true;
   };
 
@@ -85,8 +89,7 @@ export function RenameViewPopover({
     <div className={`${floatingSurfaceClass} w-72 p-1.5`}>
       <InputGroup>
         <InputGroupAddon>
-          <EmojiPickerButton icon={icon} layout={view.layout} onSubmitted={(selected, closePicker) => {
-            void updateViewIcon(view.id, selected);
+          <EmojiPickerButton icon={icon} view={view} onSubmitted={(closePicker) => {
             closePicker();
             popover?.close();
           }} />

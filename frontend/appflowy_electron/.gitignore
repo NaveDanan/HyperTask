@@ -3,3 +3,4 @@ node_modules/
 out/
 dist/
 *.tsbuildinfo
+__pycache__/

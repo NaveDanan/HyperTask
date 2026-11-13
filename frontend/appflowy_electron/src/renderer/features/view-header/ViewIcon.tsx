@@ -1,7 +1,8 @@
-import { useState, type CSSProperties } from 'react';
+import { type CSSProperties } from 'react';
 import { ViewIconTypePB, type ViewIconPB } from '@shared/protobuf/flowy-folder/icon_pb';
 import type { ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { argbToCss, findSvgContent, useIconGroups } from './icon-groups';
+import { HyperViewAppearanceImage } from '../view-appearance/HyperViewAppearanceImage';
 
 const isWindows = navigator.userAgent.includes('Windows');
 
@@ -58,22 +59,7 @@ function IconsDataIcon({ json, size, enableColor }: { json: string; size: number
 }
 
 function CustomImageIcon({ url, size }: { url: string; size: number }) {
-  const [failed, setFailed] = useState(false);
-  const isUrl = /^https?:\/\//i.test(url);
-  // A network image that fails renders nothing; a missing local file shows the ❓ fallback.
-  if (failed) return isUrl ? <span className="shrink-0" style={{ width: size, height: size }} /> : <EmojiText emoji="❓" size={size} />;
-  const src = isUrl ? url : `file:///${url.replace(/\\/g, '/').replace(/^\/+/, '')}`;
-  return (
-    <img
-      src={src}
-      width={size}
-      height={size}
-      alt=""
-      draggable={false}
-      onError={() => setFailed(true)}
-      className="shrink-0 object-cover"
-    />
-  );
+  return <HyperViewAppearanceImage value={url} className="inline-block shrink-0 object-cover" style={{ width: size, height: size }} />;
 }
 
 /** RawEmojiIconWidget (plugins/document/presentation/editor_plugins/header/emoji_icon_widget.dart). */

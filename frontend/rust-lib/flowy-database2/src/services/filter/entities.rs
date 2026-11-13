@@ -42,6 +42,22 @@ impl Filter {
     }
   }
 
+  pub fn uses_field_timezone(&self, field_id: &str) -> bool {
+    match &self.inner {
+      FilterInner::And { children } | FilterInner::Or { children } => children
+        .iter()
+        .any(|filter| filter.uses_field_timezone(field_id)),
+      FilterInner::Data {
+        field_id: current,
+        field_type: FieldType::DateTime,
+        condition_and_content,
+      } if current == field_id => condition_and_content
+        .cloned::<DateFilterPB>()
+        .is_some_and(|filter| filter.use_field_timezone),
+      _ => false,
+    }
+  }
+
   /// Recursively find a filter based on `filter_id`. Returns `None` if the filter cannot be found.
   pub fn find_filter(&mut self, filter_id: &str) -> Option<&mut Self> {
     if self.id == filter_id {
@@ -67,12 +83,18 @@ impl Filter {
     if self.id == filter_id {
       return None;
     }
+    let direct_child = match &self.inner {
+      FilterInner::And { children } | FilterInner::Or { children } => {
+        children.iter().any(|child| child.id == filter_id)
+      },
+      FilterInner::Data { .. } => false,
+    };
+    if direct_child {
+      return Some(self);
+    }
     match &mut self.inner {
       FilterInner::And { children } | FilterInner::Or { children } => {
         for child_filter in children.iter_mut() {
-          if child_filter.id == filter_id {
-            return Some(child_filter);
-          }
           let result = child_filter.find_parent_of_filter(filter_id);
           if result.is_some() {
             return result;
@@ -248,6 +270,83 @@ impl Filter {
   }
 }
 
+#[cfg(test)]
+mod hyper_filter_group_parent_tests {
+  use super::*;
+  use crate::entities::{FilterPB, TextFilterConditionPB};
+
+  fn leaf(id: &str, content: &str) -> Filter {
+    Filter {
+      id: id.into(),
+      inner: FilterInner::Data {
+        field_id: "source-field".into(),
+        field_type: FieldType::RichText,
+        condition_and_content: BoxAny::new(TextFilterPB {
+          condition: TextFilterConditionPB::TextIs,
+          content: content.into(),
+        }),
+      },
+    }
+  }
+  fn tree() -> Filter {
+    Filter {
+      id: "root".into(),
+      inner: FilterInner::And {
+        children: vec![
+          leaf("direct", "unchanged"),
+          Filter {
+            id: "nested".into(),
+            inner: FilterInner::Or {
+              children: vec![leaf("deep", "exact source")],
+            },
+          },
+        ],
+      },
+    }
+  }
+
+  #[test]
+  fn hyper_filter_group_parent_is_actual_container_for_direct_and_deep_children() {
+    let mut root = tree();
+    assert_eq!(root.find_parent_of_filter("direct").unwrap().id, "root");
+    assert_eq!(root.find_parent_of_filter("nested").unwrap().id, "root");
+    assert_eq!(root.find_parent_of_filter("deep").unwrap().id, "nested");
+    assert!(root.find_parent_of_filter("root").is_none());
+    assert!(root.find_parent_of_filter("absent").is_none());
+    let parent = root.find_parent_of_filter("deep").unwrap();
+    parent.delete_filter("deep").unwrap();
+    let after = FilterPB::from(&root);
+    assert_eq!(after.children[0].id, "direct");
+    assert_eq!(after.children[1].id, "nested");
+    assert!(after.children[1].children.is_empty());
+  }
+
+  #[test]
+  fn hyper_filter_group_insert_under_leaf_retains_original_criterion_and_stable_parent() {
+    let mut source = leaf("original-id", "Exact 🌍 source");
+    let original = FilterPB::from(&source).data.unwrap();
+    source
+      .insert_filter(leaf("new-child", "second criterion"))
+      .unwrap();
+    let group = FilterPB::from(&source);
+    assert_eq!(group.id, "original-id");
+    assert_eq!(group.filter_type, FilterType::And);
+    assert_eq!(group.children.len(), 2);
+    assert_ne!(group.children[0].id, group.id);
+    assert_eq!(group.children[0].data.as_ref(), Some(&original));
+    assert_eq!(group.children[1].id, "new-child");
+    let children = group.children;
+    source
+      .convert_to_and_or_filter_type(FilterType::Or)
+      .unwrap();
+    assert_eq!(FilterPB::from(&source).children, children);
+    source
+      .convert_to_and_or_filter_type(FilterType::And)
+      .unwrap();
+    assert_eq!(FilterPB::from(&source).children, children);
+  }
+}
+
 #[derive(Debug)]
 pub enum FilterInner {
   And {
@@ -291,7 +390,7 @@ impl FilterInner {
       },
       FieldType::Checklist => BoxAny::new(ChecklistFilterPB::parse(condition as u8, content)),
       FieldType::Checkbox => BoxAny::new(CheckboxFilterPB::parse(condition as u8, content)),
-      FieldType::Relation => BoxAny::new(RelationFilterPB::parse(condition as u8, content)),
+      FieldType::Relation => BoxAny::new(RelationFilterPB { condition }),
       FieldType::Summary => BoxAny::new(TextFilterPB::parse(condition as u8, content)),
       FieldType::Translate => BoxAny::new(TextFilterPB::parse(condition as u8, content)),
       FieldType::Time => BoxAny::new(TimeFilterPB::parse(condition as u8, content)),
@@ -348,15 +447,15 @@ impl<'a> From<&'a Filter> for FilterMap {
         field_type,
         condition_and_content,
       } => {
-        let get_raw_condition_and_content = || -> Option<(u8, String)> {
+        let get_raw_condition_and_content = || -> Option<(i64, String)> {
           let (condition, content) = match field_type {
             FieldType::RichText | FieldType::URL => {
               let filter = condition_and_content.cloned::<TextFilterPB>()?;
-              (filter.condition as u8, filter.content)
+              (filter.condition as i64, filter.content)
             },
             FieldType::Number => {
               let filter = condition_and_content.cloned::<NumberFilterPB>()?;
-              (filter.condition as u8, filter.content)
+              (filter.condition as i64, filter.content)
             },
             FieldType::DateTime | FieldType::LastEditedTime | FieldType::CreatedTime => {
               let filter = condition_and_content.cloned::<DateFilterPB>()?;
@@ -364,42 +463,43 @@ impl<'a> From<&'a Filter> for FilterMap {
                 start: filter.start,
                 end: filter.end,
                 timestamp: filter.timestamp,
+                use_field_timezone: filter.use_field_timezone,
               }
               .to_json_string();
-              (filter.condition as u8, content)
+              (filter.condition as i64, content)
             },
             FieldType::SingleSelect | FieldType::MultiSelect => {
               let filter = condition_and_content.cloned::<SelectOptionFilterPB>()?;
               let content = SelectOptionIds::from(filter.option_ids).to_cell_string();
-              (filter.condition as u8, content)
+              (filter.condition as i64, content)
             },
             FieldType::Checkbox => {
               let filter = condition_and_content.cloned::<CheckboxFilterPB>()?;
-              (filter.condition as u8, "".to_string())
+              (filter.condition as i64, "".to_string())
             },
             FieldType::Checklist => {
               let filter = condition_and_content.cloned::<ChecklistFilterPB>()?;
-              (filter.condition as u8, "".to_string())
+              (filter.condition as i64, "".to_string())
             },
             FieldType::Relation => {
               let filter = condition_and_content.cloned::<RelationFilterPB>()?;
-              (filter.condition as u8, "".to_string())
+              (filter.condition, "".to_string())
             },
             FieldType::Summary => {
               let filter = condition_and_content.cloned::<TextFilterPB>()?;
-              (filter.condition as u8, filter.content)
+              (filter.condition as i64, filter.content)
             },
             FieldType::Time => {
               let filter = condition_and_content.cloned::<TimeFilterPB>()?;
-              (filter.condition as u8, filter.content)
+              (filter.condition as i64, filter.content)
             },
             FieldType::Translate => {
               let filter = condition_and_content.cloned::<TextFilterPB>()?;
-              (filter.condition as u8, filter.content)
+              (filter.condition as i64, filter.content)
             },
             FieldType::Media => {
               let filter = condition_and_content.cloned::<MediaFilterPB>()?;
-              (filter.condition as u8, filter.content)
+              (filter.condition as i64, filter.content)
             },
           };
           Some((condition, content))
@@ -412,7 +512,7 @@ impl<'a> From<&'a Filter> for FilterMap {
 
         builder.insert(FIELD_ID.into(), field_id.as_str().into());
         builder.insert(FIELD_TYPE.into(), Any::BigInt(i64::from(field_type)));
-        builder.insert(FILTER_CONDITION.into(), Any::BigInt(condition as i64));
+        builder.insert(FILTER_CONDITION.into(), Any::BigInt(condition));
         builder.insert(FILTER_CONTENT.into(), content.into());
         builder
       },
@@ -521,6 +621,129 @@ impl FilterResultNotification {
       view_id,
       visible_rows: vec![],
       invisible_rows: vec![],
+    }
+  }
+}
+
+#[cfg(test)]
+mod hyper_date_policy_tests {
+  use super::*;
+  use crate::entities::{DateFilterConditionPB, FilterPB};
+  fn leaf(id: &str, enabled: bool) -> Filter {
+    Filter {
+      id: id.into(),
+      inner: FilterInner::Data {
+        field_id: "date".into(),
+        field_type: FieldType::DateTime,
+        condition_and_content: BoxAny::new(DateFilterPB {
+          condition: DateFilterConditionPB::DateStartsOn,
+          timestamp: Some(1794355200),
+          use_field_timezone: enabled,
+          ..Default::default()
+        }),
+      },
+    }
+  }
+  #[test]
+  fn hyper_date_policy_survives_nested_filter_maps_and_pb_replies() {
+    let source = Filter {
+      id: "root".into(),
+      inner: FilterInner::And {
+        children: vec![leaf("legacy", false), leaf("zoned", true)],
+      },
+    };
+    let original = FilterMap::from(&source);
+    let restored = Filter::try_from(original).unwrap();
+    assert!(restored.uses_field_timezone("date"));
+    assert!(!restored.uses_field_timezone("unrelated"));
+    let reply = FilterPB::from(&restored);
+    let policies: Vec<_> = reply
+      .children
+      .into_iter()
+      .map(|child| {
+        DateFilterPB::try_from(child.data.unwrap().data.as_slice())
+          .unwrap()
+          .use_field_timezone
+      })
+      .collect();
+    assert_eq!(policies, vec![false, true]);
+    let legacy = FilterMap::from(&leaf("legacy", false));
+    let before = legacy.get_as::<String>("content").unwrap();
+    let after = FilterMap::from(&Filter::try_from(legacy).unwrap())
+      .get_as::<String>("content")
+      .unwrap();
+    assert_eq!(before, after);
+    assert!(!before.contains("use_field_timezone"));
+  }
+}
+
+#[cfg(test)]
+mod hyper_presence_policy_tests {
+  use super::*;
+  use crate::entities::{FilterPB, MediaFilterConditionPB};
+
+  #[test]
+  fn hyper_presence_operators_survive_filter_maps_and_protobuf_replies() {
+    for condition in [0u8, 1] {
+      for field_type in [FieldType::Relation, FieldType::Media] {
+        let condition_and_content = match field_type {
+          FieldType::Relation => BoxAny::new(RelationFilterPB {
+            condition: i64::from(condition),
+          }),
+          FieldType::Media => BoxAny::new(MediaFilterPB {
+            condition: MediaFilterConditionPB::try_from(condition).unwrap(),
+            content: String::new(),
+          }),
+          _ => unreachable!(),
+        };
+        let original = Filter {
+          id: "presence-filter".into(),
+          inner: FilterInner::Data {
+            field_id: "presence-field".into(),
+            field_type,
+            condition_and_content,
+          },
+        };
+        let restored = Filter::try_from(FilterMap::from(&original)).unwrap();
+        let reply = FilterPB::from(&restored).data.unwrap();
+        match field_type {
+          FieldType::Relation => assert_eq!(
+            RelationFilterPB::try_from(reply.data.as_slice())
+              .unwrap()
+              .condition,
+            i64::from(condition)
+          ),
+          FieldType::Media => assert_eq!(
+            MediaFilterPB::try_from(reply.data.as_slice())
+              .unwrap()
+              .condition as u8,
+            condition
+          ),
+          _ => unreachable!(),
+        }
+      }
+    }
+  }
+
+  #[test]
+  fn hyper_presence_unknown_relation_operators_keep_their_full_int64_value() {
+    for condition in [-1, 255, 300, i64::MIN, i64::MAX] {
+      let original = Filter {
+        id: "future-relation".into(),
+        inner: FilterInner::Data {
+          field_id: "relation".into(),
+          field_type: FieldType::Relation,
+          condition_and_content: BoxAny::new(RelationFilterPB { condition }),
+        },
+      };
+      let restored = Filter::try_from(FilterMap::from(&original)).unwrap();
+      let reply = FilterPB::from(&restored).data.unwrap();
+      assert_eq!(
+        RelationFilterPB::try_from(reply.data.as_slice())
+          .unwrap()
+          .condition,
+        condition
+      );
     }
   }
 }

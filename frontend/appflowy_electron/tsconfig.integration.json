@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.web.json",
+  "compilerOptions": {
+    "composite": false,
+    "types": ["node", "electron", "vite/client"]
+  },
+  "include": ["tests/**/*.ts", "src/renderer/**/*.d.ts"]
+}

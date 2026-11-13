@@ -1,0 +1,5 @@
+.hyper-code-syntax::highlight(hyper-code-keyword) { color: var(--primary); }
+.hyper-code-syntax::highlight(hyper-code-string) { color: var(--success-foreground); }
+.hyper-code-syntax::highlight(hyper-code-number) { color: var(--warning-foreground); }
+.hyper-code-syntax::highlight(hyper-code-comment) { color: var(--muted-foreground); }
+.hyper-code-syntax::highlight(hyper-code-title) { color: var(--info-foreground); }

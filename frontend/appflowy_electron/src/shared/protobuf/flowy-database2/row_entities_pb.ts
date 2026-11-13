@@ -4,17 +4,17 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { FileUploadTypePB } from "./file_entities_pb";
-import { file_file_entities } from "./file_entities_pb";
 import type { OrderObjectPositionPB } from "./position_entities_pb";
 import { file_position_entities } from "./position_entities_pb";
+import type { FileUploadTypePB } from "./file_entities_pb";
+import { file_file_entities } from "./file_entities_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file row_entities.proto.
  */
 export const file_row_entities: GenFile = /*@__PURE__*/
-  fileDesc("ChJyb3dfZW50aXRpZXMucHJvdG8iIwoFUm93UEISCgoCaWQYASABKAkSDgoGaGVpZ2h0GAIgASgFIoECCglSb3dNZXRhUEISCgoCaWQYASABKAkSFQoLZG9jdW1lbnRfaWQYAiABKAlIABIOCgRpY29uGAMgASgJSAESGwoRaXNfZG9jdW1lbnRfZW1wdHkYBCABKAhIAhIaChBhdHRhY2htZW50X2NvdW50GAUgASgDSAMSHAoFY292ZXIYBiABKAsyCy5Sb3dDb3ZlclBCSARCFAoSb25lX29mX2RvY3VtZW50X2lkQg0KC29uZV9vZl9pY29uQhoKGG9uZV9vZl9pc19kb2N1bWVudF9lbXB0eUIZChdvbmVfb2ZfYXR0YWNobWVudF9jb3VudEIOCgxvbmVfb2ZfY292ZXIiZAoKUm93Q292ZXJQQhIMCgRkYXRhGAEgASgJEiYKC3VwbG9hZF90eXBlGAIgASgOMhEuRmlsZVVwbG9hZFR5cGVQQhIgCgpjb3Zlcl90eXBlGAMgASgOMgwuQ292ZXJUeXBlUEIiLgoRUmVwZWF0ZWRSb3dNZXRhUEISGQoFaXRlbXMYASADKAsyCi5Sb3dNZXRhUEIi/AEKGFVwZGF0ZVJvd01ldGFDaGFuZ2VzZXRQQhIKCgJpZBgBIAEoCRIPCgd2aWV3X2lkGAIgASgJEhIKCGljb25fdXJsGAMgASgJSAASHAoFY292ZXIYBCABKAsyCy5Sb3dDb3ZlclBCSAESGwoRaXNfZG9jdW1lbnRfZW1wdHkYBSABKAhIAhIaChBhdHRhY2htZW50X2NvdW50GAYgASgDSANCEQoPb25lX29mX2ljb25fdXJsQg4KDG9uZV9vZl9jb3ZlckIaChhvbmVfb2ZfaXNfZG9jdW1lbnRfZW1wdHlCGQoXb25lX29mX2F0dGFjaG1lbnRfY291bnQiogEKElVwZGF0ZVJvd1BheWxvYWRQQhIOCgZyb3dfaWQYASABKAkSGQoPaW5zZXJ0X2RvY3VtZW50GAIgASgISAASLgoOaW5zZXJ0X2NvbW1lbnQYAyABKAsyFC5Sb3dDb21tZW50UGF5bG9hZFBCSAFCGAoWb25lX29mX2luc2VydF9kb2N1bWVudEIXChVvbmVfb2ZfaW5zZXJ0X2NvbW1lbnQiMwoTUm93Q29tbWVudFBheWxvYWRQQhILCgN1aWQYASABKAkSDwoHY29tbWVudBgCIAEoCSI0Cg1PcHRpb25hbFJvd1BCEhUKA3JvdxgBIAEoCzIGLlJvd1BCSABCDAoKb25lX29mX3JvdyJ5Cg1JbnNlcnRlZFJvd1BCEhwKCHJvd19tZXRhGAEgASgLMgouUm93TWV0YVBCEg8KBWluZGV4GAIgASgFSAASDgoGaXNfbmV3GAMgASgIEhkKEWlzX2hpZGRlbl9pbl92aWV3GAQgASgIQg4KDG9uZV9vZl9pbmRleCJkCgxVcGRhdGVkUm93UEISDgoGcm93X2lkGAEgASgJEhEKCWZpZWxkX2lkcxgCIAMoCRIeCghyb3dfbWV0YRgDIAEoCzIKLlJvd01ldGFQQkgAQhEKD29uZV9vZl9yb3dfbWV0YSJdChNEYXRhYmFzZVZpZXdSb3dJZFBCEg8KB3ZpZXdfaWQYASABKAkSDgoGcm93X2lkGAIgASgJEhIKCGdyb3VwX2lkGAMgASgJSABCEQoPb25lX29mX2dyb3VwX2lkIjMKD1JlcGVhdGVkUm93SWRQQhIPCgd2aWV3X2lkGAEgASgJEg8KB3Jvd19pZHMYAiADKAki1AEKEkNyZWF0ZVJvd1BheWxvYWRQQhIPCgd2aWV3X2lkGAEgASgJEiwKDHJvd19wb3NpdGlvbhgCIAEoCzIWLk9yZGVyT2JqZWN0UG9zaXRpb25QQhISCghncm91cF9pZBgDIAEoCUgAEisKBGRhdGEYBCADKAsyHS5DcmVhdGVSb3dQYXlsb2FkUEIuRGF0YUVudHJ5GisKCURhdGFFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBQhEKD29uZV9vZl9ncm91cF9pZCJBCgxTdW1tYXJ5Um93UEISDwoHdmlld19pZBgBIAEoCRIOCgZyb3dfaWQYAiABKAkSEAoIZmllbGRfaWQYAyABKAkiQwoOVHJhbnNsYXRlUm93UEISDwoHdmlld19pZBgBIAEoCRIOCgZyb3dfaWQYAiABKAkSEAoIZmllbGRfaWQYAyABKAkqTwoLQ292ZXJUeXBlUEISDgoKQ29sb3JDb3ZlchAAEg0KCUZpbGVDb3ZlchABEg4KCkFzc2V0Q292ZXIQAhIRCg1HcmFkaWVudENvdmVyEANiBnByb3RvMw", [file_file_entities, file_position_entities]);
+  fileDesc("ChJyb3dfZW50aXRpZXMucHJvdG8iIwoFUm93UEISCgoCaWQYASABKAkSDgoGaGVpZ2h0GAIgASgFIoECCglSb3dNZXRhUEISCgoCaWQYASABKAkSFQoLZG9jdW1lbnRfaWQYAiABKAlIABIOCgRpY29uGAMgASgJSAESGwoRaXNfZG9jdW1lbnRfZW1wdHkYBCABKAhIAhIaChBhdHRhY2htZW50X2NvdW50GAUgASgDSAMSHAoFY292ZXIYBiABKAsyCy5Sb3dDb3ZlclBCSARCFAoSb25lX29mX2RvY3VtZW50X2lkQg0KC29uZV9vZl9pY29uQhoKGG9uZV9vZl9pc19kb2N1bWVudF9lbXB0eUIZChdvbmVfb2ZfYXR0YWNobWVudF9jb3VudEIOCgxvbmVfb2ZfY292ZXIiZAoKUm93Q292ZXJQQhIMCgRkYXRhGAEgASgJEiYKC3VwbG9hZF90eXBlGAIgASgOMhEuRmlsZVVwbG9hZFR5cGVQQhIgCgpjb3Zlcl90eXBlGAMgASgOMgwuQ292ZXJUeXBlUEIiLgoRUmVwZWF0ZWRSb3dNZXRhUEISGQoFaXRlbXMYASADKAsyCi5Sb3dNZXRhUEIi/AEKGFVwZGF0ZVJvd01ldGFDaGFuZ2VzZXRQQhIKCgJpZBgBIAEoCRIPCgd2aWV3X2lkGAIgASgJEhIKCGljb25fdXJsGAMgASgJSAASHAoFY292ZXIYBCABKAsyCy5Sb3dDb3ZlclBCSAESGwoRaXNfZG9jdW1lbnRfZW1wdHkYBSABKAhIAhIaChBhdHRhY2htZW50X2NvdW50GAYgASgDSANCEQoPb25lX29mX2ljb25fdXJsQg4KDG9uZV9vZl9jb3ZlckIaChhvbmVfb2ZfaXNfZG9jdW1lbnRfZW1wdHlCGQoXb25lX29mX2F0dGFjaG1lbnRfY291bnQiogEKElVwZGF0ZVJvd1BheWxvYWRQQhIOCgZyb3dfaWQYASABKAkSGQoPaW5zZXJ0X2RvY3VtZW50GAIgASgISAASLgoOaW5zZXJ0X2NvbW1lbnQYAyABKAsyFC5Sb3dDb21tZW50UGF5bG9hZFBCSAFCGAoWb25lX29mX2luc2VydF9kb2N1bWVudEIXChVvbmVfb2ZfaW5zZXJ0X2NvbW1lbnQiMwoTUm93Q29tbWVudFBheWxvYWRQQhILCgN1aWQYASABKAkSDwoHY29tbWVudBgCIAEoCSI0Cg1PcHRpb25hbFJvd1BCEhUKA3JvdxgBIAEoCzIGLlJvd1BCSABCDAoKb25lX29mX3JvdyJ5Cg1JbnNlcnRlZFJvd1BCEhwKCHJvd19tZXRhGAEgASgLMgouUm93TWV0YVBCEg8KBWluZGV4GAIgASgFSAASDgoGaXNfbmV3GAMgASgIEhkKEWlzX2hpZGRlbl9pbl92aWV3GAQgASgIQg4KDG9uZV9vZl9pbmRleCJkCgxVcGRhdGVkUm93UEISDgoGcm93X2lkGAEgASgJEhEKCWZpZWxkX2lkcxgCIAMoCRIeCghyb3dfbWV0YRgDIAEoCzIKLlJvd01ldGFQQkgAQhEKD29uZV9vZl9yb3dfbWV0YSJdChNEYXRhYmFzZVZpZXdSb3dJZFBCEg8KB3ZpZXdfaWQYASABKAkSDgoGcm93X2lkGAIgASgJEhIKCGdyb3VwX2lkGAMgASgJSABCEQoPb25lX29mX2dyb3VwX2lkIpMBChpIeXBlckR1cGxpY2F0ZVJvd1BheWxvYWRQQhIPCgd2aWV3X2lkGAEgASgJEg4KBnJvd19pZBgCIAEoCRISCghncm91cF9pZBgDIAEoCUgAEhYKDG9wZXJhdGlvbl9pZBgEIAEoCUgBQhEKD29uZV9vZl9ncm91cF9pZEIVChNvbmVfb2Zfb3BlcmF0aW9uX2lkIjMKD1JlcGVhdGVkUm93SWRQQhIPCgd2aWV3X2lkGAEgASgJEg8KB3Jvd19pZHMYAiADKAki1AEKEkNyZWF0ZVJvd1BheWxvYWRQQhIPCgd2aWV3X2lkGAEgASgJEiwKDHJvd19wb3NpdGlvbhgCIAEoCzIWLk9yZGVyT2JqZWN0UG9zaXRpb25QQhISCghncm91cF9pZBgDIAEoCUgAEisKBGRhdGEYBCADKAsyHS5DcmVhdGVSb3dQYXlsb2FkUEIuRGF0YUVudHJ5GisKCURhdGFFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBQhEKD29uZV9vZl9ncm91cF9pZCJBCgxTdW1tYXJ5Um93UEISDwoHdmlld19pZBgBIAEoCRIOCgZyb3dfaWQYAiABKAkSEAoIZmllbGRfaWQYAyABKAkiQwoOVHJhbnNsYXRlUm93UEISDwoHdmlld19pZBgBIAEoCRIOCgZyb3dfaWQYAiABKAkSEAoIZmllbGRfaWQYAyABKAkqTwoLQ292ZXJUeXBlUEISDgoKQ29sb3JDb3ZlchAAEg0KCUZpbGVDb3ZlchABEg4KCkFzc2V0Q292ZXIQAhIRCg1HcmFkaWVudENvdmVyEANiBnByb3RvMw", [file_position_entities, file_file_entities]);
 
 /**
  * @generated from message RowPB
@@ -409,6 +409,50 @@ export const DatabaseViewRowIdPBSchema: GenMessage<DatabaseViewRowIdPB> = /*@__P
   messageDesc(file_row_entities, 10);
 
 /**
+ * @generated from message HyperDuplicateRowPayloadPB
+ */
+export type HyperDuplicateRowPayloadPB = Message<"HyperDuplicateRowPayloadPB"> & {
+  /**
+   * @generated from field: string view_id = 1;
+   */
+  viewId: string;
+
+  /**
+   * @generated from field: string row_id = 2;
+   */
+  rowId: string;
+
+  /**
+   * @generated from oneof HyperDuplicateRowPayloadPB.one_of_group_id
+   */
+  oneOfGroupId: {
+    /**
+     * @generated from field: string group_id = 3;
+     */
+    value: string;
+    case: "groupId";
+  } | { case: undefined; value?: undefined };
+
+  /**
+   * @generated from oneof HyperDuplicateRowPayloadPB.one_of_operation_id
+   */
+  oneOfOperationId: {
+    /**
+     * @generated from field: string operation_id = 4;
+     */
+    value: string;
+    case: "operationId";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message HyperDuplicateRowPayloadPB.
+ * Use `create(HyperDuplicateRowPayloadPBSchema)` to create a new message.
+ */
+export const HyperDuplicateRowPayloadPBSchema: GenMessage<HyperDuplicateRowPayloadPB> = /*@__PURE__*/
+  messageDesc(file_row_entities, 11);
+
+/**
  * @generated from message RepeatedRowIdPB
  */
 export type RepeatedRowIdPB = Message<"RepeatedRowIdPB"> & {
@@ -428,7 +472,7 @@ export type RepeatedRowIdPB = Message<"RepeatedRowIdPB"> & {
  * Use `create(RepeatedRowIdPBSchema)` to create a new message.
  */
 export const RepeatedRowIdPBSchema: GenMessage<RepeatedRowIdPB> = /*@__PURE__*/
-  messageDesc(file_row_entities, 11);
+  messageDesc(file_row_entities, 12);
 
 /**
  * @generated from message CreateRowPayloadPB
@@ -466,7 +510,7 @@ export type CreateRowPayloadPB = Message<"CreateRowPayloadPB"> & {
  * Use `create(CreateRowPayloadPBSchema)` to create a new message.
  */
 export const CreateRowPayloadPBSchema: GenMessage<CreateRowPayloadPB> = /*@__PURE__*/
-  messageDesc(file_row_entities, 12);
+  messageDesc(file_row_entities, 13);
 
 /**
  * @generated from message SummaryRowPB
@@ -493,7 +537,7 @@ export type SummaryRowPB = Message<"SummaryRowPB"> & {
  * Use `create(SummaryRowPBSchema)` to create a new message.
  */
 export const SummaryRowPBSchema: GenMessage<SummaryRowPB> = /*@__PURE__*/
-  messageDesc(file_row_entities, 13);
+  messageDesc(file_row_entities, 14);
 
 /**
  * @generated from message TranslateRowPB
@@ -520,7 +564,7 @@ export type TranslateRowPB = Message<"TranslateRowPB"> & {
  * Use `create(TranslateRowPBSchema)` to create a new message.
  */
 export const TranslateRowPBSchema: GenMessage<TranslateRowPB> = /*@__PURE__*/
-  messageDesc(file_row_entities, 14);
+  messageDesc(file_row_entities, 15);
 
 /**
  * @generated from enum CoverTypePB

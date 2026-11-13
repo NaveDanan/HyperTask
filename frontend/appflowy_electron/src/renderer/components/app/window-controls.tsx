@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { UpdateButton } from './updates';
 import { cn } from '@/lib/utils';
 
 type Caption = 'minimize' | 'maximize' | 'unmaximize' | 'close';
@@ -21,6 +22,7 @@ function CaptionButton({ kind, label, onClick }: { kind: Caption; label: string;
     <button
       type="button"
       aria-label={label}
+      title={label}
       onClick={onClick}
       className={cn(
         'no-drag flex h-full w-11 items-center justify-center text-foreground/80 transition-colors',
@@ -36,16 +38,20 @@ function CaptionButton({ kind, label, onClick }: { kind: Caption; label: string;
   );
 }
 
-export const isWindowsChrome = navigator.userAgent.includes('Windows');
+/**
+ * True where the app uses the frameless custom chrome and must draw its own caption
+ * buttons: Windows and Linux. macOS keeps the native traffic lights (hiddenInset).
+ */
+export const customWindowChrome = navigator.userAgent.includes('Windows') || navigator.userAgent.includes('Linux');
 
-/** Minimize / maximize / close for the frameless window. Renders nothing off Windows. */
+/** Minimize / maximize / close for the frameless window. Renders nothing on macOS. */
 export function WindowControls({ className }: { className?: string }) {
   const [maximized, setMaximized] = useState(false);
   useEffect(() => {
     void window.appflowy.window.isMaximized().then(setMaximized);
     return window.appflowy.window.onMaximizedChange(setMaximized);
   }, []);
-  if (!isWindowsChrome) return null;
+  if (!customWindowChrome) return null;
   return (
     <div className={cn('flex h-full shrink-0 items-stretch', className)}>
       <CaptionButton kind="minimize" label="Minimize" onClick={() => window.appflowy.window.minimize()} />
@@ -54,7 +60,7 @@ export function WindowControls({ className }: { className?: string }) {
         label={maximized ? 'Restore' : 'Maximize'}
         onClick={() => window.appflowy.window.toggleMaximize()}
       />
-      <CaptionButton kind="close" label="Close" onClick={() => window.appflowy.window.close()} />
+      <CaptionButton kind="close" label="Close to tray" onClick={() => window.appflowy.window.close()} />
     </div>
   );
 }
@@ -73,6 +79,7 @@ export function TitleBar({ children, className, controls = true }: { children?: 
     >
       <div className="no-drag flex min-w-0 items-center gap-1">{children}</div>
       <div className="h-full flex-1" onDoubleClick={() => window.appflowy.window.toggleMaximize()} />
+      {controls && <UpdateButton />}
       {controls && <WindowControls />}
     </div>
   );

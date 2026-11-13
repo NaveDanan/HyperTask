@@ -6,6 +6,7 @@ import { DocumentEventOpenDocument, UserEventGetAllReminders, UserEventRemoveRem
 import { ViewBackendService } from '@/features/view/view-service';
 import { isDatabaseLayout } from '@/features/view/view-ext';
 import { blockDelta, deltaMentionsReminder, findBlock } from '../notifications/reminder-document';
+import { hyperDocumentOwnerKey, hyperGetDocumentOwner } from '../../document/HyperDocumentOwner';
 
 /** ReminderMetaKeys (user/application/reminder/reminder_extension.dart). */
 export const ReminderMetaKeys = {
@@ -97,22 +98,30 @@ export const unreadReminderCount = (state: ReminderState) => state.reminders.fil
 let allViews: ViewPB[] = [];
 let timer: number | undefined;
 let onFocus: (() => void) | null = null;
+let activeOwner = '', ownerVersion = 0, refreshVersion = 0;
+function captureOwner() {
+  const owner = hyperGetDocumentOwner(), key = hyperDocumentOwnerKey(owner);
+  if (key !== activeOwner) { activeOwner = key; ownerVersion++; refreshVersion++; allViews = []; set({ reminders: [], serverReminders: [] }); }
+  const version = ownerVersion;
+  return { valid: () => !!owner && owner.isCurrent() && version === ownerVersion && key === hyperDocumentOwnerKey(hyperGetDocumentOwner()) };
+}
 
 /** checkReminderAvailable: due (or read), its view exists, and for documents the mention still exists. */
-async function checkReminderAvailable(reminder: ReminderPB, reminderIds: Set<string>): Promise<boolean> {
+async function checkReminderAvailable(reminder: ReminderPB, views: ViewPB[], current: () => boolean): Promise<boolean> {
+  if (!current()) return false;
   if (!(Date.now() > scheduledAtMs(reminder)) && !reminder.isRead) return false;
-  const view = allViews.find((v) => v.id === reminder.objectId);
+  const view = views.find((v) => v.id === reminder.objectId);
   if (!view) return false;
   if (isDatabaseLayout(view.layout)) return true;
   const blockId = reminder.meta[ReminderMetaKeys.blockId];
   if (blockId === undefined) return false;
   const doc = await DocumentEventOpenDocument({ documentId: view.id });
-  if (!doc.ok) return false;
+  if (!current() || !doc.ok) return false;
   const block = findBlock(doc.value, blockId);
   if (!block) return false;
   const delta = blockDelta(doc.value, block);
   if (!delta) return false;
-  return deltaMentionsReminder(delta, reminderIds);
+  return deltaMentionsReminder(delta, new Set([reminder.id]));
 }
 
 function periodicCheck() {
@@ -133,6 +142,7 @@ export const reminderActions = {
   },
 
   dispose() {
+    ownerVersion++; refreshVersion++; activeOwner = '';
     window.clearInterval(timer);
     timer = undefined;
     if (onFocus) window.removeEventListener('focus', onFocus);
@@ -142,33 +152,41 @@ export const reminderActions = {
   },
 
   async refresh() {
+    const owner = captureOwner(), requestVersion = ++refreshVersion;
+    const current = () => owner.valid() && requestVersion === refreshVersion;
+    if (!current()) return;
     const result = await UserEventGetAllReminders();
+    if (!current()) return;
     const views = await ViewBackendService.getAllViews();
-    if (views.ok) allViews = views.value.items;
-    if (!result.ok) return;
+    if (!current() || !views.ok || !result.ok) return;
+    const visibleViews = views.value.items;
     const reminders = result.value.items;
-    const ids = new Set(reminders.map((r) => r.id));
     const available: ReminderPB[] = [];
     for (const r of reminders) {
-      if (await checkReminderAvailable(r, ids)) available.push(r);
+      if (await checkReminderAvailable(r, visibleViews, current)) available.push(r);
+      if (!current()) return;
     }
+    allViews = visibleViews;
     set({ reminders: normalizeReminders(available), serverReminders: reminders });
   },
 
   async removeReminder(reminderId: string) {
+    const owner = captureOwner(); if (!owner.valid() || !allReminders().some(item => item.id === reminderId)) return;
     const result = await UserEventRemoveReminder({ id: reminderId });
-    if (result.ok) setReminders(get().reminders.filter((r) => r.id !== reminderId));
+    if (result.ok && owner.valid()) set({ reminders: get().reminders.filter((r) => r.id !== reminderId), serverReminders: get().serverReminders.filter(r => r.id !== reminderId) });
   },
 
   async update(update: ReminderUpdate) {
+    const owner = captureOwner(); if (!owner.valid()) return;
     const reminder = allReminders().find((r) => r.id === update.id);
     if (!reminder) return;
     const next = mergeReminderUpdate(update, reminder);
     const result = await UserEventUpdateReminder(next);
-    if (!result.ok) return;
-    const ids = new Set(allReminders().map((r) => r.id));
+    if (!result.ok || !owner.valid()) return;
+    set({ serverReminders: get().serverReminders.map(item => item.id === next.id ? next : item) });
     const index = get().reminders.findIndex((r) => r.id === next.id);
-    const available = await checkReminderAvailable(next, ids);
+    const available = await checkReminderAvailable(next, [...allViews], owner.valid);
+    if (!owner.valid()) return;
     if (index === -1) {
       if (available) setReminders([...get().reminders, next]);
       return;
@@ -181,23 +199,30 @@ export const reminderActions = {
 
   /** markAllRead: every unread reminder is updated one by one. */
   async markAllRead() {
+    const owner = captureOwner(); if (!owner.valid()) return;
     for (const r of get().reminders.filter((r) => !r.isRead)) {
-      await UserEventUpdateReminder({ ...r, isRead: true });
+      if (!owner.valid()) return;
+      const result = await UserEventUpdateReminder({ ...r, isRead: true });
+      if (!owner.valid()) return;
+      if (result.ok) set({ reminders: get().reminders.map(item => item.id === r.id ? { ...item, isRead: true } : item), serverReminders: get().serverReminders.map(item => item.id === r.id ? { ...item, isRead: true } : item) });
     }
-    setReminders(get().reminders.map((r) => (r.isRead ? r : { ...r, isRead: true })));
   },
 
   /** archiveAll: archived reminders are also marked read. */
   async archiveAll() {
+    const owner = captureOwner(); if (!owner.valid()) return;
     const archive = (r: ReminderPB) => ({ ...r, isRead: true, meta: { ...r.meta, [ReminderMetaKeys.isArchived]: 'true' } });
     for (const r of get().reminders.filter((r) => !reminderIsArchived(r))) {
-      await UserEventUpdateReminder(archive(r));
+      if (!owner.valid()) return;
+      const result = await UserEventUpdateReminder(archive(r));
+      if (!owner.valid()) return;
+      if (result.ok) set({ reminders: get().reminders.map(item => item.id === r.id ? archive(item) : item), serverReminders: get().serverReminders.map(item => item.id === r.id ? archive(item) : item) });
     }
-    setReminders(get().reminders.map((r) => (reminderIsArchived(r) ? r : archive(r))));
   },
 
   /** pressReminder: mark past reminders read; the caller navigates to the reminder's page. */
   pressReminder(reminderId: string): ReminderPB | null {
+    const owner = captureOwner(); if (!owner.valid()) return null;
     const reminder = get().reminders.find((r) => r.id === reminderId);
     if (!reminder) return null;
     const isPast = scheduledAtMs(reminder) < Date.now();

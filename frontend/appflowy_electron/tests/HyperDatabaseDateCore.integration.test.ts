@@ -1,0 +1,64 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { create, fromBinary, toBinary, type DescMessage, type MessageInitShape } from '@bufbuild/protobuf';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import { FlowyErrorSchema } from '@shared/protobuf/flowy-error/errors_pb';
+import { CreateViewPayloadPBSchema, RepeatedViewPBSchema, ViewLayoutPB, ViewPBSchema } from '@shared/protobuf/flowy-folder/view_pb';
+import { GetWorkspaceViewPBSchema, WorkspaceLatestPBSchema } from '@shared/protobuf/flowy-folder/workspace_pb';
+import { SignUpPayloadPBSchema } from '@shared/protobuf/flowy-user/auth_pb';
+import { UserProfilePBSchema } from '@shared/protobuf/flowy-user/user_profile_pb';
+import { AuthTypePB } from '@shared/protobuf/flowy-user/workspace_pb';
+import { FieldType } from '@shared/protobuf/flowy-database2/field_entities_pb';
+import { DateCellDataPBSchema, DateFormatPB, TimeFormatPB } from '@shared/protobuf/flowy-database2/date_entities_pb';
+import { HyperDatabaseRepository } from '../src/renderer/features/database/HyperDatabaseRepository';
+import { HyperDatabaseDraftController, type HyperDatabaseDraftLease } from '../src/renderer/features/database/HyperDatabaseDraft';
+import { hyperExecuteDatabaseDraft, hyperReadDatabaseDraft } from '../src/renderer/features/database/HyperDatabaseDraftBackend';
+import { hyperDatabaseDateCandidates, hyperDatabaseDateInitial, hyperDatabaseDateMutation, hyperDatabaseDateOptions, hyperDatabaseDateParts } from '../src/renderer/features/database/HyperDatabaseDate';
+import { hyperUpdateDatabaseDateSettings } from '../src/renderer/features/database/HyperDatabaseDateSettings';
+import { CoreProcess } from '../src/main/core/process';
+import { coreBinaryPath } from '../src/main/core/binary';
+const binary = coreBinaryPath(path.resolve(__dirname, '..'), false);
+(fs.existsSync(binary) ? describe : describe.skip)('Hyper database dates against the Rust core', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hyper-database-date-core-'));
+  let core = new CoreProcess(binary); const repository = new HyperDatabaseRepository();
+  const start = async () => {
+    await core.start(() => {});
+    expect(await core.init({ root: directory, app_version: '0.11.4', custom_app_path: directory, origin_app_path: directory, device_id: 'hyper-date-test', platform: process.platform, authenticator_type: 0, appflowy_cloud_config: { base_url: '', ws_base_url: '', gotrue_url: '' }, envs: {} })).toBe(0);
+    vi.stubGlobal('window', { appflowy: { core: { request: (event: string, payload: Uint8Array) => core.request(event, payload) } } });
+  };
+  async function call<O extends DescMessage>(event: string, output: O, input?: [DescMessage, object]) {
+    const reply = await core.request(event, input ? toBinary(input[0], create(input[0], input[1] as MessageInitShape<DescMessage>)) : new Uint8Array());
+    if (reply.status !== 0) throw Error(event + ': ' + fromBinary(FlowyErrorSchema, reply.payload).msg);
+    return fromBinary(output, reply.payload);
+  }
+  afterAll(async () => { await core.stop(); fs.rmSync(directory, { recursive: true, force: true }); vi.unstubAllGlobals(); });
+  it('persists ranged instants, hidden time, field formats and timezone while recovering typed drafts with fresh guards', async () => {
+    await start(); const user = await call('SignUp', UserProfilePBSchema, [SignUpPayloadPBSchema, { email: 'anon@appflowy.io', name: 'Date fixture', password: 'Guest!@123456', authType: AuthTypePB.Local, deviceId: 'hyper-date-test' }]);
+    const workspace = await call('GetCurrentWorkspaceSetting', WorkspaceLatestPBSchema), roots = await call('ReadWorkspaceViews', RepeatedViewPBSchema, [GetWorkspaceViewPBSchema, { value: workspace.workspaceId }]);
+    const view = await call('CreateView', ViewPBSchema, [CreateViewPayloadPBSchema, { parentViewId: roots.items[0].id, name: 'Zoned dates', layout: ViewLayoutPB.Grid, setAsCurrent: false }]);
+    const snapshot = await repository.load(view.id), created = await repository.createField(view.id, 'When', FieldType.DateTime), row = await repository.createRow(view.id);
+    const owner = { workspaceId: workspace.workspaceId, actorId: String(user.id), contextKey: directory, isCurrent: () => true };
+    const initialOptions = hyperDatabaseDateOptions(created.typeOptionData);
+    await hyperUpdateDatabaseDateSettings(view.id, snapshot.database.id, created, { ...initialOptions, dateFormat: DateFormatPB.ISO, timeFormat: TimeFormatPB.TwelveHour, timezoneId: 'America/New_York' }, owner, () => true);
+    let field = (await repository.load(view.id)).fields.find(field => field.id === created.id)!;
+    const starts = hyperDatabaseDateCandidates('2026-11-01', '01:30:05', 'America/New_York'), end = hyperDatabaseDateCandidates('2026-11-02', '03:45:12', 'America/New_York')[0];
+    await repository.updateDateDetails(view.id, row.id, field.id, { timestamp: starts[1], endTimestamp: end, isRange: true, includeTime: true });
+    const read = async () => fromBinary(DateCellDataPBSchema, (await repository.cell(view.id, row.id, field.id)).data);
+    let saved = await read(); expect(saved.oneOfTimestamp.value).toBe(starts[1]); expect(saved.oneOfEndTimestamp.value).toBe(end); expect(saved.isRange && saved.includeTime).toBe(true);
+    await repository.updateDateDetails(view.id, row.id, field.id, { includeTime: false }); saved = await read(); expect(saved.oneOfTimestamp.value).toBe(starts[1]); expect(saved.oneOfEndTimestamp.value).toBe(end); expect(saved.includeTime).toBe(false);
+    await expect(repository.updateDateDetails(view.id, row.id, field.id, { timestamp: starts[0], isRange: true })).rejects.toThrow('invalidDate'); expect((await read()).oneOfTimestamp.value).toBe(starts[1]);
+    const controller = new HyperDatabaseDraftController(owner, snapshot.database.id, row.id, field); let writable = true;
+    const lease: HyperDatabaseDraftLease = { repository, viewId: view.id, current: () => writable, saved: () => {}, read: target => hyperReadDatabaseDraft(repository, view.id, target), execute: (mutation, prepared, check, sent) => hyperExecuteDatabaseDraft(repository, mutation, prepared, check, sent) };
+    const detach = controller.attach(lease); await controller.load(repository, view.id, field);
+    const options = hyperDatabaseDateOptions(field.typeOptionData), form = { ...hyperDatabaseDateInitial(saved, options), start: '2026-11-03', end: '2026-11-04', includeTime: '1' };
+    controller.editForm('date.start', form.start); writable = false;
+    expect(await controller.runMutation(lease, { method: 'updateDateDetails', args: [view.id, row.id, field.id, hyperDatabaseDateMutation(saved, options, form)] })).toBe(false);
+    expect(controller.copyText()).toContain('timestamp'); detach(); writable = true; expect(await controller.retry(lease)).toBe(true);
+    saved = await read(); expect(hyperDatabaseDateParts(saved.oneOfTimestamp.value!, options.timezoneId).day).toBe('2026-11-03');
+    await core.stop(); core = new CoreProcess(binary); await start(); field = (await repository.load(view.id)).fields.find(field => field.id === created.id)!;
+    expect(hyperDatabaseDateOptions(field.typeOptionData)).toMatchObject({ timezoneId: 'America/New_York', dateFormat: DateFormatPB.ISO, timeFormat: TimeFormatPB.TwelveHour });
+    expect((await read()).oneOfTimestamp.value).toBe(saved.oneOfTimestamp.value);
+    await repository.updateDateDetails(view.id, row.id, field.id, { clearFlag: true }); const cleared = await read(); expect(cleared.oneOfTimestamp.case).toBeUndefined(); expect(cleared.isRange || cleared.includeTime || !!cleared.reminderId).toBe(false);
+  });
+});

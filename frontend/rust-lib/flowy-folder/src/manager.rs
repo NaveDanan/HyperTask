@@ -568,10 +568,38 @@ impl FolderManager {
     params: CreateViewParams,
     notify_workspace_update: bool,
   ) -> FlowyResult<(View, Option<EncodedCollab>)> {
+    let user_id = self.user.user_id()?;
     let workspace_id = self.user.workspace_id()?;
+    let folder_lock = self
+      .mutex_folder
+      .load_full()
+      .ok_or_else(folder_not_init_error)?;
+    let view_id = params.view_id;
+    let check_owner = |backing_may_exist: bool| -> FlowyResult<()> {
+      let current = self.user.user_id().ok() == Some(user_id)
+        && self.user.workspace_id().ok() == Some(workspace_id)
+        && self.mutex_folder.load_full().is_some_and(|current| Arc::ptr_eq(&current, &folder_lock));
+      if current { Ok(()) } else {
+        Err(FlowyError::invalid_data().with_context(if backing_may_exist {
+          format!("The workspace owner changed during page creation. Backing copy {view_id} may already be committed. It was kept; do not replay creation.")
+        } else { "The workspace owner changed. Reopen the page before creating it.".to_string() }))
+      }
+    };
+    check_owner(false)?;
+    let exists = {
+      let folder = folder_lock.read().await;
+      check_owner(false)?;
+      if folder.get_workspace_id().as_deref() != Some(workspace_id.to_string().as_str()) || folder.origin().client_user_id() != Some(user_id) { return Err(FlowyError::invalid_data().with_context("The folder owner is not initialized for this account.")); }
+      folder.get_view(&params.view_id.to_string()).is_some()
+    };
+    if exists {
+      return Err(FlowyError::new(
+        ErrorCode::RecordAlreadyExists,
+        "A view with this id already exists",
+      ));
+    }
     let view_layout: ViewLayout = params.layout.clone().into();
     let handler = self.get_handler(&view_layout)?;
-    let user_id = self.user.user_id()?;
     let mut encoded_collab: Option<EncodedCollab> = None;
 
     info!(
@@ -596,22 +624,34 @@ impl FolderManager {
         .create_view_with_view_data(user_id, params.clone())
         .await?;
     }
+    check_owner(true)?;
 
     let index = params.index;
     let section = params.section.clone().unwrap_or(ViewSectionPB::Public);
     let is_private = section == ViewSectionPB::Private;
-    let view = create_view(self.user.user_id()?, params, view_layout);
-    if let Some(lock) = self.mutex_folder.load_full() {
-      let mut folder = lock.write().await;
+    let view = create_view(user_id, params, view_layout);
+    {
+      let mut folder = folder_lock.write().await;
+      check_owner(true)?;
+      // Creating the backing document/database awaits I/O. Another request or a remote
+      // update can insert the id during that await, so check again under the write lock.
+      if folder.get_view(&view.id).is_some() {
+        return Err(FlowyError::new(
+          ErrorCode::RecordAlreadyExists,
+          "A view with this id already exists",
+        ));
+      }
       folder.insert_view(view.clone(), index);
       if is_private {
         folder.add_private_view_ids(vec![view.id.clone()]);
       }
       if notify_workspace_update {
+        check_owner(true)?;
         notify_did_update_workspace(&workspace_id, &folder);
       }
     }
 
+    check_owner(true)?;
     Ok((view, encoded_collab))
   }
 
@@ -622,6 +662,21 @@ impl FolderManager {
     &self,
     params: CreateViewParams,
   ) -> FlowyResult<View> {
+    let folder_lock = self
+      .mutex_folder
+      .load_full()
+      .ok_or_else(folder_not_init_error)?;
+    if folder_lock
+      .read()
+      .await
+      .get_view(&params.view_id.to_string())
+      .is_some()
+    {
+      return Err(FlowyError::new(
+        ErrorCode::RecordAlreadyExists,
+        "A view with this id already exists",
+      ));
+    }
     let view_layout: ViewLayout = params.layout.clone().into();
     // TODO(nathan): remove orphan view. Just use for create document in row
     let handler = self.get_handler(&view_layout)?;
@@ -637,8 +692,14 @@ impl FolderManager {
       .await?;
 
     let view = create_view(self.user.user_id()?, params, view_layout);
-    if let Some(lock) = self.mutex_folder.load_full() {
-      let mut folder = lock.write().await;
+    {
+      let mut folder = folder_lock.write().await;
+      if folder.get_view(&view.id).is_some() {
+        return Err(FlowyError::new(
+          ErrorCode::RecordAlreadyExists,
+          "A view with this id already exists",
+        ));
+      }
       folder.insert_view(view.clone(), None);
     }
     Ok(view)
@@ -1248,19 +1309,18 @@ impl FolderManager {
 
       if sync_after_create {
         if let Some(encoded_collab) = encoded_collab {
-          let object_id = Uuid::from_str(&duplicated_view.id)?;
           let collab_type = match duplicated_view.layout {
             ViewLayout::Document => CollabType::Document,
             ViewLayout::Board | ViewLayout::Grid | ViewLayout::Calendar => CollabType::Database,
             ViewLayout::Chat => CollabType::Unknown,
           };
-          // don't block the whole import process if the view can't be encoded
           if collab_type != CollabType::Unknown {
-            match self.get_folder_collab_params(object_id, collab_type, encoded_collab) {
-              Ok(params) => objects.push(params),
-              Err(e) => {
-                error!("duplicate error {}", e);
-              },
+            if let Some(object) = crate::hyper_duplicate::hyper_duplicate_collab_params(
+              Uuid::from_str(&duplicated_view.id)?,
+              collab_type,
+              encoded_collab,
+            )? {
+              objects.push(object);
             }
           }
         }
@@ -1283,8 +1343,9 @@ impl FolderManager {
     let workspace_id = self.user.workspace_id()?;
     let parent_view_id = Uuid::from_str(parent_view_id)?;
 
-    // Sync the view to the cloud
-    if sync_after_create {
+    // Database copies initialize current committed objects instead of sending a
+    // saved snapshot. A database-only copy therefore has no HTTP batch to send.
+    if sync_after_create && !objects.is_empty() {
       self
         .cloud_service()?
         .batch_create_folder_collab_objects(&workspace_id, objects)

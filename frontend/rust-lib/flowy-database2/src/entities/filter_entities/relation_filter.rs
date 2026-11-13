@@ -10,8 +10,10 @@ pub struct RelationFilterPB {
 }
 
 impl ParseFilterData for RelationFilterPB {
-  fn parse(_condition: u8, _content: String) -> Self {
-    RelationFilterPB { condition: 0 }
+  fn parse(condition: u8, _content: String) -> Self {
+    RelationFilterPB {
+      condition: i64::from(condition),
+    }
   }
 }
 

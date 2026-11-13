@@ -33,6 +33,19 @@ export interface FileFilter {
   extensions: string[];
 }
 
+export interface HyperGeneratedImageAsset extends HyperImportedAsset {
+  width: number;
+  height: number;
+}
+
+export interface HyperImportedAsset {
+  /** Absolute managed path, compatible with existing LocalFile media cells. */
+  path: string;
+  name: string;
+  size: number;
+  previewUrl: string;
+}
+
 export interface HttpResponse {
   status: number;
   /** Response headers, lower-case names (absent from older harness builds). */
@@ -73,11 +86,21 @@ export interface CompanyCertificate {
   installedByApp: boolean;
 }
 
-/** OpenAIEndpointSettings.testConnection() inputs; the key stays DPAPI-protected across IPC. */
+/** Saved keys stay protected; a typed unsaved key is transient and is never persisted by testing. */
 export interface OpenAIEndpointTestRequest {
   baseUrl: string;
   model: string;
   protectedKey: string;
+  /** Transient unsaved override; explicit empty string tests without a saved key. */
+  apiKey?: string;
+}
+
+/** Unsaved keys are used only for this discovery request and are never persisted. */
+export interface OpenAIEndpointDiscoveryRequest {
+  baseUrl: string;
+  protectedKey: string;
+  apiKey?: string;
+  requestId?: string;
 }
 
 /** A `<name>.flowy_plugin` theme folder: the raw light and dark JSON texts. */
@@ -94,6 +117,38 @@ export interface GoogleFontFace {
   unicodeRange?: string;
   data: Uint8Array;
 }
+
+/** One newer stable GitHub release (main-updates feature, ported from CPA-Desktop). */
+export interface AppUpdateRelease {
+  version: string;
+  /** The GitHub release page. */
+  url: string;
+  /** The installer asset to download, when the release attaches one with a sha256 digest. */
+  installer: { name: string; size: number; sha256: string; url: string } | null;
+  notes: string;
+}
+
+export type AppUpdateStatus =
+  | 'idle' | 'checking' | 'current' | 'available' | 'error' | 'downloading' | 'downloaded' | 'installing';
+
+export interface AppUpdateState {
+  currentVersion: string;
+  status: AppUpdateStatus;
+  release: AppUpdateRelease | null;
+  error: string | null;
+  /** The platform can hand off to the downloaded installer and restart. */
+  canInstall: boolean;
+  progress: { received: number; total: number } | null;
+}
+
+export interface HyperStartupState {
+  enabled: boolean;
+  available: boolean;
+  reason?: string;
+}
+
+export interface HyperBookmarkOwner { actorId: string; workspaceId: string }
+export interface HyperBookmarkMetadataReply { url: string; html: string }
 
 export interface AppFlowyApi {
   core: {
@@ -120,10 +175,20 @@ export interface AppFlowyApi {
     exportLogs(): Promise<string | null>;
     /** FlowyCacheManager.clearAllCache(). */
     clearCache(): Promise<void>;
+    getStartup(): Promise<HyperStartupState>;
+    setStartup(enabled: boolean): Promise<HyperStartupState>;
   };
   /** HTTP from the main process (no CORS); vendor hosts are refused. */
   net: {
     request(options: { url: string; method: string; headers?: Record<string, string>; body?: string }): Promise<HttpResponse>;
+  };
+  bookmarks: {
+    /** Explicit bounded HTML metadata request without cookies or authentication; at most three validated redirects. */
+    load(url: string, owner: HyperBookmarkOwner): Promise<HyperBookmarkMetadataReply>;
+    /** Explicit credential-free fetch, validated and copied as a managed PNG snapshot. */
+    loadThumbnail(url: string, owner: HyperBookmarkOwner): Promise<HyperGeneratedImageAsset>;
+    /** Embedded raster bytes from a reviewed HTML import, without network access. */
+    importThumbnail(dataUrl: string, owner: HyperBookmarkOwner): Promise<HyperGeneratedImageAsset>;
   };
   clipboard: {
     writeText(text: string): void;
@@ -144,6 +209,28 @@ export interface AppFlowyApi {
     writeText(path: string, content: string): Promise<void>;
     /** Writes binary content, creating parent directories. */
     writeBytes(path: string, data: Uint8Array): Promise<void>;
+  };
+  assets: {
+    /** Copies a selected file into the active data directory, independent of the original. */
+    importFile(sourcePath: string, kind?: 'image' | 'file'): Promise<HyperImportedAsset>;
+    /** Validates a core-generated image URL and copies it into managed image storage. */
+    importGeneratedImage(fileUrl: string): Promise<HyperGeneratedImageAsset>;
+    /** Returns a read-only URL for a file in managed images/ or files/ storage. */
+    previewUrl(path: string): Promise<string>;
+    /** Native authenticated, owner-scoped raster preview; never a persisted attachment URL. */
+    previewCloud(url: string, owner: { actorId: string; workspaceId: string }): Promise<string>;
+    /** Copies a managed attachment to a unique export path; refuses to replace an existing file. */
+    exportFile(sourcePath: string, targetPath: string): Promise<void>;
+    /** Reads a managed attachment as a data URL, up to 16 MiB, for clipboard export. */
+    inlineUrl(path: string): Promise<string>;
+    /** Atomically replaces the selected export file after flushing its text. */
+    writeExportText(path: string, content: string): Promise<void>;
+    /** Atomically replaces a selected binary export after the complete content is ready. */
+    writeExportBytes(path: string, content: Uint8Array): Promise<void>;
+  };
+  documentExport: {
+    /** Renders self-contained HTML in an isolated PDF print window. */
+    renderPdf(html: string): Promise<Uint8Array>;
   };
   window: {
     minimize(): void;
@@ -175,9 +262,9 @@ export interface AppFlowyApi {
     /** Whether stored secrets survive a restart (false off Windows). */
     isPersistent(): Promise<boolean>;
   };
-  /** Windows DPAPI (CurrentUser, CRYPTPROTECT_UI_FORBIDDEN, no entropy), as openai_endpoint_settings.dart. */
+  /** Platform credential protection. The namespace stays compatible with the Windows port. */
   dpapi: {
-    /** encryptKey(): base64 of the raw DPAPI blob; '' for ''. */
+    /** Windows DPAPI or a versioned native-secure-storage envelope; '' for ''. */
     protect(value: string): Promise<IpcResult<string>>;
   };
   /** OpenAI-compatible endpoint settings (C.8). */
@@ -186,6 +273,7 @@ export interface AppFlowyApi {
     writeSettings(json: string): Promise<IpcResult<string>>;
     /** POST <base>/chat/completions, 30 s timeouts, redirects not followed, vendor hosts refused. */
     test(request: OpenAIEndpointTestRequest): Promise<IpcResult<void>>;
+    discover(request: OpenAIEndpointDiscoveryRequest): Promise<IpcResult<{ models: string[] }>>;
   };
   /** CompanyCertificateStore over the Windows CurrentUser Root store (C.9). */
   certificates: {
@@ -207,6 +295,18 @@ export interface AppFlowyApi {
     /** Google Fonts faces for a family; `text` subsets the font to those characters (previews). */
     loadGoogleFont(family: string, text?: string): Promise<GoogleFontFace[]>;
   };
+  /** App updates from GitHub Releases (check, download, restart-and-install). */
+  updates: {
+    state(): Promise<AppUpdateState>;
+    check(): Promise<AppUpdateState>;
+    download(): Promise<AppUpdateState>;
+    cancelDownload(): Promise<AppUpdateState>;
+    install(): Promise<AppUpdateState>;
+    /** Opens the known release page; false when there is none. */
+    openRelease(): Promise<boolean>;
+    /** State pushes from the main process (automatic checks included). */
+    onChange(listener: (state: AppUpdateState) => void): () => void;
+  };
 }
 
 export const IpcChannel = {
@@ -225,7 +325,12 @@ export const IpcChannel = {
   AppTakeLaunchDeepLink: 'app:take-launch-deep-link',
   AppExportLogs: 'app:export-logs',
   AppClearCache: 'app:clear-cache',
+  HyperStartupGet: 'hyper:startup-get',
+  HyperStartupSet: 'hyper:startup-set',
   NetRequest: 'net:request',
+  HyperBookmarkLoad: 'hyper:bookmark-load',
+  HyperBookmarkThumbnailLoad: 'hyper:bookmark-thumbnail-load',
+  HyperBookmarkThumbnailImport: 'hyper:bookmark-thumbnail-import',
   ClipboardWriteText: 'clipboard:write-text',
   ClipboardReadText: 'clipboard:read-text',
   PrefsGetAll: 'prefs:get-all',
@@ -237,6 +342,15 @@ export const IpcChannel = {
   FsReadText: 'fs:read-text',
   FsWriteText: 'fs:write-text',
   FsWriteBytes: 'fs:write-bytes',
+  AssetsImportFile: 'assets:import-file',
+  AssetsImportGeneratedImage: 'assets:import-generated-image',
+  AssetsPreviewUrl: 'assets:preview-url',
+  AssetsPreviewCloud: 'assets:preview-cloud',
+  AssetsExportFile: 'assets:export-file',
+  AssetsInlineUrl: 'assets:inline-url',
+  AssetsWriteExportText: 'assets:write-export-text',
+  AssetsWriteExportBytes: 'assets:write-export-bytes',
+  DocumentExportPdf: 'document-export:pdf',
   WindowMinimize: 'window:minimize',
   WindowToggleMaximize: 'window:toggle-maximize',
   WindowClose: 'window:close',
@@ -256,6 +370,7 @@ export const IpcChannel = {
   JiraCredentialsPersistent: 'jira:credentials-persistent',
   AiEndpointWriteSettings: 'ai-endpoint:write-settings',
   AiEndpointTest: 'ai-endpoint:test',
+  AiEndpointDiscover: 'ai-endpoint:discover',
   CertificatesList: 'certificates:list',
   CertificatesInspectFile: 'certificates:inspect-file',
   CertificatesImport: 'certificates:import',
@@ -265,4 +380,11 @@ export const IpcChannel = {
   ThemesInstall: 'themes:install',
   ThemesRemove: 'themes:remove',
   FontsLoadGoogleFont: 'fonts:load-google-font',
+  UpdateState: 'update:state',
+  UpdateCheck: 'update:check',
+  UpdateDownload: 'update:download',
+  UpdateCancelDownload: 'update:cancel-download',
+  UpdateInstall: 'update:install',
+  UpdateOpenRelease: 'update:open-release',
+  UpdateStateChanged: 'update:state-changed',
 } as const;

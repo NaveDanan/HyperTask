@@ -110,6 +110,12 @@ pub struct CalendarEventPB {
 
   #[pb(index = 4, one_of)]
   pub timestamp: Option<i64>,
+
+  #[pb(index = 5, one_of)]
+  pub end_timestamp: Option<i64>,
+
+  #[pb(index = 6)]
+  pub include_time: bool,
 }
 
 #[derive(Debug, Clone, Default, ProtoBuf)]
@@ -125,6 +131,9 @@ pub struct MoveCalendarEventPB {
 
   #[pb(index = 2)]
   pub timestamp: i64,
+
+  #[pb(index = 3, one_of)]
+  pub end_timestamp: Option<i64>,
 }
 
 #[derive(Debug, Clone, Default, ProtoBuf)]

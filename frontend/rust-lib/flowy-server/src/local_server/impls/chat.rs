@@ -13,6 +13,7 @@ use flowy_ai_pub::persistence::{
   select_answer_where_match_reply_message_id, select_chat, select_chat_messages,
   select_message_content, serialize_chat_metadata, serialize_rag_ids, update_chat, upsert_chat,
   upsert_chat_messages,
+  select_latest_chat_message_id,
 };
 use flowy_error::{FlowyError, FlowyResult};
 use lazy_static::lazy_static;
@@ -36,6 +37,13 @@ pub struct LocalChatServiceImpl {
 }
 
 impl LocalChatServiceImpl {
+  async fn next_message_id(&self) -> FlowyResult<i64> {
+    let uid = self.logged_user.user_id()?;
+    let conn = self.logged_user.get_sqlite_db(uid)?;
+    let mut generator = ID_GEN.lock().await;
+    let persisted = select_latest_chat_message_id(conn)?;
+    generator.next_id_after(persisted)
+  }
   fn get_message_content(&self, message_id: i64) -> FlowyResult<String> {
     let uid = self.logged_user.user_id()?;
     let db = self.logged_user.get_sqlite_db(uid)?;
@@ -80,7 +88,7 @@ impl ChatCloudService for LocalChatServiceImpl {
     message_type: ChatMessageType,
     _prompt_id: Option<String>,
   ) -> Result<ChatMessage, FlowyError> {
-    let message_id = ID_GEN.lock().await.next_id();
+    let message_id = self.next_message_id().await?;
     let message = match message_type {
       ChatMessageType::System => ChatMessage::new_system(message_id, message.to_string()),
       ChatMessageType::User => ChatMessage::new_human(message_id, message.to_string(), None),
@@ -98,7 +106,7 @@ impl ChatCloudService for LocalChatServiceImpl {
     question_id: i64,
     metadata: Option<serde_json::Value>,
   ) -> Result<ChatMessage, FlowyError> {
-    let message_id = ID_GEN.lock().await.next_id();
+    let message_id = self.next_message_id().await?;
     let mut message = ChatMessage::new_ai(message_id, message.to_string(), Some(question_id));
     if let Some(metadata) = metadata {
       message.metadata = metadata;
@@ -341,6 +349,12 @@ pub struct MessageIDGenerator {
 }
 
 impl MessageIDGenerator {
+  fn next_id_after(&mut self, persisted: Option<i64>) -> FlowyResult<i64> {
+    let floor = self.last_timestamp.max(timestamp()).max(persisted.unwrap_or(0));
+    let next = floor.checked_add(1).ok_or_else(|| FlowyError::internal().with_context("Chat message id range is exhausted."))?;
+    self.last_timestamp = next;
+    Ok(next)
+  }
   pub fn new() -> MessageIDGenerator {
     MessageIDGenerator {
       last_timestamp: timestamp(),
