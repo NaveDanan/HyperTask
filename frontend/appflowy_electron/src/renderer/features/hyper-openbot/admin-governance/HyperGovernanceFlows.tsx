@@ -179,12 +179,14 @@ export function HyperBoundaryEditor({
   policy,
   original,
   reload,
-  template
+  template,
+  initialOpen = false
 }: {
   policy: import('./HyperGovernanceApi').HyperPolicy;
   original?: string;
   reload(): void;
   template?: RuleTemplate;
+  initialOpen?: boolean;
 }) {
   const initial = original ? ruleLabel(policy, original) : template;
   const [text, setText] = useState('');
@@ -205,7 +207,7 @@ export function HyperBoundaryEditor({
   const [reach, setReach] = useState<unknown>();
   const [previewError, setPreviewError] = useState('');
   const [previewing, setPreviewing] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const a = useHyperAction();
   const trimmed = expression.trim();
   const duplicate = policy.deny.some(rule => rule === trimmed && rule !== original);
@@ -277,7 +279,7 @@ export function HyperBoundaryEditor({
       } : {})
     };
   };
-  return <details className="rounded border p-3" onToggle={e => setOpen(e.currentTarget.open)}><summary>{original ? 'Edit rule and review recent activity' : template ? 'Use this template' : 'Add a custom or described boundary'}</summary><div className="grid gap-3 pt-3">
+  return <details open={open} className="rounded border p-3" onToggle={e => setOpen(e.currentTarget.open)}><summary>{original ? 'Edit rule and review recent activity' : template ? 'Use this template' : 'Add a custom or described boundary'}</summary><div className="grid gap-3 pt-3">
     {template && <p>{template.cost}</p>}
     <label>Describe what to stop<textarea disabled={a.busy} className="w-full rounded border bg-background p-2" value={text} maxLength={1000} onChange={e => setText(e.target.value)} /></label>
     <Button disabled={a.busy || !text.trim()} onClick={() => void a.run(async () => {

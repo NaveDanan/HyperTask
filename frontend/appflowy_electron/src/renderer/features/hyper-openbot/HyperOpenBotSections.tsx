@@ -1,3 +1,4 @@
+import { HyperAdminDestinationGate } from './admin-governance/HyperAdminDestinationGate';
 import type { HyperInitialDraft } from './conversations/HyperInitialDraftTransfer';
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 
@@ -24,6 +25,11 @@ export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ 
   return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section key={context.navigationIntent?.path} context={context} path={context.navigationIntent?.path} /></Suspense>;
 }
 
+function hyperLazyAdminSection(load: Parameters<typeof hyperLazySection>[0]) {
+  const render=hyperLazySection(load);
+  return (context:HyperOpenBotSectionContext)=><HyperAdminDestinationGate path={context.navigationIntent?.path} navigate={context.navigate}>{render(context)}</HyperAdminDestinationGate>;
+}
+
 /** Parity sections added beside Conversations, Bots, Skills and Connections. Each area owns its slot. */
 export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: conversations
@@ -34,7 +40,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: memory
   { id: 'memory', label: 'Memory', group: 'personal', render: hyperLazySection(() => import('./memory/HyperMemorySection')) },
   { id: 'personal-learning', label: 'Your learned skills', group: 'personal', render: hyperLazySection(() => import('./memory/HyperPersonalLearningSection')) },
-  { id: 'learning', label: 'Learning', group: 'admin', render: hyperLazySection(() => import('./memory/HyperLearningSection')) },
+  { id: 'learning', label: 'Learning', group: 'admin', render: hyperLazyAdminSection(() => import('./memory/HyperLearningSection')) },
   // slot: bot-tabs
   { id: 'bot', label: 'Bot', group: 'bots', render: hyperLazySection(() => import('./bot-tabs/HyperBotSection')) },
   { id: 'needs-you', label: 'Needs you', group: 'work', render: hyperLazySection(() => import('./bot-tabs/HyperBotAttentionBoard')) },
@@ -52,20 +58,20 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: screens
   { id: 'screens', label: 'Screens', group: 'personal', render: hyperLazySection(() => import('./screens-gen/HyperScreensDestination')) },
   { id: 'components-gallery', label: 'Components gallery', group: 'personal', render: hyperLazySection(() => import('./screens-gen/HyperGallerySection')) },
-  { id: 'components-admin', label: 'UI components', group: 'admin', render: hyperLazySection(() => import('./screens-gen/HyperAdminComponentsSection')) },
-  { id: 'components-playground', label: 'Component playground', group: 'admin', render: hyperLazySection(() => import('./screens-gen/HyperPlaygroundSection')) },
+  { id: 'components-admin', label: 'UI components', group: 'admin', render: hyperLazyAdminSection(() => import('./screens-gen/HyperAdminComponentsSection')) },
+  { id: 'components-playground', label: 'Component playground', group: 'admin', render: hyperLazyAdminSection(() => import('./screens-gen/HyperPlaygroundSection')) },
   // slot: settings
   { id: 'settings', label: 'Settings', group: 'personal', render: hyperLazySection(() => import('./settings/HyperSettingsSection')) },
   // slot: admin-governance
-  { id: 'admin-governance', label: 'Admin', group: 'admin', render: hyperLazySection(() => import('./admin-governance/HyperGovernanceSection')) },
+  { id: 'admin-governance', label: 'Admin', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-governance/HyperGovernanceSection')) },
   // slot: admin-platform
-  { id: 'admin-providers', label: 'Providers', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperProvidersSection')) },
-  { id: 'admin-credentials', label: 'Credentials', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperCredentialsSection')) },
-  { id: 'admin-plugins', label: 'Plugins', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperPluginsSection')) },
-  { id: 'admin-skills', label: 'Skills', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperSkillsSection')) },
-  { id: 'admin-proactive', label: 'Routines', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperProactiveSection')) },
-  { id: 'admin-playground', label: 'Playground', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperPlaygroundSection')) },
-  { id: 'admin-computers', label: 'Computers', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperComputersSection')) },
+  { id: 'admin-providers', label: 'Providers', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperProvidersSection')) },
+  { id: 'admin-credentials', label: 'Credentials', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperCredentialsSection')) },
+  { id: 'admin-plugins', label: 'Plugins', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperPluginsSection')) },
+  { id: 'admin-skills', label: 'Skills', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperSkillsSection')) },
+  { id: 'admin-proactive', label: 'Routines', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperProactiveSection')) },
+  { id: 'admin-playground', label: 'Playground', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperPlaygroundSection')) },
+  { id: 'admin-computers', label: 'Computers', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperComputersSection')) },
   // slot: onboarding
   { id: 'home', label: 'Home', group: 'work', render: hyperLazySection(() => import('./onboarding/HyperHomeSection')) },
   { id: 'setup', label: 'Setup', group: 'personal', render: hyperLazySection(() => import('./onboarding/HyperSetupSection')) },

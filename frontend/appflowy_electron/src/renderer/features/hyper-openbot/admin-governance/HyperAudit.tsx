@@ -46,11 +46,12 @@ type HyperVocabulary = {
   }[];
 };
 export function HyperAudit({
-  navigate
+  navigate, initialFilters
 }: {
   navigate?(page: string): void;
+  initialFilters?: AuditFilters;
 }) {
-  const [filters, setFilters] = useState<AuditFilters>({});
+  const [filters, setFilters] = useState<AuditFilters>(initialFilters ?? {});
   const [cursor, setCursor] = useState('');
   const [events, setEvents] = useState<HyperEvent[]>([]);
   const [query, setQuery] = useState('');

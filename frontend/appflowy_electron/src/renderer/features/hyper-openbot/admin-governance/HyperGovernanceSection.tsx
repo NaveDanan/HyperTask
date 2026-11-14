@@ -1,3 +1,5 @@
+import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
+import { HYPER_ADMIN_PAGE_PATHS, hyperAdminBackSelection, hyperAdminSelectionFromPath, type HyperAdminSelection, type HyperAdminPage } from './HyperAdminNavigation';
 // Adapted from OpenBot admin routes and components. Copyright (c) 2026 CopilotKit. MIT licensed.
 import { useEffect, useState, type ReactNode } from 'react';
 import { HyperField, HyperStatus, HyperError, useHyperAction, useHyperResource } from './HyperGovernanceUi';
@@ -70,17 +72,18 @@ function HyperPermissions() {
         }))}><option value="inherit">Inherit{scopeKind === 'organization' ? ` (${c.default ? 'allowed' : 'refused'})` : ''}</option><option value="true">Allow</option>{scopeKind !== 'group' && <option value="false">Refuse</option>}</select></div>;
     })}<HyperError message={a.error} /></HyperStatus>;
 }
-function HyperBoundaries({ navigate }: { navigate(page: string): void }) {
+export function HyperBoundaries({ navigate, selection, onSelect }: { navigate(page: string): void; selection?: HyperAdminSelection; onSelect?(selection: HyperAdminSelection): void }) {
   const r = useHyperResource<{
     policy: HyperPolicy;
   }>('/api/computers/policy');
   const a = useHyperAction(r.reload);
   const p = r.data?.policy;
   const save = (policy: HyperPolicy) => request('/api/computers/policy', 'PUT', policy);
-  return <HyperStatus resource={r}>{p && <><label className="flex gap-2"><input type="checkbox" checked={p.mode === 'dry-run'} disabled={a.busy} onChange={e => void a.run(() => save({
+  if (selection?.page === 'Boundaries' && selection.boundary !== undefined) return <HyperStatus resource={r}>{p && <HyperBoundaryDestination key={String(selection.boundary)} policy={p} boundary={selection.boundary} reload={r.reload} onBack={()=>onSelect?.({page:'Boundaries'})}/>}</HyperStatus>;
+  return <HyperStatus resource={r}>{p && <><Button variant="outline" onClick={()=>onSelect?.({page:'Boundaries',boundary:'new'})}>New boundary</Button><label className="flex gap-2"><input type="checkbox" checked={p.mode === 'dry-run'} disabled={a.busy} onChange={e => void a.run(() => save({
           ...p,
           mode: e.target.checked ? 'dry-run' : 'enforce'
-        }))} />Trial mode</label><p className="text-sm text-muted-foreground">Trial mode records matching actions without stopping them.</p>{p.deny.length === 0 && <p>No rules yet.</p>}{p.deny.map(rule => <details className="border-b py-3" key={rule}><summary>{ruleLabel(p, rule).name}</summary><p>{p.labels?.[rule]?.description}</p><code className="break-words">{rule}</code><HyperBoundaryEditor policy={p} original={rule} reload={r.reload} /><div><Button disabled={a.busy} variant="destructive" onClick={() => {
+        }))} />Trial mode</label><p className="text-sm text-muted-foreground">Trial mode records matching actions without stopping them.</p>{p.deny.length === 0 && <p>No rules yet.</p>}{p.deny.map((rule,index) => <details className="border-b py-3" key={rule}><summary>{ruleLabel(p, rule).name}</summary><Button variant="outline" onClick={()=>onSelect?.({page:'Boundaries',boundary:index})}>Open rule</Button><p>{p.labels?.[rule]?.description}</p><code className="break-words">{rule}</code><HyperBoundaryEditor policy={p} original={rule} reload={r.reload} /><div><Button disabled={a.busy} variant="destructive" onClick={() => {
             if (window.confirm('Remove this boundary rule?')) {
               const labels = {
                 ...p.labels
@@ -199,6 +202,8 @@ const pages: Record<string, {
   description: string;
   component: (props: {
     navigate(page: string): void;
+    selection?: HyperAdminSelection;
+    onSelect?(selection: HyperAdminSelection): void;
   }) => ReactNode;
 }> = {
   People: {
@@ -227,7 +232,7 @@ const pages: Record<string, {
   },
   Activity: {
     description: 'Inspect the deployment audit trail.',
-    component: HyperAudit
+    component: props => <HyperAudit navigate={props.navigate} initialFilters={props.selection?.page === 'Activity' ? props.selection.filters : undefined}/>
   },
   'Identity providers': {
     description: 'Register and remove SAML and OIDC providers.',
@@ -239,10 +244,10 @@ const pages: Record<string, {
   },
   'What would happen': {
     description: 'Check an action against the deployment controls.',
-    component: HyperWhatIf
+    component: props => <HyperWhatIf navigate={props.navigate} initial={props.selection?.page === 'What would happen' ? props.selection.action : undefined}/>
   }
 };
-export default function HyperGovernanceSection() {
+export default function HyperGovernanceSection({path,context}: {path?: string;context?:HyperOpenBotSectionContext}) {
   const identity = useHyperResource<{
     user: {
       role: string;
@@ -251,10 +256,23 @@ export default function HyperGovernanceSection() {
   const edition = useHyperResource<{
     edition?: string;
   }>('/api/capabilities');
-  const [page, setPage] = useState('Admin');
+  const [selection,setSelection] = useState(()=>hyperAdminSelectionFromPath(path));
+  const page=selection.page;
+  const setPage=(page:string)=>{
+    const destination=({Plugins:'admin-plugins',Computers:'admin-computers'} as Record<string,string>)[page];
+    if(destination&&context?.navigate){context.navigate(destination);return;}
+    setSelection(Object.hasOwn(HYPER_ADMIN_PAGE_PATHS,page) ? {page:page as HyperAdminPage} : {page:'missing'});
+  };
   const Component = page === 'Admin' ? undefined : pages[page]?.component;
   if (identity.loading || identity.error) return <HyperStatus resource={identity}>{null}</HyperStatus>;
   if (identity.data?.user.role !== 'admin') return <p role="alert" className="p-6">Administrator access is required.</p>;
+  if (page === 'missing') return <section className="p-6"><p role="alert">This admin destination is unavailable.</p><Button onClick={()=>setPage('Admin')}>Back to admin</Button></section>;
+  if (edition.loading || edition.error) return <HyperStatus resource={edition}>{null}</HyperStatus>;
   const teamOnly = ['People', 'Permissions', 'Describe permissions', 'Identity providers', 'Approvals', 'Describe approval rules', 'Approval guidance'];
-  return <section className="mx-auto grid w-full max-w-4xl gap-5 p-6"><h2 className="text-xl font-semibold">{page}</h2><p className="text-sm text-muted-foreground">{pages[page]?.description || 'Manage settings that apply to everyone and every Bot in this deployment.'}</p><nav aria-label="Admin pages" className="flex flex-wrap gap-2"><Button variant={page === 'Admin' ? 'secondary' : 'ghost'} onClick={() => setPage('Admin')}>Overview</Button>{Object.keys(pages).map(name => <Button key={name} variant={page === name ? 'secondary' : 'ghost'} onClick={() => setPage(name)}>{name}</Button>)}</nav>{Component && edition.data?.edition === 'personal' && teamOnly.includes(page) ? <p>This page applies to a team. Your own approvals remain available in the approvals section.</p> : Component ? <Component key={page} navigate={setPage} /> : <div className="grid gap-2">{Object.entries(pages).map(([name, value]) => <button className="rounded-lg border p-4 text-left hover:bg-muted" key={name} onClick={() => setPage(name)}><strong>{name}</strong><p className="text-sm text-muted-foreground">{value.description}</p></button>)}</div>}</section>;
+  return <section className="mx-auto grid w-full max-w-4xl gap-5 p-6"><h2 className="text-xl font-semibold">{page}</h2><p className="text-sm text-muted-foreground">{pages[page]?.description || 'Manage settings that apply to everyone and every Bot in this deployment.'}</p>{page!=='Admin'&&<Button variant="outline" onClick={()=>setSelection(hyperAdminBackSelection(selection))}>Back to {hyperAdminBackSelection(selection).page.toLowerCase()}</Button>}<nav aria-label="Admin pages" className="flex flex-wrap gap-2"><Button variant={page === 'Admin' ? 'secondary' : 'ghost'} onClick={() => setPage('Admin')}>Overview</Button>{Object.keys(pages).map(name => <Button key={name} variant={page === name ? 'secondary' : 'ghost'} onClick={() => setPage(name)}>{name}</Button>)}</nav>{Component && edition.data?.edition === 'personal' && teamOnly.includes(page) ? <p>This page applies to a team. Your own approvals remain available in the approvals section.</p> : Component ? <Component key={page} navigate={setPage} selection={selection} onSelect={setSelection} /> : <div className="grid gap-2">{Object.entries(pages).map(([name, value]) => <button className="rounded-lg border p-4 text-left hover:bg-muted" key={name} onClick={() => setPage(name)}><strong>{name}</strong><p className="text-sm text-muted-foreground">{value.description}</p></button>)}</div>}</section>;
+}
+
+export function HyperBoundaryDestination({policy,boundary,reload,onBack}:{policy:HyperPolicy;boundary:'new'|number;reload():void;onBack():void}) {
+  const original=boundary==='new'?undefined:policy.deny[boundary];
+  return <section aria-label="Boundary detail" className="grid gap-3"><Button variant="outline" onClick={onBack}>Back to boundaries</Button>{boundary!=='new'&&original===undefined?<p role="alert">This boundary rule is no longer in place.</p>:<><h3>{original ? ruleLabel(policy,original).name : 'New boundary'}</h3><HyperBoundaryEditor key={original??'new'} policy={policy} original={original} reload={reload} initialOpen /></>}</section>;
 }
