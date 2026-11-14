@@ -1,4 +1,4 @@
-import type { HyperInitialDraft } from './onboarding/HyperHomeApi';
+import type { HyperInitialDraft } from './conversations/HyperInitialDraftTransfer';
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 
 export interface HyperOpenBotSectionContext {
@@ -7,7 +7,9 @@ export interface HyperOpenBotSectionContext {
   /** Start a new conversation with one or more Bots. */
   initialDraftSupported?: boolean;
   startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): Promise<void>;
-  navigate?(destinationId: string): void;
+  navigate?(destinationId: string, intent?: { path: string }): void;
+  initialAgentIds?: readonly string[];
+  navigationIntent?: { path: string };
 }
 export interface HyperOpenBotSection {
   readonly id: string;
@@ -17,9 +19,9 @@ export interface HyperOpenBotSection {
 }
 
 /** Lazily load an area module whose default export renders the section. Call once per slot entry. */
-export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext }> }>) {
+export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext; path?: string }> }>) {
   const Section = lazy(load);
-  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section context={context} /></Suspense>;
+  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section key={context.navigationIntent?.path} context={context} path={context.navigationIntent?.path} /></Suspense>;
 }
 
 /** Parity sections added beside Conversations, Bots, Skills and Connections. Each area owns its slot. */

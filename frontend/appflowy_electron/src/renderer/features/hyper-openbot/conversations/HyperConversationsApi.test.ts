@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { hyperOpenBotRequest } from '../transport';
-import { hyperReadGroup, hyperSendGroup, hyperStartGroup, hyperAddGroupMember, hyperRemoveGroupMember, hyperTeamConsent, hyperGroupPolling, type GroupConversation } from './HyperConversationsApi';
+import { hyperRenameConversation, hyperReadGroup, hyperSendGroup, hyperStartGroup, hyperAddGroupMember, hyperRemoveGroupMember, hyperTeamConsent, hyperGroupPolling, type GroupConversation } from './HyperConversationsApi';
 vi.mock('../transport', () => ({ hyperOpenBotRequest: vi.fn() }));
 const request = vi.mocked(hyperOpenBotRequest);
 beforeEach(() => request.mockReset());
@@ -34,4 +34,9 @@ it('polls active replies and bounds awaiting-first-reply polling', () => {
   expect(hyperGroupPolling(group, 601001)).toBe(true);
   group.messages[0].status = 'waiting';
   expect(hyperGroupPolling(group, 601001)).toBe(false);
+});
+
+it('renames with a trimmed title and sends null to restore the server-chosen name', async () => {
+  await hyperRenameConversation('channel id', '  A title  '); expect(request).toHaveBeenLastCalledWith('/api/channels/channel%20id/title', 'PUT', { title: 'A title' });
+  await hyperRenameConversation('channel', '  '); expect(request).toHaveBeenLastCalledWith('/api/channels/channel/title', 'PUT', { title: null });
 });

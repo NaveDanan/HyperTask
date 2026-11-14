@@ -1,3 +1,4 @@
+import { useHyperTypedReveal } from '../conversations/HyperTypedReveal';
 // Derived from OpenBot. Copyright (c) 2026 CopilotKit. MIT License; see REUSE.md.
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -24,12 +25,17 @@ function HyperSearch({ value, onChange, label }: { value: string; onChange: (val
   return <Input aria-label={label} placeholder={label} type="search" value={value} onChange={event => onChange(event.target.value)} />;
 }
 
+function HyperAnimatedConversationTitle({ row }: { row: HyperConversation }) {
+  const reveal = useHyperTypedReveal(row.summary ?? undefined);
+  return <>{reveal.text || HyperConversationTitle(row) || 'New conversation'}{reveal.typing && <span aria-hidden="true">▏</span>}</>;
+}
 export interface HyperConversationsScreenProps extends HyperScreenState {
   conversations: readonly HyperConversation[];
   selectedId?: string;
   pendingId?: string;
   onOpen: (id: string) => void;
   onNew?: () => void;
+  onRename?: (id: string, title: string) => Promise<void>;
   onSetPinned?: (id: string, pinned: boolean) => void | Promise<unknown>;
   /** Caller must leave the active conversation before deleting it. */
   onDelete?: (id: string) => void | Promise<unknown>;
@@ -40,6 +46,8 @@ export interface HyperConversationsScreenProps extends HyperScreenState {
 }
 export function HyperConversationsScreen(props: HyperConversationsScreenProps) {
   const [search, setSearch] = useState('');
+  const [renaming, setRenaming] = useState<HyperConversation | null>(null);
+  const [title, setTitle] = useState('');
   const [deleting, setDeleting] = useState<HyperConversation | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -61,12 +69,14 @@ export function HyperConversationsScreen(props: HyperConversationsScreenProps) {
     {actionError && <p role="alert" className="text-sm text-destructive">{actionError}</p>}
     {!props.loading && !props.error && !rows.length && <p className="text-sm text-muted-foreground">{search ? 'No matching conversations.' : 'No conversations yet.'}</p>}
     {([true, false] as const).map(pinned => <div key={String(pinned)}>{rows.some(row => !!row.pinned === pinned) && <h2 className="text-xs font-medium text-muted-foreground">{pinned ? 'Pinned' : 'Recent'}</h2>}{rows.filter(row => !!row.pinned === pinned).map(row => <div key={row.id} className="flex items-center border-b border-border">
-      <button type="button" className={rowClass} aria-current={props.selectedId === row.id ? 'page' : undefined} onClick={() => props.onOpen(row.id)}><span className="min-w-0"><span className="block truncate font-medium">{HyperConversationTitle(row) || 'New conversation'}</span><span className="block truncate text-xs text-muted-foreground">{row.name}</span></span>{!!row.unreadCount && <span aria-label={`${row.unreadCount} unread`}>{row.unreadCount}</span>}</button>
+      <button type="button" className={rowClass} aria-current={props.selectedId === row.id ? 'page' : undefined} onClick={() => props.onOpen(row.id)}><span className="min-w-0"><span className="block truncate font-medium"><HyperAnimatedConversationTitle row={row} /></span><span className="block truncate text-xs text-muted-foreground">{row.name}</span></span>{!!row.unreadCount && <span aria-label={`${row.unreadCount} unread`}>{row.unreadCount}</span>}</button>
+      {props.onRename && (row as HyperConversation & { canRename?: boolean }).canRename && <Button variant="ghost" onClick={() => { setRenaming(row); setTitle(HyperConversationTitle(row)); setActionError(null); }}>Rename…</Button>}
       {props.onSetPinned && <Button variant="ghost" disabled={props.pendingId === row.id} onClick={() => void pin(row)} aria-label={`${row.pinned ? 'Unpin' : 'Pin'} ${HyperConversationTitle(row)}`}>{row.pinned ? 'Unpin' : 'Pin'}</Button>}
       {props.onDelete && <Button variant="destructive" disabled={props.pendingId === row.id} onClick={() => { setActionError(null); setDeleting(row); }}>Delete…</Button>}
     </div>)}</div>)}
     {props.loadMoreError && <p role="alert" className="text-sm text-destructive">{props.loadMoreError}</p>}
     {props.hasMore && props.onLoadMore && <Button variant="outline" disabled={props.loadingMore} onClick={props.onLoadMore}>{props.loadingMore ? 'Loading older conversations…' : 'Load older conversations'}</Button>}
+    <Dialog open={!!renaming} onOpenChange={open => { if (!open && !busy) setRenaming(null); }}><DialogContent><DialogHeader><DialogTitle>Rename conversation</DialogTitle><DialogDescription>Leave it empty to use the name chosen by the Bot.</DialogDescription></DialogHeader><form onSubmit={event => { event.preventDefault(); if (!renaming || !props.onRename || busy) return; if (title.trim() === HyperConversationTitle(renaming).trim()) { setRenaming(null); return; } setBusy(true); setActionError(null); void props.onRename(renaming.id, title).then(() => setRenaming(null)).catch(error => setActionError(error instanceof Error ? error.message : 'Could not rename conversation.')).finally(() => setBusy(false)); }}><Input aria-label="Conversation name" maxLength={60} value={title} onChange={event => setTitle(event.target.value)} />{actionError && <p role="alert">{actionError}</p>}<DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={() => setRenaming(null)}>Cancel</Button><Button disabled={busy}>Save name</Button></DialogFooter></form></DialogContent></Dialog>
     <Dialog open={!!deleting} onOpenChange={open => { if (!open && !busy) setDeleting(null); }}><DialogContent><DialogHeader><DialogTitle>Delete conversation?</DialogTitle><DialogDescription>{HyperConversationTitle(deleting ?? {}) || 'This conversation'} will be permanently deleted.</DialogDescription></DialogHeader>{actionError && <p role="alert" className="text-destructive text-sm">{actionError}</p>}<DialogFooter><Button variant="outline" disabled={busy} onClick={() => setDeleting(null)}>Cancel</Button><Button variant="destructive" disabled={busy} onClick={() => void remove()}>{busy ? 'Deleting…' : 'Delete'}</Button></DialogFooter></DialogContent></Dialog>
   </HyperPage>;
 }

@@ -33,3 +33,9 @@ it('does not navigate when cancellation arrives during upload/send', async () =>
   const result = transfer.start(['bot'], { text: 'task', files: [], commandIds: [], submit: true }, { create: async () => 'channel', receive: () => done.promise, navigate });
   await Promise.resolve(); transfer.cancel(); done.resolve(); await expect(result).rejects.toThrow(); expect(navigate).not.toHaveBeenCalled();
 });
+it('does not reuse a channel configured for a different first-message model', async () => {
+  const transfer = new HyperInitialDraftTransfer<string>(); const create = vi.fn().mockResolvedValueOnce('one').mockResolvedValueOnce('two'); const receive = vi.fn().mockRejectedValueOnce(new Error('refused')).mockResolvedValueOnce(undefined);
+  const draft = { text: 'task', files: [], commandIds: [], submit: true, modelPick: { model: 'one', effort: null } };
+  await expect(transfer.start(['bot'], draft, { create, receive, navigate: vi.fn() })).rejects.toThrow();
+  await transfer.start(['bot'], { ...draft, modelPick: { model: 'two', effort: null } }, { create, receive, navigate: vi.fn() }); expect(create).toHaveBeenCalledTimes(2);
+});
