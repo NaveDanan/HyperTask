@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { hyperRoutineCreationIssue, hyperRoutineEligibleChannels, hyperRoutineTriggerConfig } from './HyperRoutineFlows';
+import { hyperRoutineTriggerEndpoint, hyperRoutineCreationIssue, hyperRoutineEligibleChannels, hyperRoutineTriggerConfig } from './HyperRoutineFlows';
 import { ROUTINE_FORM_DEFAULTS } from './HyperRoutineForm';
 import type { ProactiveSetting, ResponsibilityRecord, RoutineRecord, BotTask } from './HyperRoutineTypes';
 import { HyperGoalActions } from './HyperRoutinesSection';
@@ -47,4 +47,11 @@ it('merges goal schedules once and retains an orphan schedule after a missing go
 it('prioritizes actionable tasks and expires resolved tasks after seven days',()=>{
  const tasks=[{id:'old',status:'resolved',updatedAt:'2020-01-01'},{id:'working',status:'working',updatedAt:'2026-11-15'},{id:'review',status:'ready_for_review',updatedAt:'2026-11-14'}] as BotTask[];
  expect(orderTasks(tasks,()=>false,Date.parse('2026-11-15')).map(row=>row.task.id)).toEqual(['review','working']);
+});
+
+it('copies public webhook URLs without adopting Electron origins or URL credentials',()=>{
+ expect(hyperRoutineTriggerEndpoint('https://openbot.example.com','/api/hooks/token')).toBe('https://openbot.example.com/api/hooks/token');
+ expect(()=>hyperRoutineTriggerEndpoint('javascript:alert(1)','/api/hooks/token')).toThrow();
+ expect(()=>hyperRoutineTriggerEndpoint('https://user:secret@example.com','/api/hooks/token')).toThrow();
+ expect(()=>hyperRoutineTriggerEndpoint('https://openbot.example.com','//other.example.com')).toThrow();
 });

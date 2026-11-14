@@ -21,3 +21,10 @@ export function hyperRoutineTriggerConfig(kind:TriggerKind,fields:Record<string,
  if(kind==='email')return {kind,filter,allowedSenders:list(fields.senders||'')};
  return {kind,filter};
 }
+/** Electron's renderer origin is not the deployment's public webhook origin. */
+export function hyperRoutineTriggerEndpoint(origin:string,path:string):string {
+ const url=new URL(origin);
+ if(!['https:','http:'].includes(url.protocol)||url.username||url.password)throw new Error('Enter an HTTP or HTTPS public OpenBot URL without credentials.');
+ if(!path.startsWith('/')||path.startsWith('//'))throw new Error('The server returned an invalid webhook path.');
+ return new URL(path,url.origin).href;
+}
