@@ -1,3 +1,4 @@
+import { HyperDictationControl } from './HyperDictationControl';
 // Copyright (c) 2026 CopilotKit. SPDX-License-Identifier: MIT
 // Adapted for HyperTask, developed by NaveDanan. See REUSE.md.
 import { useEffect, useRef, useState, type Ref, type Dispatch, type SetStateAction } from 'react';
@@ -38,6 +39,8 @@ export interface HyperComposerProps {
   /** The integration owns uploads, server IDs, previews and their cleanup. Resolve after staging. */
   onFiles?: (files: readonly File[]) => void | Promise<void>;
   attachments?: readonly HyperComposerAttachment[];
+  /** Current channel count when onFiles reserves placeholders synchronously in the owner draft. */
+  getAttachmentCount?: () => number;
   onRemoveAttachment?: (id: string) => void;
   /** Called after success with exactly the attachments consumed by this send. */
   onConsumeAttachments?: (ids: readonly string[]) => void;
@@ -59,7 +62,7 @@ export interface HyperComposerProps {
   className?: string;
 }
 const EMPTY_ATTACHMENTS: readonly HyperComposerAttachment[] = [];
-export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, onRemoveAttachment,
+export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, getAttachmentCount, onRemoveAttachment,
   onConsumeAttachments, onStop, pending = false, stoppable = pending, disabled = false, autoFocus = false,
   initialValue = '', value, onTextChange, recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
   const [localText, setLocalText] = useState(initialValue);
@@ -86,7 +89,10 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   const stage = async (files: readonly File[]) => {
     if (disabled || !files.length) return;
     if (!onFiles) { setError('Attachments are unavailable in this conversation.'); return; }
-    const screened = HyperScreenPickedFiles(files, { alreadyStaged: attachments.length + queuedAttachmentCount + reservations.current });
+    // Channel placeholders already include in-flight files. Read the live owner count
+    // so even another pick before React rerenders cannot count them twice or overflow.
+    const stagedCount = getAttachmentCount ? getAttachmentCount() : attachments.length + reservations.current;
+    const screened = HyperScreenPickedFiles(files, { alreadyStaged: stagedCount + queuedAttachmentCount });
     setRejected((current) => [...current, ...screened.rejected]);
     if (!screened.accepted.length) return;
     reservations.current += screened.accepted.length;
@@ -140,6 +146,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     {!!rejected.length && <ul aria-label="Files not added" className="space-y-1 py-2">{rejected.map((file) => <li key={file.id} className="flex items-center gap-2 text-sm text-destructive"><span role="alert">{file.reason}</span><Button type="button" size="icon-xs" variant="ghost" aria-label={`Dismiss rejection for ${file.name}`} onClick={() => setRejected((current) => current.filter((item) => item.id !== file.id))}><X /></Button></li>)}</ul>}
     <div className="flex flex-wrap items-center gap-2">
       {onFiles && <><input ref={picker} type="file" multiple className="hidden" tabIndex={-1} aria-label="Choose attachments" accept="image/png,image/jpeg,image/gif,image/webp,text/plain,text/markdown,text/csv,application/json" onChange={(event) => { void stage(Array.from(event.target.files ?? [])); event.target.value = ''; }} /><Button type="button" variant="ghost" size="icon-sm" aria-label="Attach files" disabled={disabled} onClick={() => picker.current?.click()}><Paperclip /></Button></>}
+      <HyperDictationControl disabled={disabled || pending || submitting} onText={words => setText(current => [current.trimEnd(), words].filter(Boolean).join(' '))} />
       {modelPicker && <HyperModelPicker {...modelPicker} disabled={disabled || modelPicker.disabled} onPicked={() => { modelPicker.onPicked?.(); input.current?.focus(); }} />}
       <div className="ml-auto">{stoppable && onStop ? <Button type="button" size="icon-sm" aria-label="Stop generating" disabled={stopping} onClick={() => void stop()}><Square /></Button> : <Button type="submit" size="icon-sm" aria-label="Send message" disabled={disabled || pending || submitting || !sendable}>{submitting ? <LoaderCircle className="animate-spin" /> : <ArrowUp />}</Button>}</div>
     </div>

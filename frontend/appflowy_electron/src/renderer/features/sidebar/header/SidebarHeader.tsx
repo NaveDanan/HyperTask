@@ -22,12 +22,10 @@ export function SidebarTopMenu() {
       <Tooltip rich={panelCollapsed
         ? hintTooltip(tr('sideBar.closeSidebar'), isMac ? '⌘+.' : 'Ctrl+\\')
         : tr('sideBar.closeSidebar')}>
-        {/* Fires on pointer down, even while invisible. */}
-        <NavIconButton className="no-drag opacity-0 group-hover/sidebar:opacity-100"
+        {/* Available to pointer and keyboard users. */}
+        <NavIconButton className="no-drag opacity-0 group-hover/sidebar:opacity-100 focus-visible:opacity-100"
           aria-label={tr('sideBar.closeSidebar')}
-          onMouseDown={(event) => {
-            if (event.button === 0) homeSettingActions.collapseMenu();
-          }}>
+          onClick={() => homeSettingActions.collapseMenu()}>
           <PanelLeftClose />
         </NavIconButton>
       </Tooltip>
