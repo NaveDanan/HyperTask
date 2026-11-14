@@ -7,3 +7,6 @@ export { default as HyperMemorySkillsSection } from './HyperPersonalLearningSect
 export { HyperLearningPermissions } from './HyperLearningPermissions';
 export { HyperLearningHealth } from './HyperLearningConfiguration';
 export { HyperLearningRecordings } from './HyperLearningRecordings';
+
+export { HyperMemorySources, HyperMemorySourcesView } from './HyperMemorySources';
+export { hyperMemorySelectionFromPath, type HyperMemorySelection } from './HyperMemoryNavigation';

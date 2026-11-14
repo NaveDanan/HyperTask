@@ -1,3 +1,4 @@
+import { hyperAdminSectionFromPath } from '../admin-governance/HyperAdminNavigation';
 export function hyperConversationDestination(id: string, intent?: { path: string }) {
   const path = intent?.path ?? (id.includes('/') || id.includes('?') ? id : undefined);
   const head = id.replace(/^\//, '').split(/[/?]/)[0];
@@ -7,6 +8,7 @@ export function hyperConversationDestination(id: string, intent?: { path: string
     const url = new URL(path, 'https://native.invalid');
     if (url.origin !== 'https://native.invalid') return { sectionId: 'settings', path: '/settings' };
     const pathname = url.pathname;
+    if (/^\/(?:settings\/|capabilities\/)?memory(?:\/|$)/.test(pathname)) sectionId = 'memory';
     const admin = /^\/admin\/(providers|credentials|plugins|skills|proactive|playground|computers)(?:\/|$)/.exec(pathname);
     if (admin) sectionId = `admin-${admin[1]}`;
     if (/^\/admin\/components(?:\/|$)/.test(pathname)) sectionId = 'components-admin';
@@ -23,6 +25,8 @@ export function hyperConversationDestination(id: string, intent?: { path: string
     if (/\/browsers(?:\/|$)/.test(pathname)) sectionId = 'connected-browsers';
     if (/\/browser(?:\/|$)/.test(pathname)) sectionId = 'browser';
     if (/\/notifications(?:\/|$)|\/approvals(?:\/|$)/.test(pathname)) sectionId = 'approvals';
+    const adminSection = hyperAdminSectionFromPath(pathname);
+    if (adminSection) sectionId = adminSection;
   }
   // Keep unknown allocations, including screens, explicit. Redirecting to Home would discard intent.
   return { sectionId, ...(path ? { path } : {}) };

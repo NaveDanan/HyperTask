@@ -12,6 +12,8 @@ export function HyperVerdict({
   navigate?(page: string): void;
 }) {
   const pages: Record<string, string> = {
+    '/admin/plugins': 'Plugins',
+    '/admin/computers': 'Computers',
     '/admin/permissions': 'Permissions',
     '/admin/boundaries': 'Boundaries',
     '/admin/approvals': 'Approvals'
