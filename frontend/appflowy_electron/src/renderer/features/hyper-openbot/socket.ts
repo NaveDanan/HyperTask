@@ -1,3 +1,4 @@
+import { hyperRunConnectionLost } from './HyperRunConnection';
 import type { HyperOpenBotSocketEvent } from '@shared/api';
 /** Browser-compatible Phoenix transport with a fixed main-process gateway destination. */
 export class HyperOpenBotSocket extends EventTarget {
@@ -9,6 +10,7 @@ export class HyperOpenBotSocket extends EventTarget {
   onclose: ((event: CloseEvent) => void) | null = null;
   onerror: ((event: Event) => void) | null = null;
   private id = crypto.randomUUID();
+  private connection?: { threadId: string; runId: string };
   private dispose: () => void;
   constructor(readonly url: string, protocols: string | string[] = []) {
     super();
@@ -26,11 +28,25 @@ export class HyperOpenBotSocket extends EventTarget {
       const data = typeof value.data === 'string' ? value.data : this.binaryType === 'arraybuffer' ? new Uint8Array(value.data ?? []).buffer : new Blob([new Uint8Array(value.data ?? [])]);
       const event = new MessageEvent('message', { data }); this.dispatchEvent(event); this.onmessage?.(event);
     } else if (value.type === 'error') { const event = new Event('error'); this.dispatchEvent(event); this.onerror?.(event); }
-    else { this.readyState = 3; this.dispose(); const event = new CloseEvent('close', { code: value.code, reason: value.reason, wasClean: value.code === 1000 }); this.dispatchEvent(event); this.onclose?.(event); }
+    else {
+      const interrupted = this.readyState !== 2 ? this.connection : undefined;
+      this.readyState = 3; this.dispose();
+      const event = new CloseEvent('close', { code: value.code, reason: value.reason, wasClean: value.code === 1000 });
+      this.dispatchEvent(event); this.onclose?.(event);
+      if (interrupted) hyperRunConnectionLost(interrupted);
+    }
   }
   send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
     if (this.readyState !== 1) throw new DOMException('OpenBot socket is not open', 'InvalidStateError');
-    if (typeof data === 'string') window.appflowy.hyperOpenBot.socketSend(this.id, data);
+    if (typeof data === 'string') {
+      // Phoenix's run join carries IDs only. Never retain its URL, token or entire payload.
+      try {
+        const frame = JSON.parse(data);
+        if (Array.isArray(frame) && frame.length === 5 && frame[3] === 'phx_join' && typeof frame[2] === 'string' && frame[2].startsWith('thread:') && typeof frame[4]?.run_id === 'string')
+          this.connection = { threadId: frame[2].slice('thread:'.length), runId: frame[4].run_id };
+      } catch { /* Other socket messages do not identify a run. */ }
+      window.appflowy.hyperOpenBot.socketSend(this.id, data);
+    }
     else if (data instanceof Blob) void data.arrayBuffer().then(bytes => { if (this.readyState === 1) window.appflowy.hyperOpenBot.socketSend(this.id, new Uint8Array(bytes)); });
     else window.appflowy.hyperOpenBot.socketSend(this.id, ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data));
   }

@@ -1,9 +1,10 @@
+import { CopilotKitCoreReact } from '@copilotkit/react-core/v2/headless';
 import { afterEach, expect, it, vi } from 'vitest';
 import { readableTurns } from './HyperThreadMessages';
 import { hyperRestoreStoredMessages, mergeStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
-import { hyperGatewayJoin, hyperRunWithRecovery } from './HyperRun';
+import { hyperGatewayJoin, hyperRunWithRecovery, hyperWatchGatewayActivity, hyperWatchGatewayErrors } from './HyperRun';
 afterEach(() => vi.useRealTimers());
 it('normalizes actual persisted tool dialect and counts corrupt history', () => {
   const result = readableTurns([{ id: 'call', role: 'assistant', content: null, toolCalls: [{ id: 'c1', name: 'lookup', args: { q: 'test' } }] }, { id: 'bad', role: 'user', content: null }]);
@@ -118,4 +119,48 @@ it('successful joins clear their deadline and an overdue active join invokes it 
   await vi.advanceTimersByTimeAsync(5000);
   await overdue.promise;
   expect(detach).toHaveBeenCalledTimes(1);
+});
+
+it.each(['onTextMessageContentEvent', 'onToolCallStartEvent', 'onToolCallArgsEvent', 'onToolCallResultEvent'])('keeps a cursor-based reconnect alive when %s arrives without RUN_STARTED', async event => {
+  vi.useFakeTimers();
+  let events: any; const unsubscribe = vi.fn(), detach = vi.fn();
+  const watching = hyperWatchGatewayActivity({ subscribe: (value: unknown) => { events = value; return { unsubscribe }; } } as never);
+  const join = hyperGatewayJoin(() => new Promise(() => {}), () => { if (!watching.isAnswering()) detach(); }, 5000, watching.isConnected);
+  events[event]();
+  await vi.advanceTimersByTimeAsync(5000); expect(await join.promise).toBe('connected');
+  expect(detach).not.toHaveBeenCalled(); expect(watching.isAnswering()).toBe(true);
+  events.onRunFinishedEvent(); expect(watching.isAnswering()).toBe(false);
+  watching.unsubscribe(); expect(unsubscribe).toHaveBeenCalledOnce();
+});
+
+it('reports core connect failures even though the real SDK resolves, scoped to the current agent', async () => {
+  const core = new CopilotKitCoreReact({});
+  const failingAgent = (agentId: string, threadId: string) => ({ agentId, threadId,
+    detachActiveRun: vi.fn(), setMessages: vi.fn(), setState: vi.fn(),
+    connectAgent: vi.fn().mockRejectedValue(new Error('Socket unavailable')),
+  }) as never;
+  const agent = failingAgent('selected', 'thread'), other = failingAgent('other', 'elsewhere');
+  const failed = vi.fn();
+  const watch = hyperWatchGatewayErrors(core, agent, failed);
+  await expect(core.connectAgent({ agent: other })).resolves.toMatchObject({ newMessages: [] });
+  expect(failed).not.toHaveBeenCalled();
+  await expect(core.connectAgent({ agent })).resolves.toMatchObject({ newMessages: [] });
+  expect(failed).toHaveBeenCalledOnce();
+  await core.connectAgent({ agent }); expect(failed).toHaveBeenCalledTimes(2);
+  watch.unsubscribe(); await core.connectAgent({ agent }); expect(failed).toHaveBeenCalledTimes(2);
+});
+it('distinguishes an unconfirmed deadline from a confirmed connection and ignores late settlement', async () => {
+  vi.useFakeTimers();
+  let finish!: () => void; const detach = vi.fn();
+  const join = hyperGatewayJoin(() => new Promise<void>(resolve => { finish = resolve; }), detach);
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(await join.promise).toBe('deadline'); expect(detach).toHaveBeenCalledOnce();
+  finish(); await Promise.resolve(); expect(await join.promise).toBe('deadline');
+  expect(await hyperGatewayJoin(async () => {}, detach).promise).toBe('connected');
+});
+it('confirms an active cursor-based stream at the deadline without detaching it', async () => {
+  vi.useFakeTimers(); const detach = vi.fn();
+  const join = hyperGatewayJoin(() => new Promise(() => {}), detach, 5000, () => true);
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(await join.promise).toBe('connected'); expect(detach).not.toHaveBeenCalled();
 });

@@ -2,7 +2,7 @@
 
 Tracking [issue #5](https://github.com/NaveDanan/HyperTask/issues/5), [PR #11](https://github.com/NaveDanan/HyperTask/pull/11). Updated 2026-11-14. The original backend baseline merged in [PR #10](https://github.com/NaveDanan/HyperTask/pull/10), commit `a7e05b3df815a7ae82f078ee3c3a55e390912eca`.
 
-The real HyperTask Electron window now hosts OpenBot conversations, transcript and composer. A live native-window check passed sending, incremental response, authoritative saved history and reopening the same conversation after an app/core restart. This completes the narrow chat proof, with review still required before merge. It does not complete the epic or the later tool, approval and lifecycle acceptance.
+The real HyperTask Electron window now hosts OpenBot conversations, transcript and composer. A live native-window check passed sending, incremental response, authoritative saved history and reopening the same conversation after an app/core restart. PR #11 merged as `d026839b5aceeb7c6d34cedcd5731d0c47100945` after the final head cleared Codex code/security review. Issue #5 is closed. [Issue #6 action/recovery acceptance](HYPER_OPENBOT_ACTIONS.md) extends this native chat proof; the epic and later lifecycle work remain open.
 
 ## Implementation and reuse
 
@@ -64,7 +64,7 @@ Launch a development window with `APPFLOWY_SUPPORT_DIR`, Electron user-data and 
 
 Open Chat through native navigation, start a conversation with `picked-harness`, send uniquely marked disposable plain text and observe live AG-UI events. Compare the assembled response with native transcript rows and authoritative saved message IDs/text. Allow the original history store its bounded final-write delay. Quit/relaunch the app with the same scratch profile, then require the same view/conversation/message IDs and displayed text without sending again. Keep session files, logs and raw captures private; the committed record contains sanitized results and hashes.
 
-Approved and denied tools, interrupted runs, connection failures, portable startup/shutdown/configuration and full phase-1 end-to-end acceptance remain tracked by issues #6, #7 and #8. No Knowledge Graph, Intelligence replacement or permanent offline claim is included.
+Native approved/denied actions and interrupted-run recovery are recorded separately for issue #6. Portable startup/shutdown/configuration and full phase-1 acceptance remain tracked by #7 and #8. No Knowledge Graph, Intelligence replacement or permanent offline claim is included.
 
 CodeRabbit follow-up fixes preserve Bot drafts across pending, successful and failed refreshes; reject old editor completions; scope disconnect confirmation to its server; and keep approval rows independently locked while rejecting stale inbox responses. Question option labels cannot collide with free-text mode. Null runtime results, skipped steps, key snapshot requirements and HTTP status diagnostics have regressions. Transcript follow uses actual scroll position and preserves text selection, and Chat discovery/creation ignores workspace changes. Seven isolated Chromium scenarios use the production components with a mocked backend; they passed and do not establish live action/approval acceptance. POSIX permission assertions are excluded on Windows and tunnel tests explicitly select their Linux implementation; no native Windows run is claimed.
 

@@ -52,3 +52,9 @@ Further review protects Electron private state from generic renderer file APIs, 
 Generated Markdown images render inert alt text and strip passive resource sources. A real native model reply produced no requests to an owned loopback image probe while preserving its citation and saved text. Tool-call recovery keeps the longer arguments independently per ID and retains both live-only and stored-only calls.
 
 Review follow-ups preserve editor/confirmation/approval state, validate key snapshot and tool-result contracts, handle non-JSON HTTP errors with status and guard scroll/navigation races. Seven isolated browser scenarios exercise the actual production React components against a mocked backend; they are separate from native/live tool acceptance.
+
+## Issue #6 action/recovery follow-up
+
+`HyperApprovalOutcomes.ts` adapts upstream `shared/approval-outcomes.ts` at the same `f8af37ab73e96784f174a11104505a965e722cab` pin, retaining the MIT notice. Its exact durable approval sentences and person-facing translations distinguish a declined step, a step handled by the person and an unknown/not-run outcome. These sentences remain unchanged in model context and persisted messages; only transcript display is translated.
+
+`HyperRunConnection.ts` adds native transport failure observation keyed to the actual Phoenix thread/run join and canonical AG-UI run identity. It retains no join token or URL. Intentional Stop/cleanup is distinct from an unexpected socket close. The composer keeps the failed draft while the native page reconnects through the original SDK and authoritative history, without resubmitting that user turn. Cursor-based progress can omit `RUN_STARTED` and still counts as an active response.

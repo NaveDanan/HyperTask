@@ -76,9 +76,11 @@ The final CodeRabbit follow-up identified two small baseline gaps: an empty vali
 - A browser regression reproduced the whole-reply locator failure for multi-paragraph text. The corrected runner locates each original transcript row by saved message ID and compares whitespace-folded rendered text. Exact stream/history equality is unchanged. Runner `a2860f3` has SHA-256 `fa64b3fb2b5b45a66c6c987acfd3446341b4c1b6016ff62a0adf1263f1380f6d` and has not changed during local preparation.
 - Codex code and security reviews subsequently cleared preparation heads `47035f6`, `f352648`, OAuth-evidence head `b765f9c` and agreement/resource-evidence head `4590b4b` without findings. Each subsequent evidence/runtime head requires its own review before merge. PR #10 remained draft until the runtime evidence, tested lifecycle and final review gates passed; its merge is recorded above.
 
-## Current step: issue #5
+## Completed: issue #5
 
-[PR #11](https://github.com/NaveDanan/HyperTask/pull/11) contains the native feature assembled by four initial and four follow-up GPT-6.1 Sol medium/priority specialists, followed by parent review fixes. The UI branch is rebased on the verified #10 merge. The original CopilotKit runtime remains in phase 1.
+Status: [PR #11](https://github.com/NaveDanan/HyperTask/pull/11) squash merged into main as `d026839b5aceeb7c6d34cedcd5731d0c47100945`. Issue #5 is closed and checked in epic #2. Final head `b88b76578764f372931aa02b63433b9cf9f21a21` had clean Codex code and security receipts, no unresolved threads, Macroscope SUCCESS and CodeRabbit NEUTRAL. Its watch was stopped after merge.
+
+PR #11 contains the native feature assembled by four initial and four follow-up GPT-6.1 Sol medium/priority specialists, followed by parent review fixes. The UI branch is rebased on the verified #10 merge. The original CopilotKit runtime remains in phase 1.
 
 - After the latest review fixes, the actual HyperTask Electron window sent through the private main-owned SSH/HTTP/Phoenix bridge and observed 95 live text deliveries. The exact 477-character reply matched the rendered transcript and authoritative saved history.
 - After restarting the actual app and core, the same native Chat view, channel, thread, user/assistant IDs and full text reopened without a replacement prompt. No renderer errors were recorded.
@@ -92,7 +94,11 @@ The final CodeRabbit follow-up identified two small baseline gaps: an empty vali
 - Markdown images are inert in assistant and tool text. A real model-generated image in HyperTask produced zero requests to an owned loopback probe while its citation and saved reply remained correct. Tool-call read-back now retains the longer arguments per ID, plus live-only and stored-only calls; regressions reproduced both prior failures.
 - CodeRabbit reported sixteen minor findings. Fifteen code/test issues are fixed in `6305480`; the documentation mismatch was already corrected in `1edb31d`. Seven production-component Chromium scenarios with a mocked backend pass for question values, Bot drafts/stale callbacks, connection confirmation, approval concurrency/poll order, transcript selection/follow and workspace-switch navigation. They supplement the real native chat proof; live tool/approval acceptance stays #6.
 - CodeRabbit follow-up requested the literal-option callback check in the committed suite. The real card form handler now has a repository regression asserting the exact `onAnswer` value; it fails on the old implementation and passes with the fix. This follow-up changes tests/evidence only.
-- PR #11 still needs review of the combined rebased head and resolution of all applicable findings before merge. Issue #6 approved/denied action proof and issues #7/#8 remain open.
+- PR #11 completed its final review and merge gate. Native action/recovery acceptance continues in #6; #7/#8 remain open.
+
+## Current step: issue #6
+
+[PR #12](https://github.com/NaveDanan/HyperTask/pull/12) contains the issue #6 follow-up on `hyper/openbot-actions`. Native approved/denied actions, Stop/continue, restart restoration, a real runtime error/retry and private-tunnel failure/reconnect passed. Typecheck/build and all 540 tests pass; one opt-in simulated-IPC live test is skipped. Three CodeRabbit follow-ups now preserve the barrier on swallowed connect failures and unconfirmed deadlines, and retain already-waiting status. Five page-state fixtures and a repeated actual native disconnect/reconnect check pass; the updated PR head needs fresh review. See [the action acceptance record](HYPER_OPENBOT_ACTIONS.md). Issue #6 stays open until its PR clears review and merges; #7/#8 follow in order.
 
 ## Queue
 
@@ -100,8 +106,8 @@ The final CodeRabbit follow-up identified two small baseline gaps: an empty vali
 | --- | --- | --- |
 | [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | Merged in PR #9 |
 | [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Merged in PR #10 |
-| [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11; native plain-chat proof passed, final review pending |
-| [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | Components implemented; approved/denied action acceptance follows #5 |
+| [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11 merged as d026839; issue closed |
+| [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12; native acceptance passed, review/merge pending |
 | [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Waiting for #6 |
 | [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Waiting for #7 |
 

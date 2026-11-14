@@ -53,3 +53,9 @@ Terminal accepts input/resize messages and binary output. Fatal/superseded viewe
 errors must stop reconnects so tabs never compete for ownership. Do not point native
 renderer WebSockets at the service or expose a general socket bridge. These are
 future allowlist requirements, not implemented or advertised viewer controls.
+
+## Future HyperTask integration seams
+
+Phase 1 registers only the original server-managed computer tools. A future workspace tool should have a typed, allowlisted main/core operation with a workspace identity and capability check. Capture the selected workspace, document revision and intended arguments at run start; send that snapshot to the original approval/policy/audit gateway. A later tab selection must not change the operation being approved. This is an interface boundary, not a new implementation here.
+
+Keep Jira credentials and native database access in their existing trusted processes. A future connector should return scoped results or references, never a credential or general Rust-event dispatcher to the renderer or model. Backend account provenance, portable configuration and a trusted reconnect flow are #7 work; the current fixed personal connection still denies unsupported identities. No Knowledge Graph or Intelligence replacement is introduced.

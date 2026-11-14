@@ -1,3 +1,4 @@
+import { hyperToolResultForPerson } from '../HyperToolOutcome';
 // Copyright (c) 2026 CopilotKit. MIT license, see LICENSE.
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowDown, LoaderCircle, Wrench } from 'lucide-react';
@@ -32,7 +33,7 @@ export function HyperToolMessage({ id, label, attempted, detail, status, argumen
     <summary className="cursor-pointer rounded-md py-1 focus-visible:outline focus-visible:outline-ring">{summary}</summary>
     <div className="mt-2 max-h-80 space-y-3 overflow-auto border-l border-border pl-3">
       {args !== undefined && <div><p className="mb-1 text-xs font-medium text-muted-foreground">Arguments</p><pre className="whitespace-pre-wrap break-all rounded-md bg-muted p-2 font-mono text-xs">{args}</pre></div>}
-      {result !== undefined && <HyperMarkdown content={result} onOpenLink={onOpenLink} />}{children}
+      {result !== undefined && <HyperMarkdown content={hyperToolResultForPerson(result)} onOpenLink={onOpenLink} />}{children}
     </div>
   </details>;
 }

@@ -47,6 +47,8 @@ export interface HyperComposerProps {
   disabled?: boolean;
   autoFocus?: boolean;
   initialValue?: string;
+  /** Clear the reported send error after external recovery, retaining the draft and attachments. */
+  recoveryVersion?: number;
   placeholder?: string;
   queuedAttachmentCount?: number;
   modelPicker?: HyperModelPickerProps;
@@ -56,12 +58,13 @@ export interface HyperComposerProps {
 const EMPTY_ATTACHMENTS: readonly HyperComposerAttachment[] = [];
 export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, onRemoveAttachment,
   onConsumeAttachments, onStop, pending = false, stoppable = pending, disabled = false, autoFocus = false,
-  initialValue = '', placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
+  initialValue = '', recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
   const [text, setText] = useState(initialValue);
   const [submitting, setSubmitting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [staging, setStaging] = useState(0);
   const [error, setError] = useState<string>();
+  useEffect(() => { setError(undefined); }, [recoveryVersion]);
   const [rejected, setRejected] = useState<HyperRejectedFile[]>([]);
   const input = useRef<HTMLTextAreaElement | null>(null);
   const picker = useRef<HTMLInputElement>(null);

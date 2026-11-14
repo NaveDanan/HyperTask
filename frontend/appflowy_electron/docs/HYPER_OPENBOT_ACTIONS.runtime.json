@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "issue": 6,
+  "observedAt": "2026-11-14T13:06:28.889039+00:00",
+  "status": "native_acceptance_passed_review_and_merge_pending",
+  "upstreamCommit": "f8af37ab73e96784f174a11104505a965e722cab",
+  "runtime": "Original OpenBot plus CopilotKit Intelligence on authorized MMEMS-mems01 VM",
+  "native": {
+    "application": "HyperTask Electron",
+    "electron": "44.10.2",
+    "coreBinarySha256": "a630e4600c7774c75e08b1d7c63768a147c68effe81c30071cf35bfa10aef064",
+    "profile": "existing isolated scratch; owner binding preserved",
+    "actionCaptureHead": "d026839b5aceeb7c6d34cedcd5731d0c47100945",
+    "finalRuntimeHead": "9632dcd17636cddf467cc52e3177f7be7e16796c",
+    "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
+    "channelId": "channel_92510869-6877-49e2-986f-327fe338823e",
+    "threadId": "49c8cef5-0fb2-81df-89ba-2568762b1de0",
+    "botId": "picked-harness"
+  },
+  "actions": {
+    "scope": "hyper-issue6-0e148a01-d696-44a8-be90-f732470713d8",
+    "gate": "POST /api/approvals/computer/:botId; original policy/audit/continuation",
+    "rule": {
+      "toolRef": "computer_write_file",
+      "effect": "write",
+      "scope": "hyper-issue6-0e148a01-d696-44a8-be90-f732470713d8",
+      "behaviour": "ask",
+      "revokedAfterTest": true
+    },
+    "approved": {
+      "requestId": "6135268f-6fd6-4d9d-9453-5e59ca52f9b3",
+      "toolCallId": "call_3e419ee77f1044d9b392d89676a2651f",
+      "decision": "allow_once",
+      "finalStatus": "completed",
+      "file": "approved.txt",
+      "bytes": 37,
+      "exactContentVerifiedIndependently": true
+    },
+    "denied": {
+      "requestId": "158489c8-9409-4f4d-9dff-b7d4678b6ed5",
+      "toolCallId": "call_a0f5d95cf0a044e19e9a7456865e0a74",
+      "decision": "deny",
+      "finalStatus": "completed",
+      "file": "denied.txt",
+      "absenceVerifiedIndependently": true,
+      "nativeRestoredStatus": "refused",
+      "nativeDisplay": "You declined it."
+    },
+    "audit": [
+      {
+        "id": "3604495d-deda-4e6f-af5d-0e30d1f722fc",
+        "eventType": "approval.rule_changed"
+      },
+      {
+        "id": "fb5792ab-c821-4eb2-8aaa-d5665aa49ae5",
+        "eventType": "approval.evaluated"
+      },
+      {
+        "id": "deb065b8-4978-432e-a6b3-87cfe5dacecf",
+        "eventType": "approval.person_decided"
+      },
+      {
+        "id": "b96a0dc6-ff74-4f45-8cac-c9a8638064cd",
+        "eventType": "computer.action_allowed"
+      },
+      {
+        "id": "c454a359-951e-4d16-bef3-773478a4ba3b",
+        "eventType": "approval.evaluated"
+      },
+      {
+        "id": "00f719f7-e361-4b1a-ad7e-1f4b30b34887",
+        "eventType": "approval.person_decided"
+      },
+      {
+        "id": "fd2f050c-0657-4f22-9a09-2e708ce950d7",
+        "eventType": "computer.action_refused"
+      }
+    ],
+    "preferencesUnchanged": true
+  },
+  "stopContinue": {
+    "head": "38ef1498aaebda42b1cc076424d93ed9f76ac5b7",
+    "textDeliveriesBeforeSettledStop": 28,
+    "continuedSameThread": true,
+    "intentionalStopNotReportedAsDisconnect": true,
+    "continuationSucceeded": true
+  },
+  "restart": {
+    "status": 200,
+    "bothSavedCallsAndResults": true
+  },
+  "disconnect": {
+    "head": "38ef1498aaebda42b1cc076424d93ed9f76ac5b7",
+    "fault": "SIGTERM only the verified child SSH process owned by the scratch Electron app",
+    "failureShownWithinMs": 89,
+    "draftKept": true,
+    "resendBlockedBeforeReconnect": true,
+    "reconnectedWithoutResend": true,
+    "userPromptCopies": 1,
+    "assistantMessageId": "resp_0214d337a7a013ab016af85ba4535887d2bbd89a05042342e0",
+    "finalSavedAnswerCharacters": 1343,
+    "finalSavedAnswerSha256": "044e5a936b3428fb5e47f744b29f62bb0c1a86cd835a7b9a48be6286f88a1042",
+    "exactSavedUi": true,
+    "staleErrorsAfterRecovery": []
+  },
+  "backendToolFailure": {
+    "head": "38ef1498aaebda42b1cc076424d93ed9f76ac5b7",
+    "fault": "Read one unique nonexistent file inside the owned disposable folder; no creation or retry",
+    "nativeStatus": "failed",
+    "oneReadCall": true,
+    "followingTurnSucceeded": true
+  },
+  "runtimeFailure": {
+    "head": "38ef1498aaebda42b1cc076424d93ed9f76ac5b7",
+    "fault": "Briefly stopped only hypertask-openbot-baseline-agent-harness-1, then restarted the same container",
+    "realRunError": true,
+    "draftKept": true,
+    "retrySucceeded": true,
+    "userPromptCopies": 1,
+    "harnessFinalState": "running",
+    "staleErrorsAfterRetry": []
+  },
+  "checks": {
+    "typecheck": "pass",
+    "frontendBuild": "pass",
+    "frontendTests": {
+      "passed": 540,
+      "skipped": 1,
+      "skip": "opt-in simulated-IPC live test; separate actual Electron checks above"
+    }
+  },
+  "rendererPageErrors": [],
+  "limits": [
+    "Linux development transport and process-only no-sandbox launch; no production packaging or other OS claim",
+    "Service lifecycle/configuration/trusted reconnect and authenticated remote-account provenance remain issue #7",
+    "Broader phase-1 acceptance remains issue #8",
+    "No shared MMEMS K3s or AppFlowy services changed; no model/API-key configuration changed"
+  ],
+  "artifacts": {
+    "HyperNativeActions.json": {
+      "sha256": "07568cd4b2caecd06871c398ac73804113f9d98abe63b3f15d23bc5f6fcb5dd9",
+      "storage": "private; not committed"
+    },
+    "HyperNativeActionsAudit.json": {
+      "sha256": "6109d6d8be91b2c15b0ef17d21df6e0ff8efe5595d1fd670bcb1cd83a976dd56",
+      "storage": "private; not committed"
+    },
+    "HyperNativeDisconnect.json": {
+      "sha256": "5b4665eceaa6a18d0741bbb24e573cd44ed6ca96816e4fd0bded6f3cfefb70c2",
+      "storage": "private; not committed"
+    },
+    "HyperNativeToolFailure.json": {
+      "sha256": "5644b948a700037a117043c809dd9735c278b52fa0b556b1bfdf32bb0fddaebf",
+      "storage": "private; not committed"
+    },
+    "HyperNativeRuntimeFailure.json": {
+      "sha256": "0d5eb26c41fcb13af5b16748c475b9554ad0b60c7b443ac92260802f9ffc870b",
+      "storage": "private; not committed"
+    },
+    "HyperNativeStopResume.json": {
+      "sha256": "5be75ec0739e529b713ead90d7d259c4fdebd77ebd938f7349e8c6d9466af5a4",
+      "storage": "private; not committed"
+    },
+    "HyperNativeAction-allow_once-pending.png": {
+      "sha256": "cd9d348d6b7b8b63341afc90bdcf4fa49a4f6295156a814d69c48e50ce267dd2",
+      "storage": "private; not committed"
+    },
+    "HyperNativeAction-deny-pending.png": {
+      "sha256": "8cc4371b66016e3d3e6a2603a937af81b76ec8ca7e7a0f851617578311eec3a0",
+      "storage": "private; not committed"
+    },
+    "HyperNativeDisconnectFixed.png": {
+      "sha256": "f7ecc281188ab8038e78f1190d519c5bc5d2621029a29f615c45e4c41c520fe4",
+      "storage": "private; not committed"
+    },
+    "HyperNativeReconnectResult.png": {
+      "sha256": "d26bbfc3b1876f99a6026bb725a78b55ccd914fdb1e2efd858bc408070cb9057",
+      "storage": "private; not committed"
+    },
+    "HyperNativeBackendToolFailure.png": {
+      "sha256": "9fd7e4e2c6acfc397e53c62524773782f437f6b5a6a228c1ef3a0dbb1644ac2d",
+      "storage": "private; not committed"
+    },
+    "HyperNativeRuntimeFailure.png": {
+      "sha256": "bd4cee5592f45a90b8e4402a79ce5ffb81944cee76ae2ad3a826e872d406d978",
+      "storage": "private; not committed"
+    },
+    "HyperNativeActionsTest.mjs": {
+      "sha256": "27aeefb4491069f41a97f4e47fdc3133d0969ac811946df0bbc243df2f9a0e0d",
+      "storage": "private acceptance driver; not committed"
+    },
+    "HyperNativeDisconnectTest.mjs": {
+      "sha256": "34f96a8e4a8d91e87f46fe1096ec3b4b4032c0318abe50c05f3da3099ab0bb80",
+      "storage": "private acceptance driver; not committed"
+    },
+    "HyperNativeToolFailureTest.mjs": {
+      "sha256": "b482da20bbc7aba8aabeccdeebb02f431b2e5a280628f9b8361df822390d01cd",
+      "storage": "private acceptance driver; not committed"
+    },
+    "HyperNativeRuntimeFailureTest.mjs": {
+      "sha256": "4fd8e9fe3764e7e59b9edaff9fb7bda42fa783795a7ed408de27b3b47fc83204",
+      "storage": "private acceptance driver; not committed"
+    },
+    "HyperNativeStopResumeTest.mjs": {
+      "sha256": "af25999277230c2035b87d27d4a50c18410f58cbffcf6386da896e417336002c",
+      "storage": "private acceptance driver; not committed"
+    }
+  },
+  "pullRequest": "https://github.com/NaveDanan/HyperTask/pull/12",
+  "reviewFollowUp": {
+    "codeHead": "9632dcd17636cddf467cc52e3177f7be7e16796c",
+    "findingsFixed": [
+      4573638949,
+      4573638952,
+      4573638955
+    ],
+    "realSdkRegression": "CopilotKitCoreReact.connectAgent resolves an empty result while emitting agent_connect_failed; persistent observer catches only current-agent failures and unsubscribes on cleanup",
+    "fixture": {
+      "scope": "Compiled production HyperOpenBotPage with mocked SDK/backend and accelerated 5-second deadline; not native/live gateway proof",
+      "cases": [
+        "resolved_core_connect_failure_blocks_composer",
+        "persistent_core_observer_scoped_to_agent",
+        "deadline_and_late_completion_keep_resend_barrier_and_retry",
+        "confirmed_retry_clears_barrier_without_resending_or_losing_draft",
+        "slow_initial_open_still_restores_readable_history"
+      ],
+      "observedAt": "2026-11-14T13:28:03.659Z"
+    },
+    "nativeDisconnectRerun": {
+      "observedAt": "2026-11-14T13:29:51.912Z",
+      "failureShownWithinMs": 104,
+      "draftKept": true,
+      "resendBlockedUntilConfirmedReconnect": true,
+      "recoveredWithoutResend": true,
+      "userPromptCopies": 1,
+      "exactFinalSavedUi": true,
+      "rendererErrors": []
+    },
+    "checks": {
+      "testsPassed": 540,
+      "testsSkipped": 1,
+      "typecheck": "pass",
+      "frontendBuild": "pass"
+    },
+    "artifacts": {
+      "HyperNativeDisconnectReview.json": {
+        "sha256": "03961164c7a891fca9b9edfc57c2e926a88e99d97f905781402c840afe42db96",
+        "storage": "private; not committed"
+      },
+      "HyperNativeDisconnectReviewFixed.png": {
+        "sha256": "9d45354a10a7e888b0773676aa6961beb735500f47dab3482c6f23ab5dffaeaf",
+        "storage": "private; not committed"
+      },
+      "HyperNativeReconnectReviewResult.png": {
+        "sha256": "295abef1e088b5be7123170a49e45ad8bc0e7b92946d4b70bcf0231c24617a0e",
+        "storage": "private; not committed"
+      },
+      "HyperReconnectReviewFixture.json": {
+        "sha256": "4e23937baf669eff72e95ba66c5053db7518a6f61cef35ab3459cc8c8a3c439c",
+        "storage": "private; not committed"
+      },
+      "reconnect-fixture/HyperReconnectFixture.js": {
+        "sha256": "9ed4f69d91000bf19c7dfe92e6ad09b25aa707548ddee46f1df580ebdab09b98",
+        "storage": "private; not committed"
+      },
+      "HyperReconnectFixture.tsx": {
+        "sha256": "4effd6795b3a03409f74d25bf8157faca9d69def068b77d14d3bfe4bbb935e4e",
+        "storage": "private test driver; not committed"
+      },
+      "HyperReconnectFixtureTest.mjs": {
+        "sha256": "3b619df2826dfe3ba8a71106bc423eff144cfe781084c3ba84efd551488a42b4",
+        "storage": "private test driver; not committed"
+      },
+      "HyperNativeDisconnectReviewTest.mjs": {
+        "sha256": "390f084f79a841251c958ebae835732a823f240ab91dc1e224088b4f9f4db2c5",
+        "storage": "private test driver; not committed"
+      }
+    }
+  }
+}
