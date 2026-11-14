@@ -29,3 +29,9 @@ export const HyperBotGrantApi = {
   replay: <T>(agentId: string, app: string, grants: string[]) => request<T>(`${hyperBotGrantsPath(agentId, app)}/replay`, 'POST', { grants }),
   save: (agentId: string, app: string, input: { add: string[]; remove: string[]; authoring?: { source: 'english'; text: string }; approval?: { audience: string; outsideInput: boolean; members: { kind: string; value: string }[] } }) => request(hyperBotGrantsPath(agentId, app), 'POST', input),
 };
+export async function hyperReadExplicitBot(agentId: string): Promise<HyperBotProfile> {
+  const value = await request<unknown>(HyperAgentPath(agentId));
+  const bot = value && typeof value === 'object' && 'agent' in value ? value.agent : undefined;
+  if (!bot || typeof bot !== 'object' || !('id' in bot) || typeof bot.id !== 'string' || !('name' in bot) || typeof bot.name !== 'string') throw new Error('Could not load this Bot.');
+  return bot as HyperBotProfile;
+}

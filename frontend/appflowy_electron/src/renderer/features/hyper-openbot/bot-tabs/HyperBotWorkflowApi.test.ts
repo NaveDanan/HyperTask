@@ -45,3 +45,11 @@ it('translates and replays grants without writing them, then saves explicit add/
   expect(hyperOpenBotRequest).toHaveBeenNthCalledWith(2, '/api/plugins/for/desk/apps/mail/grants/replay', 'POST', { grants: ['mail/read'] });
   expect(hyperOpenBotRequest).toHaveBeenNthCalledWith(3, '/api/plugins/for/desk/apps/mail/grants', 'POST', change);
 });
+it('loads named hidden bots directly and refuses malformed named-bot responses', async () => {
+  const { hyperReadExplicitBot } = await import('./HyperBotWorkflowApi');
+  vi.mocked(hyperOpenBotRequest).mockResolvedValueOnce({ agent: { id: '123', name: 'Numbered Bot' } });
+  expect((await hyperReadExplicitBot('123')).id).toBe('123');
+  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/agents/123');
+  vi.mocked(hyperOpenBotRequest).mockResolvedValueOnce({ agent: null });
+  await expect(hyperReadExplicitBot('missing')).rejects.toThrow('Could not load');
+});

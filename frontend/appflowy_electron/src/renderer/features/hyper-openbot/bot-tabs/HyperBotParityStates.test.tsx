@@ -58,3 +58,11 @@ it('keeps the upstream routines app always on without an action editor', () => {
   const html = renderToStaticMarkup(<HyperBotAppGrants agentId="desk" app="routines" onSaved={() => {}} />);
   expect(html).toContain('Always on'); expect(html).not.toContain('Save action changes'); expect(html).not.toContain('type="checkbox"');
 });
+it('revokes callback authority without requesting or exposing a token', async () => {
+  const { HyperBotSetupTab } = await import('./HyperBotSetupTab');
+  mock.data = { bot: { id: 'desk', name: 'Desk', canManage: true, builtIn: false, endpoint: 'https://agent.example.test', hasCallbackToken: true }, personal: false, available: false, allowed: true };
+  const html = renderToStaticMarkup(<HyperBotSetupTab agentId="desk" />);
+  expect(html).toContain('Revoke callback key'); expect(html).not.toContain('Generate key');
+  await mock.clicks.get('Revoke callback key')!();
+  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/agents/desk/callback-token', 'DELETE');
+});
