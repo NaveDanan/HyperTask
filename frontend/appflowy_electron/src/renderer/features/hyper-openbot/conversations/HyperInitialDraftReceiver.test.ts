@@ -1,11 +1,33 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { HyperConversationDraftCache } from '../HyperConversationDraft';
-import { hyperReceiveInitialDraft } from './HyperInitialDraftTransfer';
+import { HyperConversationDraftCache, type HyperDraftAttachment } from '../HyperConversationDraft';
+import { HyperInitialDraftTransfer, hyperReceiveInitialDraft, type HyperInitialDraft } from './HyperInitialDraftTransfer';
 import { hyperOpenBotFetch } from '../transport';
 import { hyperDeferred } from './HyperVoiceDeferred';
 vi.mock('../transport', () => ({ hyperOpenBotFetch: vi.fn(), hyperOpenBotRequest: vi.fn(), HYPER_OPENBOT_ORIGIN: 'https://hyper-openbot.invalid' }));
 beforeEach(() => vi.resetAllMocks());
 const response = (id: string) => new Response(JSON.stringify({ id, name: id + '.txt', mimeType: 'text/plain' }));
+it('keeps upload bookkeeping with the retained transaction when the receiving page remounts', async () => {
+  const transfer = new HyperInitialDraftTransfer<string>();
+  const lease = new HyperConversationDraftCache(() => 'group').acquire('channel');
+  const initial = { text: 'task', files: [new File(['one'], 'one.txt')], commandIds: [], submit: true };
+  let uploads = 0;
+  vi.mocked(hyperOpenBotFetch).mockImplementation(async () => response(`upload-${++uploads}`));
+  const send = vi.fn().mockRejectedValueOnce(new Error('send failed')).mockResolvedValueOnce(undefined);
+  const create = vi.fn().mockResolvedValue('channel');
+  const deps = { create, navigate: vi.fn(), receive: (channel: string, draft: HyperInitialDraft, signal: AbortSignal, uploaded?: Map<File, HyperDraftAttachment>) => hyperReceiveInitialDraft(channel, draft, signal, { ...lease, uploaded: uploaded ?? new Map(), send }) };
+  await expect(transfer.start(['bot'], initial, deps)).rejects.toThrow('send failed');
+  await transfer.start(['bot'], initial, deps);
+  expect(create).toHaveBeenCalledOnce(); expect(hyperOpenBotFetch).toHaveBeenCalledOnce();
+  expect(send.mock.calls[1][0].attachments.map((file: HyperDraftAttachment) => file.id)).toEqual(['upload-1']);
+});
+it('rejects initial uploads that would exceed the existing conversation attachment limit', async () => {
+  const lease = new HyperConversationDraftCache(() => 'group').acquire('channel');
+  lease.update(current => ({ ...current, attachments: Array.from({ length: 8 }, (_, index) => ({ id: `saved-${index}`, name: 'saved.txt', mimeType: 'text/plain', status: 'ready' })) }));
+  vi.mocked(hyperOpenBotFetch).mockResolvedValueOnce(response('extra'));
+  const send = vi.fn();
+  await expect(hyperReceiveInitialDraft('channel', { text: 'task', files: [new File(['extra'], 'extra.txt')], commandIds: [], submit: true }, new AbortController().signal, { ...lease, uploaded: new Map(), send })).rejects.toThrow('eight-file limit');
+  expect(hyperOpenBotFetch).not.toHaveBeenCalled(); expect(send).not.toHaveBeenCalled();
+});
 it('awaits every upload and send, passes files unchanged, and clears only after success', async () => {
   const lease = new HyperConversationDraftCache(() => 'group').acquire('channel');
   const files = [new File(['one'], 'one.txt'), new File(['two'], 'two.txt')];

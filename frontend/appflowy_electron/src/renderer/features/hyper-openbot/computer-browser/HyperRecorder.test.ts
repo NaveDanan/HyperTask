@@ -31,5 +31,15 @@ it('preserves all loaded history when an earlier cursor page becomes unavailable
   const row = (id: string) => ({ id, title: id, recordedAt: '2026-11-15', ended: 'stopped', reason: null });
   request.mockResolvedValueOnce({ recordings: [], nextCursor: null, unavailable: 'unreachable' });
   const pages = await hyperRefreshRecordings([{ recordings: [row('first')], nextCursor: 'second' }, { recordings: [row('second')], nextCursor: null }]);
-  expect(pages[0].recordings.map(row => row.id)).toEqual(['first', 'second']); expect(pages[0].unavailable).toBe('unreachable');
+  expect(pages.map(page => page.recordings.map(row => row.id))).toEqual([['first'], ['second']]); expect(pages[0].unavailable).toBe('unreachable');
+});
+it('recovers every loaded recording page after a first-page outage', async () => {
+  const row = (id: string) => ({ id, title: id, recordedAt: '2026-11-15', ended: 'stopped', reason: null });
+  const initial = [{ recordings: [row('first')], nextCursor: 'second' }, { recordings: [row('second')], nextCursor: null }];
+  request.mockResolvedValueOnce({ recordings: [], nextCursor: null, unavailable: 'unreachable' });
+  const unavailable = await hyperRefreshRecordings(initial);
+  request.mockResolvedValueOnce(initial[0]).mockResolvedValueOnce(initial[1]);
+  const recovered = await hyperRefreshRecordings(unavailable);
+  expect(recovered.map(page => page.recordings.map(item => item.id))).toEqual([['first'], ['second']]);
+  expect(request.mock.calls.slice(-2)).toEqual([['/api/recorder/recordings'], ['/api/recorder/recordings?cursor=second']]);
 });

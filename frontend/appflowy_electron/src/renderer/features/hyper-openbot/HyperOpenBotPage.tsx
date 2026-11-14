@@ -190,13 +190,12 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
         if (!mounted.current) turnFinishedAway(channel.id); else setSending(false);
       }
   }
-  const uploadedInitial = useRef(new Map<File, HyperDraftAttachment>());
   useEffect(() => {
     if (!registerReceiver || !isReady || !serviceReady || restoring || reconnectRequired || !channel.active) return;
-    registerReceiver(async (initial, signal) => {
+    registerReceiver(async (initial, signal, uploaded) => {
       const abort = () => { stopped.current = true; void copilotkit.stopAgent({ agent }); };
       signal.addEventListener('abort', abort, { once: true });
-      try { await hyperReceiveInitialDraft(channel.id, initial, signal, { get: getDraft, assertCurrent: assertDraftCurrent, update: updateDraft, uploaded: uploadedInitial.current, send: sendDraft }); }
+      try { await hyperReceiveInitialDraft(channel.id, initial, signal, { get: getDraft, assertCurrent: assertDraftCurrent, update: updateDraft, uploaded, send: sendDraft }); }
       finally { signal.removeEventListener('abort', abort); }
     });
     return () => registerReceiver(undefined);
@@ -313,7 +312,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
           if (initialDraft?.modelPick && ids.length === 1) { try { await request(`/api/channels/${encodeURIComponent(created.id)}/model`, 'PUT', initialDraft.modelPick); } catch (error) { await request(`/api/channels/${encodeURIComponent(created.id)}?discardFailedStart=true`, 'DELETE').catch(() => {}); throw error; } }
           version.current++; setLoading(false); setChannels(previous => [created, ...previous]); return created;
         },
-        receive: async (created, initial, signal) => {
+        receive: async (created, initial, signal, uploaded) => {
           if (created.agentIds.length > 1) {
             const lease = hyperAcquireConversationDraft(created.id);
             lease.update(current => ({ ...current, text: initial.text, commandIds: initial.commandIds }));
@@ -328,7 +327,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
             receiverWait.current = { resolve: next => { cleanup(); resolve(next); } };
             if (receiver.current) receiverWait.current.resolve(receiver.current);
           });
-          signal.throwIfAborted(); await receive(initial, signal);
+          signal.throwIfAborted(); await receive(initial, signal, uploaded);
         },
         navigate: created => { selectionVersion.current++; setChannel(created); setReceiving(undefined); localStorage.setItem(`hyper-openbot.channel.${viewId}`, created.id); },
       });
