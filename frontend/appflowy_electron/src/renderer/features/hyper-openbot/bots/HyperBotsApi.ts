@@ -4,7 +4,7 @@ export interface HyperBotProfile {
   id: string; name: string; title: string; roleDescription: string;
   visibility: 'private' | 'public'; canManage: boolean; mine: boolean;
   systemOwned: boolean; pinned: boolean; hidden: boolean; assignedToMe?: boolean;
-  instructions?: string; endpoint: string | null;
+  builtIn?: boolean; instructions?: string; endpoint: string | null;
 }
 export interface HyperBotInput {
   name: string; title: string; roleDescription: string; visibility: 'private' | 'public'; instructions?: string;
