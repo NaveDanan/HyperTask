@@ -5,6 +5,8 @@ import { FolderEventGetCurrentWorkspaceSetting, FolderEventGetViewAncestors, Use
 import { WorkspaceFailedScreen } from '@/features/auth/screens';
 import { NotificationPanel } from '@/features/sidebar/notifications/NotificationPanel';
 import { HomeSideBar } from '@/features/sidebar/Sidebar';
+import { HyperSidebarRail } from '../sidebar/HyperSidebarRail';
+import { HyperSidebarRail } from '../sidebar/HyperSidebarRail';
 import { HomeStack } from '@/features/tabs/HomeStack';
 import { CommandPaletteHost } from '@/features/search/CommandPalette';
 import { SettingsDialogHost } from '@/features/settings/SettingsDialog';
@@ -83,7 +85,7 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
   return (
     <div className="relative h-full overflow-hidden bg-sidebar text-foreground">
       <div
-        className="absolute inset-y-0 right-0 min-w-[500px]"
+        className="absolute inset-y-0 right-0 min-w-0"
         style={{
           left: layout.homePageLOffset,
           transition: `left ${ease(layout.animDuration)}`,
@@ -93,9 +95,11 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
       </div>
       <QuestionBubble />
       {layout.showNotificationPanel && (
-        <NotificationPanel left={layout.showMenu ? layout.menuWidth : 0} top={layout.showMenu ? 0 : 52} />
+        <NotificationPanel left={layout.showMenu ? layout.menuWidth : layout.railWidth} top={layout.showMenu ? 0 : 52} />
       )}
       <div
+        inert={!layout.showMenu}
+        inert={!layout.showMenu}
         className="absolute inset-y-0 left-0 z-2"
         style={{
           width: layout.menuWidth,
@@ -105,6 +109,8 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
       >
         <HomeSideBar user={user} />
       </div>
+      {!layout.showMenu && <HyperSidebarRail user={user} />}
+      {!layout.showMenu && <HyperSidebarRail user={user} />}
       {layout.showMenu && <SidebarResizer left={layout.menuWidth} />}
       <CommandPaletteHost />
       <SettingsDialogHost user={user} />

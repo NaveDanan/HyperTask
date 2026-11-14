@@ -21,11 +21,13 @@ function CaptionButton({ kind, label, onClick }: { kind: Caption; label: string;
     <button
       type="button"
       aria-label={label}
+      title={label}
+      title={label}
       onClick={onClick}
       className={cn(
-        'no-drag flex h-full w-11 items-center justify-center text-foreground/80 transition-colors',
+        'no-drag flex h-full w-11 items-center justify-center text-foreground/80 transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
         kind === 'close'
-          ? 'hover:bg-[#c42b1c] hover:text-white active:bg-[#c42b1c]/90'
+          ? 'hover:bg-destructive hover:text-destructive-foreground active:bg-destructive/90'
           : 'hover:bg-(--caption-hover) active:bg-(--caption-pressed)',
       )}
     >
@@ -36,16 +38,20 @@ function CaptionButton({ kind, label, onClick }: { kind: Caption; label: string;
   );
 }
 
-export const isWindowsChrome = navigator.userAgent.includes('Windows');
+export function hyperUsesCustomWindowChrome(userAgent: string) {
+  return userAgent.includes('Windows') || userAgent.includes('Linux');
+}
 
-/** Minimize / maximize / close for the frameless window. Renders nothing off Windows. */
+export const customWindowChrome = hyperUsesCustomWindowChrome(navigator.userAgent);
+
+/** Minimize / maximize / close for the frameless window. Renders nothing on macOS. */
 export function WindowControls({ className }: { className?: string }) {
   const [maximized, setMaximized] = useState(false);
   useEffect(() => {
     void window.appflowy.window.isMaximized().then(setMaximized);
     return window.appflowy.window.onMaximizedChange(setMaximized);
   }, []);
-  if (!isWindowsChrome) return null;
+  if (!customWindowChrome) return null;
   return (
     <div className={cn('flex h-full shrink-0 items-stretch', className)}>
       <CaptionButton kind="minimize" label="Minimize" onClick={() => window.appflowy.window.minimize()} />
