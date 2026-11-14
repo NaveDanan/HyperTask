@@ -1,3 +1,4 @@
+import { HyperVoiceBroker } from './HyperVoiceBroker';
 import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath, hyperOpenBotCookieHeader, hyperTunnelFetch } from './HyperOpenBotTunnel';
 import type { HyperOpenBotSession } from './HyperOpenBotSession';
 import { hyperOpenBotPathAllowed } from '@shared/hyper-openbot-policy';
@@ -53,6 +54,7 @@ export function registerHyperOpenBotFileIpc(userData: string) {
 }
 
 export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sessions: HyperOpenBotSession, ready: () => boolean = () => true) {
+  const voiceBroker = new HyperVoiceBroker();
   const running = new Map<string, AbortController>();
   const sockets = new Map<string, WebSocket>();
   const openingSockets = new Map<string, { cancelled: boolean }>();
@@ -79,11 +81,15 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     try {
       const lease = await sessions.acquire();
       controller.signal.throwIfAborted();
-      const response = await hyperTunnelFetch(request.path, {
+      let response = await hyperTunnelFetch(request.path, {
         method: request.method, body: typeof request.body === 'string' ? request.body : request.body ? Buffer.from(request.body) : undefined,
         signal: controller.signal, lease,
-        headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN },
+        headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN, ...(request.path === '/api/audio/transcriptions' ? { 'x-openbot-dictation': '1' } : {}), ...(request.path === '/api/voice/calls' ? { 'x-openbot-voice': '1' } : {}) },
       });
+      if (request.path === '/api/voice/calls' && response.ok) {
+        const value = await response.json();
+        response = new Response(JSON.stringify(voiceBroker.sanitize(value, event.sender.id, lease.signal)), { status: response.status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+      }
       setTimeout(() => void (async () => {
         try {
           const reader = response.body?.getReader();
@@ -100,7 +106,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
   ipcMain.handle('hyper-openbot:socket-open', async (event, id: unknown, path: unknown, protocols: unknown) => {
     if (!trusted(event) || !safeId(id) || sockets.has(id) || openingSockets.has(id) || sockets.size + openingSockets.size >= 16) throw new Error('Socket caller refused');
     if (!ready()) throw new Error('AI services are not ready. Check AI service status.');
-    if (typeof path !== 'string' || path.length > 16384 || !/^\/api\/intelligence\/client\/websocket\?[^#\\]*$/.test(path)) throw new Error('Socket route refused');
+    if (typeof path !== 'string' || path.length > 16384 || (!/^\/api\/intelligence\/client\/websocket\?[^#\\]*$/.test(path) && !/^\/api\/voice\/socket\/[a-f0-9-]{36}$/.test(path))) throw new Error('Socket route refused');
     if (!Array.isArray(protocols) || protocols.length > 8 || protocols.some(value => typeof value !== 'string' || value.length > 200)) throw new Error('Socket protocols refused');
     own(event);
     const opening = { cancelled: false }; openingSockets.set(id, opening);
@@ -111,7 +117,8 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     const cookie = await hyperOpenBotCookieHeader(lease);
     lease.assertCurrent();
     if (event.sender.isDestroyed() || opening.cancelled) throw new Error('Renderer closed or socket cancelled');
-    const socket = new WebSocket(`ws+unix://${socketPath}:${path}`, protocols, { origin: ORIGIN, headers: { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
+    const voiceSecret = path.startsWith('/api/voice/socket/') ? voiceBroker.take(path, event.sender.id) : undefined;
+    const socket = new WebSocket(voiceSecret ? 'wss://api.x.ai/v1/realtime' : `ws+unix://${socketPath}:${path}`, voiceSecret ? [`xai-client-secret.${voiceSecret}`] : protocols, { origin: ORIGIN, headers: voiceSecret ? {} : { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
     sockets.set(id, socket);
     const abort = () => socket.terminate();
     lease.signal.addEventListener('abort', abort, { once: true });

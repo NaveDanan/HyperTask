@@ -1,3 +1,4 @@
+import { HyperDictationControl } from './HyperDictationControl';
 // Copyright (c) 2026 CopilotKit. SPDX-License-Identifier: MIT
 // Adapted for HyperTask, developed by NaveDanan. See REUSE.md.
 import { useEffect, useRef, useState, type Ref, type Dispatch, type SetStateAction } from 'react';
@@ -145,6 +146,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     {!!rejected.length && <ul aria-label="Files not added" className="space-y-1 py-2">{rejected.map((file) => <li key={file.id} className="flex items-center gap-2 text-sm text-destructive"><span role="alert">{file.reason}</span><Button type="button" size="icon-xs" variant="ghost" aria-label={`Dismiss rejection for ${file.name}`} onClick={() => setRejected((current) => current.filter((item) => item.id !== file.id))}><X /></Button></li>)}</ul>}
     <div className="flex flex-wrap items-center gap-2">
       {onFiles && <><input ref={picker} type="file" multiple className="hidden" tabIndex={-1} aria-label="Choose attachments" accept="image/png,image/jpeg,image/gif,image/webp,text/plain,text/markdown,text/csv,application/json" onChange={(event) => { void stage(Array.from(event.target.files ?? [])); event.target.value = ''; }} /><Button type="button" variant="ghost" size="icon-sm" aria-label="Attach files" disabled={disabled} onClick={() => picker.current?.click()}><Paperclip /></Button></>}
+      <HyperDictationControl disabled={disabled || pending || submitting} onText={words => setText(current => [current.trimEnd(), words].filter(Boolean).join(' '))} />
       {modelPicker && <HyperModelPicker {...modelPicker} disabled={disabled || modelPicker.disabled} onPicked={() => { modelPicker.onPicked?.(); input.current?.focus(); }} />}
       <div className="ml-auto">{stoppable && onStop ? <Button type="button" size="icon-sm" aria-label="Stop generating" disabled={stopping} onClick={() => void stop()}><Square /></Button> : <Button type="submit" size="icon-sm" aria-label="Send message" disabled={disabled || pending || submitting || !sendable}>{submitting ? <LoaderCircle className="animate-spin" /> : <ArrowUp />}</Button>}</div>
     </div>

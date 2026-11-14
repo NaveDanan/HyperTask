@@ -1,10 +1,13 @@
+import type { HyperInitialDraft } from './onboarding/HyperHomeApi';
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 
 export interface HyperOpenBotSectionContext {
   /** Open an existing conversation by channel ID. */
   openConversation(channelId: string): void;
   /** Start a new conversation with one or more Bots. */
-  startConversation(agentIds: string[]): void;
+  initialDraftSupported?: boolean;
+  startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): Promise<void>;
+  navigate?(destinationId: string): void;
 }
 export interface HyperOpenBotSection {
   readonly id: string;
@@ -22,7 +25,7 @@ export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ 
 /** Parity sections added beside Conversations, Bots, Skills and Connections. Each area owns its slot. */
 export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: conversations
-  /* conversations */
+  { id: 'new-conversation', label: 'New conversation', group: 'work', render: hyperLazySection(() => import('./conversations/HyperNewConversationSection')) },
   // slot: routines
   /* routines */
   // slot: memory
