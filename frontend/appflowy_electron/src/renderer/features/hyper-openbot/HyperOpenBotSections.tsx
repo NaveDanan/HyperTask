@@ -29,7 +29,9 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: routines
   /* routines */
   // slot: memory
-  /* memory */
+  { id: 'memory', label: 'Memory', group: 'personal', render: hyperLazySection(() => import('./memory/HyperMemorySection')) },
+  { id: 'personal-learning', label: 'Your learned skills', group: 'personal', render: hyperLazySection(() => import('./memory/HyperPersonalLearningSection')) },
+  { id: 'learning', label: 'Learning', group: 'admin', render: hyperLazySection(() => import('./memory/HyperLearningSection')) },
   // slot: bot-tabs
   /* bot-tabs */
   // slot: approvals-inbox
