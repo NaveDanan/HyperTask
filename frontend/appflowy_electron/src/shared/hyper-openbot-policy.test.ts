@@ -20,6 +20,11 @@ it('bot-tabs allows attention tasks and findings and refuses traversal and unrel
   for (const path of ['/api/bots/attention', '/api/tasks', '/api/tasks/task/again', '/api/proactive/suggestions', '/api/proactive/suggestions/item/start']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/tasks/../secrets', '/api/proactive/%2e%2e/secrets', '/api/admin/arbitrary']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+it('screens allows component and sandbox API families and refuses traversal', () => {
+  for (const path of ['/api/components', '/api/components/functions', '/api/components/custom_x/decision', '/api/components/chart/functions/read', '/api/sandboxed', '/api/sandboxed/published', '/api/sandboxed/custom_x/publish']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/components-credentials', '/api/sandboxed-private', '/api/components/%2e%2e/secrets', '/api/sandboxed/../secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
 it('memory slot allows memory and learning routes and refuses adjacent families', () => {
  for (const path of ['/api/memory', '/api/memory/sources/available/bot', '/api/admin/learning/settings', '/api/admin/learning/people/person/proposals/p/approve', '/api/settings/learning/review', '/api/settings/learning/proposals/p?container=space']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
  for (const path of ['/api/memory-export', '/api/admin/learning-secrets', '/api/settings/learning-other', '/api/memory/%2e%2e/credentials']) expect(hyperOpenBotPathAllowed(path)).toBe(false);

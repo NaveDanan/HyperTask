@@ -50,7 +50,10 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   { id: 'computer', label: 'Computer', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperComputerSettings')) },
   { id: 'bot-computer', label: 'Bot computer', group: 'bots', render: hyperLazySection(() => import('./computer-browser/HyperComputerDestination')) },
   // slot: screens
-  /* screens */
+  { id: 'screens', label: 'Screens', group: 'personal', render: hyperLazySection(() => import('./screens-gen/HyperScreensDestination')) },
+  { id: 'components-gallery', label: 'Components gallery', group: 'personal', render: hyperLazySection(() => import('./screens-gen/HyperGallerySection')) },
+  { id: 'components-admin', label: 'UI components', group: 'admin', render: hyperLazySection(() => import('./screens-gen/HyperAdminComponentsSection')) },
+  { id: 'components-playground', label: 'Component playground', group: 'admin', render: hyperLazySection(() => import('./screens-gen/HyperPlaygroundSection')) },
   // slot: settings
   { id: 'settings', label: 'Settings', group: 'personal', render: hyperLazySection(() => import('./settings/HyperSettingsSection')) },
   // slot: admin-governance

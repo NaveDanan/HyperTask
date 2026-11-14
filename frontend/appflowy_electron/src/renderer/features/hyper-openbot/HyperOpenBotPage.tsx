@@ -9,6 +9,9 @@ import { HyperPauseNotice } from './conversations/HyperPauseNotice';
 import { hyperWatchChannelEvents, hyperMarkChannelRead } from './conversations/HyperChannelEvents';
 import { hyperSettingsApi } from './settings/HyperSettingsApi';
 import { hyperConversationDestination } from './conversations/HyperNavigation';
+import { HyperGalleryTools, hyperPrepareGalleryAgent } from './screens-gen/HyperGalleryRuntime';
+import { hyperRuntimeBotOf } from './runtime';
+import { HyperConversationResult } from './screens-gen/HyperConversationResult';
 import { HyperInitialDraftTransfer, hyperReceiveInitialDraft, type HyperInitialDraftReceiver } from './conversations/HyperInitialDraftTransfer';
 import { HyperRoutineNavigationProvider } from './routines';
 import type { HyperInitialDraft } from './conversations/HyperInitialDraftTransfer';
@@ -96,6 +99,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
     if (!isReady || !serviceReady) return;
     let current = true;
     hyperPrepareRuntimeAgent(agent);
+    hyperPrepareGalleryAgent(agent);
     const releaseApproval = hyperObserveApprovalAgent(agent);
     const version = ++generation.current;
     setRestoring(true);
@@ -137,7 +141,8 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
   }, [agent, copilotkit, isReady, channel.threadId, historyRevision, serviceReady]);
   const running = sending || agent.isRunning || !!channel.busy || awayTurns > 0;
   useEffect(() => { if (eventRevision && serviceReady && !agent.isRunning && !sending && !channel.busy) setHistoryRevision(value => value + 1); }, [eventRevision, serviceReady]);
-  const messages: HyperTranscriptMessage[] = agent.messages.flatMap(message => {
+  const messages: HyperTranscriptMessage[] = agent.messages.flatMap<HyperTranscriptMessage>(message => {
+    if (message.role === 'activity' && message.activityType === 'open-generative-ui') return [{id: message.id, role: 'assistant' as const, content: '', tools: [{id: message.id, label: 'open-generative-ui', arguments: JSON.stringify(message.content), status: 'complete' as const}]}];
     // System instructions remain in the agent context, outside the visible transcript.
     if (message.role !== 'user' && message.role !== 'assistant') return [];
     const tools = 'toolCalls' in message ? message.toolCalls?.map(call => {
@@ -210,7 +215,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
 
     } })} />
     <HyperDeliveryControls channelId={channel.id} bots={channel.agentIds.map(id => ({ id, name: id }))} enabled={serviceReady} />
-    <HyperTranscript renderTool={tool => tool.label === 'run_subagent' ? <HyperToolMessage {...tool}><HyperSubagentSteps toolCallId={tool.id} parentThreadId={channel.threadId} agentId={channel.agentIds[0]} result={tool.result} live={tool.status === 'running'} /></HyperToolMessage> : <HyperToolMessage {...tool} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
+    <HyperTranscript renderTool={tool => tool.label === 'run_subagent' ? <HyperToolMessage {...tool}><HyperSubagentSteps toolCallId={tool.id} parentThreadId={channel.threadId} agentId={channel.agentIds[0]} result={tool.result} live={tool.status === 'running'} /></HyperToolMessage> : <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} ask={!running && serviceReady && !restoring && !reconnectRequired ? text => { void sendDraft({ text, attachments: [] }).catch(() => setError('The follow-up could not be sent.')); } : undefined} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     {!!agent.messages.length && <HyperNotifyPrompt />}
     <HyperConversationActions onQuestions={value => { questions.current = value; }} threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
     <HyperComposer commandIds={draft.commandIds} onCommandIdsChange={ids => updateDraft(current => ({ ...current, commandIds: ids }))} commands={commands} onDiscardAttachment={id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }} className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} getAttachmentCount={() => getDraft().attachments.length} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => hyperUploadDraftFiles(files, async file => {
@@ -345,8 +350,9 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
   const context: HyperOpenBotSectionContext = { openConversation: id => void openAny(id), initialDraftSupported: true, startConversation: start, initialAgentIds: newRecipients, navigationIntent, navigate: (id, intent) => { if (!serviceRef.current) return; const resolved = hyperConversationDestination(id, intent); const destination = resolved.sectionId; if (tabs.some(tab => tab.id === destination)) { cancelStart(); selectionVersion.current++; setNavigationIntent(resolved.path ? { path: resolved.path } : undefined); setScreen(destination); setChannel(undefined); } else { setNavigationIntent(current => current?.path === resolved.path ? current : resolved.path ? { path: resolved.path } : undefined); setError(`The ${destination} destination has not been registered by its owning area yet.`); } } };
   return <HyperRoutineNavigationProvider context={context}><div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />
+    <HyperGalleryTools />
     <nav aria-label="OpenBot" className="flex shrink-0 flex-wrap gap-1 border-b border-border p-2">
-      {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { cancelStart(); selectionVersion.current++; setScreen(tab.id); setChannel(undefined); }}>{tab.label}</Button>)}
+      {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { cancelStart(); selectionVersion.current++; setScreen(tab.id); setNavigationIntent(undefined); setChannel(undefined); }}>{tab.label}</Button>)}
       {screen === 'conversations' && <Button variant="ghost" onClick={() => void refresh()}>Refresh</Button>}
     </nav>
     {palette && <section aria-label="Command palette" className="max-h-80 space-y-1 overflow-auto border-b p-3"><Input autoFocus aria-label="Find a page, Bot or conversation" value={paletteQuery} onChange={event => setPaletteQuery(event.target.value)} /><Button variant="ghost" onClick={() => setPalette(false)}>Close palette</Button>{tabs.filter(tab => tab.label.toLowerCase().includes(paletteQuery.toLowerCase())).map(tab => <Button key={tab.id} variant="ghost" onClick={() => { cancelStart(); selectionVersion.current++; setScreen(tab.id); setChannel(undefined); setPalette(false); }}>{tab.label}</Button>)}{channels.filter(row => `${row.name} ${row.summary ?? ''}`.toLowerCase().includes(paletteQuery.toLowerCase())).map(row => <Button key={row.id} variant="ghost" onClick={() => { open(row.id); setPalette(false); }}>{row.summary ?? row.name}</Button>)}{paletteBots.filter(bot => bot.name.toLowerCase().includes(paletteQuery.toLowerCase())).map(bot => <Button key={bot.id} variant="ghost" onClick={() => { setPalette(false); void start([bot.id]).catch(() => {}); }}>Chat with {bot.name}</Button>)}</section>}
