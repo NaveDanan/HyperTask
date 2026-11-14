@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, chmod, lstat, rm } from 'node:fs/promises';
+import { mkdtemp, chmod, lstat, rm, writeFile, readFile, readdir, readlink } from 'node:fs/promises';
 import { PassThrough } from 'node:stream';
 import { once } from 'node:events';
 import { WebSocket } from 'ws';
-import { hyperPrivateSmokePath, hyperServeSmokePipe } from './HyperNativeSmokeBroker.mjs';
+import { hyperPrivateSmokePath, hyperServeSmokePipe, hyperLaunchSmokeApp } from './HyperNativeSmokeBroker.mjs';
 
 test('the debugger refuses a nonprivate directory and closes its one-use Unix endpoint after access', async () => {
   const directory = await mkdtemp('/tmp/hyper-native-smoke-'), socketPath = directory + '/cdp.sock';
@@ -35,4 +35,17 @@ test('an unused debugger lease expires and removes its Unix endpoint', async () 
     await chmod(directory, 0o700); relay = await hyperServeSmokePipe({ socketPath, input, output, ttlMs: 20 });
     await new Promise(r => setTimeout(r, 80)); await assert.rejects(lstat(socketPath), { code: 'ENOENT' });
   } finally { await relay?.stop(); input.destroy(); output.destroy(); await rm(directory, { recursive: true, force: true }); }
+});
+
+test('the launcher closes its own log handle while the child retains its duplicated output', async () => {
+  const directory = await mkdtemp('/tmp/hyper-native-smoke-'), logPath = directory + '/child.log'; let child;
+  try {
+    await writeFile(directory + '/index.js', "console.log('ready');setTimeout(()=>console.log('later'),30);setTimeout(()=>process.exit(0),50);");
+    child = await hyperLaunchSmokeApp({ app: directory, profile: directory, logPath, electron: process.execPath, sessionId: 'a'.repeat(32) });
+    const descriptors = await readdir('/proc/self/fd');
+    const targets = await Promise.all(descriptors.map(fd => readlink('/proc/self/fd/' + fd).catch(() => '')));
+    assert.equal(targets.includes(logPath), false);
+    await once(child, 'exit');
+    assert.equal(await readFile(logPath, 'utf8'), 'ready\nlater\n');
+  } finally { if (child?.exitCode === null) child.kill('SIGTERM'); await rm(directory, { recursive: true, force: true }); }
 });

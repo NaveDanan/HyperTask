@@ -66,16 +66,26 @@ export async function hyperServeSmokePipe({ socketPath, input, output, ttlMs = 2
   return { stop };
 }
 
+export async function hyperLaunchSmokeApp(config) {
+  const log = await open(config.logPath, 'ax', 0o600);
+  try {
+    const args = [config.app, `--user-data-dir=${config.profile}/electron`, '--remote-debugging-pipe', `--hyper-native-smoke-session=${config.sessionId}`];
+    if (config.developmentNoSandbox) args.push('--no-sandbox');
+    return spawn(config.electron, args, { cwd: config.app, env: process.env, stdio: ['ignore', log.fd, log.fd, 'pipe', 'pipe'] });
+  } finally {
+    // The child owns duplicated descriptors. Leaving the parent's FileHandle to
+    // GC is an error on current Node and would close Electron's debugging pipe.
+    await log.close();
+  }
+}
+
 async function main(configPath) {
   process.umask(0o077);
   const info = await lstat(configPath);
   if (!info.isFile() || info.uid !== process.getuid() || (info.mode & 0o077)) throw Error('Private broker config required');
   const config = JSON.parse(await readFile(configPath, 'utf8'));
   await hyperPrivateSmokePath(config.socketPath);
-  const log = await open(config.logPath, 'ax', 0o600);
-  const args = [config.app, `--user-data-dir=${config.profile}/electron`, '--remote-debugging-pipe', `--hyper-native-smoke-session=${config.sessionId}`];
-  if (config.developmentNoSandbox) args.push('--no-sandbox');
-  const app = spawn(config.electron, args, { cwd: config.app, env: process.env, stdio: ['ignore', log.fd, log.fd, 'pipe', 'pipe'] });
+  const app = await hyperLaunchSmokeApp(config);
   let relay;
   app.on('exit', () => { void relay?.stop().finally(() => process.exit(0)); if (!relay) process.exit(1); });
   app.on('error', () => process.exit(1));
