@@ -25,7 +25,7 @@ The source pin remains `f8af37ab73e96784f174a11104505a965e722cab`. The desktop r
 | Lifecycle and prerequisites | [Issue #7's lifecycle evidence](HYPER_OPENBOT_LIFECYCLE.md) covers actual Stop/Start/Restart, auto-start, disabled startup persistence, unchanged stores/owner and untouched shared AppFlowy. Ten controlled helper/controller scenarios cover missing Docker/deployment, unsafe deployment, unhealthy services, Intelligence, entitlement and provider setup. These simulated prerequisites are distinct from real lifecycle and runtime interruption tests. |
 | Identity and credentials | Existing main-only identity/owner/cookie/tunnel guards remain. Draft tests clear memory leases on trusted sign-out/profile rejection and reject stale asynchronous writes. No renderer API accepts credentials, arbitrary commands or an unrestricted Rust/Jira tool. |
 
-Repository validation passed **569 tests**, with one optional simulated-IPC live test skipped. Four tests use the unchanged real core binary. The native runner/launcher have **10 additional Node safeguard tests**. Typecheck and production frontend build passed. No Rust rebuild, Electron download or new backend deployment was needed.
+Repository validation passed **569 tests**, with one optional simulated-IPC live test skipped. Four tests use the unchanged real core binary. The native runner/launcher have **13 additional Node safeguard tests**. Typecheck and production frontend build passed. No Rust rebuild, Electron download or new backend deployment was needed.
 
 The seven earlier component-browser scenarios used mocked backend responses. They remain useful state regressions but are not counted as live approval/tool proof. Model/approval/runtime/transport results in this report came from the actual native window and original runtime.
 
@@ -42,6 +42,12 @@ Failed first attempts are retained privately and are not presented as passes. Th
 CodeRabbit's test-tool findings are also corrected. Completion now waits for the requested new thread/run/socket, with an interleaved-socket regression. Restart waits for the tracked owned core processes to exit and refuses a replacement after a bounded timeout; delayed-exit and unrelated-process tests pass. The after phase now compares the visible restored model label against its catalogue entry.
 
 A fresh before/after smoke on tooling commit `7ab4f7d16da4caa2237c5ee91e2575c3a1c2f429` received 106 and 43 live text deliveries, then restored the same identities/content and visible model label after an actual app/core restart. The production source remains the already-built `b3dec85` retry fix. No renderer exception or replacement prompt occurred. A prior tool refresh failed when the model returned a numbered Markdown list: CSS list markers are absent from `innerText`. The corrected visible-content check accepts either exact plain text or a complete ordered list with matching numbering, start, item count and every item. It still requires exact raw streamed/saved text. Those failed attempts are not acceptance evidence.
+
+Codex security review identified that the earlier loopback TCP debugger could be reached by another local Linux account. That owned debugger app was stopped. The launcher now passes only `--remote-debugging-pipe`; it has no TCP debugger option or fallback. A broker relays the inherited pipe through a single-use Unix socket in an owned mode-0700 directory, with a mode-0600 socket. Launcher/runner checks require the original app/profile, random pipe session, matching UID and protected paths. The broker removes the endpoint when the first client connects, closes the relay on disconnect and expires an unused lease after twenty minutes. Tests reject bad directory permissions and UID mismatch, exercise the real Unix socket exchange/removal/expiry and verify that the broker closes its own parent log descriptor after spawning the child.
+
+The secured before/after smoke on `7f18cccce7d526e585186087bffcae0c91d21b75` passed with 89/56 live text deliveries, same saved identities/content and visible model label after app/core restart. Process/socket inspection found no TCP listeners owned by Electron or the broker; the Unix endpoint was absent after use, while HyperTask remained open. No cross-account OS process was created for a negative connection attempt; the UID/mode guards and actual filesystem/socket lifecycle were tested. Earlier loopback captures remain historical functional evidence, not proof of debugger isolation, and their private TCP launchers/drivers must not be reused. Initial pipe attempts exposed a parent log-handle cleanup error under Node 25; explicit closure and a child-output/parent-descriptor regression fixed it before the passing capture.
+
+[Electron's pipe implementation](https://github.com/electron/electron/blob/main/shell/browser/electron_browser_main_parts.cc) quits the browser when its debugging pipe closes. The broker therefore retains only its inherited private pipe handles so the native app can stay open after testing. The filesystem endpoint and relay client are closed; no externally reachable debugger remains.
 
 ## Repeating the smoke test
 
@@ -60,7 +66,7 @@ chmod 700 "$HYPER_SMOKE_ROOT" "$HYPER_SMOKE_ROOT/evidence"
 npm run typecheck
 npm test
 npm run build
-node --test scripts/HyperNativeOpenBotSmoke.test.mjs scripts/HyperNativeSmokeLaunch.test.mjs
+node --test scripts/HyperNativeOpenBotSmoke.test.mjs scripts/HyperNativeSmokeLaunch.test.mjs scripts/HyperNativeSmokeBroker.test.mjs
 
 python3 -B scripts/HyperNativeSmokeLaunch.py \
   --profile "$HYPER_SMOKE_ROOT/profile" \
@@ -92,7 +98,7 @@ node scripts/HyperNativeOpenBotSmoke.mjs --phase after \
   --output "$HYPER_SMOKE_ROOT/evidence/after.json" --allow-test-data
 ```
 
-Carry the same development sandbox flag on both launch commands if needed. Supply another existing native bot name with `--agent` if appropriate. Use `--help` for optional model/effort selection. Outputs are exclusively created with mode 0600; use new names for another attempt. A failed artifact is diagnostic evidence, never acceptance. CDP attaches only to the recorded owned Linux app/profile/debug port and its core. The scripts detach without closing the browser. The launcher signals only a matching owned process; it refuses another checkout/profile/port and keeps the same stores.
+Carry the same development sandbox flag on both launch commands if needed. Supply another existing native bot name with `--agent` if appropriate. Use `--help` for optional model/effort selection. Outputs are exclusively created with mode 0600; use new names for another attempt. A failed artifact is diagnostic evidence, never acceptance. CDP attaches only through the recorded private Unix socket and inherited pipe for the owned Linux app/profile/session and its core. Each launch permits one debugger client. Do not attach a preliminary inspector before the smoke phase; relaunch the owned app for another test connection. The scripts detach without closing the native app and remove the debugger endpoint. The launcher signals only a matching owned process, refuses another checkout/profile/session or TCP-debugger process, and keeps the same stores.
 
 For action and fault reproduction, follow [the action procedure](HYPER_OPENBOT_ACTIONS.md) and [the lifecycle procedure](HYPER_OPENBOT_LIFECYCLE.md). Use a unique disposable marker folder, the original gateway's ask rule and native approval cards. Verify both the authoritative result/audit and confined filesystem, then revoke the rule. Do not replace those proofs with mock events. Interrupt only the verified scratch app SSH child, or stop only the inspected, project-labelled existing harness; always restore it and verify readiness/preferences. Never use upstream broad cleanup on this host.
 

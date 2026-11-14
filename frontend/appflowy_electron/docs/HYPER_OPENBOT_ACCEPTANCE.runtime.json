@@ -13,7 +13,7 @@
     "passedTests": 569,
     "skippedTests": 1,
     "skipReason": "opt-in simulated-IPC live test; actual native live tests ran separately",
-    "nativeRunnerSafeguards": 10,
+    "nativeRunnerSafeguards": 13,
     "typecheck": "passed",
     "frontendBuild": "passed",
     "realCoreTests": 4,
@@ -171,6 +171,38 @@
       "startedAt": "2026-11-14T16:13:18.704Z",
       "finishedAt": "2026-11-14T16:13:21.405Z",
       "status": "passed"
+    },
+    {
+      "file": "HyperNativeSmokeBeforeIssue8-pipe-v3.json",
+      "sha256": "0dd86d30a9a447913c84021df8ad259c94ea6f113e55f7d992cbd31ddf3a3daf",
+      "capturedCommit": "7f18cccce7d526e585186087bffcae0c91d21b75",
+      "status": "passed",
+      "startedAt": "2026-11-14T16:26:00.949Z",
+      "finishedAt": "2026-11-14T16:26:17.650Z"
+    },
+    {
+      "file": "HyperNativeSmokeAfterIssue8-pipe-v3.json",
+      "sha256": "36e2d9579a75b5a78aabeb41d858f4790cd572e01e4151a542690fc8f94dbae1",
+      "capturedCommit": "7f18cccce7d526e585186087bffcae0c91d21b75",
+      "status": "passed",
+      "startedAt": "2026-11-14T16:27:07.376Z",
+      "finishedAt": "2026-11-14T16:27:10.027Z"
+    },
+    {
+      "file": "HyperNativePipeSecurity14.json",
+      "sha256": "3990c11f3b3eab26f57a924e45437b5a4f0464185ee510225925a5121c231b70",
+      "capturedCommit": "7f18cccce7d526e585186087bffcae0c91d21b75",
+      "status": "no_tcp_listener_and_endpoint_removed",
+      "startedAt": null,
+      "finishedAt": null
+    },
+    {
+      "file": "HyperNativePipeSecurity14-after.json",
+      "sha256": "1df5160208537778298613bd0f1209d5e7da17a2874eaa7e02fc1694ca1e4f7b",
+      "capturedCommit": "7f18cccce7d526e585186087bffcae0c91d21b75",
+      "status": "no_tcp_listener_and_endpoint_removed",
+      "startedAt": null,
+      "finishedAt": null
     }
   ],
   "upstreamAndNotices": "HYPER_OPENBOT_AUDIT.md and ../src/renderer/features/hyper-openbot/REUSE.md, LICENSE and component mappings",
@@ -212,5 +244,26 @@
     ],
     "outsideDiffNitAddressed": 5905662201,
     "ownedCoreExitBarrier": "bounded wait, delayed exit and timeout tested; actual native relaunch passed"
+  },
+  "privateDebuggerSecurityReview": {
+    "comment": 4574552092,
+    "capturedCommit": "7f18cccce7d526e585186087bffcae0c91d21b75",
+    "transport": "inherited Electron pipe, single-use Unix socket relay",
+    "directoryMode": "0700 with matching owner UID",
+    "socketMode": "0600 with matching owner UID",
+    "tcpFallback": false,
+    "endpointUnlinkedAfterClaim": true,
+    "unusedLeaseExpires": true,
+    "electronAndBrokerTcpListeners": [],
+    "appRemainsOpenWithoutDebuggerEndpoint": true,
+    "sameProfileAfterActualRestart": true,
+    "restoredVisibleModelLabel": true,
+    "textDeliveries": [
+      89,
+      56
+    ],
+    "crossUidOsProcessProbe": "not executed; UID mismatch/mode policy tests and actual Unix socket lifecycle passed",
+    "parentLogDescriptorClosed": true,
+    "olderLoopbackDebuggerCaptures": "historical functional evidence only; do not reuse old TCP launch/driver scripts"
   }
 }

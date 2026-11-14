@@ -6,12 +6,16 @@ import { once } from 'node:events';
 import { WebSocket } from 'ws';
 import { hyperPrivateSmokePath, hyperServeSmokePipe, hyperLaunchSmokeApp } from './HyperNativeSmokeBroker.mjs';
 
-test('the debugger refuses a nonprivate directory and closes its one-use Unix endpoint after access', async () => {
+test('the debugger refuses a nonprivate directory and closes its one-use Unix endpoint after access', async t => {
   const directory = await mkdtemp('/tmp/hyper-native-smoke-'), socketPath = directory + '/cdp.sock';
   const input = new PassThrough(), output = new PassThrough(); let relay, client;
   try {
     await chmod(directory, 0o755); await assert.rejects(hyperPrivateSmokePath(socketPath), /private/);
     await chmod(directory, 0o700);
+    const uid = process.getuid();
+    const uidMock = t.mock.method(process, 'getuid', () => uid + 1);
+    await assert.rejects(hyperPrivateSmokePath(socketPath), /owned/);
+    uidMock.mock.restore();
     relay = await hyperServeSmokePipe({ socketPath, input, output });
     assert.equal((await lstat(socketPath)).mode & 0o777, 0o600);
     client = new WebSocket(`ws+unix://${socketPath}:/cdp`); await once(client, 'open');
