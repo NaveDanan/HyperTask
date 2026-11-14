@@ -13,3 +13,9 @@ it('onboarding starter preferences allows only its preference path family', () =
   expect(hyperOpenBotPathAllowed('/api/settings/preferences')).toBe(true);
   for (const path of ['/api/settings/providers', '/api/settings/preferences-other', '/api/settings/preferences/%2e%2e/secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+
+it('onboarding routing allows only its route family', () => {
+  expect(hyperOpenBotPathAllowed('/api/route')).toBe(true);
+  expect(hyperOpenBotPathAllowed('/api/route-other')).toBe(false);
+  expect(hyperOpenBotPathAllowed('/api/route/%2e%2e/auth')).toBe(false);
+});

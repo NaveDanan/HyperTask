@@ -6,6 +6,8 @@ import type { HyperOnboardingUser } from './HyperOnboardingApi';
 /** Lead-owned navigation must await creation/upload/send, reject on failure, and preserve File identity. */
 export interface HyperInitialDraft { text: string; files: File[]; commandIds: string[]; submit: boolean }
 export interface HyperHomeContext extends Omit<HyperOpenBotSectionContext, 'startConversation'> {
+  /** Set by the parent only once the receiving composer consumes initialDraft. */
+  initialDraftSupported?: boolean;
   startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): void | Promise<void>;
 }
 export interface HyperHomeChannel { id: string; name: string; busy?: boolean; summary: string | null; opening?: string | null }
@@ -35,6 +37,7 @@ export async function HyperRouteHomeMessage(text: string, agentId?: string, skil
   return (await response.json() as { agentId: string }).agentId;
 }
 export async function HyperStartHomeDraft(context: HyperHomeContext, bots: HyperBotProfile[], draft: HyperInitialDraft, chosen?: string) {
+  if (!context.initialDraftSupported) throw new Error('Initial draft transfer is unavailable in shared navigation.');
   let agentId = chosen;
   try { agentId = await HyperRouteHomeMessage(draft.text, chosen, draft.commandIds); }
   catch (error) {

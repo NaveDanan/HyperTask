@@ -6,10 +6,11 @@ import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { hyperOpenBotRequest } from '../transport';
 import { HyperListBots, type HyperBotProfile } from '../bots/HyperBotsApi';
 import { HyperReadCapabilities, HyperReadUser, HyperSaveOnboarding, HyperSaveOnboardingName, type HyperOnboardingUser } from './HyperOnboardingApi';
+import { HyperNativeTour } from './HyperNativeTour';
 import { HyperHomeComposer } from './HyperHomeComposer';
 import { HyperHomeGreeting, HyperReadHomeChannels, type HyperHomeChannelPage } from './HyperHomeApi';
 import { HyperNativeDestination } from './HyperSetupSection';
-export default function HyperHomeSection({ context }: { context: HyperOpenBotSectionContext }) {
+export default function HyperHomeSection({ context, initialText }: { context: HyperOpenBotSectionContext; initialText?: string }) {
   const [user, setUser] = useState<HyperOnboardingUser | null>();
   const [caps, setCaps] = useState<Awaited<ReturnType<typeof HyperReadCapabilities>>>();
   const [bots, setBots] = useState<HyperBotProfile[]>([]);
@@ -48,12 +49,12 @@ export default function HyperHomeSection({ context }: { context: HyperOpenBotSec
         setUser(await HyperSaveOnboarding({ completed: true })); setBots(await HyperListBots(false));
       })}>{busy ? 'Saving…' : current === steps[steps.length - 1] ? 'Get started' : current === 2 ? 'Not now' : 'Continue'}</Button></div>
     </> : <><h1 className="text-lg font-semibold">{HyperHomeGreeting(user, Boolean(channels && channels.channels.length === 0))}</h1>
-      <HyperHomeComposer context={context} bots={bots} />
+      <HyperHomeComposer key={user.id} userId={user.id} context={context} bots={bots} initialText={initialText} />
       {bots.length === 0 ? <p>No Bots available.</p> : null}
       {bots.some(bot => !bot.mine && bot.visibility === 'public') ? <><h2 className="text-sm font-medium">Explore Bots</h2>{bots.filter(bot => !bot.mine && bot.visibility === 'public').slice(0, showAll ? undefined : 4).map(bot => <Button key={bot.id} variant="outline" onClick={() => context.startConversation([bot.id])}>{bot.name} · {bot.title}</Button>)}{bots.filter(bot => !bot.mine && bot.visibility === 'public').length > 4 ? <Button variant="ghost" onClick={() => setShowAll(value => !value)}>{showAll ? 'Show fewer Bots' : 'All Bots'}</Button> : null}</> : caps?.edition !== 'personal' ? <p>Nobody has shared a Bot with you yet.</p> : null}
       {channels?.channels.find(channel => channel.busy) ? (() => { const working = channels.channels.find(channel => channel.busy)!; return <Button variant="outline" onClick={() => context.openConversation(working.id)}>{working.name} is working · {working.summary || working.opening || 'New conversation'} · Open</Button>; })() : null}
       {channelError ? <p role="status">Couldn't refresh conversations. Existing conversations are still available in navigation.</p> : null}
       {channels?.nextCursor ? <Button variant="ghost" onClick={() => { void HyperReadHomeChannels(channels.nextCursor!).then(page => setChannels({ channels: [...channels.channels, ...page.channels], nextCursor: page.nextCursor })).catch(() => setChannelError(true)); }}>Load more conversations</Button> : null}
-      <h2 className="text-sm font-medium">Explore HyperTask</h2>{['/bots', '/skills', '/connections', '/routines', '/computer-browser', '/settings'].map(path => <HyperNativeDestination key={path} path={path} context={context} />)}</>}
+      <HyperNativeTour context={context} /><h2 className="text-sm font-medium">Explore HyperTask</h2>{['/bots', '/skills', '/connections', '/routines', '/computer-browser', '/settings'].map(path => <HyperNativeDestination key={path} path={path} context={context} />)}</>}
   </section>;
 }

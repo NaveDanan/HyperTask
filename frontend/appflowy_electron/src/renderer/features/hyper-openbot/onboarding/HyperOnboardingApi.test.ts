@@ -30,6 +30,9 @@ it('does not grant setup without a server role or local evaluation', () => {
   expect(HyperMayOpenSetup(null, { localEvaluation: true })).toBe(true);
 });
 it('preserves refused writes', async () => {
-  vi.mocked(hyperOpenBotRequest).mockRejectedValue(new Error('403'));
-  await expect(HyperSaveOnboarding({ completed: true })).rejects.toThrow('403');
+  const refusal = new Error('Write refused');
+  vi.mocked(hyperOpenBotRequest).mockRejectedValueOnce(refusal);
+  const result = await HyperSaveOnboarding({ completed: true }).then(() => null, error => error);
+  expect(result).toBe(refusal);
+  expect(hyperOpenBotRequest).toHaveBeenCalledTimes(1);
 });
