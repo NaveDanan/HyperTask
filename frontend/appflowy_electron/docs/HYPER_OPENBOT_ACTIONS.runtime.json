@@ -205,5 +205,6 @@
       "sha256": "af25999277230c2035b87d27d4a50c18410f58cbffcf6386da896e417336002c",
       "storage": "private acceptance driver; not committed"
     }
-  }
+  },
+  "pullRequest": "https://github.com/NaveDanan/HyperTask/pull/12"
 }

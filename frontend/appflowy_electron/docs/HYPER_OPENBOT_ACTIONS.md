@@ -1,6 +1,6 @@
 # Native conversation and action acceptance
 
-Tracking [issue #6](https://github.com/NaveDanan/HyperTask/issues/6). Observed 2026-11-14. Native UI issue #5 merged in [PR #11](https://github.com/NaveDanan/HyperTask/pull/11), squash `d026839b5aceeb7c6d34cedcd5731d0c47100945`. This follow-up remains subject to its own review and merge.
+Tracking [issue #6](https://github.com/NaveDanan/HyperTask/issues/6), [PR #12](https://github.com/NaveDanan/HyperTask/pull/12). Observed 2026-11-14. Native UI issue #5 merged in [PR #11](https://github.com/NaveDanan/HyperTask/pull/11), squash `d026839b5aceeb7c6d34cedcd5731d0c47100945`. This follow-up remains subject to its own review and merge.
 
 The actual HyperTask Electron window exercised approved and denied actions, Stop/continue, restored action history, connection loss and runtime failure against the existing original OpenBot/CopilotKit Intelligence stack. The backend stayed on the authorized VM. These observations use the native composer, transcript and approval cards, rather than mocked component fixtures or a separate OpenBot shell.
 

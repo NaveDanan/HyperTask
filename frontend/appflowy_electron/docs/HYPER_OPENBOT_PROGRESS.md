@@ -98,7 +98,7 @@ PR #11 contains the native feature assembled by four initial and four follow-up 
 
 ## Current step: issue #6
 
-Native approved/denied actions, Stop/continue, restart restoration and private-tunnel failure/reconnect are exercised on `hyper/openbot-actions`. See [the action acceptance record](HYPER_OPENBOT_ACTIONS.md). Issue #6 stays open until its PR clears review and merges; #7/#8 follow in order.
+[PR #12](https://github.com/NaveDanan/HyperTask/pull/12) contains the issue #6 follow-up on `hyper/openbot-actions`. Native approved/denied actions, Stop/continue, restart restoration, a real runtime error/retry and private-tunnel failure/reconnect passed. Typecheck/build and all 536 tests pass; one opt-in simulated-IPC live test is skipped. See [the action acceptance record](HYPER_OPENBOT_ACTIONS.md). Issue #6 stays open until its PR clears review and merges; #7/#8 follow in order.
 
 ## Queue
 
@@ -107,7 +107,7 @@ Native approved/denied actions, Stop/continue, restart restoration and private-t
 | [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | Merged in PR #9 |
 | [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Merged in PR #10 |
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11 merged as d026839; issue closed |
-| [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | Native approved/denied actions and failure recovery passed; issue PR review/merge pending |
+| [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12; native acceptance passed, review/merge pending |
 | [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Waiting for #6 |
 | [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Waiting for #7 |
 
