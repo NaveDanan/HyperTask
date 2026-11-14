@@ -1,3 +1,4 @@
+import { useHyperTypedReveal } from '../conversations/HyperTypedReveal';
 // Derived from OpenBot. Copyright (c) 2026 CopilotKit. MIT License; see REUSE.md.
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,10 @@ function HyperSearch({ value, onChange, label }: { value: string; onChange: (val
   return <Input aria-label={label} placeholder={label} type="search" value={value} onChange={event => onChange(event.target.value)} />;
 }
 
+function HyperAnimatedConversationTitle({ row }: { row: HyperConversation }) {
+  const reveal = useHyperTypedReveal(HyperConversationTitle(row) || undefined);
+  return <>{reveal.text || 'New conversation'}{reveal.typing && <span aria-hidden="true">▏</span>}</>;
+}
 export interface HyperConversationsScreenProps extends HyperScreenState {
   conversations: readonly HyperConversation[];
   selectedId?: string;
@@ -61,7 +66,7 @@ export function HyperConversationsScreen(props: HyperConversationsScreenProps) {
     {actionError && <p role="alert" className="text-sm text-destructive">{actionError}</p>}
     {!props.loading && !props.error && !rows.length && <p className="text-sm text-muted-foreground">{search ? 'No matching conversations.' : 'No conversations yet.'}</p>}
     {([true, false] as const).map(pinned => <div key={String(pinned)}>{rows.some(row => !!row.pinned === pinned) && <h2 className="text-xs font-medium text-muted-foreground">{pinned ? 'Pinned' : 'Recent'}</h2>}{rows.filter(row => !!row.pinned === pinned).map(row => <div key={row.id} className="flex items-center border-b border-border">
-      <button type="button" className={rowClass} aria-current={props.selectedId === row.id ? 'page' : undefined} onClick={() => props.onOpen(row.id)}><span className="min-w-0"><span className="block truncate font-medium">{HyperConversationTitle(row) || 'New conversation'}</span><span className="block truncate text-xs text-muted-foreground">{row.name}</span></span>{!!row.unreadCount && <span aria-label={`${row.unreadCount} unread`}>{row.unreadCount}</span>}</button>
+      <button type="button" className={rowClass} aria-current={props.selectedId === row.id ? 'page' : undefined} onClick={() => props.onOpen(row.id)}><span className="min-w-0"><span className="block truncate font-medium"><HyperAnimatedConversationTitle row={row} /></span><span className="block truncate text-xs text-muted-foreground">{row.name}</span></span>{!!row.unreadCount && <span aria-label={`${row.unreadCount} unread`}>{row.unreadCount}</span>}</button>
       {props.onSetPinned && <Button variant="ghost" disabled={props.pendingId === row.id} onClick={() => void pin(row)} aria-label={`${row.pinned ? 'Unpin' : 'Pin'} ${HyperConversationTitle(row)}`}>{row.pinned ? 'Unpin' : 'Pin'}</Button>}
       {props.onDelete && <Button variant="destructive" disabled={props.pendingId === row.id} onClick={() => { setActionError(null); setDeleting(row); }}>Delete…</Button>}
     </div>)}</div>)}

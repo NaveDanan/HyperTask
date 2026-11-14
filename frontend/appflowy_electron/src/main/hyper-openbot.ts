@@ -109,7 +109,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
   ipcMain.handle('hyper-openbot:socket-open', async (event, id: unknown, path: unknown, protocols: unknown) => {
     if (!trusted(event) || !safeId(id) || sockets.has(id) || openingSockets.has(id) || sockets.size + openingSockets.size >= 16) throw new Error('Socket caller refused');
     if (!ready()) throw new Error('AI services are not ready. Check AI service status.');
-    if (typeof path !== 'string' || path.length > 16384 || (!/^\/api\/intelligence\/client\/websocket\?[^#\\]*$/.test(path) && !/^\/api\/voice\/socket\/[a-f0-9-]{36}$/.test(path) && !hyperComputerSocketPathAllowed(path))) throw new Error('Socket route refused');
+    if (typeof path !== 'string' || path.length > 16384 || (!/^\/api\/intelligence\/client\/websocket\?[^#\\]*$/.test(path) && path !== '/api/channels/events' && !/^\/api\/voice\/socket\/[a-f0-9-]{36}$/.test(path) && !hyperComputerSocketPathAllowed(path))) throw new Error('Socket route refused');
     if (!Array.isArray(protocols) || protocols.length > 8 || protocols.some(value => typeof value !== 'string' || value.length > 200)) throw new Error('Socket protocols refused');
     own(event);
     const opening = { cancelled: false }; openingSockets.set(id, opening);

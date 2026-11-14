@@ -17,7 +17,7 @@ export function HyperTeamConsent({ botId, serverId, message }: { botId: string; 
   const [error, setError] = useState<string>();
   return <div className="space-y-2 rounded-lg border p-3"><p>{message}</p>{chosen ? <p role="status">{chosen === 'skip' ? 'Skipped. Nothing of yours was used.' : 'Allowed. Ask the Bot to try again.'}</p> : <div className="flex flex-wrap gap-2">{(['allow_once', 'allow_always', 'allow_all_team_bots', 'skip'] as const).map((decision, index) => <Button key={decision} disabled={pending} variant="outline" onClick={() => { setPending(true); setError(undefined); void hyperTeamConsent(botId, serverId, decision).then(() => setChosen(decision)).catch(error => setError(String(error))).finally(() => setPending(false)); }}>{['Allow once', 'Always allow for this Bot', 'Always allow for all Team Bots', 'Skip'][index]}</Button>)}</div>}{error && <p role="alert">{error}</p>}</div>;
 }
-export function HyperGroupChat({ channelId, serviceReady }: { channelId: string; serviceReady: boolean }) {
+export function HyperGroupChat({ channelId, serviceReady, eventRevision = 0 }: { channelId: string; serviceReady: boolean; eventRevision?: number }) {
   const { draft: heldDraft, updateDraft } = useHyperConversationDraft(channelId);
   const [questions, setQuestions] = useState<HyperWaitingQuestion[]>([]);
   const [questionError, setQuestionError] = useState(false);
@@ -42,7 +42,7 @@ export function HyperGroupChat({ channelId, serviceReady }: { channelId: string;
       catch (error) { if (current) setError(String(error)); }
     };
     void load(); return () => { current = false; clearTimeout(timer); };
-  }, [channelId, revision, serviceReady]);
+  }, [channelId, revision, serviceReady, eventRevision]);
   const last = data?.messages.at(-1);
   useLayoutEffect(() => { if (viewport.current && data?.messages.length && (!landed.current || atBottom.current || last?.ownerUserId === me)) { viewport.current.scrollTop = viewport.current.scrollHeight; landed.current = true; } }, [data, me, last]);
   const working = data?.messages.some(message => ['running', 'queued'].includes(message.status));
@@ -73,6 +73,6 @@ export function HyperGroupChat({ channelId, serviceReady }: { channelId: string;
     {questionError && <p role="alert" className="px-4">Questions could not be checked. <Button variant="ghost" onClick={() => setRevision(value => value + 1)}>Retry</Button></p>}
     {question && <HyperGroupQuestionNotice key={question.id} question={question} name={names.get(question.conversationBotId ?? question.botId) ?? 'A Bot'} disabled={!serviceReady || pending || !!working} onAnswer={answer} onDismiss={async () => { await hyperDismissQuestion(question.id); setQuestions(value => value.filter(item => item.id !== question.id)); setRevision(value => value + 1); }} />}
     <label className="px-4 text-sm">To: <select aria-label="Address a Bot" value={address} onChange={event => setAddress(event.target.value)}><option value="">Every Bot</option>{data.bots.map(bot => <option key={bot.id} value={bot.id}>{bot.name}</option>)}</select></label>
-    <HyperComposer value={heldDraft.text} onTextChange={change => updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change }))} className="m-4" disabled={!serviceReady || !data.bots.length} pending={pending || working} stoppable={false} autoFocus onSubmit={async draft => { const agentId = address || null; if (question && hyperQuestionRecipient(question, agentId)) { await answer(draft.text); return; } if (!retry.current || retry.current.text !== draft.text || retry.current.agentId !== agentId) retry.current = { id: crypto.randomUUID(), text: draft.text, agentId }; try { await hyperSendGroup(channelId, retry.current); retry.current = undefined; } finally { setRevision(value => value + 1); } }} />
+    <HyperComposer agents={data.bots} value={heldDraft.text} onTextChange={change => updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change }))} className="m-4" disabled={!serviceReady || !data.bots.length} pending={pending || working} stoppable={false} autoFocus onSubmit={async draft => { const agentId = draft.agentId || address || null; if (question && hyperQuestionRecipient(question, agentId)) { await answer(draft.text); return; } if (!retry.current || retry.current.text !== draft.text || retry.current.agentId !== agentId) retry.current = { id: crypto.randomUUID(), text: draft.text, agentId }; try { await hyperSendGroup(channelId, retry.current); retry.current = undefined; } finally { setRevision(value => value + 1); } }} />
   </div>;
 }

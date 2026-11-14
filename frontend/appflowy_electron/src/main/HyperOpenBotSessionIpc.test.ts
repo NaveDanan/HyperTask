@@ -145,3 +145,9 @@ it('does not restart the private tunnel when Stop interrupts a pending identity 
   await rejected;
   expect(ipc.path).not.toHaveBeenCalled(); expect(ipc.sockets).toHaveLength(0);
 });
+it('allows only the exact channel events socket and rejects variants', async () => {
+  const h = setup();
+  for (const path of ['/api/channels/events?token=x', '/api/channels/events/extra', '/api/channels/../events', '/api/channels/%65vents', 'wss://evil/api/channels/events']) await expect(ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'events-denied', path, [])).rejects.toThrow('Socket route refused');
+  await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'events-allowed', '/api/channels/events', []);
+  expect(ipc.sockets).toHaveLength(1); await h.manager.beginNativeTransition().cleared;
+});

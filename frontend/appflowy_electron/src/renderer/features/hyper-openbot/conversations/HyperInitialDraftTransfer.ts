@@ -1,4 +1,5 @@
-import type { HyperInitialDraft } from '../onboarding/HyperHomeApi';
+import type { HyperInitialDraft as HyperHomeInitialDraft } from '../onboarding/HyperHomeApi';
+export type HyperInitialDraft = HyperHomeInitialDraft & { modelPick?: { model: string; effort: string | null } };
 /** One memory-only start transaction, retained after refusal so retry reuses its server channel. */
 export class HyperInitialDraftTransfer<T> {
   private active?: AbortController;

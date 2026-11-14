@@ -1,4 +1,4 @@
-import type { HyperInitialDraft } from './onboarding/HyperHomeApi';
+import type { HyperInitialDraft } from './conversations/HyperInitialDraftTransfer';
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 
 export interface HyperOpenBotSectionContext {
@@ -7,7 +7,9 @@ export interface HyperOpenBotSectionContext {
   /** Start a new conversation with one or more Bots. */
   initialDraftSupported?: boolean;
   startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): Promise<void>;
-  navigate?(destinationId: string): void;
+  navigate?(destinationId: string, intent?: { path: string }): void;
+  initialAgentIds?: readonly string[];
+  navigationIntent?: { path: string };
 }
 export interface HyperOpenBotSection {
   readonly id: string;
