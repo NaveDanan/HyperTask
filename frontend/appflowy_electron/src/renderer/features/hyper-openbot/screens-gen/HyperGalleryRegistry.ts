@@ -80,7 +80,7 @@ let modules: Record<string, { GALLERY?: HyperGalleryComponent[] }> = {};
 try {
   // Keep this call inline: Vite replaces `import.meta.glob` at build time.
   modules = import.meta.glob<{ GALLERY?: HyperGalleryComponent[] }>(
-    "./*.tsx",
+    ["./charts.tsx", "./cards.tsx", "./table.tsx", "./quote.tsx", "./decisions.tsx", "./form.tsx", "./activity.tsx"],
     { eager: true },
   );
 } catch {
