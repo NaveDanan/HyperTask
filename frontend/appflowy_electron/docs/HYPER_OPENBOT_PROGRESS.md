@@ -102,15 +102,21 @@ PR #11 contains the native feature assembled by four initial and four follow-up 
 
 Native approved/denied actions, Stop/continue, restart restoration, real runtime error/retry and private-tunnel failure/reconnect passed. The full suite passed 540 tests with one opt-in simulated-IPC live skip. [The action record](HYPER_OPENBOT_ACTIONS.md) separates real native observations from mocked component-state checks.
 
-## Current step: issue #7
+## Completed: issue #7
 
-The `hyper/openbot-lifecycle` branch starts from the #12 squash merge. Main owns a fixed scoped VM helper, readiness gating, native Stop/Start/Restart confirmation and a persistent automatic-start preference. The renderer receives closed actions and sanitized checks only. No new backend installation, cluster, image rebuild or Rust rebuild was needed.
+[PR #13](https://github.com/NaveDanan/HyperTask/pull/13) merged as `98f0b91267dfe72c78b3be1049778ae0dcf2622c`. Issue #7 is closed and checked in epic #2. Final head `be851d57e4f71feda5a0e3b77acd2bf0248498a4` had clean Codex code/security receipts `6879117423` / `6879191197`, no unresolved threads, Macroscope SUCCESS and CodeRabbit NEUTRAL. The completed PR was unwatched. Main owns a fixed scoped VM helper, readiness gating, native Stop/Start/Restart confirmation and a persistent automatic-start preference. The renderer receives closed actions and sanitized checks only. No new backend installation, cluster, image rebuild or Rust rebuild was needed.
 
 Real native Stop/Start/Restart, idempotent attach, draft and exact saved-conversation preservation passed. The same container/image/mount identities returned, the existing Rust core remained available while AI stopped, and shared AppFlowy services were unchanged. A native app restart automatically started the deliberately stopped deployment. The disabled startup preference survived another app/core restart. The owner binding remained unchanged throughout.
 
 The full frontend suite passes 560 tests with one opt-in simulated-IPC live skip, plus typecheck/build. Ten controlled prerequisite scenarios cover missing Docker/deployment, unsafe ownership/public bindings, stopped/unhealthy services, Intelligence, licensing and provider setup. These are simulated faults, separate from the real native lifecycle evidence. [The lifecycle note](HYPER_OPENBOT_LIFECYCLE.md) documents the supported connection, diagnostics, evidence and reproduction steps.
 
-This remains a provisioned Linux development connection to the authorized personal VM. Original Intelligence, the human-owned agreement/model sign-in and the original local native-owner boundary remain required. Same-owner network recovery is supported; remote native-account provenance and ownership transfer remain unsupported and fail closed. No shared K3s, AppFlowy service or source/runtime replacement is part of this change. [PR #13](https://github.com/NaveDanan/HyperTask/pull/13) is under review. The initial Macroscope findings and duplicate Codex model-recovery finding are fixed: readiness now retries model initialization and rejects obsolete results, while Stop permits a remaining Intelligence node or unhealthy managed component. CodeRabbit’s additional namespace-safety finding is fixed with host/shared-container rejection and twelve regressions; all six actual network modes and their bridge drivers were verified read-only. Final-head code/security reviews and merge remain pending, followed by #8.
+This remains a provisioned Linux development connection to the authorized personal VM. Original Intelligence, the human-owned agreement/model sign-in and the original local native-owner boundary remain required. Same-owner network recovery is supported; remote native-account provenance and ownership transfer remain unsupported and fail closed. No shared K3s, AppFlowy service or source/runtime replacement is part of this change. The initial Macroscope findings and duplicate Codex model-recovery finding are fixed: readiness now retries model initialization and rejects obsolete results, while Stop permits a remaining Intelligence node or unhealthy managed component. CodeRabbit’s additional namespace-safety finding is fixed with host/shared-container rejection and twelve regressions; all six actual network modes and their bridge drivers were verified read-only. All fixes passed the final review gate before merge. Broader acceptance continues in #8.
+
+## Current step: issue #8
+
+The `hyper/openbot-acceptance` branch starts from the #13 merge. The acceptance audit is checking each matrix item against the actual native app and original VM runtime. A committed two-phase native smoke runner and controlled launcher are being validated using existing Electron/core/Playwright installations. They preserve the test profile and never install dependencies or close unrelated applications.
+
+Documents and datasets still use the Electron port's pre-existing placeholder bodies. The integration changes only the Chat renderer registration; it did not remove document/grid/board/calendar editors from this frontend. Their existing navigation and native core contracts can be regression-tested, but full editing UI acceptance is unavailable. This limitation must be explicit in the report and owner checkpoint.
 
 ## Queue
 
@@ -120,8 +126,8 @@ This remains a provisioned Linux development connection to the authorized person
 | [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Merged in PR #10 |
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11 merged as d026839; issue closed |
 | [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12 merged as bb158354; issue closed |
-| [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Native lifecycle/startup validated; PR review/merge pending |
-| [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Waiting for #7 |
+| [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | PR #13 merged as 98f0b912; issue closed |
+| [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Requirements/evidence audit and repeatable native smoke runner in progress |
 
 ## Working-copy note
 
