@@ -1,3 +1,4 @@
+import { useHyperOpenBotService } from '../hyper-openbot/HyperServiceStatus';
 // Sidebar entries: search, new page, Jira, Templates and Trash.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
@@ -75,6 +76,7 @@ export function SidebarFooter(): ReactNode {
 
 /** Discoverable entry using the existing native Chat view/plugin. */
 export function HyperChatButton() {
+  const { state: ai, error: aiError } = useHyperOpenBotService(true);
   const active = useTabsStore(state => state.tabs[state.currentIndex]?.plugin.type === 'chat');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
@@ -108,5 +110,5 @@ export function HyperChatButton() {
     } catch (error) { if (current()) setError(error instanceof Error ? error.message : 'Chat could not be opened.'); }
     finally { if (current()) setPending(false); }
   }
-  return <><NavItem icon={<MessageSquareText />} label={pending ? 'Opening Chat…' : 'Chat'} active={active} onClick={() => { if (!pending) void open(); }} />{error && <p role="alert" className="px-3 text-xs text-destructive">{error}</p>}</>;
+  return <><NavItem icon={<MessageSquareText />} label={pending ? 'Opening Chat…' : 'Chat'} aria-label="Chat" title={aiError || (ai.ready ? 'AI services ready on the configured VM' : 'Open Chat to check AI service readiness')} trailing={<span aria-hidden="true" className="text-2xs">{ai.ready ? 'AI ready' : ai.phase !== 'idle' ? 'Connecting' : 'AI status'}</span>} active={active} onClick={() => { if (!pending) void open(); }} />{error && <p role="alert" className="px-3 text-xs text-destructive">{error}</p>}</>;
 }

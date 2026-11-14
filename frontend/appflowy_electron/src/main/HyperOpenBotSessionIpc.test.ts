@@ -11,13 +11,13 @@ vi.mock('ws', async () => { const { EventEmitter } = await import('node:events')
 import { HyperOpenBotSession, hyperNativeCoreRequest, type HyperOpenBotSessionDependencies } from './HyperOpenBotSession';
 import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
 beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.path.mockResolvedValue('/private/gateway.sock'); });
-function setup(identity: string | null = 'a') {
+function setup(identity: string | null = 'a', ready = () => true) {
   let owner: string | null = null;
   const manager = new HyperOpenBotSession({ readIdentity: async () => identity, bindOwner: async (value: string) => { owner ??= value; if (owner !== value) throw new Error('Owner mismatch'); }, readOwner: async () => owner, partition: () => ({ cookies: {}, clearStorageData: async () => {}, clearAuthCache: async () => {} }), clearLegacyCookies: async () => {} } as unknown as HyperOpenBotSessionDependencies);
   const sender = Object.assign(new EventEmitter(), { mainFrame: {}, isDestroyed: () => false, send: vi.fn() });
   const event = { sender, senderFrame: sender.mainFrame };
-  registerHyperOpenBotIpc(() => ({ webContents: sender }) as never, manager);
-  return { manager, sender, event };
+  const bridge = registerHyperOpenBotIpc(() => ({ webContents: sender }) as never, manager, ready);
+  return { manager, sender, event, bridge };
 }
 it('denies unauthenticated HTTP before touching SSH or the backend', async () => {
   const h = setup(null);
@@ -110,4 +110,25 @@ it('blocks all generic renderer file handlers from main-owned state, including t
     expect(await ipc.handlers.get(C.FsExists)!({}, ordinary)).toBe(true);
     await ipc.handlers.get(C.FsEnsureDir)!({}, path.join(directory, 'ordinary-directory'));
   } finally { await fs.rm(directory, { recursive: true, force: true }); }
+});
+
+it('blocks new HTTP/socket work while services are not ready and cancels an established bridge', async () => {
+  let ready = true; const h = setup('a', () => ready);
+  await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'live', '/api/intelligence/client/websocket?vsn=2.0.0', []);
+  ready = false; h.bridge.disconnect(); expect(ipc.sockets[0].terminate).toHaveBeenCalledOnce();
+  ipc.path.mockClear();
+  await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'blocked', path: '/api/channels', method: 'GET' })).rejects.toThrow('not ready');
+  await expect(ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'blocked-socket', '/api/intelligence/client/websocket?vsn=2.0.0', [])).rejects.toThrow('not ready');
+  expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.path).not.toHaveBeenCalled();
+});
+it('does not restart the private tunnel when Stop interrupts a pending identity read', async () => {
+  let ready = true; const h = setup('a', () => ready);
+  const lease = await h.manager.acquire();
+  let finish!: (value: typeof lease) => void;
+  vi.spyOn(h.manager, 'acquire').mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const opening = ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'pending-owner', '/api/intelligence/client/websocket?vsn=2.0.0', []);
+  const rejected = expect(opening).rejects.toThrow();
+  ready = false; h.bridge.disconnect(); finish(lease);
+  await rejected;
+  expect(ipc.path).not.toHaveBeenCalled(); expect(ipc.sockets).toHaveLength(0);
 });

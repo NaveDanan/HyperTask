@@ -96,9 +96,21 @@ PR #11 contains the native feature assembled by four initial and four follow-up 
 - CodeRabbit follow-up requested the literal-option callback check in the committed suite. The real card form handler now has a repository regression asserting the exact `onAnswer` value; it fails on the old implementation and passes with the fix. This follow-up changes tests/evidence only.
 - PR #11 completed its final review and merge gate. Native action/recovery acceptance continues in #6; #7/#8 remain open.
 
-## Current step: issue #6
+## Completed: issue #6
 
-[PR #12](https://github.com/NaveDanan/HyperTask/pull/12) contains the issue #6 follow-up on `hyper/openbot-actions`. Native approved/denied actions, Stop/continue, restart restoration, a real runtime error/retry and private-tunnel failure/reconnect passed. Typecheck/build and all 540 tests pass; one opt-in simulated-IPC live test is skipped. Three CodeRabbit follow-ups now preserve the barrier on swallowed connect failures and unconfirmed deadlines, and retain already-waiting status. Five page-state fixtures and a repeated actual native disconnect/reconnect check pass; the updated PR head needs fresh review. See [the action acceptance record](HYPER_OPENBOT_ACTIONS.md). Issue #6 stays open until its PR clears review and merges; #7/#8 follow in order.
+[PR #12](https://github.com/NaveDanan/HyperTask/pull/12) squash merged as `bb158354c712dd6401072bbe8dfd63db74e604fd`. Issue #6 is closed/completed and checked in epic #2. Final head `ff4edcd55fb6c9887cb06de0814b256a99899d5c` cleared Codex code/security review with receipts `6878031829` / `6878066624`, no unresolved threads, Macroscope SUCCESS and CodeRabbit NEUTRAL. All three CodeRabbit corrections were acknowledged and resolved. The completed PR watch is stopped.
+
+Native approved/denied actions, Stop/continue, restart restoration, real runtime error/retry and private-tunnel failure/reconnect passed. The full suite passed 540 tests with one opt-in simulated-IPC live skip. [The action record](HYPER_OPENBOT_ACTIONS.md) separates real native observations from mocked component-state checks.
+
+## Current step: issue #7
+
+The `hyper/openbot-lifecycle` branch starts from the #12 squash merge. Main owns a fixed scoped VM helper, readiness gating, native Stop/Start/Restart confirmation and a persistent automatic-start preference. The renderer receives closed actions and sanitized checks only. No new backend installation, cluster, image rebuild or Rust rebuild was needed.
+
+Real native Stop/Start/Restart, idempotent attach, draft and exact saved-conversation preservation passed. The same container/image/mount identities returned, the existing Rust core remained available while AI stopped, and shared AppFlowy services were unchanged. A native app restart automatically started the deliberately stopped deployment. The disabled startup preference survived another app/core restart. The owner binding remained unchanged throughout.
+
+The full frontend suite passes 560 tests with one opt-in simulated-IPC live skip, plus typecheck/build. Ten controlled prerequisite scenarios cover missing Docker/deployment, unsafe ownership/public bindings, stopped/unhealthy services, Intelligence, licensing and provider setup. These are simulated faults, separate from the real native lifecycle evidence. [The lifecycle note](HYPER_OPENBOT_LIFECYCLE.md) documents the supported connection, diagnostics, evidence and reproduction steps.
+
+This remains a provisioned Linux development connection to the authorized personal VM. Original Intelligence, the human-owned agreement/model sign-in and the original local native-owner boundary remain required. Same-owner network recovery is supported; remote native-account provenance and ownership transfer remain unsupported and fail closed. No shared K3s, AppFlowy service or source/runtime replacement is part of this change. [PR #13](https://github.com/NaveDanan/HyperTask/pull/13) is under review. The initial Macroscope findings and duplicate Codex model-recovery finding are fixed: readiness now retries model initialization and rejects obsolete results, while Stop permits a remaining Intelligence node or unhealthy managed component. CodeRabbit’s additional namespace-safety finding is fixed with host/shared-container rejection and twelve regressions; all six actual network modes and their bridge drivers were verified read-only. Final-head code/security reviews and merge remain pending, followed by #8.
 
 ## Queue
 
@@ -107,8 +119,8 @@ PR #11 contains the native feature assembled by four initial and four follow-up 
 | [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | Merged in PR #9 |
 | [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Merged in PR #10 |
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11 merged as d026839; issue closed |
-| [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12; native acceptance passed, review/merge pending |
-| [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Waiting for #6 |
+| [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12 merged as bb158354; issue closed |
+| [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Native lifecycle/startup validated; PR review/merge pending |
 | [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Waiting for #7 |
 
 ## Working-copy note

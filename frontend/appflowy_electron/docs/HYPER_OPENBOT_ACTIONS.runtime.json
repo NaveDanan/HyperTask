@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 6,
   "observedAt": "2026-11-14T13:06:28.889039+00:00",
-  "status": "native_acceptance_passed_review_and_merge_pending",
+  "status": "merged_complete",
   "upstreamCommit": "f8af37ab73e96784f174a11104505a965e722cab",
   "runtime": "Original OpenBot plus CopilotKit Intelligence on authorized MMEMS-mems01 VM",
   "native": {
@@ -276,5 +276,13 @@
         "storage": "private test driver; not committed"
       }
     }
+  },
+  "delivery": {
+    "finalReviewedHead": "ff4edcd55fb6c9887cb06de0814b256a99899d5c",
+    "mergeSha": "bb158354c712dd6401072bbe8dfd63db74e604fd",
+    "codeReceipt": 6878031829,
+    "securityReceipt": 6878066624,
+    "unresolvedThreads": 0,
+    "issue6Closed": true
   }
 }

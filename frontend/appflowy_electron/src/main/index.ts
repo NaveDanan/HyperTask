@@ -1,3 +1,6 @@
+import type { HyperOpenBotService } from './HyperOpenBotService';
+import { createHyperOpenBotService } from './HyperOpenBotBackend';
+import { registerHyperOpenBotServiceIpc } from './HyperOpenBotServiceIpc';
 import { createHyperOpenBotSession, hyperReadCoreIdentity, hyperNativeCoreRequest } from './HyperOpenBotSession';
 import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
 import os from 'node:os';
@@ -120,7 +123,10 @@ function focusWindow() {
 
 function registerIpc() {
   const openBotSessions = createHyperOpenBotSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
-  registerHyperOpenBotIpc(() => mainWindow, openBotSessions);
+  let openBotService: HyperOpenBotService | undefined;
+  const openBotBridge = registerHyperOpenBotIpc(() => mainWindow, openBotSessions, () => openBotService?.snapshot().ready === true);
+  openBotService = createHyperOpenBotService(app.getPath('userData'), openBotSessions, openBotBridge.disconnect);
+  registerHyperOpenBotServiceIpc(() => mainWindow, openBotService);
   core.on('exit', () => { void openBotSessions.beginNativeTransition().cleared.catch(() => {}); });
   ipcMain.handle(C.CoreInit, async (_, config: CoreInitConfig) => {
     const transition = openBotSessions.beginNativeTransition(false);
