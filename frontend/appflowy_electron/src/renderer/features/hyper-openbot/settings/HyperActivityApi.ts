@@ -21,11 +21,17 @@ export const hyperActivityApi = {
     return hyperOpenBotRequest<{ events: AuditEvent[]; nextCursor?: string }>(`/api/admin/audit-events?${params}`);
   },
   names: async () => {
-    const [bots, plugins] = await Promise.all([
-      hyperOpenBotRequest<{ agents: { id: string; name: string }[] }>('/api/agents'),
-      hyperOpenBotRequest<{ skills: { slug: string; title: string }[] }>('/api/plugins'),
-    ]);
-    return { bots: Object.fromEntries(bots.agents.map(bot => [bot.id, bot.name])), skills: Object.fromEntries(plugins.skills.map(skill => [skill.slug, skill.title])) };
+    const roster = async (hidden: boolean) => {
+      const bots: { id: string; name: string }[] = []; const seen = new Set<string>(); let cursor: string | undefined;
+      do {
+        const params = new URLSearchParams({ limit: '100', ...(hidden ? { hidden: 'true' } : {}), ...(cursor ? { cursor } : {}) });
+        const page = await hyperOpenBotRequest<{ bots: { id: string; name: string }[]; nextCursor?: string }>(`/api/v2/organizations/default/bots?${params}`);
+        bots.push(...page.bots); if (cursor) seen.add(cursor); cursor = page.nextCursor;
+      } while (cursor && !seen.has(cursor));
+      return bots;
+    };
+    const [shown, hidden, plugins] = await Promise.all([roster(false), roster(true).catch(() => []), hyperOpenBotRequest<{ skills: { slug: string; title: string }[] }>('/api/plugins')]);
+    return { bots: Object.fromEntries([...hidden, ...shown].map(bot => [bot.id, bot.name])), skills: Object.fromEntries(plugins.skills.map(skill => [skill.slug, skill.title])) };
   },
   export: async (search: URLSearchParams) => {
     const params = new URLSearchParams(search); params.delete('cursor'); params.delete('limit'); params.set('format', 'csv');

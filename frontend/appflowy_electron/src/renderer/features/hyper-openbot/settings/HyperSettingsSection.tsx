@@ -1,5 +1,6 @@
 // Adapted from OpenBot (MIT), Copyright (c) 2026 CopilotKit.
 // app/src/routes/_authed/settings/index.tsx and components/settings/{profile,standing-instructions,message-list-preference,settings-sidebar}.tsx
+import { HyperSettingsAppearance } from './HyperSettingsAppearance';
 import { HyperPersonalActivity } from './HyperPersonalActivity';
 import type { HyperSettingsContext } from './HyperSettingsNavigation';
 import { HyperSettingsEdition } from './HyperSettingsEdition';
@@ -51,7 +52,7 @@ export function HyperSettingsGeneral({ user, instructions, preferences, onUser, 
       <figure aria-label="Message list preview" className="rounded-lg border bg-muted p-3 text-sm"><p className={preferences.messageListEmphasis === 'agent' ? 'font-semibold' : 'text-muted-foreground'}>General Assistant</p><p className={preferences.messageListEmphasis === 'thread' ? 'font-semibold' : 'text-muted-foreground'}>Plan next week</p></figure>
     </div>
     {busy && <p role="status">Saving…</p>}{error && !editor && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    <p className="text-sm text-muted-foreground">Appearance and keyboard shortcuts follow HyperTask's application settings.</p>
+    <HyperSettingsAppearance preferences={preferences} onPreferences={onPreferences} /><section><h2 className="text-sm font-medium">Keyboard shortcuts</h2><p className="text-sm text-muted-foreground">Open the command palette with Ctrl+K or ⌘K. HyperTask application shortcuts apply throughout the native interface.</p></section>
     <Dialog open={editor !== null} onOpenChange={value => { if (!value && !busy) setEditor(null); }}><DialogContent><DialogHeader><DialogTitle>{editor === 'name' ? 'Your name' : 'Standing instructions'}</DialogTitle><DialogDescription>{editor === 'name' ? 'Choose the name OpenBot shows for you.' : "Applies to every Bot in every conversation. A Bot's role says what it does. This says how you want it done, like your writing style."}</DialogDescription></DialogHeader>
       <form className="flex flex-col gap-3" onSubmit={event => { event.preventDefault(); void save(); }}>
         {editor === 'name' ? <Input aria-label="Name" autoComplete="name" maxLength={100} required disabled={busy} value={draft} onChange={event => { setDraft(event.target.value); setError(''); }} /> : <><Textarea aria-label="Standing instructions" className="min-h-40" disabled={busy} value={draft} onChange={event => { setDraft(event.target.value); setSaved(false); }} /><p className="text-xs text-muted-foreground">{draft.trim().length} of {HYPER_INSTRUCTIONS_LIMIT} characters</p></>}

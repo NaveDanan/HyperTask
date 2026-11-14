@@ -23,7 +23,7 @@ export function HyperPersonalActivity({ bot: initialBot }: { bot?: string }) {
     void hyperActivityApi.names().then(value => { if (active) setNames(value); }).catch(() => { /* Stored IDs remain readable when names cannot be loaded. */ });
     return () => { active = false; };
   }, [search, attempt]);
-  const nameFor = (id: string) => names.bots[id] || id;
+  const nameFor = (id: string) => names.bots[id] || 'A Bot no longer here';
   const rows = oneRowPerAction(events).map(event => event.targetType === 'skill' && event.targetId && names.skills[event.targetId] ? { ...event, subjectTitle: names.skills[event.targetId] } : event);
   const facet = (event: AuditEvent, key: string) => key === 'Outcome' ? ({ allowed: 'Allowed', refused: 'Blocked', 'did-not-happen': 'Did not happen' }[outcomeOf(event)]) : key === 'Bot' ? botText(event, nameFor) || 'None' : startedByText(event, nameFor, 'OpenBot');
   const shown = rows.filter(event => searchTextOf(event, nameFor, 'OpenBot').includes(query.trim().toLowerCase()) && Object.entries(facets).every(([key, values]) => !values.length || values.includes(facet(event, key)))).sort((a, b) => (Date.parse(a.createdAt) - Date.parse(b.createdAt)) * (ascending ? 1 : -1));
