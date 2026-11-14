@@ -3,7 +3,7 @@ vi.mock('../transport', () => ({ hyperOpenBotRequest: vi.fn() }));
 vi.mock('./HyperRecorderBridge', () => ({ sendConnectCode: vi.fn(), findRecorderHere: vi.fn(), sendRecorderPage: vi.fn(), askConnectWait: vi.fn(), connectRefusalSentence: () => 'Connection refused.', CONFIRM_WINDOW_MS: 300000 }));
 import { hyperOpenBotRequest } from '../transport';
 import { sendConnectCode } from './HyperRecorderBridge';
-import { hyperConnectRecorder, hyperReadRecordings } from './HyperRecorder';
+import { hyperConnectRecorder, hyperReadRecordings, hyperRefreshRecordings } from './HyperRecorder';
 import { hyperSupplyComputerSecret } from './HyperPrivateHandoffs';
 import { hyperOpenBotComputer } from './HyperComputerDestination';
 const request = vi.mocked(hyperOpenBotRequest);
@@ -25,4 +25,11 @@ it('sends a private secret in a body and never echoes a refused response', async
 });
 it('uses the same native computer destination from typed browser callbacks', () => {
   const navigate = vi.fn(); hyperOpenBotComputer('bot', navigate); expect(navigate).toHaveBeenCalledWith('bot-computer');
+});
+
+it('preserves all loaded history when an earlier cursor page becomes unavailable', async () => {
+  const row = (id: string) => ({ id, title: id, recordedAt: '2026-11-15', ended: 'stopped', reason: null });
+  request.mockResolvedValueOnce({ recordings: [], nextCursor: null, unavailable: 'unreachable' });
+  const pages = await hyperRefreshRecordings([{ recordings: [row('first')], nextCursor: 'second' }, { recordings: [row('second')], nextCursor: null }]);
+  expect(pages[0].recordings.map(row => row.id)).toEqual(['first', 'second']); expect(pages[0].unavailable).toBe('unreachable');
 });
