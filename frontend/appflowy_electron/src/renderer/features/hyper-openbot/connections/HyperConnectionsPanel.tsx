@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { hyperOpenBotRequest } from '../transport';
 import { hyperAddConnectionServer, hyperAuthorizationUrl, hyperLoadConnections, hyperServerPath, hyperStartConnection, type HyperConnectionRow } from './HyperConnectionsApi';
 
-export function HyperConnectionsPanel({}: Record<string, never>) {
+export function HyperConnectionsPanel({ admin = false }: { admin?: boolean }) {
   const [rows, setRows] = useState<HyperConnectionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -17,6 +17,7 @@ export function HyperConnectionsPanel({}: Record<string, never>) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
   const [address, setAddress] = useState('');
+  const [removing, setRemoving] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const sequence = useRef(0);
   const load = useCallback(async () => {
@@ -78,11 +79,13 @@ export function HyperConnectionsPanel({}: Record<string, never>) {
       </div>
       {disconnecting === row.key && <div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted p-3"><p className="text-sm">Disconnect this account at the provider?</p><Button variant="destructive" disabled={disabled} onClick={() => void action(async () => { await hyperOpenBotRequest(`${hyperServerPath(row.key)}/connection`, 'DELETE'); setDisconnecting(null); })}>Confirm disconnect</Button><Button variant="outline" disabled={disabled} onClick={() => setDisconnecting(null)}>Cancel</Button></div>}
       {row.connections.map((c, i) => <div key={i} className="rounded-md bg-muted p-3 text-xs"><p>{c.holder === 'deployment' ? 'Team account' : 'Your account'}{c.displayName ? ` · ${c.displayName}` : ''}</p>{c.scope && <p className="mt-1 break-all text-muted-foreground">Granted scopes: {c.scope}</p>}{c.connectedAt && <p className="mt-1 text-muted-foreground">Connected {c.connectedAt}</p>}</div>)}
+      {admin && row.server && <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={disabled} onClick={() => void action(async () => { await hyperOpenBotRequest(`${hyperServerPath(row.key)}/refresh`, 'POST', {}); })}>Refresh tools</Button><Button variant="destructive" disabled={disabled} onClick={() => setRemoving(true)}>Remove app</Button></div>}
+      {admin && removing && <div role="alertdialog" aria-label="Remove app" className="space-y-3 rounded-lg bg-muted p-3"><p>Remove this app and its grants?</p><Button disabled={disabled} variant="destructive" onClick={() => void action(async () => { await hyperOpenBotRequest(hyperServerPath(row.key), 'DELETE'); setRemoving(false); setSelected(null); })}>Confirm removal</Button><Button disabled={disabled} variant="outline" onClick={() => setRemoving(false)}>Cancel</Button></div>}
       <h2 className="text-sm font-medium">Tools</h2>
       {row.server?.tools.length ? <ul className="divide-y divide-border">{row.server.tools.map(tool => <li key={tool.name} className="py-3"><p className="text-sm font-medium">{tool.name}</p><p className="text-xs text-muted-foreground">{tool.description}</p>{tool.effect && <p className="text-xs text-muted-foreground">{tool.effect}</p>}</li>)}</ul> : <p className="text-sm text-muted-foreground">No tools reported by the service.</p>}
     </div> : !loading && !error && <>
       <Input aria-label="Search connections" placeholder="Search connections" value={search} onChange={e => setSearch(e.target.value)} />
-      {['Your apps', 'Available apps'].map(section => { const matching = rows.filter(r => (section === 'Available apps' ? r.state === 'Available' : r.state !== 'Available') && `${r.title} ${r.summary}`.toLowerCase().includes(search.toLowerCase())); return <div key={section}><h2 className="mb-3 text-sm font-medium">{section}</h2>{matching.length ? <div className="grid gap-3 md:grid-cols-2">{matching.map(item => <button type="button" key={item.key} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent focus-visible:outline focus-visible:outline-ring" onClick={() => { setSelected(item.key); setDisconnecting(null); }}><span className="text-sm font-medium">{item.title}</span><span className="text-xs text-muted-foreground">{item.summary}</span><span className="text-xs">{item.state}</span></button>)}</div> : <p className="text-sm text-muted-foreground">No apps to show.</p>}</div>; })}
+      {['Your apps', 'Available apps'].map(section => { const matching = rows.filter(r => (section === 'Available apps' ? r.state === 'Available' : r.state !== 'Available') && `${r.title} ${r.summary}`.toLowerCase().includes(search.toLowerCase())); return <div key={section}><h2 className="mb-3 text-sm font-medium">{section}</h2>{matching.length ? <div className="grid gap-3 md:grid-cols-2">{matching.map(item => <button type="button" key={item.key} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent focus-visible:outline focus-visible:outline-ring" onClick={() => { setSelected(item.key); setRemoving(false); setDisconnecting(null); }}><span className="text-sm font-medium">{item.title}</span><span className="text-xs text-muted-foreground">{item.summary}</span><span className="text-xs">{item.state}</span></button>)}</div> : <p className="text-sm text-muted-foreground">No apps to show.</p>}</div>; })}
     </>}
   </section>;
 }

@@ -22,7 +22,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: admin-governance
   /* admin-governance */
   // slot: admin-platform
-  /* admin-platform */
+  'admin/credentials',
   // slot: onboarding
   /* onboarding */
 ];
