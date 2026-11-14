@@ -5,7 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hyperVaultApi, type SignInRequest } from './HyperVaultApi';
 const FINAL = ['signed_in', 'failed', 'cancelled', 'expired'];
-export function HyperSignInForm({ requestId, onOpenBrowser }: { requestId: string; onOpenBrowser?: (botId: string) => void }) {
+export interface HyperSignInFormProps {
+  requestId: string;
+  /** Lead integration supplies the native computer-browser navigation. No remote URL is opened here. */
+  onOpenBrowser?: (botId: string) => void;
+}
+export function HyperSignInForm({ requestId, onOpenBrowser }: HyperSignInFormProps) {
   const [data, setData] = useState<SignInRequest>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);

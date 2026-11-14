@@ -17,7 +17,8 @@ export default function HyperVaultSection() {
     setError('');
     const results = await Promise.allSettled([hyperVaultApi.capabilities(), hyperVaultApi.logins(), hyperVaultApi.pending()]);
     if (results[1].status === 'fulfilled') setLogins(results[1].value); else setError('Could not load saved logins. Access may be refused.');
-    if (results[2].status === 'fulfilled') setRequests(results[2].value);
+    if (results[2].status === 'fulfilled') setRequests(results[2].value); else setError('Could not load sign-in requests. Try refreshing.');
+    if (results[0].status !== 'fulfilled' || results[0].value.edition !== 'personal') { setEdition('team'); setKeys(undefined); }
     if (results[0].status === 'fulfilled' && results[0].value.edition === 'personal') {
       setEdition('personal');
       try { setKeys(await hyperVaultApi.keys()); } catch { setError('Could not load keys. Access may be refused.'); }
