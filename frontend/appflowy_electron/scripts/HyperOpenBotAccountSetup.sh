@@ -189,7 +189,7 @@ TOTAL_STAGES=1
 
 if [[ "${1:-}" == "--help" && $# -eq 1 ]]; then
   printf '%s\n' 'HyperOpenBotAccountSetup: human-only CopilotKit local terms step.'
-  printf '%s\n' 'Run in your own Ubuntu terminal on the prepared Windows/WSL baseline host, after CopilotKit sign-in.'
+  printf '%s\n' 'Run in your own interactive terminal on this PC, after CopilotKit sign-in here.'
   printf '%s\n' 'This does not collect secrets, approve the agreement, or install/start the application stack automatically.'
   exit 0
 fi
@@ -198,27 +198,23 @@ if [[ $# -ne 0 ]]; then
   exit 2
 fi
 if [[ ! -t 0 || ! -t 1 ]]; then
-  printf '%s\n' 'Run this helper yourself in an interactive Ubuntu terminal. The agent cannot accept the agreement.' >&2
+  printf '%s\n' 'Run this helper yourself in an interactive terminal on this PC. The agent cannot accept the agreement.' >&2
   exit 2
 fi
 
 HYPER_BASELINE_ROOT="${HYPERTASK_OPENBOT_BASELINE_ROOT:-$HOME/.local/share/hypertask-openbot-baseline}"
-HYPER_SOURCE_ROOT="${HYPERTASK_OPENBOT_SOURCE_ROOT:-$HOME/HyperTask-OpenBot-baseline}"
 HYPER_NODE_BIN="$HYPER_BASELINE_ROOT/tools/node-v22.23.5-linux-x64/bin"
-if [[ ! -x "$HYPER_NODE_BIN/node" || ! -x "$HYPER_NODE_BIN/npx" || ! -d "$HYPER_SOURCE_ROOT" ]]; then
-  printf '%s\n' 'Prepared baseline tools/source are missing here. Use the prepared Windows host Ubuntu terminal.' >&2
+if [[ ! -x "$HYPER_NODE_BIN/node" || ! -x "$HYPER_NODE_BIN/npx" || ! -f "$HYPER_BASELINE_ROOT/cli/node_modules/copilotkit/package.json" ]]; then
+  printf '%s\n' 'Prepared local CLI tools are missing. Prepare the baseline account tools on this PC first.' >&2
   exit 2
 fi
-export PATH="$HYPER_NODE_BIN:$HYPER_BASELINE_ROOT/docker/root/usr/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-export DOCKER_HOST="unix://$HYPER_BASELINE_ROOT/docker/run/docker.sock"
-export DOCKER_CONFIG="$HYPER_BASELINE_ROOT/docker/config"
-cd "$HYPER_SOURCE_ROOT"
+export PATH="$HYPER_NODE_BIN:$PATH"
 
 stage "Read the CopilotKit local evaluation agreement"
-say "Complete the private CopilotKit account sign-in first. No API key is needed here."
+say "Complete the private CopilotKit account sign-in on this PC first. No API key is needed here."
 say "The official CLI requires the account holder to read and accept the agreement in their own terminal."
 say "The next command presents that agreement. Make your own choice in the CLI; this helper sends no acceptance answer."
-note "The existing baseline daemon and account session are selected. No new stack or cluster is created by this helper."
+note "This command uses this PC's account session. It needs no Docker daemon or OpenBot checkout and creates no stack."
 npx --prefer-offline --yes copilotkit@4.34.0 local accept-terms
 say "The terms command finished. The agent still needs to verify acceptance and complete the original-service baseline."
 say "ChatGPT OAuth approval and live streaming/persistence/restart evidence are separate requirements."

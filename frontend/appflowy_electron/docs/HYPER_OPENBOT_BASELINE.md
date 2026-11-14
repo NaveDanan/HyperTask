@@ -1,8 +1,8 @@
 # Hyper OpenBot local baseline
 
-Tracking: [issue #4](https://github.com/NaveDanan/HyperTask/issues/4), following the merged [baseline audit](HYPER_OPENBOT_AUDIT.md). Updated 2026-11-13.
+Tracking: [issue #4](https://github.com/NaveDanan/HyperTask/issues/4), following the merged [baseline audit](HYPER_OPENBOT_AUDIT.md). Updated 2026-11-14.
 
-Status: tool/dependency/browser preparation and four original OpenBot image builds succeeded, including the matching-source LangGraph agent. CopilotKit sign-in is verified; human evaluation-terms acceptance and ChatGPT OAuth remain outstanding. The application/Intelligence stack is not live. [The preparation record](HYPER_OPENBOT_PREPARATION.runtime.json) captures measured pins, image IDs and limits. It is not live acceptance. [Progress](HYPER_OPENBOT_PROGRESS.md) records delivery state.
+Status: all execution is on this Linux PC, `naved-IdeaPad-5-14IIL05`, as the user requires. The pinned source, frozen dependencies, private tools, Docker engine and one original agent image are prepared here. CopilotKit sign-in is verified, but its evaluation terms remain unaccepted. No OpenBot/Intelligence application stack or live acceptance test has run. [The local runtime record](HYPER_OPENBOT_LOCAL.runtime.json) is the active preparation evidence. [The earlier Windows record](HYPER_OPENBOT_PREPARATION.runtime.json) is historical. [Progress](HYPER_OPENBOT_PROGRESS.md) records the sequence and review gates.
 
 ## Scope and source
 
@@ -12,15 +12,15 @@ OpenBot source pin: `f8af37ab73e96784f174a11104505a965e722cab`. This remains a r
 
 | Input | Required record | Current evidence |
 | --- | --- | --- |
-| OpenBot | Full source SHA and pristine tracked files | Source pin inspected; runtime validation pending |
-| Bun | Exact installed version compatible with the lockfile | `1.4.3`; frozen install completed successfully with 891 packages |
-| CopilotKit CLI | Exact package version and installation source | `4.34.0`; native engine preflight passed; account signed out and terms unaccepted |
+| OpenBot | Full source SHA and pristine tracked files | Clean tracked source at `f8af37ab73e96784f174a11104505a965e722cab`, `/home/naved/HyperTask-OpenBot-baseline` |
+| Bun | Exact installed version compatible with the lockfile | `1.4.3`; local frozen install passed with 1,366 packages |
+| CopilotKit CLI | Exact package version and installation source | `4.34.0`; private engine preflight passed; local account signed in and terms unaccepted |
 | Intelligence | Original release/chart version, image digests, API/gateway addresses and valid entitlement | Not established |
-| OpenBot images and PostgreSQL | Image IDs/digests or exact build inputs | Server/computer/supervisor image IDs recorded; application PostgreSQL not provisioned; mutable build inputs remain a reproducibility limit |
+| OpenBot images and PostgreSQL | Image IDs/digests or exact build inputs | One matching-source LangGraph image built locally; other application images and PostgreSQL not provisioned here; mutable inputs remain a reproducibility limit |
 | Model and agent | Actual provider destination, model and Bot ID | ChatGPT OAuth selected without an API key; approval and live agent/model proof pending |
 | Persistence | Test-specific volumes/data directories for both OpenBot and Intelligence | Not established |
 
-Node.js `22.23.5` was also installed in the baseline-specific Ubuntu tools directory. Tool archive hashes and exact observed image IDs are in the preparation record. These installed/built inputs do not establish a working runtime or an identical rebuild from mutable OS/Python/base-image inputs.
+Node.js `22.23.5`, Bun `1.4.3`, CopilotKit CLI `4.34.0` and Docker Engine `29.9.3` are installed in this PC's private baseline directory. The local record contains actual hashes and image IDs. The Bun Linux archive was verified against the official release asset digest; its hash differs from the historical Windows record, which was not reused as local verification. These inputs do not establish a working application runtime or an identical rebuild from mutable OS/Python/base-image inputs.
 
 The [root package manifest](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/package.json) and [lockfile](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/bun.lock) pin source dependencies. They do not pin container images or prove that a model or Intelligence installation works.
 
@@ -28,9 +28,17 @@ The [root package manifest](https://github.com/CopilotKit/OpenBot/blob/f8af37ab7
 
 The original local-evaluation guide documents at least 4 CPUs, 12 GiB RAM and 40 GiB free disk. Its supported preview is macOS/Docker Desktop; the CLI accepts Linux/rootful Docker while Linux runtime evaluation remains outside that supported preview. Windows native CLI operation is unsupported. A licensed original Kubernetes/k3d installation is a separate documented option. See [local evaluation](https://docs.copilotkit.ai/intelligence/self-hosting-local) and [self-hosting](https://docs.showcase.copilotkit.ai/intelligence/self-hosting), checked 2026-11-13.
 
-The current Linux development machine has insufficient RAM/disk and no Docker. A separate OpenBot project was cloned and registered at `D:\pythonprojects\HyperTask-OpenBot-baseline` on the linked Windows host. Its WSL guest reports 20 CPUs and about 15.5 GiB engine memory, with more than 140 GiB physical free space on each checked drive. The scoped native engine is healthy and its CLI preflight passed. Intelligence runtime/platform behavior and application resource use remain unverified.
+The selected Linux PC has 8 CPUs and 7.4 GiB total RAM. CLI 4.34.0's bundled README and resource-check implementation require 4 CPUs, 4 GiB available memory and 40 GiB free storage; the public guide still states 12 GiB RAM. The official engine preflight passes. The full installation resource check has not run, so it must still evaluate available memory and disk before installation. The local record contains the measured resource snapshot.
 
-The pinned [Windows/WSL development instructions](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/docs/development.md#windows-wsl-2) specify Docker Engine/Compose inside Ubuntu and a source clone in its home filesystem. The first attempt failed against Docker Desktop; the native-engine follow-up passed without patching upstream checks. The measured dependency install and builds used `/mnt/d/pythonprojects/HyperTask-OpenBot-baseline`. A new source clone is now registered at `/home/naved/HyperTask-OpenBot-baseline` through T3's Windows/WSL filesystem path so subsequent work can follow the documented location. Its source pin and frozen install must be verified before use. No application or Intelligence stack/cluster/volume exists yet. One owned loopback OAuth sign-in container is separate from application services. Original CLI-managed disposable local dependencies are within this baseline's scope; existing shared clusters remain outside it.
+Authorized generated-cache/build-output cleanup released 18.56 GiB. The user then separately approved and personally removed only `/home/Ubuntu26-recovery/var/lib/containerd`, the old recovery container store. Free space was 52.73 GiB afterward and 47.45 GiB after local preparation, above the 40 GiB disk check. The rest of the recovery copy and personal files remain outside cleanup scope. Private inventory and cleanup evidence stay outside Git.
+
+The 40 GiB value is an installation free-space threshold, not the measured size of downloaded images. The [local evaluation requirements](https://docs.copilotkit.ai/intelligence/self-hosting-local) apply it to each local stack. The [production self-hosting guide](https://docs.copilotkit.ai/intelligence/self-hosting) describes backend services plus Postgres, Redis and identity services; its deployment layout differs from the local evaluation setup. A local HyperTask mode would need room for its backend on each PC. A server deployment would put that storage on the server. Record compressed downloads, stored image/layer usage, persistent data and setup/update peaks separately during live baseline work. No fixed production desktop storage budget has been established.
+
+The current source clone is registered on this PC at `/home/naved/HyperTask-OpenBot-baseline`. Its exact pin, clean tracked source and frozen install are verified. Private Docker packages matched both recorded SHA-256 pins and official repository metadata before extraction. No system Docker service was installed or global context switched. The private engine passed a disposable `hello-world` container check; that container was removed. No OpenBot/Intelligence application service, cluster or application volume has been created here.
+
+Select this engine explicitly with `DOCKER_HOST=unix:///home/naved/.local/share/hypertask-openbot-baseline/docker/run/docker.sock` and `DOCKER_CONFIG=/home/naved/.local/share/hypertask-openbot-baseline/docker/config`, with the private Docker binary on `PATH` and no inherited `DOCKER_CONTEXT`. Its configuration binds default published ports to loopback. Verify actual listeners for each service rather than relying on that default. Do not start a second daemon or restart the current one merely because an observation times out.
+
+Earlier Windows/WSL builds, sign-in attempts and source paths belong only to the historical record. They establish no service, image or account state on this PC. No further execution there is authorized. Original CLI-managed disposable local dependencies are within this baseline's scope; existing shared clusters remain outside it.
 
 Use a unique test deployment identity, ports, configuration and persistence. Verify actual listeners remain loopback-only, including the host side of WSL/Docker forwarding. Never reuse HyperTask's support directory or native chat databases. Preserve volumes and configuration during the restart test. Do not delete existing containers, disks or user files to make room.
 
@@ -67,27 +75,19 @@ If startup fails, retain sanitized failure logs and the exact failed stage. Resu
 
 ## Account-only prerequisites
 
-The selected model route is ChatGPT OAuth, with no OpenAI API key. The original [OpenBot model configuration](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/docs/configuration.md) supports its ChatGPT sign-in store through the LangGraph harness. The matching-source harness is now built from the native pinned checkout, with its resolved Python base digest and dependency-list hash recorded. The previously pulled release harness has a different source commit and remains an unverified reference. Neither build nor sign-in alone proves a live provider call.
+The selected model route is ChatGPT OAuth, with no OpenAI API key. The original [OpenBot model configuration](https://github.com/CopilotKit/OpenBot/blob/f8af37ab73e96784f174a11104505a965e722cab/docs/configuration.md) supports its ChatGPT sign-in store through the LangGraph harness. The matching-source harness built on this PC as `hypertask-openbot-baseline-langgraph-agui:f8af37ab`, image ID `sha256:46e763b6f84b216b2f657bafbe33f2b08b5b0788e9cada73baaf7c89563be832`. Docker reports 460,592,304 bytes, about 439 MiB, for this one image. This is not a complete backend or total physical disk measurement. The local record includes the resolved Python package-list hash. Neither the build nor account sign-in proves a live provider call.
 
-Two sign-ins remain separate. CopilotKit's device authorization can be approved from any device using the private card for the owned CLI request. Its latest actual session check confirms sign-in. ChatGPT's original flow returns to a loopback callback on the Windows baseline host, so approve that private card in a browser on that host. The owned flow is running but has not produced its auth store. Earlier cards timed out; fresh owned flows replaced them only after their processes exited. Never paste account tokens into chat or reuse an unrelated pending approval.
+The two sign-ins are separate. CopilotKit's local device sign-in completed and the official terms check reports `accepted: false`. ChatGPT's original OAuth callback must return to this PC's loopback listener; no baseline provider auth store exists here yet. Previous Windows sessions do not establish local authentication. Never paste account tokens into chat or reuse an unrelated pending approval.
 
 After CopilotKit sign-in, the account holder must read and accept its local evaluation agreement in their own terminal. The installed `copilotkit@4.34.0` setup prompt at `onboarding/prompts/deployment/local-evaluation.md` explicitly says "Never accept the agreement yourself." The CLI enforces this boundary; the agent must not bypass it or submit acceptance for the user.
 
-[HyperOpenBotAccountSetup.sh](../scripts/HyperOpenBotAccountSetup.sh) prepares only that human terms step. It selects the existing private baseline tools/daemon, invokes the exact pinned `npx --prefer-offline --yes copilotkit@4.34.0 local accept-terms` command, and leaves the agreement choice to the person. It captures no credentials, automatically submits no consent, and creates no application stack. Run it in an interactive Ubuntu terminal on the prepared Windows host after its installation there. `bash -n` and its help check passed; it was not run end-to-end by the agent.
+[HyperOpenBotAccountSetup.sh](../scripts/HyperOpenBotAccountSetup.sh) prepares only the human terms step on this PC. It selects private Node and invokes the exact pinned `npx --prefer-offline --yes copilotkit@4.34.0 local accept-terms` command. The person makes the agreement choice in their own interactive terminal. The terms command uses this PC's account session and needs no Docker daemon or OpenBot checkout. Local syntax/help checks passed; the agent did not run the agreement flow.
 
-The prepared helper, account session and private Docker daemon belong to Windows computer `NAVED`, in its `Ubuntu` WSL 2 distro as user `naved`. Open your own PowerShell terminal on that Windows computer and run:
-
-```powershell
-wsl.exe --distribution Ubuntu --user naved --exec bash /home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh
-```
-
-The exact PowerShell launch route passed `--help`; the installed helper also passed `bash -n`, and its hash matches the preparation manifest. The agreement was not run by the agent. If your terminal is already inside that computer's Ubuntu distro as `naved`, use:
+The helper is installed on this Linux PC. Run it in your own interactive terminal:
 
 ```sh
 bash /home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh
 ```
-
-A HyperTask checkout on another machine has its own filesystem. A `no such file or directory` error there means the command needs to run on the prepared Windows host; copying the helper alone would not provide that host's tools or account session.
 
 After the person's action, verify `onboard local-terms --json` reports acceptance for the actual signed-in user/organization before provisioning. A typed acknowledgment alone is not that verification. Sign-in and terms completion still do not prove model access, license issuance, service health or any live acceptance row below.
 
@@ -147,7 +147,7 @@ The [browser regression](../scripts/HyperOpenBotBaseline.browser.test.mjs) repro
 HYPER_OPENBOT_TEST_CLIENT_ROOT=/absolute/path/to/OpenBot node --test scripts/HyperOpenBotBaseline.browser.test.mjs
 ```
 
-Use `PLAYWRIGHT_BROWSERS_PATH` for a private browser cache, or `HYPER_OPENBOT_TEST_BROWSER` for a specific Chromium executable. This one browser test passed locally with Playwright core 1.62.1 and system Chrome 156.0.8078.47, with no skips. It also passed on the prepared baseline host with Node 22.23.5 and pinned Chromium 151.0.7922.34, revision 1234. The corrected runner is staged there from commit `a2860f3`, with its path and verified hash in the preparation manifest. These checks use a DOM fixture and establish no live OpenBot, Intelligence or provider acceptance.
+Use `PLAYWRIGHT_BROWSERS_PATH` for a private browser cache, or `HYPER_OPENBOT_TEST_BROWSER` for a specific Chromium executable. The current local run passed all five unit tests and this browser test without skips, using Node 22.23.5, the original client's Playwright core 1.62.1 and private Chrome Headless Shell 151.0.7922.34, revision 1234. Only the headless browser was installed. Earlier system-Chrome and Windows/WSL results remain historical. The local record contains the current runner and browser hashes. These checks use a DOM fixture and establish no live OpenBot, Intelligence or provider acceptance.
 
 ## Acceptance evidence
 

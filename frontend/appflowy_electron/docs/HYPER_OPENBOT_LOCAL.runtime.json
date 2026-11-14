@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-14T06:51:50.119264+00:00",
+  "status": "local_preparation_complete_human_agreement_required",
+  "scope": "Current Linux PC only. No live OpenBot/Intelligence application acceptance or reproducible rebuild is claimed.",
+  "host": {
+    "name": "naved-IdeaPad-5-14IIL05",
+    "system": "Ubuntu 24.04.5 LTS",
+    "cpus": 8,
+    "memoryTotalBytes": 7984033792,
+    "memoryAvailableSnapshotBytes": 5307551744,
+    "freeDiskBytes": 50951151616,
+    "installerDiskMinimumBytes": 42949672960,
+    "diskMinimumMet": true,
+    "fullInstallerResourceCheck": "not_run"
+  },
+  "source": {
+    "repository": "https://github.com/CopilotKit/OpenBot",
+    "commit": "f8af37ab73e96784f174a11104505a965e722cab",
+    "path": "/home/naved/HyperTask-OpenBot-baseline",
+    "trackedSourceClean": true,
+    "bunLockSha256": "0187f72264f0685a5ddc62c5d1855dc8b36107b4013f13b7402b7365ee8f4da4"
+  },
+  "node": {
+    "version": "22.23.5",
+    "archiveSha256": "cdeb8670a0c81f51b4dc4ac61919f9b1ad917b304bf8221eb939570663d240f8"
+  },
+  "bun": {
+    "version": "1.4.3",
+    "archiveSha256": "3e730528d89775f03f87f05c06787c4df4099d0a37f3f252e7b829cb23816e18",
+    "executableSha256": "7ce7d6b654eddeec20afddf2396317fba6dc19ab52788a27e894e1806bf8f24b",
+    "verifiedAgainst": "https://api.github.com/repos/oven-sh/bun/releases/tags/bun-v1.4.3",
+    "asset": "bun-linux-x64.zip"
+  },
+  "dependencyInstall": {
+    "command": "bun install --frozen-lockfile",
+    "result": "pass",
+    "packageCount": 1366,
+    "elapsedSeconds": 30.81
+  },
+  "copilotkit": {
+    "version": "4.34.0",
+    "build": "42306449617",
+    "intelligenceCommit": "92ad7e488117cb669d06578b9d142971f7385ba3",
+    "copilotkitCommit": "114d64c00c762ca72992884273f83ddc009684e1",
+    "packageLockSha256": "a21cde84b895bb52c7d712db1a5312ce09134fb3c98a1ec7bafd9bd9bf1faa6f",
+    "installScriptsIgnored": true,
+    "accountStatus": "signed_in",
+    "terms": {
+      "status": "required",
+      "accepted": false,
+      "preflight": {
+        "status": "pass"
+      },
+      "exitCode": 0
+    }
+  },
+  "docker": {
+    "engineVersion": "29.9.3",
+    "composeVersion": "5.7.1",
+    "containerdVersion": "2.4.2",
+    "runcVersion": "1.5.3",
+    "configValidation": "pass",
+    "daemon": {
+      "status": "ready",
+      "observedAt": "2026-11-14T06:39:56.078482+00:00",
+      "host": "naved-IdeaPad-5-14IIL05",
+      "socket": "unix:///home/naved/.local/share/hypertask-openbot-baseline/docker/run/docker.sock",
+      "pid": 25248,
+      "engine": {
+        "ServerVersion": "29.9.3",
+        "NCPU": 8,
+        "MemTotal": 7984033792,
+        "DockerRootDir": "/home/naved/.local/share/hypertask-openbot-baseline/docker/data",
+        "Driver": "overlayfs",
+        "OperatingSystem": "Ubuntu 24.04.5 LTS",
+        "SecurityOptions": [
+          "name=apparmor,profile=default",
+          "name=seccomp,profile=builtin",
+          "name=cgroupns"
+        ]
+      }
+    },
+    "selection": "Explicit DOCKER_HOST and DOCKER_CONFIG; no global context switch",
+    "clientConfig": "/home/naved/.local/share/hypertask-openbot-baseline/docker/config",
+    "config": "/home/naved/.local/share/hypertask-openbot-baseline/docker/daemon.json",
+    "configurationSha256": "2d0f38637742e37f3d192cc370351ff8e77bfde4eb73739e5642bf08dddea5a9",
+    "packages": [
+      {
+        "package": "docker-ce",
+        "version": "5:29.9.3-1~ubuntu.24.04~noble",
+        "sha256": "c546181f0bc5f1d19085d764a3219aa86069468dbee4743fae420ee8a31809a4",
+        "source": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-ce_29.9.3-1~ubuntu.24.04~noble_amd64.deb"
+      },
+      {
+        "package": "docker-ce-cli",
+        "version": "5:29.9.3-1~ubuntu.24.04~noble",
+        "sha256": "24f78a893cece8d345c4e90b5163907c047b996b747265f873743e8b0b0546d4",
+        "source": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-ce-cli_29.9.3-1~ubuntu.24.04~noble_amd64.deb"
+      },
+      {
+        "package": "containerd.io",
+        "version": "2.4.2-4~ubuntu.24.04~noble",
+        "sha256": "15cc3d6c64422ed278f60cb3c9a5df760a3de38055affc335c6ee40c12411b75",
+        "source": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/containerd.io_2.4.2-4~ubuntu.24.04~noble_amd64.deb"
+      },
+      {
+        "package": "docker-buildx-plugin",
+        "version": "0.39.0-1~ubuntu.24.04~noble",
+        "sha256": "165c2fe237325eb6e2dbda40e94870386e7c3990279a916dae3f122842ed8dc6",
+        "source": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-buildx-plugin_0.39.0-1~ubuntu.24.04~noble_amd64.deb"
+      },
+      {
+        "package": "docker-compose-plugin",
+        "version": "5.7.1-1~ubuntu.24.04~noble",
+        "sha256": "c2f6549958ca64466da9e31a6d488e19f5a1bf475a4425df9e4c3a010d5950ac",
+        "source": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-compose-plugin_5.7.1-1~ubuntu.24.04~noble_amd64.deb"
+      }
+    ],
+    "helloWorld": {
+      "result": "pass",
+      "removedContainer": true,
+      "imageDigest": "sha256:cf1b20a0c89a666b6950fecda7ccbc1b1a86520e7c53f908f3a21e79d0d60458"
+    }
+  },
+  "agentImage": {
+    "tag": "hypertask-openbot-baseline-langgraph-agui:f8af37ab",
+    "id": "sha256:46e763b6f84b216b2f657bafbe33f2b08b5b0788e9cada73baaf7c89563be832",
+    "reportedImageSizeBytes": 460592304,
+    "sizeSource": "docker image inspect .Size; not the complete backend or physical total",
+    "dockerfileSha256": "7ca6a2caf1be65d7959b7161f20b05777460637204603fba5a2cf364f404534d",
+    "requirementsSha256": "818f4c8797e10d8032aa2efa29b2d207b6f8c18715d2d891b98206b726359f00",
+    "resolvedPythonPackageCount": 70,
+    "privateFreezeSha256": "0c44d837ab1cf0b989022ef8b150a172dd27955ca85744f3520349ca87b5fc97"
+  },
+  "browser": {
+    "playwrightCore": "1.62.1",
+    "headlessShell": "151.0.7922.34",
+    "revision": 1234,
+    "ffmpegRevision": 1011,
+    "privateCache": "/home/naved/.local/share/hypertask-openbot-baseline/playwright",
+    "headlessShellSha256": "e11fc9ce65c96313476f7ee9844b6fb6a9220fb048693cfe9eee00acf4170a9f",
+    "regression": "pass",
+    "scope": "DOM fixture only"
+  },
+  "runner": {
+    "sha256": "fa64b3fb2b5b45a66c6c987acfd3446341b4c1b6016ff62a0adf1263f1380f6d",
+    "unitTests": {
+      "passed": 5,
+      "skipped": 0
+    },
+    "browserRegression": {
+      "passed": 1,
+      "skipped": 0
+    },
+    "liveExecution": "not_run"
+  },
+  "humanTermsHelper": {
+    "path": "/home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh",
+    "sha256": "0059261342631fd2baf4e46db6090ee323c65a159e04397303faad43281a966b",
+    "syntax": "pass",
+    "help": "pass",
+    "agreementRunByAgent": false,
+    "requirements": "Local Node/CLI only; no Docker daemon or OpenBot source checkout required"
+  },
+  "provider": {
+    "choice": "ChatGPT OAuth; no API key",
+    "baselineAuthStore": "not_created",
+    "realProviderVerified": false
+  },
+  "acceptance": {
+    "realProvider": "not_run",
+    "liveStreaming": "not_run",
+    "authoritativeSavedHistory": "not_run",
+    "openbotServiceRestart": "not_run",
+    "intelligenceServiceRestart": "not_run",
+    "sameThreadReopen": "not_run"
+  },
+  "limits": [
+    "Terms acceptance is still required before original Intelligence installation.",
+    "Linux runtime evaluation remains outside the documented macOS preview.",
+    "Mutable base images and ranged Python dependencies prevent a bit-for-bit rebuild claim.",
+    "Full application lifecycle commands and live proof remain incomplete.",
+    "Historical Windows preparation does not prove this PC is ready or authorize execution there."
+  ]
+}
