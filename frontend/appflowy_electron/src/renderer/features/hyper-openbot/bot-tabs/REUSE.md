@@ -9,7 +9,7 @@ Read-only source `/home/naved/HyperTask-OpenBot-baseline`, pinned at
 | HyperBotTabsApi.ts | app/src/lib/app-access/{queries,mutations}.ts; app/src/lib/team-bots.ts |
 | HyperBotDetailTabs.tsx | app/src/components/bot-profile/{access,sharing}.tsx; app/src/routes/_authed/_app/bots.$agentId.{access,apps,sharing}.tsx |
 | HyperBotHandoffTab.tsx | app/src/components/agents/handoff-panel.tsx; app/src/lib/agents/{queries,mutations}.ts |
-| HyperBotApprovalsTab.tsx | app/src/components/approvals/bot-rules.tsx; app/src/lib/approvals.ts; app/src/routes/_authed/_app/bots.$agentId.approvals.tsx |
+| HyperBotApprovalsTab.tsx | app/src/components/approvals/{bot-rules,rules}.tsx; app/src/lib/approvals.ts; app/src/routes/_authed/_app/bots.$agentId.approvals.tsx |
 | HyperBotSkillsTab.tsx | app/src/components/bot-profile/access.tsx YourSkills/Granted; app/src/lib/plugins/{queries,mutations}.ts; app/src/routes/_authed/_app/bots.$agentId.skills.tsx |
 | HyperReachability.tsx | app/src/components/delivery/reaching-you.tsx; app/src/lib/delivery.ts; app/src/routes/_authed/_app/{reachability,bots.$agentId.reach}.tsx |
 | HyperExternalAgents.tsx | app/src/components/agents/new-bot-sheet.tsx; app/src/lib/agents/{form,queries,mutations,legacy-routes}.ts; app/src/routes/_authed/_app/agents/index.tsx |
@@ -94,3 +94,19 @@ computer implementation, owned by the Conversations specialist; no second chat r
 Exports in index.ts include the detail tabs, workflow API, typed extra-tab registry, reachability,
 activity, approvals, skills, setup and external-agent components. HyperBotEditor is additionally
 exported from bots/HyperBotsPanel.tsx for the context-aware Bot page.
+
+# Resumed validation checkpoint
+
+The resumed worktree was clean. The earlier commits already implement the assigned
+reachability, approvals, skills, external-agent and roster workflows described above.
+This pass preserves account and Bot-pattern qualifiers on approval rows, restores the
+upstream wildcard defaults for effect/target, clears a successfully saved rule draft,
+and locks external-agent fields during connection verification and writes. The scope
+qualifiers have a regression case in HyperBotParityStates.test.tsx.
+
+Validation after these changes: `npm run typecheck`, `npm test` and `npm run build`
+passed. Vitest reports 113 passing files, 840 passing tests, two skipped files and five
+skipped tests. The build retains the existing launcher dynamic-import warning. No live
+backend or Electron session was used. No new route families, shared-file edits,
+dependencies or exports were needed. The callback-token creation and owner-supplied
+Routines/Responsibilities integration limitations above remain explicit.
