@@ -165,8 +165,31 @@
   },
   "provider": {
     "choice": "ChatGPT OAuth; no API key",
-    "baselineAuthStore": "not_created",
-    "realProviderVerified": false
+    "baselineAuthStore": "created_private_0600",
+    "realProviderVerified": false,
+    "authenticationVerified": true,
+    "authStoreOwnerMatchesCurrentUser": true,
+    "signInCompletedAt": "2026-11-14T07:09:32.607376+00:00",
+    "signInSource": "Pinned desktop/src-tauri/src/plan.rs CHATGPT_LOGIN with original placeholders rendered",
+    "signInProgramSha256": "e33309e2b0e0f2fd4b62a100651aba78edf7987eaa87bd4c4bede3d191dfcb34",
+    "callbackBindings": [
+      {
+        "HostIp": "127.0.0.1",
+        "HostPort": "1455"
+      },
+      {
+        "HostIp": "::1",
+        "HostPort": "1455"
+      }
+    ],
+    "modelCatalog": {
+      "result": "pass",
+      "count": 8,
+      "endpoint": "https://chatgpt.com/backend-api/codex/models",
+      "observedAt": "2026-11-14T07:11:01.930748+00:00",
+      "source": "Original src/chatgpt_models.py fetch_listing"
+    },
+    "evidenceLimit": "Authentication and model-catalog access only; no genuine model answer or application acceptance yet."
   },
   "acceptance": {
     "realProvider": "not_run",
