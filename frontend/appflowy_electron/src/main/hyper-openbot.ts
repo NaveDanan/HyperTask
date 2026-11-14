@@ -102,7 +102,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
         finally { cleanup(); }
       })(), 0);
       // Only content metadata crosses IPC. Authentication and deployment headers stay in main.
-      return { status: response.status, headers: Object.fromEntries([...response.headers].filter(([key]) => ['content-type', 'content-length', 'content-disposition', 'cache-control'].includes(key))) };
+      return { status: response.status, headers: Object.fromEntries([...response.headers].filter(([key, value]) => ['content-type', 'content-length', 'content-disposition', 'cache-control'].includes(key) || (key === 'x-audit-export-truncated' && /^\d+$/.test(value)))) };
     } catch (error) { cleanup(); throw error; }
   });
   ipcMain.on('hyper-openbot:cancel', (event, id: unknown) => { if (trusted(event) && safeId(id)) running.get(id)?.abort(); });

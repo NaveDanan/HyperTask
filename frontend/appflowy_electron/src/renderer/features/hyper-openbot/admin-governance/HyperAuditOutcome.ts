@@ -27,7 +27,7 @@
  * evidence anywhere that anything was attempted: the wire answers all of them with the same opaque
  * refusal on purpose.
  */
-export const REFUSED_EVENT_TYPES = ["computer.action_refused", "component.refused", "component.function_refused", "mcp.call_rejected", "mcp.callback_refused", "routines.dispatch_refused",
+export const REFUSED_EVENT_TYPES = ["app_access.refused", "computer.action_refused", "component.refused", "component.function_refused", "mcp.call_rejected", "mcp.callback_refused", "routines.dispatch_refused",
 /*
  * A hop one Bot was not allowed to make. `server/src/audit.ts` calls this "the more important of
  * the pair": a hop that happened is visible in the transcript anyway, and a hop that was refused
@@ -47,7 +47,7 @@ export const REFUSED_EVENT_TYPES = ["computer.action_refused", "component.refuse
  * holding and a Bot that was asked and never answered are different faults with different fixes, and
  * only one of them is the deployment working as configured.
  */
-export const DID_NOT_HAPPEN_EVENT_TYPES = ["computer.action_failed", /** A person pressed Stop mid-action: the action did not happen, and nothing broke. */
+export const DID_NOT_HAPPEN_EVENT_TYPES = ["delivery.failed", "computer.sign_in_failed", "computer.action_failed", /** A person pressed Stop mid-action: the action did not happen, and nothing broke. */
 "computer.action_stopped", "agent.stream_stalled", /** A hop that was accepted, ran out of attempts, and never became the other Bot's turn. */
 "agent.handoff_failed", /** A question that reached nobody: the Bot stopped, and the person was never asked. */
 "agent.escalation_failed",

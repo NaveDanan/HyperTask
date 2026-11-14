@@ -19,9 +19,9 @@ export default function HyperSetupSection({ context }: { context: HyperOpenBotSe
   const [busy, setBusy] = useState(true);
   const [allowed, setAllowed] = useState<boolean>();
   const load = async (check = false) => {
-    setBusy(true); setError('');
+    setBusy(true); setError(''); setAllowed(undefined); setData(undefined);
     try {
-      const [user, caps] = await Promise.all([HyperReadUser(), HyperReadCapabilities().catch(() => undefined)]);
+      const [user, caps] = await Promise.all([HyperReadUser(), HyperReadCapabilities()]);
       const may = HyperMayOpenSetup(user, caps); setAllowed(may);
       if (may) setData(await (check ? HyperRecheckSetup() : HyperReadSetup()));
     } catch { setError("Couldn't check your setup. Check again."); } finally { setBusy(false); }

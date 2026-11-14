@@ -8,7 +8,7 @@ const harness = vi.hoisted(() => ({ active: false, values: [] as unknown[], curs
 vi.mock('./HyperVaultApi', () => ({hyperVaultApi: {answerSignIn: harness.answer, createKey: harness.createKey}}));
 vi.mock('react', async original => {
   const react = await original<typeof import('react')>();
-  return {...react, useRef: (value: unknown) => harness.active ? harness.poll : react.useRef(value), useState: (value: unknown) => harness.active ? [harness.values[harness.cursor++] ?? value, vi.fn()] : react.useState(value), useEffect: (...args: Parameters<typeof react.useEffect>) => { if (!harness.active) react.useEffect(...args); }};
+  return {...react, useRef: (value: unknown) => harness.active ? value === undefined ? harness.poll : { current: value } : react.useRef(value), useState: (value: unknown) => harness.active ? [harness.values[harness.cursor++] ?? value, vi.fn()] : react.useState(value), useEffect: (...args: Parameters<typeof react.useEffect>) => { if (!harness.active) react.useEffect(...args); }};
 });
 beforeEach(() => { harness.answer.mockReset(); harness.createKey.mockReset(); });
 const base = {id:'request',botId:'bot',origin:'https://example.test',reason:null,status:'pending',outcome:null,passwordManager:true,savedLogins:[{id:'saved',username:'person'}]} as SignInRequest;

@@ -24,6 +24,15 @@ it('denies unauthenticated HTTP before touching SSH or the backend', async () =>
   await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'one', path: '/api/channels', method: 'GET' })).rejects.toThrow('identity is unavailable');
   expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.path).not.toHaveBeenCalled();
 });
+it('forwards the audit export row cap without forwarding authentication headers', async () => {
+  const h = setup();
+  ipc.fetch.mockResolvedValueOnce(new Response('row\n', { headers: { 'x-audit-export-truncated': '5000', 'set-cookie': 'private', authorization: 'private' } }));
+  const response = await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'audit-export', path: '/api/admin/audit-events?format=csv', method: 'GET' });
+  expect(response.headers['x-audit-export-truncated']).toBe('5000');
+  expect(response.headers).not.toHaveProperty('set-cookie');
+  expect(response.headers).not.toHaveProperty('authorization');
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ done: true })));
+});
 it('applies voice CSRF headers and removes provider secrets even when the route has a query string', async () => {
   const h = setup();
   const secret = 'synthetic-voice-secret';

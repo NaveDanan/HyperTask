@@ -30,6 +30,7 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
   const busy = writing || unconfirmed;
   const alive = useRef(false);
   const version = useRef(0);
+  const notificationVersion = useRef(0);
   async function refresh(propagate = false) {
     const current = ++version.current;
     try {
@@ -41,13 +42,20 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
     try { const data = await request<{ edition: string }>('/api/capabilities'); if (alive.current) { setPersonal(data.edition === 'personal'); setEditionFailed(false); } }
     catch { if (alive.current) setEditionFailed(true); }
   }
-  useEffect(() => { alive.current = true; void loadEdition(); void refresh(); const timer = setInterval(() => { if (!mutationLock.current) void refresh(); }, 10000); return () => { alive.current = false; version.current++; clearInterval(timer); }; }, []);
-  async function loadNotifications() { const [d, r] = await Promise.all([notify.HyperLoadDelivery(), notify.HyperLoadRouting()]); if (alive.current) { setDelivery(d); setRouting(r); if (unconfirmedTarget.current !== 'inbox') setUnconfirmed(false); } }
+  useEffect(() => { alive.current = true; void loadEdition(); void refresh(); const timer = setInterval(() => { if (!mutationLock.current) void refresh(); }, 10000); return () => { alive.current = false; version.current++; notificationVersion.current++; clearInterval(timer); }; }, []);
+  async function loadNotifications(propagate = false) {
+    const current = ++notificationVersion.current;
+    const [d, r] = await Promise.all([notify.HyperLoadDelivery(), notify.HyperLoadRouting()]);
+    if (!alive.current || current !== notificationVersion.current) { if (propagate) throw new Error('Notification read was superseded'); return; }
+    setDelivery(d); setRouting(r); if (unconfirmedTarget.current !== 'inbox') setUnconfirmed(false);
+  }
   async function mutate(action: () => Promise<unknown>, target: 'inbox' | 'notifications' | 'none' = 'inbox') {
     if (mutationLock.current || unconfirmed) return false;
     mutationLock.current = true;
+    if (target === 'notifications') notificationVersion.current++;
+    if (target === 'inbox') version.current++;
     setBusy(true); setError('');
-    const result = await HyperRunMutation(action, () => target === 'notifications' ? loadNotifications() : target === 'none' ? Promise.resolve() : refresh(true));
+    const result = await HyperRunMutation(action, () => target === 'notifications' ? loadNotifications(true) : target === 'none' ? Promise.resolve() : refresh(true));
     if (alive.current) {
       unconfirmedTarget.current = result === 'unconfirmed' ? target : 'none';
       setUnconfirmed(result === 'unconfirmed');
@@ -72,7 +80,7 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
   return <div className="space-y-6 overflow-auto p-6 text-sm">
     <h1 className="text-xl font-semibold">Approvals</h1>
     <nav className="flex gap-2" aria-label="Approval sections">{['Inbox', 'Standing rules', 'Notifications'].map(name => <Button key={name} disabled={writing} variant={tab === name ? 'secondary' : 'ghost'} onClick={() => { setTab(name); if (name === 'Notifications') void loadNotifications().catch(() => setError('Notifications could not be loaded.')); }}>{name}</Button>)}</nav>
-    {error && <div role="alert" className="text-destructive">{error} <Button variant="outline" disabled={writing} onClick={() => { setError(''); if (tab !== 'Notifications') void refresh(); if (tab === 'Notifications') void loadNotifications().catch(() => setError('Notifications could not be loaded.')); }}>Retry</Button></div>}
+    {error && <div role="alert" className="text-destructive">{error} <Button variant="outline" disabled={writing} onClick={() => { setError(''); const notifications = unconfirmed ? unconfirmedTarget.current === 'notifications' : tab === 'Notifications'; if (notifications) void loadNotifications().catch(() => setError('Notifications could not be loaded.')); else void refresh(); }}>Retry</Button></div>}
     {!inbox && !error && <p role="status">Loading approvals…</p>}
     {tab === 'Inbox' && inbox && <>
       {!pending.length && !inbox.questions.length && <p>Nothing needs your answer.</p>}
@@ -105,5 +113,5 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
 function HyperRuleForm({ busy, save }: { busy: boolean; save(input: api.HyperApprovalRuleInput): Promise<boolean> }) {
   const empty: api.HyperApprovalRuleInput = { botId: '*', toolRef: '', effect: '*', scope: '*', behaviour: 'ask' };
   const [draft, setDraft] = useState(empty);
-  return <form className="space-y-3 rounded border border-border p-4" onSubmit={e => { e.preventDefault(); void save({ ...draft, botId: draft.botId.trim(), toolRef: draft.toolRef.trim(), effect: draft.effect.trim(), scope: draft.scope.trim() }).then(ok => { if (ok) setDraft(empty); }); }}><h3>Add a rule</h3><p>Use * to match anything. composio-gmail/* matches every Gmail tool.</p>{(['botId', 'toolRef', 'effect', 'scope'] as const).map(key => <label className="block" key={key}>{({ botId: 'Bot', toolRef: 'Tool or app', effect: 'Kind of action', scope: 'Target' })[key]}<Input required value={draft[key]} onChange={e => setDraft({ ...draft, [key]: e.target.value })} /></label>)}<select aria-label="New rule behaviour" className="bg-background" value={draft.behaviour} onChange={e => setDraft({ ...draft, behaviour: e.target.value as api.RuleBehaviour })}>{Object.entries(behaviours).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select><Button type="submit" disabled={busy || ![draft.botId, draft.toolRef, draft.effect, draft.scope].every(value => value.trim())}>Save rule</Button></form>;
+  return <form className="space-y-3 rounded border border-border p-4" onSubmit={e => { e.preventDefault(); if (busy) return; void save({ ...draft, botId: draft.botId.trim(), toolRef: draft.toolRef.trim(), effect: draft.effect.trim(), scope: draft.scope.trim() }).then(ok => { if (ok) setDraft(empty); }); }}><h3>Add a rule</h3><p>Use * to match anything. composio-gmail/* matches every Gmail tool.</p>{(['botId', 'toolRef', 'effect', 'scope'] as const).map(key => <label className="block" key={key}>{({ botId: 'Bot', toolRef: 'Tool or app', effect: 'Kind of action', scope: 'Target' })[key]}<Input required disabled={busy} value={draft[key]} onChange={e => setDraft(current => ({ ...current, [key]: e.target.value }))} /></label>)}<select aria-label="New rule behaviour" className="bg-background" disabled={busy} value={draft.behaviour} onChange={e => setDraft(current => ({ ...current, behaviour: e.target.value as api.RuleBehaviour }))}>{Object.entries(behaviours).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select><Button type="submit" disabled={busy || ![draft.botId, draft.toolRef, draft.effect, draft.scope].every(value => value.trim())}>Save rule</Button></form>;
 }

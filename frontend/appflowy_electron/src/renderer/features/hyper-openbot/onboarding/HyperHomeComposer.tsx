@@ -27,20 +27,25 @@ export function HyperHomeComposer({ context, bots, userId, initialText = '' }: {
     });
     return () => { active = false; };
   }, [bots]);
-  const send = async (message = text, bot = chosen) => {
-    if (lock.current || !fallback || (!message.trim() && !files.length)) return;
+  const send = async (message = text, bot = chosen, consumeDraft = true) => {
+    if (lock.current || !fallback || (!message.trim() && (!consumeDraft || !files.length))) return;
     lock.current = true; setBusy(true); setError('');
-    const draft = { text: [...commands.map(slug => `/${slug}`), message].join(' '), files: [...files], commandIds: [...commands], submit: true };
+    const draft = { text: [...(consumeDraft ? commands.map(slug => `/${slug}`) : []), message].join(' '), files: consumeDraft ? [...files] : [], commandIds: consumeDraft ? [...commands] : [], submit: true };
     try {
       await HyperStartHomeDraft(context, bots, draft, bot || undefined);
-      hyperHeldDraft = undefined; setText(''); setFiles([]); setCommands([]);
+      if (consumeDraft) {
+        if (hyperHeldDraft?.userId === userId && hyperHeldDraft.text === text) hyperHeldDraft = undefined;
+        setText(current => current === message ? '' : current);
+        setFiles(current => current.filter(file => !draft.files.includes(file)));
+        setCommands(current => current.length === draft.commandIds.length && current.every((command, index) => command === draft.commandIds[index]) ? [] : current);
+      }
     } catch {
-      setText(message); setError("Couldn't start the conversation. Your draft and files are kept. Choose a Bot or try again.");
+      setError("Couldn't start the conversation. Your draft and files are kept. Choose a Bot or try again.");
       throw new Error('Conversation could not be started.');
     } finally { lock.current = false; setBusy(false); }
   };
   return <div className="flex flex-col gap-3">
-    <HyperStarterTasks agentId={fallback?.id} disabled={busy} onSelect={message => send(message, fallback?.id)} />
+    <HyperStarterTasks agentId={fallback?.id} disabled={busy} onSelect={message => send(message, fallback?.id, false)} />
     <form className="flex flex-col gap-3 rounded-lg border p-4" onSubmit={event => { event.preventDefault(); void send().catch(() => {}); }}>
       <label className="flex flex-col gap-2 text-sm">Task<Textarea aria-label="Message" disabled={busy || !fallback} value={text} onChange={event => setText(event.target.value)} /></label>
       <label className="flex flex-col gap-2 text-sm">Bot<select aria-label="Choose Bot" className="rounded-md border bg-background p-2" disabled={busy} value={chosen} onChange={event => setChosen(event.target.value)}><option value="">Pick the right Bot automatically</option>{bots.map(bot => <option key={bot.id} value={bot.id}>{bot.name}</option>)}</select></label>

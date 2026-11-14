@@ -10,27 +10,57 @@ export interface HyperSignInFormProps {
   /** Lead integration supplies the native computer-browser navigation. No remote URL is opened here. */
   onOpenBrowser?: (botId: string) => void;
 }
+interface HyperSignInControl {
+  live: boolean; epoch: number; requestId: string; issued: number; applied: number;
+  writing: boolean; latest?: SignInRequest; read?: () => Promise<void>;
+}
 export function HyperSignInForm({ requestId, onOpenBrowser }: HyperSignInFormProps) {
-  const [data, setData] = useState<SignInRequest>();
+  const [stored, setData] = useState<SignInRequest>();
+  const data = stored?.id === requestId ? stored : undefined;
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const poll = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const control = useRef<HyperSignInControl>({ live: true, epoch: 0, requestId, issued: 0, applied: 0, writing: false, latest: data });
+  const current = (epoch: number, id: string) => control.current.live && control.current.epoch === epoch && control.current.requestId === id;
+  function apply(value: SignInRequest, sequence: number, epoch: number, id: string) {
+    if (!current(epoch, id)) return;
+    if (value.id !== id) throw new Error('Invalid sign-in response');
+    const state = control.current, terminal = FINAL.includes(value.status), alreadyTerminal = FINAL.includes(state.latest?.status ?? '');
+    // A completed request never becomes filling again. Otherwise newer reads/writes own state.
+    if ((alreadyTerminal && !terminal) || (sequence < state.applied && (!terminal || alreadyTerminal))) return;
+    state.applied = Math.max(state.applied, sequence); state.latest = value;
+    setData(value); setError('');
+  }
+  function schedule() {
+    clearTimeout(poll.current); poll.current = undefined;
+    const state = control.current;
+    if (state.live && !state.writing && state.read && !FINAL.includes(state.latest?.status ?? '')) poll.current = setTimeout(() => void state.read?.(), 3000);
+  }
   useEffect(() => {
-    let live = true;
+    const state = control.current;
+    if (state.requestId !== requestId) { state.latest = undefined; setData(undefined); }
+    state.live = true; state.requestId = requestId; state.writing = false;
+    state.issued = 0; state.applied = 0; const epoch = ++state.epoch;
     async function read() {
-      try { const value = await hyperVaultApi.readSignIn(requestId); if (!live) return; setData(value); setError(''); if (!FINAL.includes(value.status)) poll.current = setTimeout(read, 3000); }
-      catch { if (live) { setError('Could not load this sign-in request. Access may be refused.'); poll.current = setTimeout(read, 3000); } }
+      if (!current(epoch, requestId) || state.writing || FINAL.includes(state.latest?.status ?? '')) return;
+      const sequence = ++state.issued;
+      try { apply(await hyperVaultApi.readSignIn(requestId), sequence, epoch, requestId); }
+      catch { if (current(epoch, requestId) && sequence >= state.applied && !FINAL.includes(state.latest?.status ?? '')) setError('Could not load this sign-in request. Access may be refused.'); }
+      finally { if (current(epoch, requestId)) schedule(); }
     }
-    void read(); return () => { live = false; clearTimeout(poll.current); };
+    state.read = read; void read();
+    return () => { state.live = false; state.epoch++; state.read = undefined; clearTimeout(poll.current); };
   }, [requestId]);
   async function answer(action: Parameters<typeof hyperVaultApi.answerSignIn>[1], body?: unknown) {
-    if (busy) return; setBusy(true); setError('');
+    const state = control.current, epoch = state.epoch;
+    if (busy || state.writing || !current(epoch, requestId) || FINAL.includes(state.latest?.status ?? '')) return;
+    state.writing = true; const sequence = ++state.issued;
+    clearTimeout(poll.current); poll.current = undefined; setBusy(true); setError('');
     try {
-      const value = await hyperVaultApi.answerSignIn(requestId, action, body);
-      if (FINAL.includes(value.status)) clearTimeout(poll.current);
-      setData(value);
+      apply(await hyperVaultApi.answerSignIn(requestId, action, body), sequence, epoch, requestId);
     }
-    catch { setError('Sign-in operation failed. Retype any secret and try again.'); } finally { setBusy(false); }
+    catch { if (current(epoch, requestId) && !FINAL.includes(state.latest?.status ?? '')) setError('Sign-in operation failed. Retype any secret and try again.'); }
+    finally { if (current(epoch, requestId)) { state.writing = false; setBusy(false); schedule(); } }
   }
   return <section className="space-y-3 rounded-lg border border-border p-4 text-sm">
     {error && <p role="alert" className="text-destructive">{error}</p>}

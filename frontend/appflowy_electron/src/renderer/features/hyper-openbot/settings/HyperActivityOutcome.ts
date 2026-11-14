@@ -29,6 +29,7 @@
  * refusal on purpose.
  */
 export const REFUSED_EVENT_TYPES = [
+  "app_access.refused",
   "computer.action_refused",
   "component.refused",
   "component.function_refused",
@@ -61,6 +62,8 @@ export const REFUSED_EVENT_TYPES = [
  * only one of them is the deployment working as configured.
  */
 export const DID_NOT_HAPPEN_EVENT_TYPES = [
+  "delivery.failed",
+  "computer.sign_in_failed",
   "computer.action_failed",
   /** A person pressed Stop mid-action: the action did not happen, and nothing broke. */
   "computer.action_stopped",

@@ -49,8 +49,14 @@ export function HyperSettingsAutomation({ preferences, onPreferences }: { prefer
     <Dialog open={adding} onOpenChange={open => { if (!open) close(); }}><DialogContent><DialogHeader><DialogTitle>Add a repository</DialogTitle><DialogDescription>Use the same secret when you add the webhook in GitHub.</DialogDescription></DialogHeader>
       <form className="flex flex-col gap-3" onSubmit={async event => {
         event.preventDefault(); if (busy) return; setBusy(true); setFormError('');
-        try { await hyperSettingsApi.connectRepository(repository, secret); setSecret(''); setRepository(''); setAdding(false); setBindings(await hyperSettingsApi.repositories()); }
-        catch { setFormError('Could not connect or refresh GitHub events. Check the repository and secret, then try again.'); }
+        const submittedSecret = secret; setSecret(''); setError('');
+        try {
+          await hyperSettingsApi.connectRepository(repository, submittedSecret);
+          setRepository(''); setAdding(false);
+          try { setBindings(await hyperSettingsApi.repositories()); }
+          catch { setError('Repository connected, but the list could not be refreshed. Try again.'); }
+        }
+        catch { setFormError('Could not connect GitHub events. Check the repository, retype the secret and try again.'); }
         finally { setBusy(false); }
       }}><label className="text-sm">Repository<Input required disabled={busy} value={repository} onChange={event => setRepository(event.target.value)} placeholder="owner/repository" /></label><label className="text-sm">Webhook secret<Input type="password" autoComplete="new-password" required disabled={busy} value={secret} onChange={event => setSecret(event.target.value)} /></label>
         {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}<Button disabled={busy || !repository.trim() || !secret} type="submit">{busy ? 'Connecting…' : 'Connect events'}</Button><Button variant="outline" disabled={busy} type="button" onClick={close}>Cancel</Button>
