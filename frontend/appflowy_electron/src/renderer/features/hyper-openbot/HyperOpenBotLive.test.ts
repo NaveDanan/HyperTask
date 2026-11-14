@@ -23,7 +23,12 @@ it.skipIf(process.env.HYPER_OPENBOT_LIVE_TEST !== '1')('streams a real Intellige
   const sockets = new Set<(value: HyperOpenBotSocketEvent) => void>();
   const sender = Object.assign(new EventEmitter(), { mainFrame: {}, isDestroyed: () => false, send: (channel: string, value: any) => { if (channel === 'hyper-openbot:chunk') chunks.forEach(fn => fn(value)); else { if (value.type === 'open') openedSockets++; sockets.forEach(fn => fn(value)); } } });
   const event = { sender, senderFrame: sender.mainFrame };
-  registerHyperOpenBotIpc(() => ({ webContents: sender }));
+  // Only this harness injects identity. Production reads GetUserProfile directly from the Rust core.
+  const sessionPath = '../../../main/HyperOpenBotSession';
+  const { HyperOpenBotSession } = await import(/* @vite-ignore */ sessionPath);
+  let owner: string | null = null;
+  const sessions = new HyperOpenBotSession({ readIdentity: async () => 'private-bridge-test-identity', readOwner: async () => owner, bindOwner: async (next: string) => { if (owner && owner !== next) throw new Error('Owner mismatch'); owner = next; }, partition: () => ({ cookies: { get: async () => [], set: async () => {} }, clearStorageData: async () => {}, clearAuthCache: async () => {} }), clearLegacyCookies: async () => {} });
+  registerHyperOpenBotIpc(() => ({ webContents: sender }), sessions);
   vi.stubGlobal('window', { appflowy: { hyperOpenBot: {
     start: (request: unknown) => bridge.handlers.get('hyper-openbot:start')!(event, request),
     cancel: (id: string) => bridge.events.get('hyper-openbot:cancel')!(event, id),

@@ -1,3 +1,4 @@
+import { createHyperOpenBotSession, hyperReadCoreIdentity } from './HyperOpenBotSession';
 import { registerHyperOpenBotIpc } from './hyper-openbot';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -119,14 +120,24 @@ function focusWindow() {
 }
 
 function registerIpc() {
-  registerHyperOpenBotIpc(() => mainWindow);
+  const openBotSessions = createHyperOpenBotSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
+  registerHyperOpenBotIpc(() => mainWindow, openBotSessions);
+  core.on('exit', () => { void openBotSessions.beginNativeTransition().cleared.catch(() => {}); });
   ipcMain.handle(C.CoreInit, async (_, config: CoreInitConfig) => {
+    const transition = openBotSessions.beginNativeTransition(false);
     await startCore();
-    return core.init(config);
+    await transition.cleared;
+    const result = await core.init(config);
+    openBotSessions.completeNativeTransition(transition.version, result === 0);
+    return result;
   });
   ipcMain.handle(C.CoreRequest, async (_, event: string, payload: Uint8Array) => {
+    const authTransition = ['SignOut', 'DeleteAccount', 'SignUp', 'OauthSignIn', 'SignInWithEmailPassword', 'PasscodeSignIn', 'MagicLinkSignIn', 'InitUser'].includes(event) ? openBotSessions.beginNativeTransition(event !== 'InitUser') : undefined;
     await startCore();
-    return core.request(event, payload);
+    if (authTransition) await authTransition.cleared;
+    const reply = await core.request(event, payload);
+    if (authTransition && !['SignOut', 'DeleteAccount'].includes(event)) openBotSessions.completeNativeTransition(authTransition.version, reply.status === 0);
+    return reply;
   });
   ipcMain.on(C.CoreLog, (_, level: number, message: string) => core.log(level, message));
 

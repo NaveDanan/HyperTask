@@ -4,7 +4,8 @@ import path from 'node:path';
 import http from 'node:http';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { Readable } from 'node:stream';
-import { app, session } from 'electron';
+import { app } from 'electron';
+import type { HyperOpenBotSessionLease } from './HyperOpenBotSession';
 const ORIGIN = 'http://127.0.0.1:3010';
 let starting: Promise<string> | undefined;
 let generation = 0;
@@ -55,26 +56,31 @@ export function hyperOpenBotSocketPath(): Promise<string> {
   return starting;
 }
 app.once('before-quit', closeHyperOpenBotTunnel);
-export async function hyperOpenBotCookieHeader() {
-  const cookies = await session.defaultSession.cookies.get({ url: ORIGIN });
+export async function hyperOpenBotCookieHeader(lease: HyperOpenBotSessionLease) {
+  const cookies = await lease.withCookies(cookies => cookies.get({ url: ORIGIN }));
   return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
 }
-async function saveCookies(values: string[]) {
+async function saveCookies(values: string[], lease: HyperOpenBotSessionLease) {
+  await lease.withCookies(async cookies => {
   for (const raw of values) {
     const [pair, ...attributes] = raw.split(';'); const at = pair.indexOf('='); if (at < 1) continue;
     const parts = new Map(attributes.map(part => { const i = part.indexOf('='); return [part.slice(0, i < 0 ? undefined : i).trim().toLowerCase(), i < 0 ? '' : part.slice(i + 1).trim()]; }));
     const expiry = parts.has('max-age') ? Date.now() / 1000 + Number(parts.get('max-age')) : parts.has('expires') ? Date.parse(parts.get('expires')!) / 1000 : undefined;
-    await session.defaultSession.cookies.set({ url: ORIGIN, name: pair.slice(0, at), value: pair.slice(at + 1), path: parts.get('path') || '/', httpOnly: parts.has('httponly'), secure: parts.has('secure'), ...(expiry !== undefined && Number.isFinite(expiry) ? { expirationDate: expiry } : {}), sameSite: parts.get('samesite')?.toLowerCase() === 'strict' ? 'strict' : parts.get('samesite')?.toLowerCase() === 'none' ? 'no_restriction' : 'lax' });
+    await cookies.set({ url: ORIGIN, name: pair.slice(0, at), value: pair.slice(at + 1), path: parts.get('path') || '/', httpOnly: parts.has('httponly'), secure: parts.has('secure'), ...(expiry !== undefined && Number.isFinite(expiry) ? { expirationDate: expiry } : {}), sameSite: parts.get('samesite')?.toLowerCase() === 'strict' ? 'strict' : parts.get('samesite')?.toLowerCase() === 'none' ? 'no_restriction' : 'lax' });
   }
+  });
 }
-export async function hyperTunnelFetch(route: string, options: { method: string; body?: string | Buffer; signal: AbortSignal; headers: Record<string, string> }): Promise<Response> {
-  const socketPath = await hyperOpenBotSocketPath(); options.signal.throwIfAborted();
-  const cookie = await hyperOpenBotCookieHeader(); options.signal.throwIfAborted();
+export async function hyperTunnelFetch(route: string, options: { method: string; body?: string | Buffer; signal: AbortSignal; lease: HyperOpenBotSessionLease; headers: Record<string, string> }): Promise<Response> {
+  options.lease.assertCurrent();
+  const signal = AbortSignal.any([options.signal, options.lease.signal]);
+  const socketPath = await hyperOpenBotSocketPath(); signal.throwIfAborted();
+  const cookie = await hyperOpenBotCookieHeader(options.lease); signal.throwIfAborted();
   return new Promise((resolve, reject) => {
-    const request = http.request({ socketPath, path: route, method: options.method, signal: options.signal, headers: { ...options.headers, host: '127.0.0.1:3010', cookie } }, response => {
+    const request = http.request({ socketPath, path: route, method: options.method, signal, headers: { ...options.headers, host: '127.0.0.1:3010', cookie } }, response => {
       void (async () => {
         try {
-          await saveCookies(response.headers['set-cookie'] ?? []);
+          await saveCookies(response.headers['set-cookie'] ?? [], options.lease);
+          options.lease.assertCurrent();
           const headers = new Headers(); for (const [name, value] of Object.entries(response.headers)) if (value && name !== 'set-cookie') headers.set(name, Array.isArray(value) ? value.join(', ') : value);
           const status = response.statusCode ?? 502;
           if (status >= 300 && status < 400) { response.destroy(); throw new Error('OpenBot redirects are refused'); }

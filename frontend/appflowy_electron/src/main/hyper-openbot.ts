@@ -1,4 +1,5 @@
 import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath, hyperOpenBotCookieHeader, hyperTunnelFetch } from './HyperOpenBotTunnel';
+import type { HyperOpenBotSession } from './HyperOpenBotSession';
 import { hyperOpenBotPathAllowed } from '@shared/hyper-openbot-policy';
 import { ipcMain, type BrowserWindow, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron';
 import WebSocket from 'ws';
@@ -7,12 +8,13 @@ const ORIGIN = 'http://127.0.0.1:3010';
 const MAX_BYTES = 24 * 1024 * 1024;
 const DEADLINE_MS = 10 * 60 * 1000;
 const safeId = (id: unknown): id is string => typeof id === 'string' && /^[\w-]{1,100}$/.test(id);
-export function registerHyperOpenBotIpc(window: () => BrowserWindow | null) {
+export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sessions: HyperOpenBotSession) {
   const running = new Map<string, AbortController>();
   const sockets = new Map<string, WebSocket>();
   const openingSockets = new Map<string, { cancelled: boolean }>();
   const owners = new WeakSet<object>();
   const own = (event: IpcMainEvent | IpcMainInvokeEvent) => { if (!owners.has(event.sender)) { owners.add(event.sender); event.sender.once('destroyed', () => { for (const controller of running.values()) controller.abort(); for (const socket of sockets.values()) socket.terminate(); for (const opening of openingSockets.values()) opening.cancelled = true; closeHyperOpenBotTunnel(); }); } };
+  sessions.onInvalidate(() => { for (const controller of running.values()) controller.abort(); for (const socket of sockets.values()) socket.terminate(); for (const opening of openingSockets.values()) opening.cancelled = true; closeHyperOpenBotTunnel(); });
   const trusted = (event: IpcMainEvent | IpcMainInvokeEvent) => event.sender === window()?.webContents && event.senderFrame === event.sender.mainFrame;
   ipcMain.handle('hyper-openbot:start', async (event, request: HyperOpenBotRequest) => {
     if (!trusted(event)) throw new Error('Untrusted OpenBot caller');
@@ -27,12 +29,13 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null) {
     running.set(request.id, controller);
     const timer = setTimeout(() => controller.abort(new Error('OpenBot request deadline exceeded')), DEADLINE_MS);
     const cleanup = () => { clearTimeout(timer); running.delete(request.id); };
-    const send = (value: object) => { if (!event.sender.isDestroyed()) event.sender.send('hyper-openbot:chunk', { id: request.id, ...value }); };
+    const send = (value: object) => { if ('chunk' in value && controller.signal.aborted) return; if (!event.sender.isDestroyed()) event.sender.send('hyper-openbot:chunk', { id: request.id, ...value }); };
     try {
+      const lease = await sessions.acquire();
       controller.signal.throwIfAborted();
       const response = await hyperTunnelFetch(request.path, {
         method: request.method, body: typeof request.body === 'string' ? request.body : request.body ? Buffer.from(request.body) : undefined,
-        signal: controller.signal,
+        signal: controller.signal, lease,
         headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN },
       });
       setTimeout(() => void (async () => {
@@ -55,17 +58,22 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null) {
     own(event);
     const opening = { cancelled: false }; openingSockets.set(id, opening);
     try {
+    const lease = await sessions.acquire();
     const socketPath = await hyperOpenBotSocketPath();
-    const cookie = await hyperOpenBotCookieHeader();
+    const cookie = await hyperOpenBotCookieHeader(lease);
+    lease.assertCurrent();
     if (event.sender.isDestroyed() || opening.cancelled) throw new Error('Renderer closed or socket cancelled');
     const socket = new WebSocket(`ws+unix://${socketPath}:${path}`, protocols, { origin: ORIGIN, headers: { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
     sockets.set(id, socket);
-    const send = (value: Omit<HyperOpenBotSocketEvent, 'id'>) => { if (!event.sender.isDestroyed()) event.sender.send('hyper-openbot:socket', { id, ...value }); };
+    const abort = () => socket.terminate();
+    lease.signal.addEventListener('abort', abort, { once: true });
+    lease.assertCurrent();
+    const send = (value: Omit<HyperOpenBotSocketEvent, 'id'>) => { if (value.type !== 'close' && lease.signal.aborted) return; if (!event.sender.isDestroyed()) event.sender.send('hyper-openbot:socket', { id, ...value }); };
     const deadline = setTimeout(() => socket.close(1000, 'Connection lifetime reached'), DEADLINE_MS);
     socket.on('open', () => send({ type: 'open' }));
     socket.on('message', (data, binary) => send({ type: 'message', data: binary ? new Uint8Array(data as Buffer) : data.toString() }));
     socket.on('error', () => send({ type: 'error' }));
-    socket.on('close', (code, reason) => { clearTimeout(deadline); sockets.delete(id); send({ type: 'close', code, reason: reason.toString() }); });
+    socket.on('close', (code, reason) => { clearTimeout(deadline); lease.signal.removeEventListener('abort', abort); sockets.delete(id); send({ type: 'close', code, reason: reason.toString() }); });
     } finally { openingSockets.delete(id); }
   });
   ipcMain.on('hyper-openbot:socket-send', (event, id: unknown, data: unknown) => {
