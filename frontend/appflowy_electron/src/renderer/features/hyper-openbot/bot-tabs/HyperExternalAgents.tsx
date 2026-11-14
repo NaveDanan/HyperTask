@@ -1,4 +1,5 @@
 // Adapted from OpenBot. Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
+import { HYPER_EXTERNAL_HARNESSES } from './HyperHarnesses';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ export function HyperExternalAgents({ onChat }: { onChat: (id: string) => void }
 function HyperExternalAgentForm({ bot, onSaved, onClose }: { bot?: HyperBotProfile; onSaved: () => void; onClose: () => void }) {
   const [name, setName] = useState(bot?.name ?? ''); const [title, setTitle] = useState(bot?.title ?? ''); const [roleDescription, setRole] = useState(bot?.roleDescription ?? '');
   const [endpoint, setEndpoint] = useState(bot?.endpoint ?? ''); const [key, setKey] = useState(''); const [visibility, setVisibility] = useState<'private' | 'public'>(bot?.visibility ?? 'private');
+  const [harness, setHarness] = useState('byo-url');
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [tested, setTested] = useState(false); const [confirm, setConfirm] = useState(false);
   async function test() {
     if (busy) return; setBusy(true); setError('');
@@ -29,9 +31,10 @@ function HyperExternalAgentForm({ bot, onSaved, onClose }: { bot?: HyperBotProfi
       setTested(result.ok); if (!result.ok) setError('The endpoint could not be reached.');
     } catch { setTested(false); setError('The endpoint could not be reached. Check its address and credentials.'); } finally { setBusy(false); }
   }
-  return <form className="grid gap-3 rounded-lg border border-border p-4" onSubmit={async event => { event.preventDefault(); if (!tested || busy || (bot && !bot.canManage)) return; setBusy(true); setError(''); try { const values = HyperBotValues({ name, title, roleDescription, visibility }); await request(bot ? HyperAgentPath(bot.id) : '/api/agents', bot ? 'PATCH' : 'POST', { ...values, endpoint: endpoint.trim(), ...(key.trim() ? { auth: { header: 'Authorization', value: key.trim() } } : {}) }); setKey(''); onSaved(); } catch { setError('The agent could not be saved. Check the fields and your permissions.'); } finally { setBusy(false); } }}>
+  return <form className="grid gap-3 rounded-lg border border-border p-4" onSubmit={async event => { event.preventDefault(); if (!tested || busy || (bot && !bot.canManage)) return; setBusy(true); setError(''); try { const values = HyperBotValues({ name, title, roleDescription, visibility }); await request(bot ? HyperAgentPath(bot.id) : '/api/agents', bot ? 'PATCH' : 'POST', { ...values, ...(!bot && harness !== 'byo-url' ? { harness } : {}), endpoint: endpoint.trim(), ...(key.trim() ? { auth: { header: 'Authorization', value: key.trim() } } : {}) }); setKey(''); onSaved(); } catch { setError('The agent could not be saved. Check the fields and your permissions.'); } finally { setBusy(false); } }}>
     <h3>{bot ? 'Edit agent' : 'Connect agent'}</h3>{error && <p role="alert" className="text-destructive">{error}</p>}
     <label>Name<Input required maxLength={80} value={name} onChange={e => setName(e.target.value)} /></label><label>Title<Input maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label><label>Role description<Textarea required maxLength={1000} value={roleDescription} onChange={e => setRole(e.target.value)} /></label>
+    {!bot && <label>Framework<select value={harness} onChange={event => setHarness(event.target.value)}>{HYPER_EXTERNAL_HARNESSES.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>}
     <label>AG-UI endpoint<Input required type="url" value={endpoint} onChange={e => { setEndpoint(e.target.value); setTested(false); }} /></label><label>Authorization key<Input type="password" autoComplete="off" value={key} onChange={e => { setKey(e.target.value); setTested(false); }} placeholder={bot ? 'Leave empty to keep current key' : ''} /></label>
     <label><input type="checkbox" checked={visibility === 'public'} onChange={e => setVisibility(e.target.checked ? 'public' : 'private')} />Public</label>
     <Button disabled={busy} variant="outline" type="button" onClick={() => void test()}>{tested ? 'Connection verified' : 'Test connection'}</Button><Button disabled={busy || !tested}>Save agent</Button><Button type="button" variant="ghost" disabled={busy} onClick={onClose}>Cancel</Button>
