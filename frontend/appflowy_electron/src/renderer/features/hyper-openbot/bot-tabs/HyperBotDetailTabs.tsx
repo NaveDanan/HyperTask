@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { HyperBotProfile } from '../bots/HyperBotsApi';
+import { HyperSharedAppNotice } from './HyperSharedAppNotice';
+import { HyperBotAppGrants } from './HyperBotAppGrants';
 import { HyperBotSetupTab } from './HyperBotSetupTab';
 import { HyperBotActivityTab } from './HyperBotActivityTab';
 import { HyperReachability } from './HyperReachability';
@@ -22,6 +24,7 @@ export function HyperBotDetailTabs({ bot }: { bot: HyperBotProfile }) {
   </section>;
 }
 function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) {
+  const [editingApp, setEditingApp] = useState<string>();
   const [apps, setApps] = useState<HyperBotApp[]>();
   const [team, setTeam] = useState<HyperTeamBots>();
   const [error, setError] = useState('');
@@ -57,7 +60,7 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <Button variant="outline" disabled={pending} onClick={() => setRevision(v => v + 1)}>Refresh</Button>
     {tab === 'apps' && apps && <>{apps.length === 0 && <p>No apps on this Bot.</p>}{apps.map(app => <article key={app.key} className="grid gap-2 rounded-lg border border-border p-3">
-      <h3 className="font-medium">{app.displayName}</h3><p className="text-sm text-muted-foreground">{app.state.replaceAll('_', ' ')}{app.accountHolder === 'owner' ? ' · Uses the owner’s account' : ''}{app.asksFirst ? ' · Asks before first use' : ''}</p>
+      <h3 className="font-medium">{app.displayName}</h3><Button variant="outline" onClick={() => setEditingApp(editingApp === app.key ? undefined : app.key)}>Manage actions</Button>{editingApp === app.key && <HyperBotAppGrants agentId={bot.id} app={app.key} onSaved={() => setRevision(v => v + 1)} />}<p className="text-sm text-muted-foreground">{app.state.replaceAll('_', ' ')}{app.accountHolder === 'owner' ? ' · Uses the owner’s account' : ''}{app.asksFirst ? ' · Asks before first use' : ''}</p>
       {app.needsConnect && <p>Connect your account on Connections first.</p>}
       {app.state === 'owner_grantable' && !app.needsConnect && <Button disabled={pending} onClick={() => void mutate(() => api.give(bot.id, app.key))}>Give app</Button>}
       {app.givenByOwner && bot.mine && <Button disabled={pending} variant="outline" onClick={() => void mutate(() => api.give(bot.id, app.key, true))}>Take back app</Button>}
@@ -70,7 +73,7 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
       {bot.mine && (published || team.publishable.some(row => row.id === bot.id)) && <form className="grid gap-3" onSubmit={event => { event.preventDefault(); void mutate(() => api.publish(bot.id, audience, split(emails), split(groups))); }}>
         <label><input type="checkbox" checked={audience === 'people'} onChange={e => setAudience(e.target.checked ? 'people' : 'team')} /> Publish to specific people or groups</label>
         {audience === 'people' && <><label>People by email<Input value={emails} onChange={e => setEmails(e.target.value)} placeholder="Comma separated" /></label><label>Groups<Input value={groups} onChange={e => setGroups(e.target.value)} placeholder="Comma separated" /></label></>}
-        <Button disabled={pending} type="submit">{published ? 'Update audience' : 'Publish'}</Button>
+        <HyperSharedAppNotice agentId={bot.id} /><Button disabled={pending} type="submit">{published ? 'Update audience' : 'Publish'}</Button>
         {published && <Button disabled={pending} type="button" variant="outline" onClick={() => void mutate(() => api.unpublish(bot.id))}>Unpublish</Button>}
       </form>}
     </>}
