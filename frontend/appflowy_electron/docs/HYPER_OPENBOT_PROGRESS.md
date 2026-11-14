@@ -146,6 +146,14 @@ Documents and datasets still use pre-existing placeholder editing bodies. Their 
 - GitHub's checks on `63f4755` were CodeRabbit NEUTRAL and Macroscope SKIPPED, not two completed code reviews. Macroscope's estimate exceeded the configured $10 per-review limit; billing and ignore configuration were not changed. The expanded branch still requires Codex and native verification.
 - Combined source validation: 1012 tests pass with one optional skip, four real-core tests ran, 13 smoke safeguards pass, and typecheck/build pass on Node 24.18.1. The current support matrix now distinguishes implemented code from pending native verification and the two remaining protected-interface/detail-wiring tasks.
 
+### Native interfaces and Codex follow-up
+
+- Codex security review completed without findings for `63f4755`; the summary now runs code/security review on `ece4710`. The older clean receipt does not approve the newer head.
+- Codex Settings finding `4575950332` is superseded by `0104a32` and its canonical-ID regressions. Fixed `4575950336` and `4575950340` in `0340784`: Home upload mappings belong to the retained transaction instead of a remounted receiver; initial uploads enforce staged-plus-missing attachment counts; recording outages retain page boundaries and recovery refreshes every loaded page. The three new regressions failed before the fixes and pass afterward.
+- Integrated protected native credentials at `d0102197`: confirmed create/rotate/revoke, main-only key responses, main-frame preload exposure and credential-free `openbot://open` handling. No protocol associations were changed. `6d58aa5` adds explicit native Copy key with another owner check and an accurate byte limit. Renderer results remain status-only.
+- Integrated `fff0846` destination selections, authoritative connection-return refresh, verified access cards and versioned Home draft ownership. Standalone Memory-source and deeper admin destinations remain with the same integration specialist.
+- Validation at this checkpoint: 1050 tests pass with one optional skip, four real-core tests ran, typecheck/build pass on Node 24.18.1, and the existing thirteen smoke safeguards remain passing. Integrated native OS dialog/vendor consent and final-head reviews are still required before merge.
+
 ## Queue
 
 | Issue | Deliverable | State |

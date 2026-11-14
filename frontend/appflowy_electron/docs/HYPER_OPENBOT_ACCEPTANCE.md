@@ -131,7 +131,9 @@ Computer/browser includes live controls, terminal/files/folders, narration, reco
 
 The voice broker preserves the configured x.ai model query in main, permits only the original provider destination/model parameter and returns only expected WebRTC SDP fields. Canonical-path checks keep headers and masking active when a request includes a query string. Tests cover these boundaries. Tauri-only local update/container/native-speech controls have no equivalent in this remote architecture and remain explicit environment limits.
 
-Current validation on Node 24.18.1: typecheck, production build, 1012 tests and 13 smoke-script safeguards pass. One opt-in simulated-IPC live test is skipped; the four real-core tests ran. The upstream terminal packages `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0 are locked; existing package versions were unchanged. Current review fixes have failing-before/passing-after regressions. The following matrix describes integrated code, not a claim that every new screen passed native acceptance.
+Protected native key creation/rotation/revocation and browser returns are now integrated. Key bytes stay in main-owned dialogs; Copy key writes the OS clipboard only after an explicit native choice and another owner check. Generic renderer key-creation HTTP remains blocked. The pinned browser return is credential-free `openbot://open`; native navigation refreshes authoritative connection state and does not claim success based on return alone. No OS protocol association was changed. Most nested selections/access components and versioned Home ownership are integrated; standalone Memory-source and deeper admin destinations remain pending.
+
+Current validation on Node 24.18.1: typecheck, production build, 1050 tests and 13 smoke-script safeguards pass. One opt-in simulated-IPC live test is skipped; the four real-core tests ran. The upstream terminal packages `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0 are locked; existing package versions were unchanged. Current review fixes have failing-before/passing-after regressions, including receiver remount/upload deduplication and recording outage/recovery page boundaries. The following matrix describes integrated code, not a claim that every new screen passed native acceptance.
 
 The complete original OpenBot backend and Intelligence run on the VM. HyperTask exposes a selected part of the original app's roughly ninety routes at the pinned source. The main-process route allowlist in [hyper-openbot-policy.ts](../src/shared/hyper-openbot-policy.ts) admits only the API families those native screens use, so unlisted features are unreachable from HyperTask even though the backend provides them. Phase 1 scoped chat, agents, tools, approvals, streaming and service lifecycle; the epic directs later work toward HyperTask components rather than duplicate OpenBot screens.
 
@@ -144,13 +146,13 @@ The complete original OpenBot backend and Intelligence run on the VM. HyperTask 
 | Bot questions | Available |
 | Bots: roster, create, profile editing, Pause/Resume, notifications, hidden Bots | Available |
 | Skills: create, edit, delete, grant to Bots | Available |
-| Connections: directory, Add app, MCP server by URL, start external sign-in | Integrated accounts, grants and setup; main browser-return and nested-page integration pending |
+| Connections: directory, Add app, MCP server by URL, start external sign-in | Accounts, grants, setup, native return and typed nested selections integrated; live consent verification pending |
 | Bot computer | Integrated status, screenshots, live input/takeover, terminal, files/folders, narration and recording; native verification pending |
 | Original computer tools (navigate, read, snapshot, type, click, key, list/read/write files, run command, scroll) | Available through the original approval gate |
 | Group conversations with several Bots | Integrated; native verification pending |
 | Routines: schedules, goals, check-ins | Integrated, including Bot routine/responsibility tabs; native verification pending |
 | Memory and Automatic Learning | Integrated facts, sources, review, sharing, participation and capability controls; native verification pending |
-| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Integrated; protected callback-key generation/rotation and cross-area wiring pending |
+| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Integrated with protected native callback-key actions; native verification pending |
 | Cross-conversation approvals inbox | Integrated with decisions/questions, standing rules, history and routing; native verification pending |
 | Vault and passwords | Integrated with key/login management and private sign-in forms; native verification pending |
 | Bot browser page | Integrated with recorder pairing/history and live controls; native verification pending |
