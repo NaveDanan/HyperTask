@@ -31,6 +31,20 @@ export function hyperNativeModelId(saved, defaultModel) {
   return saved.model ?? defaultModel;
 }
 
+/** Self-contained so Playwright can run this predicate against the current browser records. */
+export function hyperNativeCompletion({ records = globalThis.__hyperSmokeFrames ?? [], threadId, previousRunIds = [] }) {
+  const rows = records.flatMap(record => {
+    try {
+      const frame = JSON.parse(record.frame);
+      return Array.isArray(frame) && frame.length === 5 && frame[3] === 'ag_ui_event' && frame[4] ? [{ socketId: record.socketId, event: frame[4] }] : [];
+    } catch { return []; }
+  });
+  const first = rows.findIndex(row => row.event.type === 'RUN_STARTED' && row.event.threadId === threadId && typeof row.event.runId === 'string' && !previousRunIds.includes(row.event.runId));
+  if (first < 0 || typeof rows[first].socketId !== 'string') return false;
+  const { socketId, event: start } = rows[first];
+  return rows.slice(first + 1).some(row => row.socketId === socketId && row.event.threadId === threadId && row.event.runId === start.runId && ['RUN_FINISHED', 'RUN_ERROR'].includes(row.event.type));
+}
+
 /** A live run belongs to one IPC socket. Join replies and buffered histories prove nothing. */
 export function hyperNativeStream(records, threadId, previousRunIds = []) {
   const decoded = records.map(record => ({ socketId: record.socketId, event: eventFromFrame(record.frame, record.delivery, record.at) }));
@@ -176,6 +190,11 @@ async function waitModel(page, channelId, wanted, defaultModel) {
   fail('Native model selection was not persisted');
 }
 
+async function waitModelLabel(page, label) {
+  if (typeof label !== 'string' || !label.trim()) fail('Restored model is missing from the catalogue');
+  await page.waitForFunction(label => document.querySelector('[role="combobox"][aria-label="Model"]')?.innerText.replace(/\s+/g, ' ').trim() === label, normalize(label), { timeout: 30000 });
+}
+
 async function waitReadiness(page) {
   const deadline = Date.now() + 120000;
   do {
@@ -202,7 +221,7 @@ async function observeTurn(page, channel, prompt, previousRunIds) {
   try {
     await page.getByRole('textbox', { name: 'Message', exact: true }).fill(prompt);
     await page.getByRole('button', { name: 'Send message', exact: true }).click();
-    await page.waitForFunction(() => window.__hyperSmokeFrames.some(record => ['RUN_FINISHED', 'RUN_ERROR'].includes(JSON.parse(record.frame)[4].type)), null, { timeout: 120000 });
+    await page.waitForFunction(hyperNativeCompletion, { threadId: channel.threadId, previousRunIds }, { timeout: 120000 });
     const proof = hyperNativeStream(await page.evaluate(() => window.__hyperSmokeFrames), channel.threadId, previousRunIds);
     await page.getByRole('button', { name: 'Stop generating', exact: true }).waitFor({ state: 'hidden', timeout: 30000 });
     // No prior prompt ID exists for a newly submitted UI turn. The authoritative read establishes it.
@@ -264,7 +283,7 @@ async function run(args) {
         let persisted = false;
         while (Date.now() < deadline) { const saved = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}/model`); if (saved.status === 200 && hyperNativeModelId(saved.value, catalogue.value.default) === choice.id) { persisted = true; break; } await page.waitForTimeout(100); }
         if (!persisted) fail('An exercised model switch was not persisted');
-        await page.waitForFunction(label => document.querySelector('[role="combobox"][aria-label="Model"]')?.innerText.replace(/\s+/g, ' ').trim() === label, normalize(choice.label), { timeout: 30000 });
+        await waitModelLabel(page, choice.label);
       }
       const effort = args.effort ?? (wanted.efforts?.includes('low') ? 'low' : null);
       if (effort !== null) {
@@ -275,7 +294,7 @@ async function run(args) {
       }
       const saved = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}/model`);
       result.model = await waitModel(page, result.channelId, { model: wanted.id, effort: effort ?? saved.value.effort }, catalogue.value.default);
-      await page.waitForFunction(label => document.querySelector('[role="combobox"][aria-label="Model"]')?.innerText.replace(/\s+/g, ' ').trim() === label, normalize(wanted.label), { timeout: 30000 });
+      await waitModelLabel(page, wanted.label);
       result.defaultModel = catalogue.value.default;
       result.modelSwitchVerified = true;
       const marker = randomUUID(); result.turns = [];
@@ -284,6 +303,8 @@ async function run(args) {
     } else {
       const catalogue = await jsonFromNative(page, '/api/models');
       result.model = await waitModel(page, result.channelId, before.model, catalogue.value.default); result.turns = before.turns;
+      await waitModelLabel(page, catalogue.value.models.find(model => model.id === result.model.model)?.label);
+      result.restoredModelLabelVerified = true;
       for (const turn of before.turns) {
         const read = () => jsonFromNative(page, `/api/copilotkit/threads/${encodeURIComponent(result.threadId)}/messages?agentId=${encodeURIComponent(result.botId)}`);
         await waitForHistoryPair(read, turn.prompt, turn.answer, turn.messages); await renderedTurn(page, turn.messages);

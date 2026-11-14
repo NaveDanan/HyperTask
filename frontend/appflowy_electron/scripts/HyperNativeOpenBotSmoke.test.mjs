@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hyperNativeCdpUrl, hyperNativeStream, hyperValidateNativeBefore, hyperOwnsNativeCommand, hyperNativeModelId } from './HyperNativeOpenBotSmoke.mjs';
+import { hyperNativeCdpUrl, hyperNativeCompletion, hyperNativeStream, hyperValidateNativeBefore, hyperOwnsNativeCommand, hyperNativeModelId } from './HyperNativeOpenBotSmoke.mjs';
 
 const at = '2026-11-14T00:00:00Z';
 function events(runId = 'run-1', messageId = 'message-1') {
@@ -62,4 +62,14 @@ test('restart input requires distinct turns consistent with their stream and dis
   const reused = before(); reused.turns[1] = reused.turns[0]; assert.throws(() => hyperValidateNativeBefore(reused));
   const altered = before(); altered.turns[0].answer = altered.turns[0].messages.assistant.text = 'Changed text'; assert.throws(() => hyperValidateNativeBefore(altered));
   const wrong = before(); wrong.turns[0].messages.user.id = '../escape'; assert.throws(() => hyperValidateNativeBefore(wrong));
+});
+test('completion waits for the selected new run on its own socket and thread', () => {
+  const pending = records(events().slice(0, -1), 'a');
+  const terminal = (socketId, runId, threadId = 'thread-1', type = 'RUN_FINISHED') => ({ socketId, delivery: 20, at, frame: JSON.stringify([null, null, 'private-routing-topic', 'ag_ui_event', { type, runId, threadId }]) });
+  const interleaved = [...pending, terminal('another-socket', 'run-1'), terminal('a', 'another-run'), terminal('a', 'run-1', 'another-thread')];
+  assert.equal(hyperNativeCompletion({ records: interleaved, threadId: 'thread-1', previousRunIds: [] }), false);
+  assert.throws(() => hyperNativeStream(interleaved, 'thread-1'));
+  assert.equal(hyperNativeCompletion({ records: [...interleaved, terminal('a', 'run-1')], threadId: 'thread-1', previousRunIds: [] }), true);
+  assert.equal(hyperNativeCompletion({ records: [...pending, terminal('a', 'run-1', 'thread-1', 'RUN_ERROR')], threadId: 'thread-1', previousRunIds: [] }), true);
+  assert.equal(hyperNativeCompletion({ records: [...pending, terminal('a', 'run-1')], threadId: 'thread-1', previousRunIds: ['run-1'] }), false);
 });

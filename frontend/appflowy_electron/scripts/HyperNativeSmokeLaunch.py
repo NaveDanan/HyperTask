@@ -23,6 +23,21 @@ def owns_command(arguments, app, profile, port):
     return len(arguments) == 1 and all(re.search(r'(?<!\S)' + re.escape(value) + r'(?!\S)', arguments[0]) for value in expected)
 
 
+def _process_running(proc_dir):
+    try:
+        return (proc_dir / 'stat').read_text().rsplit(') ', 1)[1].split()[0] != 'Z'
+    except FileNotFoundError:
+        return False
+
+
+def wait_for_cores(children, timeout=10):
+    deadline = time.monotonic() + timeout
+    while any(_process_running(child) for child in children):
+        if time.monotonic() >= deadline:
+            raise RuntimeError('Owned core has not exited; no replacement was launched')
+        time.sleep(.05)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--profile', type=Path, required=True, help='Disposable test profile; all stores are retained')
@@ -86,6 +101,7 @@ def main():
                         os.kill(int(child.name), signal.SIGTERM)
                 except (FileNotFoundError, ProcessLookupError):
                     pass
+            wait_for_cores(children)
     profile.mkdir(mode=0o700, parents=True, exist_ok=True)
     logs = profile / 'smoke-logs'
     logs.mkdir(mode=0o700, exist_ok=True)
