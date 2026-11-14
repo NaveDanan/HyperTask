@@ -1,3 +1,4 @@
+import { HyperBotMemoryTab } from '../memory';
 import { HyperBotComputerTab } from '../computer-browser/HyperBotComputerTab';
 import type { ComponentType } from 'react';
 export interface HyperBotExtraTab {
@@ -8,7 +9,7 @@ export interface HyperBotExtraTab {
 /** Integration slots populated by the corresponding area owners. */
 export const HYPER_BOT_EXTRA_TABS: readonly HyperBotExtraTab[] = [
   // slot: memory
-  /* memory */
+  { id: 'memory', label: 'Memory', component: HyperBotMemoryTab },
   // slot: routines
   /* routines */
   // slot: responsibilities
