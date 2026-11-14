@@ -59,3 +59,12 @@ export const hyperVaultApi = {
   answerSignIn: (id: string, action: 'submit' | 'code' | 'use-saved' | 'take-over' | 'finish' | 'cancel', body?: unknown) => hyperRequest<SignInRequest>('/api/sign-in-requests/' + encodeURIComponent(id) + '/' + action, 'POST', body),
   requestSignIn: (body: {botId: string; site: string; reason?: string; toolCallId?: string}) => hyperRequest<SignInRequest>('/api/sign-in-requests', 'POST', body),
 };
+
+/** Connector setup keeps only this ID. The token travels once in the request body. */
+export async function hyperStoreMcpToken(serverId: string, token?: string): Promise<string | undefined> {
+  if (!token?.trim()) return undefined;
+  const result = await hyperRequest<{ credential?: { id: string } }>('/api/admin/credentials', 'POST', {
+    kind: 'mcp', provider: serverId, keyId: `mcp-${serverId}`, plaintext: token.trim(), metadata: { server: serverId },
+  });
+  return result.credential?.id;
+}
