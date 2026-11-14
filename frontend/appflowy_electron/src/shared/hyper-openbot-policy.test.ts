@@ -47,9 +47,10 @@ it('settings automation permits only the requested nested families', () => {
   for (const path of ['/api/proactive/suggestions', '/api/responsibilities', '/api/responsibilities/sources/slack', '/api/responsibilities/sources/github-evil', '/api/responsibilities/sources/github/%2e%2e']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
 
-it('settings activity allows its audit and bot-list families and refuses other administration', () => {
+it('settings activity and governance share approved routes without permitting adjacent administration', () => {
   for (const path of ['/api/admin/audit-events?format=csv', '/api/v2/organizations/default/bots?hidden=true&limit=100']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
-  for (const path of ['/api/admin/audit-secrets', '/api/admin/people', '/api/v2/organizations/other/bots', '/api/v2/organizations/default/secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+  expect(hyperOpenBotPathAllowed('/api/admin/people')).toBe(true);
+  for (const path of ['/api/admin/audit-secrets', '/api/admin/people-other', '/api/v2/organizations/other/bots', '/api/v2/organizations/default/secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
 
 it('approvals-inbox allows its contracts and refuses traversal and unrelated families', () => {
@@ -69,4 +70,14 @@ it('computer-browser allows its verified families and refuses foreign and traver
 it('computer-browser folder access permits its API and rejects traversal and foreign protocols', () => {
   for (const path of ['/api/host-access', '/api/host-access/grants', '/api/host-access/grants/folder-id', '/api/host-access/stop', '/api/computers/a/files/download?path=report.txt', '/api/browser/narration']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/host-access/%2fprivate', '/api/host-access/../private', 'file:///api/host-access', '/api/host-access\\private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
+it('admin-governance permits its API families and refuses adjacent or escaped paths', () => {
+  for (const path of ['/api/admin/people?search=a', '/api/admin/people/id/role', '/api/admin/enterprise/capabilities/batch', '/api/admin/identity-providers/id', '/api/auth/sso/register', '/api/admin/audit-events?format=csv', '/api/admin/what-if/check', '/api/computers/policy', '/api/computers/policy-dry-run', '/api/computers/policy-translate']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/admin/people-other', '/api/auth/sso/delete-provider', '/api/computers-other/policy', '/api/admin/identity-providers/%2e%2e/credentials', '/api/admin/what-if/../../secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
+it('admin-governance permits identity and approval subflows without adjacent auth/admin access', () => {
+  for (const path of ['/api/me', '/api/capabilities', '/api/approvals/team', '/api/approvals/team/rules/batch', '/api/approvals/team/rules/backtest', '/api/approvals/shared-use/request/approve', '/api/approvals/team/guidance/check', '/api/admin/enterprise/settings/ssoRequired', '/api/admin/enterprise/people/id/terminate-computers']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/auth/sso/providers', '/api/admin/identity', '/api/admin/what-if-other', '/api/admin/enterprise-other', '/api/me-other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
