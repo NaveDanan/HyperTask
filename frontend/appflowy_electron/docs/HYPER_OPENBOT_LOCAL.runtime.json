@@ -1,26 +1,31 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-14T07:40:36.332508+00:00",
-  "status": "original_installer_stopped_at_available_memory_check",
-  "scope": "Current Linux PC only. No live OpenBot/Intelligence application acceptance or reproducible rebuild is claimed.",
+  "recordedAt": "2026-11-14T08:18:35.192618+00:00",
+  "status": "local_intelligence_ready_then_stopped_for_authorized_vm_offload",
+  "scope": "Historical preparation on the current Linux PC. User now authorizes heavy backend execution on agent@MEMS-mems01; HyperTask desktop remains on this PC. VM deployment and integrated app acceptance are not established.",
   "host": {
     "name": "naved-IdeaPad-5-14IIL05",
     "system": "Ubuntu 24.04.5 LTS",
     "cpus": 8,
     "memoryTotalBytes": 7984033792,
-    "memoryAvailableSnapshotBytes": 4042702848,
-    "freeDiskBytes": 50755850240,
+    "memoryAvailableSnapshotBytes": 5278973952,
+    "freeDiskBytes": 44132106240,
     "installerDiskMinimumBytes": 42949672960,
     "diskMinimumMet": true,
-    "fullInstallerResourceCheck": "failed_available_memory",
-    "memoryAvailableObservedAt": "2026-11-14T07:40:36.332508+00:00"
+    "fullInstallerResourceCheck": "passed_before_cluster_creation",
+    "memoryAvailableObservedAt": "2026-11-14T08:18:35.192618+00:00"
   },
   "source": {
     "repository": "https://github.com/CopilotKit/OpenBot",
     "commit": "f8af37ab73e96784f174a11104505a965e722cab",
     "path": "/home/naved/HyperTask-OpenBot-baseline",
-    "trackedSourceClean": true,
-    "bunLockSha256": "0187f72264f0685a5ddc62c5d1855dc8b36107b4013f13b7402b7365ee8f4da4"
+    "trackedSourceClean": false,
+    "bunLockSha256": "0187f72264f0685a5ddc62c5d1855dc8b36107b4013f13b7402b7365ee8f4da4",
+    "trackedConfigurationChanges": [
+      ".gitignore"
+    ],
+    "runtimeSourcePatched": false,
+    "configurationWriter": "Original CopilotKit local connect; .copilotkit project/reference files remain untracked."
   },
   "node": {
     "version": "22.23.5",
@@ -202,7 +207,7 @@
     "sameThreadReopen": "not_run"
   },
   "limits": [
-    "The account holder accepted the official agreement. Available memory stopped installation before any application stack was created.",
+    "Local Intelligence reached ready and was stopped with data preserved for the requested VM move. VM installation and integrated HyperTask chat remain unverified.",
     "Linux runtime evaluation remains outside the documented macOS preview.",
     "Mutable base images and ranged Python dependencies prevent a bit-for-bit rebuild claim.",
     "Full application lifecycle commands and live proof remain incomplete.",
@@ -211,15 +216,57 @@
   "intelligenceSetup": {
     "cliVersion": "4.34.0",
     "command": "copilotkit local setup --defer-model --json",
-    "result": "stopped_before_stack_record_or_cluster_creation",
-    "failureStep": "Docker available-resource check",
-    "reportedMemoryTotalGiB": 7.4,
-    "reportedMemoryAvailableGiB": 3.2,
-    "requiredMemoryAvailableGiB": 4,
-    "reportPrecision": "Installer floors GiB values to one decimal place. This is the observed text-mode failure, not the later idle snapshot.",
-    "evaluationLicenseRequest": "returned before the resource check",
+    "result": "completed",
+    "completedAt": "2026-11-14T08:06:38.495409+00:00",
+    "release": "0.15.1",
+    "stackId": "local-9a7fb84ee2bbe06a7cdd1d24",
+    "installerStep": "ready",
+    "urls": {
+      "api": "http://localhost:42253",
+      "dashboard": "http://cpk.localhost:46701",
+      "gateway": "ws://localhost:35751"
+    },
+    "resourceCheck": "pass",
+    "initialResourceFailure": {
+      "availableGiB": 3.2,
+      "requiredAvailableGiB": 4
+    },
+    "authorizedChromeQuit": true,
+    "memoryAvailableBeforeSuccessfulAttemptBytes": 4779859968,
+    "connectionCommand": "copilotkit local connect --approve-connection --json",
+    "connectionResult": "completed",
+    "currentState": "stopped_data_preserved",
+    "stopCommand": "copilotkit local stop --stack local-9a7fb84ee2bbe06a7cdd1d24 --json",
+    "stopResult": "completed",
     "checksBypassed": false,
-    "cleanup": "No rollback, deletion or stack recreation performed.",
-    "retry": "Same app directory and --defer-model; preserve any saved inputs."
+    "evidenceLimit": "Original Intelligence installation only. No original OpenBot chat or HyperTask integration proof."
+  },
+  "backendTarget": {
+    "requestedByUser": "agent@mmems-mems01",
+    "authorization": "Heavy backend services may run on this VM; desktop stays on this PC.",
+    "environmentLink": "requested_pending",
+    "vmCapacityVerified": false,
+    "vmProvisioned": false,
+    "connection": "Tailscale address supplied by the user; updated link request pending"
+  },
+  "hyperTaskDesktop": {
+    "coreBuild": "in_progress",
+    "toolchain": "1.85.0",
+    "jobs": 2,
+    "debugInfo": false,
+    "incremental": false,
+    "appLaunched": "not_run",
+    "openbotChatIntegration": "not_implemented",
+    "integratedEndToEnd": "not_run",
+    "frontendBuild": "pass",
+    "frontendBuiltAt": "2026-11-14T08:20:08.677369+00:00",
+    "initialCoreFailure": "RocksDB bindgen could not find stdbool.h because matching Clang resource headers were absent.",
+    "clangResourceHeaders": {
+      "package": "libclang-common-18-dev",
+      "version": "1:18.1.3-1ubuntu1",
+      "sha256": "d41631bb752815a8196261d1030c096591c59678c8adfbf2e6a740a691b49e80",
+      "installation": "Private extraction; system packages unchanged",
+      "realRocksdbHeaderParse": "Fails without the include directory and passes with it"
+    }
   }
 }
