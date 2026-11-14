@@ -29,3 +29,9 @@ it('allows only exact computer stream endpoints', () => {
   for (const path of ['/api/computers/bot-1/stream', '/api/computers/person_a/terminal']) expect(hyperComputerSocketPathAllowed(path)).toBe(true);
   for (const path of ['/api/computers/../stream', '/api/computers/b%2fo/stream', '/api/computers/a/stream?token=x', '/api/computers/a/stream/extra', '/api/recorder/stream', '/api/computers/a\\b/terminal']) expect(hyperComputerSocketPathAllowed(path)).toBe(false);
 });
+it('keeps the main-process socket route check exact and aligned with renderer deny cases', async () => {
+  const { readFileSync } = await import('node:fs');
+  const main = readFileSync(new URL('../../../../main/hyper-openbot.ts', import.meta.url), 'utf8');
+  expect(main).toContain('/^\\/api\\/computers\\/[A-Za-z0-9_-]{1,200}\\/(stream|terminal)$/');
+  for (const path of ['/api/computers/a/stream#x', '/api/computers/a/terminal?token=x', '/api/computers/a/%74erminal', '/api/computers/a/streaming', '/api/computers/a/terminal/..']) expect(hyperComputerSocketPathAllowed(path)).toBe(false);
+});

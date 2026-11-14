@@ -1,4 +1,5 @@
 // Adapted from OpenBot components/computer/live-terminal.tsx. Copyright (c) 2026 CopilotKit. MIT.
+import { Button } from "@/components/ui/button";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
@@ -84,7 +85,7 @@ type Props = {
   ref?: Ref<HyperTerminalHandle>;
 };
 
-export function HyperTerminal({
+function HyperLiveTerminal({
   computerId,
   driving,
   onProblem,
@@ -266,4 +267,16 @@ export function HyperTerminal({
       ref={host}
     />
   );
+}
+
+/** Native recovery controls around the upstream streaming terminal. */
+export function HyperTerminal({ computerId, driving }: { computerId: string; driving: boolean }) {
+  const [problem, setProblem] = useState<string | null>(null);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [retry, setRetry] = useState(0);
+  return <section className="flex h-full flex-col gap-2">
+    {problem && <p role="alert">{problem} <Button variant="outline" onClick={() => { setProblem(null); setRetry(value => value + 1); }}>Retry</Button></p>}
+    {reconnecting && <p role="status">Reconnecting terminal…</p>}
+    <div className="min-h-0 flex-1"><HyperLiveTerminal computerId={computerId} driving={driving} retryKey={retry} onProblem={setProblem} onReconnecting={setReconnecting} /></div>
+  </section>;
 }

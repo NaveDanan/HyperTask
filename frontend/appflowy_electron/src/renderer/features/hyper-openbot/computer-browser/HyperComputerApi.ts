@@ -2,7 +2,7 @@
 // Copyright (c) 2026 CopilotKit. MIT.
 import { hyperOpenBotRequest } from '../transport';
 export interface HyperBrowserState {
-  available?: boolean; note?: string; problem?: string; computerId?: string; open: boolean;
+  shows?: 'native' | 'screen'; narration?: 'own' | 'external'; available?: boolean; note?: string; problem?: string; computerId?: string; open: boolean;
   mine?: boolean; recordingIsMine?: boolean; recordRefused?: string;
   tabs: { id: string; title: string; url: string; active: boolean }[];
   recorder?: { phase: string; actions: number; title?: string; lastStopped?: { actions: number; phrases: number; sending?: boolean; retrying?: string; kept?: string; discarded?: boolean } };
