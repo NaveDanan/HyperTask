@@ -125,3 +125,5 @@ export const HyperPreferences = (input: { enabled?: boolean; autoReview?: boolea
 export const HyperSaveRule = (input: HyperApprovalRuleInput, id?: string) => request('/api/approvals/rules' + (id ? '/' + encodeURIComponent(id) : ''), id ? 'PATCH' : 'POST', input);
 export const HyperRemoveRule = (id: string) => request('/api/approvals/rules/' + encodeURIComponent(id), 'DELETE');
 export const HyperRevokeGrant = (id: string) => request('/api/approvals/conversation-grants/' + encodeURIComponent(id), 'DELETE');
+
+export const HyperClearSharedBotConsents = () => request('/api/team-bots/consents', 'DELETE');

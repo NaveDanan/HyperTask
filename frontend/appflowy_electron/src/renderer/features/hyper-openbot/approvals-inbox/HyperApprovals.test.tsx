@@ -43,3 +43,33 @@ describe('Hyper approvals inbox', () => {
     expect(html).toContain('Notifications');
   });
 });
+
+import { HyperOffersStandingRule, HyperApprovalDetails } from './HyperApprovalPresentation';
+import { HyperClearSharedBotConsents, HyperLoadInbox } from './HyperApprovalsApi';
+describe('Hyper approvals policy and failure contracts', () => {
+  it('never offers standing allowances for task, closed or handoff actions', () => {
+    for (const policy of [{ source: 'task' }, { source: 'default', closed: true }, { source: 'default', behaviour: 'hand_off' }]) {
+      expect(HyperOffersStandingRule({ policy })).toBe(false);
+    }
+    expect(HyperOffersStandingRule({})).toBe(true);
+    expect(HyperOffersStandingRule({ policy: { source: 'default' } })).toBe(true);
+  });
+  it('shows complete inert action arguments and omits internal handles', () => {
+    const html = renderToStaticMarkup(<HyperApprovalDetails args={{ ref: 'internal-handle', text: '<script>unsafe()</script>', to: ['one', 'two'], enabled: false }} />);
+    expect(html).toContain('&lt;script&gt;unsafe()&lt;/script&gt;');
+    expect(html).toContain('one, two');
+    expect(html).toContain('No');
+    expect(html).not.toContain('internal-handle');
+    expect(renderToStaticMarkup(<HyperApprovalDetails args={null} />)).toBe('');
+  });
+  it('passes through refused mutations and read failures', async () => {
+    vi.mocked(hyperOpenBotRequest).mockRejectedValue(new Error('refused'));
+    await expect(HyperDecide('one', 'deny')).rejects.toThrow('refused');
+    await expect(HyperLoadInbox()).rejects.toThrow('refused');
+    await expect(HyperSaveRule({ botId: '*', toolRef: '*', effect: '*', scope: '*', behaviour: 'ask' })).rejects.toThrow('refused');
+  });
+  it('resets shared Bot consents using the original endpoint', async () => {
+    await HyperClearSharedBotConsents();
+    expect(hyperOpenBotRequest).toHaveBeenLastCalledWith('/api/team-bots/consents', 'DELETE');
+  });
+});

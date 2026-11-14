@@ -10,7 +10,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: bot-tabs
   /* bot-tabs */
   // slot: approvals-inbox
-  'delivery',
+  'delivery', 'team-bots/consents$',
   // slot: vault
   /* vault */
   // slot: computer-browser
