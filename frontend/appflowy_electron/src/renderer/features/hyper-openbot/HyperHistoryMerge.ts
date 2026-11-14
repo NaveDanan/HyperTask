@@ -60,6 +60,12 @@ export function mergeStoredMessages(
   let lengthened = false;
   const current = local.map((message) => {
     const later = storedFor.get(message.id);
+    if (message.role === "tool" && later?.role === "tool" &&
+      message.toolCallId === later.toolCallId && waitingTool(message) &&
+      typeof later.content === "string" && later.content.trim() && !waitingTool(later)) {
+      lengthened = true;
+      return later;
+    }
     if (message.role !== "assistant" || later?.role !== "assistant")
       return message;
     const content =
@@ -88,6 +94,12 @@ export function mergeStoredMessages(
     ]),
     ...pending,
   ];
+}
+
+function waitingTool(message: Message): boolean {
+  if (message.role !== "tool" || typeof message.content !== "string") return false;
+  try { return JSON.parse(message.content)?.waiting === true; }
+  catch { return false; }
 }
 
 type ToolCalls = Extract<Message, { role: "assistant" }>["toolCalls"];

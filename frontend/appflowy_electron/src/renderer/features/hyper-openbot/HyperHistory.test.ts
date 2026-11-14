@@ -14,6 +14,16 @@ it('restores missing turns without replacing longer streamed text with lagging p
   expect(result.map(message => message.id)).toEqual(['u', 'a']);
   expect(result[1].content).toBe('complete live answer');
 });
+it('replaces a waiting tool placeholder with its durable result and never regresses a final result', () => {
+  const waiting = { id: 'tool', role: 'tool' as const, toolCallId: 'call', content: '{"waiting":true}' };
+  for (const content of ['{"ok":true,"text":"done"}', '{"ok":false,"refused":true}', '{"ok":false,"error":"failed"}']) {
+    const final = { ...waiting, content };
+    expect(mergeStoredMessages([waiting], [final])).toEqual([final]);
+    expect(mergeStoredMessages([final], [waiting])).toEqual([final]);
+  }
+  const otherCall = { ...waiting, toolCallId: 'different', content: '{"ok":true}' };
+  expect(mergeStoredMessages([waiting], [otherCall])).toEqual([waiting]);
+});
 it('renders compound text and attachment identity without serializing metadata', () => {
   expect(hyperMessageContent([{ type: 'text', text: 'Caption' }, { type: 'document', source: { type: 'url', value: '/api/attachments/a' }, metadata: { attachmentId: 'a', filename: 'notes.txt' } }])).toEqual({ text: 'Caption', attachments: [{ id: 'a', name: 'notes.txt', image: false, mimeType: undefined }] });
 });

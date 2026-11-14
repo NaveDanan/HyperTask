@@ -9,6 +9,7 @@ import { readThreadMessages } from './HyperThreadMessages';
 import { mergeStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
 import { hyperToolOutcome } from './HyperToolOutcome';
+import { hyperGatewayJoin } from './HyperGatewayJoin';
 import { HyperConversationActions } from './HyperConversationActions';
 import { Button } from '@/components/ui/button';
 import { HyperOpenBotProvider } from './provider';
@@ -49,12 +50,14 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
     setRestoring(true);
     let answering = false;
     const watching = agent.subscribe({ onRunStartedEvent: () => { answering = true; }, onRunFinishedEvent: () => { answering = false; }, onRunFailed: () => { answering = false; } });
+    const join = hyperGatewayJoin(() => hyperWhileObserved(agent, () => copilotkit.connectAgent({ agent })), () => {
+      if (current && version === generation.current && !answering) agent.detachActiveRun();
+    });
     void (async () => {
       try {
         // A bounded gateway join precedes the durable read. Never replace live text with a partial store copy.
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        try { await Promise.race([hyperWhileObserved(agent, () => copilotkit.connectAgent({ agent })), new Promise<void>(resolve => { timer = setTimeout(() => { if (!answering) agent.detachActiveRun(); resolve(); }, 5000); })]); }
-        finally { clearTimeout(timer); }
+        await join.promise;
+        if (!current || version !== generation.current) return;
         const stored = await readThreadMessages(channel.threadId, channel.agentIds[0]);
         if (!current || version !== generation.current) return;
         if (stored.availability === 'unavailable') setError('Conversation history could not be loaded. Retry by reopening the conversation.');
@@ -62,7 +65,7 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
       } catch (error) { if (current) setError(String(error)); }
       finally { if (current) setRestoring(false); }
     })();
-    return () => { current = false; generation.current++; watching.unsubscribe(); releaseApproval(); };
+    return () => { current = false; generation.current++; join.cancel(); watching.unsubscribe(); releaseApproval(); };
   }, [agent, copilotkit, isReady, channel.threadId, historyRevision]);
   const running = sending || agent.isRunning;
   const messages: HyperTranscriptMessage[] = agent.messages.flatMap(message => {
