@@ -44,7 +44,7 @@ The current transport is a Linux development configuration for `agent@100.104.17
 | Appearance | Actual light, dark and Lavender token/screenshot checks passed; default Auto scheme restored |
 | Navigation regression | Jira opened without credential changes; returning to Chat showed the same saved message |
 | Async selection | Actual pending model save locks both pickers, retains the draft and saves the requested model; a late channel creation preserves newer navigation and remembered selection |
-| Automated checks | Typecheck, production frontend build and 525 tests passed; one opt-in simulated-IPC live test skipped |
+| Automated checks | Typecheck, production frontend build and 526 tests passed; one opt-in simulated-IPC live test skipped |
 
 The optional bridge-only test uses a simulated Electron IPC host with the real backend. Its earlier pass is recorded separately and is not substituted for the native-window observations above. The full suite included real-core integration checks using the rebuilt identity-query binary. The concurrency checks paused and resumed only the scratch app's private SSH child; the reference and T3 forwards were untouched.
 
@@ -67,3 +67,5 @@ Open Chat through native navigation, start a conversation with `picked-harness`,
 Approved and denied tools, interrupted runs, connection failures, portable startup/shutdown/configuration and full phase-1 end-to-end acceptance remain tracked by issues #6, #7 and #8. No Knowledge Graph, Intelligence replacement or permanent offline claim is included.
 
 CodeRabbit follow-up fixes preserve Bot drafts across pending, successful and failed refreshes; reject old editor completions; scope disconnect confirmation to its server; and keep approval rows independently locked while rejecting stale inbox responses. Question option labels cannot collide with free-text mode. Null runtime results, skipped steps, key snapshot requirements and HTTP status diagnostics have regressions. Transcript follow uses actual scroll position and preserves text selection, and Chat discovery/creation ignores workspace changes. Seven isolated Chromium scenarios use the production components with a mocked backend; they passed and do not establish live action/approval acceptance. POSIX permission assertions are excluded on Windows and tunnel tests explicitly select their Linux implementation; no native Windows run is claimed.
+
+The repository suite also submits the literal `__other__` choice through the real decision-card form handler and question callbacks, asserting the exact `onAnswer` argument once. This committed unit interaction fails against the earlier question implementation, which returned an empty answer. It supplements the already recorded isolated browser scenario. Runtime source and native observations remain unchanged.

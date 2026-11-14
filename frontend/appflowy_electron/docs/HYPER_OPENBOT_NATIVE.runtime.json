@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-14T12:15:34.666291+00:00",
+  "recordedAt": "2026-11-14T12:25:32.880643+00:00",
   "issue": 5,
   "pullRequest": 11,
   "codeHeadObserved": "63054806317331f81582aff027585e08197a86a1",
@@ -85,7 +85,7 @@
     "typecheck": "pass",
     "frontendBuild": "pass",
     "fullVitest": {
-      "passed": 525,
+      "passed": 526,
       "skipped": 1,
       "skippedReason": "Opt-in simulated-IPC live backend test; actual native Electron live test ran separately."
     },
@@ -272,5 +272,13 @@
       "defensive HTTP error parsing",
       "Chat completion guards across workspace changes"
     ]
+  },
+  "questionSubmissionRegression": {
+    "path": "src/renderer/features/hyper-openbot/activity/activity.test.tsx",
+    "scope": "Committed unit interaction through the real HyperDecisionCard form handler and HyperQuestion callbacks",
+    "assertion": "onAnswer receives literal __other__ unchanged exactly once",
+    "redCapability": "Fails against original 1edb31d question implementation; receives empty answer",
+    "sourceSha256": "a9be501477346eaabbeceef20ccd80047c4f8c0419e627efb31ac0fc7f3719f8",
+    "runtimeChanged": false
   }
 }
