@@ -1,6 +1,6 @@
 // Adapted from OpenBot components/passwords/sign-in-form.tsx.
 // Copyright (c) 2026 CopilotKit. MIT licensed.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hyperVaultApi, type SignInRequest } from './HyperVaultApi';
@@ -14,17 +14,22 @@ export function HyperSignInForm({ requestId, onOpenBrowser }: HyperSignInFormPro
   const [data, setData] = useState<SignInRequest>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const poll = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
-    let live = true; let timer: ReturnType<typeof setTimeout>;
+    let live = true;
     async function read() {
-      try { const value = await hyperVaultApi.readSignIn(requestId); if (!live) return; setData(value); setError(''); if (!FINAL.includes(value.status)) timer = setTimeout(read, 3000); }
-      catch { if (live) { setError('Could not load this sign-in request. Access may be refused.'); timer = setTimeout(read, 3000); } }
+      try { const value = await hyperVaultApi.readSignIn(requestId); if (!live) return; setData(value); setError(''); if (!FINAL.includes(value.status)) poll.current = setTimeout(read, 3000); }
+      catch { if (live) { setError('Could not load this sign-in request. Access may be refused.'); poll.current = setTimeout(read, 3000); } }
     }
-    void read(); return () => { live = false; clearTimeout(timer); };
+    void read(); return () => { live = false; clearTimeout(poll.current); };
   }, [requestId]);
   async function answer(action: Parameters<typeof hyperVaultApi.answerSignIn>[1], body?: unknown) {
     if (busy) return; setBusy(true); setError('');
-    try { setData(await hyperVaultApi.answerSignIn(requestId, action, body)); }
+    try {
+      const value = await hyperVaultApi.answerSignIn(requestId, action, body);
+      if (FINAL.includes(value.status)) clearTimeout(poll.current);
+      setData(value);
+    }
     catch { setError('Sign-in operation failed. Retype any secret and try again.'); } finally { setBusy(false); }
   }
   return <section className="space-y-3 rounded-lg border border-border p-4 text-sm">
