@@ -26,7 +26,17 @@ export interface HyperOpenBotSessionDependencies {
 export async function hyperReadCoreIdentity(request: (event: string, payload: Uint8Array) => Promise<{ status: number; payload: Uint8Array }>): Promise<string | null> {
   const reply = await request('GetUserProfile', new Uint8Array());
   if (reply.status !== 0) return null;
-  try { const profile = fromBinary(UserProfilePBSchema, reply.payload); return profile.id === 0n ? null : `${profile.userAuthType}:${profile.id}`; }
+  try {
+    const profile = fromBinary(UserProfilePBSchema, reply.payload);
+    // Remote numeric IDs and UUIDs are server supplied. Until the core persists the
+    // authenticating server's origin, they cannot safely identify this backend's owner.
+    if (profile.id === 0n || profile.userAuthType !== 0) return null;
+    const identity = await request('HyperGetNativeIdentity', new Uint8Array());
+    if (identity.status !== 0) return null;
+    const value: unknown = JSON.parse(new TextDecoder().decode(identity.payload));
+    if (!value || typeof value !== 'object' || !('version' in value) || value.version !== 1 || !('domain' in value) || value.domain !== 'local' || !('userId' in value) || value.userId !== profile.id.toString() || !('userUuid' in value) || typeof value.userUuid !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.userUuid) || value.userUuid === '00000000-0000-0000-0000-000000000000') return null;
+    return JSON.stringify(['local', value.userUuid]);
+  }
   catch { return null; }
 }
 
@@ -127,7 +137,7 @@ export function createHyperOpenBotSession(storageRoot: string, readIdentity: Hyp
   async function readOwner(): Promise<string | null> {
     try {
       const value: unknown = JSON.parse(await fs.readFile(file, 'utf8'));
-      if (!value || typeof value !== 'object' || !('version' in value) || value.version !== 1 || !('backend' in value) || value.backend !== BACKEND || !('owner' in value) || typeof value.owner !== 'string' || !/^[a-f0-9]{64}$/.test(value.owner)) throw new Error('Invalid OpenBot owner binding');
+      if (!value || typeof value !== 'object' || !('version' in value) || value.version !== 2 || !('backend' in value) || value.backend !== BACKEND || !('owner' in value) || typeof value.owner !== 'string' || !/^[a-f0-9]{64}$/.test(value.owner)) throw new Error('Invalid OpenBot owner binding; a trusted reconnect is required');
       return value.owner;
     } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null; throw error; }
   }
@@ -135,7 +145,7 @@ export function createHyperOpenBotSession(storageRoot: string, readIdentity: Hyp
     readIdentity, readOwner,
     async bindOwner(owner) {
       await fs.mkdir(directory, { recursive: true, mode: 0o700 }); await fs.chmod(directory, 0o700);
-      try { await fs.writeFile(file, JSON.stringify({ version: 1, backend: BACKEND, owner }), { flag: 'wx', mode: 0o600 }); }
+      try { await fs.writeFile(file, JSON.stringify({ version: 2, backend: BACKEND, owner }), { flag: 'wx', mode: 0o600 }); }
       catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
       if (await readOwner() !== owner) throw new Error('OpenBot is bound to another HyperTask identity. A trusted reconnect is required.');
     },

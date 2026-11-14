@@ -3,7 +3,7 @@ import { readableTurns } from './HyperThreadMessages';
 import { mergeStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
-import { hyperGatewayJoin } from './HyperGatewayJoin';
+import { hyperGatewayJoin, hyperRunWithRecovery } from './HyperRun';
 afterEach(() => vi.useRealTimers());
 it('normalizes actual persisted tool dialect and counts corrupt history', () => {
   const result = readableTurns([{ id: 'call', role: 'assistant', content: null, toolCalls: [{ id: 'c1', name: 'lookup', args: { q: 'test' } }] }, { id: 'bad', role: 'user', content: null }]);
@@ -52,7 +52,23 @@ it('restores read-back text when the local assistant has no content', () => {
   expect(mergeStoredMessages(local, stored, { readBack: true })[0].content).toBe('Recovered answer');
   expect(mergeStoredMessages(local, stored)).toBe(local);
 });
-
+it('rejects a resolved SDK call when a run failure event was emitted', async () => {
+  let events: any; const unsubscribe = vi.fn();
+  const agent = { subscribe: (value: unknown) => { events = value; return { unsubscribe }; } };
+  await expect(hyperRunWithRecovery(agent as never, async () => { events.onRunInitialized(); events.onRunFailed({ error: new Error('Gateway unavailable') }); }, () => false)).rejects.toThrow('Gateway unavailable');
+  expect(unsubscribe).toHaveBeenCalledOnce();
+});
+it('keeps a draft retryable when the agent refused initialization', async () => {
+  const unsubscribe = vi.fn();
+  await expect(hyperRunWithRecovery({ subscribe: () => ({ unsubscribe }) } as never, async () => {}, () => false)).rejects.toThrow('did not start');
+  expect(unsubscribe).toHaveBeenCalledOnce();
+});
+it('treats a deliberate Stop as completion and always releases its observer', async () => {
+  let events: any; const unsubscribe = vi.fn();
+  const agent = { subscribe: (value: unknown) => { events = value; return { unsubscribe }; } };
+  await expect(hyperRunWithRecovery(agent as never, async () => { events.onRunFailed({ error: new Error('Aborted') }); }, () => true)).resolves.toBeUndefined();
+  expect(unsubscribe).toHaveBeenCalledOnce();
+});
 it('releasing a pending join prevents its stale deadline from detaching a later run', async () => {
   vi.useFakeTimers();
   const detach = vi.fn();

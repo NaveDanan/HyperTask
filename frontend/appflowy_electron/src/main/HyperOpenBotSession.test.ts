@@ -16,14 +16,29 @@ function harness() {
   const dependencies = { readIdentity: vi.fn(async () => identity), readOwner: vi.fn(async () => owner), bindOwner: vi.fn(async (next: string) => { if (owner && owner !== next) throw new Error('Trusted reconnect required'); owner = next; }), partition, clearLegacyCookies: vi.fn(async () => {}) };
   return { manager: new HyperOpenBotSession(dependencies as unknown as HyperOpenBotSessionDependencies), cookieSession, dependencies, partition, identity: (next: string | null) => { identity = next; }, owner: () => owner };
 }
-it('decodes identity only from a real core GetUserProfile response and rejects empty/corrupt replies', async () => {
+it('uses the core session UUID in the local namespace rather than a numeric profile ID', async () => {
   const payload = toBinary(UserProfilePBSchema, create(UserProfilePBSchema, { id: 123n, userAuthType: 0, token: 'not-part-of-identity' }));
-  const request = vi.fn(async () => ({ status: 0, payload }));
-  expect(await hyperReadCoreIdentity(request)).toBe('0:123');
+  const userUuid = '02753979-2e38-48f5-959d-7a7b38469dc1';
+  const identity = (uuid = userUuid, userId = '123', domain = 'local') => new TextEncoder().encode(JSON.stringify({ version: 1, userId, userUuid: uuid, domain }));
+  const request = vi.fn(async (event: string) => ({ status: 0, payload: event === 'GetUserProfile' ? payload : identity() }));
+  expect(await hyperReadCoreIdentity(request)).toBe(JSON.stringify(['local', userUuid]));
   expect(request).toHaveBeenCalledWith('GetUserProfile', new Uint8Array());
+  expect(request).toHaveBeenCalledWith('HyperGetNativeIdentity', new Uint8Array());
+  expect(await hyperReadCoreIdentity(async event => ({ status: 0, payload: event === 'GetUserProfile' ? payload : identity('38fb8eb1-bb70-4248-8ce8-64cddc296224') }))).not.toBe(await hyperReadCoreIdentity(request));
+  expect(await hyperReadCoreIdentity(async event => ({ status: 0, payload: event === 'GetUserProfile' ? payload : identity(userUuid, '124') }))).toBeNull();
+  expect(await hyperReadCoreIdentity(async event => ({ status: 0, payload: event === 'GetUserProfile' ? payload : identity(userUuid, '123', 'https://other-server.example') }))).toBeNull();
+  expect(await hyperReadCoreIdentity(async event => ({ status: 0, payload: event === 'GetUserProfile' ? payload : identity('00000000-0000-0000-0000-000000000000') }))).toBeNull();
   expect(await hyperReadCoreIdentity(async () => ({ status: 1, payload }))).toBeNull();
   expect(await hyperReadCoreIdentity(async () => ({ status: 0, payload: new Uint8Array() }))).toBeNull();
   expect(await hyperReadCoreIdentity(async () => ({ status: 0, payload: new Uint8Array([255]) }))).toBeNull();
+});
+it('denies remote accounts with colliding IDs until authenticated server provenance is available', async () => {
+  for (const userAuthType of [1, 2, 99]) {
+    const payload = toBinary(UserProfilePBSchema, create(UserProfilePBSchema, { id: 123n, userAuthType }));
+    const request = vi.fn(async () => ({ status: 0, payload }));
+    expect(await hyperReadCoreIdentity(request)).toBeNull();
+    expect(request).toHaveBeenCalledTimes(1);
+  }
 });
 it('invalidates HTTP/WS leases synchronously on signout, clears credentials, and keeps owner binding', async () => {
   const h = harness(); const lease = await h.manager.acquire(); const bound = h.owner();
@@ -99,4 +114,16 @@ it('fails closed if the private owner binding is malformed rather than replacing
   await fs.mkdir(path.join(directory, 'hyper-openbot-session')); const file = path.join(directory, 'hyper-openbot-session', 'owner.json'); await fs.writeFile(file, 'broken');
   const manager = createHyperOpenBotSession(directory, async () => 'native-b');
   await expect(manager.acquire()).rejects.toThrow(); expect(await fs.readFile(file, 'utf8')).toBe('broken');
+});
+it('does not promote an old numeric-ID owner binding into a UUID binding', async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'hyper-session-test-')); directories.push(directory);
+  await fs.mkdir(path.join(directory, 'hyper-openbot-session'));
+  const file = path.join(directory, 'hyper-openbot-session', 'owner.json');
+  const legacy = JSON.stringify({ version: 1, backend: 'ssh:agent@100.104.170.51:127.0.0.1:3010', owner: 'a'.repeat(64) });
+  await fs.writeFile(file, legacy);
+  const manager = createHyperOpenBotSession(directory, async () => 'new-uuid-owner');
+  electron.fromPartition.mockClear();
+  await expect(manager.acquire()).rejects.toThrow('Invalid OpenBot owner binding');
+  expect(electron.fromPartition).not.toHaveBeenCalled();
+  expect(await fs.readFile(file, 'utf8')).toBe(legacy);
 });

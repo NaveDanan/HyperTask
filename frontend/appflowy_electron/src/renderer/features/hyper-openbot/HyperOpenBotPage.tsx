@@ -9,7 +9,7 @@ import { readThreadMessages } from './HyperThreadMessages';
 import { mergeStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
 import { hyperToolOutcome } from './HyperToolOutcome';
-import { hyperGatewayJoin } from './HyperGatewayJoin';
+import { hyperGatewayJoin } from './HyperRun';
 import { HyperConversationActions } from './HyperConversationActions';
 import { Button } from '@/components/ui/button';
 import { HyperOpenBotProvider } from './provider';

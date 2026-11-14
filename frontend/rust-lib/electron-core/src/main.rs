@@ -108,6 +108,7 @@ unsafe impl Send for Task {}
 struct CoreHost {
   core: Option<AppFlowyCore>,
   sender: Option<mpsc::UnboundedSender<Task>>,
+  local_identity: bool,
 }
 
 impl CoreHost {
@@ -141,6 +142,7 @@ impl CoreHost {
         return -1;
       },
     };
+    let local_identity = configuration.authenticator_type == AuthenticatorType::Local;
     configuration.write_env();
 
     if configuration.authenticator_type == AuthenticatorType::AppFlowyCloud {
@@ -181,6 +183,7 @@ impl CoreHost {
     let cloned_runtime = runtime.clone();
     self.core =
       Some(runtime.block_on(async move { AppFlowyCore::new(config, cloned_runtime, None).await }));
+    self.local_identity = local_identity;
     0
   }
 
@@ -191,6 +194,29 @@ impl CoreHost {
       send_response(request.id, STATUS_INTERNAL, b"AppFlowy core is not initialized");
       return;
     };
+
+    // Additive host-only query: existing plugin event IDs and protobufs are unchanged.
+    // The main process pairs this session UUID with GetUserProfile, permits local
+    // accounts only, and never accepts an identity supplied by the renderer.
+    if request.event == "HyperGetNativeIdentity" {
+      if !self.local_identity {
+        send_response(request.id, STATUS_INTERNAL, b"Authenticated server identity is unavailable");
+        return;
+      }
+      match core.user_manager.get_session() {
+        Ok(session) if !session.user_uuid.is_nil() => {
+          let identity = serde_json::json!({
+            "version": 1,
+            "domain": "local",
+            "userId": session.user_id.to_string(),
+            "userUuid": session.user_uuid.to_string(),
+          });
+          send_response(request.id, STATUS_OK, identity.to_string().as_bytes());
+        },
+        _ => send_response(request.id, STATUS_INTERNAL, b"Native identity is unavailable"),
+      }
+      return;
+    }
 
     #[cfg(feature = "verbose_log")]
     trace!("[Electron]: {} Async Event: {}", request.id, request.event);
