@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { Button } from '../../../components/ui/button';
 import { hyperGovernanceRequest as request } from './HyperGovernanceApi';
-import { HyperError, HyperStatus, useHyperAction, useHyperResource } from './HyperGovernanceSection';
+import { HyperError, HyperStatus, useHyperAction, useHyperResource } from './HyperGovernanceUi';
 type HyperAudience = { audience: string; outsideInput: boolean; members: { kind: string; value: string }[] };
 function describe(a: HyperAudience | null) { if (!a) return 'Not approved'; return `${a.audience === 'owner' ? 'Only its owner' : a.audience === 'team' ? 'Everyone' : a.members.map(m => `${m.kind}: ${m.value}`).join(', ') || 'Nobody named'}${a.outsideInput ? ', and outside input' : ''}`; }
 export function HyperSharedUseRequests() {

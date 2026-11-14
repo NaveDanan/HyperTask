@@ -1,7 +1,12 @@
 // Adapted from OpenBot app/src/lib/{people,enterprise,identity-providers,audit,what-if,reviewer-guidance}.
 // Copyright (c) 2026 CopilotKit. MIT licensed. HyperTask developed by NaveDanan.
 import { hyperOpenBotRequest } from '../transport';
-export const hyperGovernanceRequest = hyperOpenBotRequest;
+import { hyperValidateGovernanceResponse } from './HyperGovernanceContracts';
+export async function hyperGovernanceRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+  const value = await hyperOpenBotRequest<T>(path, method, body);
+  hyperValidateGovernanceResponse(path, method, value);
+  return value;
+}
 export interface HyperPerson { id: string; email: string; name: string | null; role: 'admin' | 'user'; providers: string[]; revoked: boolean; configuredAdmin: boolean; lastSignedInAt: string | null }
 export interface HyperPolicy { mode: 'dry-run' | 'enforce'; deny: string[]; allow: string[]; labels?: Record<string, { name: string; description: string }> }
 export interface HyperCapability { capability: string; title: string; description: string; default: boolean; organization: boolean | null; roles: Record<string, boolean>; groups: Record<string, boolean> }

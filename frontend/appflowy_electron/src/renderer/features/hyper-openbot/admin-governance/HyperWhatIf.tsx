@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { hyperGovernanceRequest as request } from './HyperGovernanceApi';
-import { HyperField, HyperStatus, HyperError, useHyperAction, useHyperResource } from './HyperGovernanceSection';
+import { HyperField, HyperStatus, HyperError, useHyperAction, useHyperResource } from './HyperGovernanceUi';
 import { EMPTY_WHAT_IF_ACTION, missingFrom, WHAT_IF_INITIATOR_WORDS, WHAT_IF_INTENT_WORDS, type WhatIfAction, type WhatIfVocabulary, type WhatIfResult } from './HyperWhatIfModel';
 export function HyperVerdict({ result, navigate }: { result: WhatIfResult; navigate?(page: string): void }) {
   const pages: Record<string, string> = { '/admin/permissions': 'Permissions', '/admin/boundaries': 'Boundaries', '/admin/approvals': 'Approvals' };

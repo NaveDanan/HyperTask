@@ -6,7 +6,7 @@ import { ruleLabel, withRuleReplaced, withoutRule, type RuleTemplate } from './H
 import { HyperEvidence } from './HyperEvidence';
 import { HyperSharedUseRequests } from './HyperSharedUseRequests';
 import { hyperGovernanceRequest as request } from './HyperGovernanceApi';
-import { HyperResult, HyperStatus, HyperError, useHyperResource, useHyperAction } from './HyperGovernanceSection';
+import { HyperStatus, HyperError, useHyperResource, useHyperAction } from './HyperGovernanceUi';
 
 export function HyperDescribeChanges({ kind }: { kind: 'permissions' | 'approvals' }) {
   const permissions = kind === 'permissions';
@@ -14,39 +14,49 @@ export function HyperDescribeChanges({ kind }: { kind: 'permissions' | 'approval
   const key = permissions ? 'changes' : 'rules';
   const [text, setText] = useState('');
   const [source, setSource] = useState('');
-  const [rows, setRows] = useState<unknown[]>([]);
+  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [reading, setReading] = useState<unknown>();
   const [preview, setPreview] = useState<{ check: { ok: boolean } }>();
   const [saved, setSaved] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  useEffect(() => {
+    setPreview(undefined); setPreviewError('');
+    if (!rows.length) return;
+    let active = true; setPreviewing(true);
+    request<{ check: { ok: boolean } }>(`${base}/${permissions ? 'preview' : 'backtest'}`, 'POST', { [key]: rows }).then(value => { if (active) setPreview(value); }, () => { if (active) setPreviewError('Could not preview these changes. Retry before saving.'); }).finally(() => { if (active) setPreviewing(false); });
+    return () => { active = false; };
+  }, [rows, base, key, permissions]);
   const a = useHyperAction();
-  return <div className="grid gap-3"><label>Describe the change<textarea className="w-full rounded-md border bg-background p-3" value={text} maxLength={4000} disabled={a.busy} onChange={e => { setText(e.target.value); setPreview(undefined); setSaved(false); }} /></label>
+  return <div className="grid gap-3"><label>Describe the change<textarea className="w-full rounded-md border bg-background p-3" value={text} maxLength={1000} disabled={a.busy} onChange={e => { setText(e.target.value); setPreview(undefined); setSaved(false); }} /></label>
     <Button disabled={a.busy || !text.trim()} onClick={() => void a.run(async () => {
       setPreview(undefined); setSaved(false);
       const result = await request<Record<string, unknown>>(`${base}/translate`, 'POST', { text });
-      setReading(result); setSource(text); setRows(result[key] as unknown[]);
+      setReading(result); setSource(text); setRows(result[key] as Record<string, unknown>[]);
     })}>Write changes</Button>
     {reading !== undefined && <HyperEvidence value={reading} />}
-    {rows.map((row, index) => <div className="rounded border p-3" key={index}><HyperEvidence value={row} /><Button disabled={a.busy} variant="outline" onClick={() => { setRows(rows.filter((_, i) => i !== index)); setPreview(undefined); setSaved(false); }}>Remove change</Button></div>)}
+    {rows.map((row, index) => <div className="rounded border p-3" key={index}><HyperEvidence value={row} />{!permissions && <div className="grid gap-2">{['botId', 'toolRef', 'effect', 'scope', 'behaviour'].map(field => <label key={field}>{field}{field === 'behaviour' ? <select disabled={a.busy} value={String(row[field])} onChange={e => { setRows(rows.map((r, i) => i === index ? { ...r, [field]: e.target.value } : r)); setPreview(undefined); setSaved(false); }}>{['allow', 'pre_approved', 'ask', 'hand_off'].map(value => <option key={value}>{value}</option>)}</select> : <input className="rounded border bg-background p-2" disabled={a.busy} value={String(row[field])} onChange={e => { setRows(rows.map((r, i) => i === index ? { ...r, [field]: e.target.value } : r)); setPreview(undefined); setSaved(false); }} />}</label>)}</div>}<Button disabled={a.busy} variant="outline" onClick={() => { setRows(rows.filter((_, i) => i !== index)); setPreview(undefined); setSaved(false); }}>Remove change</Button></div>)}
     <Button disabled={a.busy || !rows.length || source !== text} onClick={() => void a.run(async () => { setPreview(undefined); setPreview(await request(`${base}/${permissions ? 'preview' : 'backtest'}`, 'POST', { [key]: rows })); })}>Preview effects and validate</Button>
-    {preview && <HyperEvidence value={preview} />}
-    <Button disabled={a.busy || !preview?.check.ok || source !== text || saved} onClick={() => void a.run(async () => { await request(`${base}/batch`, 'POST', { [key]: rows, authoring: { source: 'english', text: source } }); setSaved(true); setPreview(undefined); })}>Save changes</Button>
+    {previewing && <p role="status">Checking effects on recent activity…</p>}<HyperError message={previewError} />{preview && <HyperEvidence value={preview} />}
+    <Button disabled={a.busy || previewing || !rows.length || !preview?.check.ok || source !== text || saved} onClick={() => void a.run(async () => { await request(`${base}/batch`, 'POST', { [key]: rows, authoring: { source: 'english', text: source } }); setSaved(true); setPreview(undefined); })}>Save changes</Button>
     {saved && <p role="status">Changes saved.</p>}<HyperError message={a.error} />
   </div>;
 }
 
 type HyperRule = { id: string; botId: string; toolRef: string; effect: string; scope: string; behaviour: string };
 export function HyperTeamApprovals() {
-  const r = useHyperResource<{ team?: { enforceAutoReview: boolean; customRulesEnabled: boolean; hostCommandsCap: string; actionKinds?: Record<string, string> }; teamRules: HyperRule[] }>('/api/approvals');
+  const r = useHyperResource<{ enabled: boolean; team?: { enforceAutoReview: boolean; customRulesEnabled: boolean; hostCommandsCap: string; actionKinds?: Record<string, string> }; teamRules: HyperRule[] }>('/api/approvals');
   const a = useHyperAction(r.reload);
-  const [rule, setRule] = useState({ botId: '*', toolRef: '*', effect: '*', scope: '*', behaviour: 'ask' });
+  const choices = useHyperResource<import('./HyperWhatIfModel').WhatIfVocabulary>('/api/admin/what-if/vocabulary');
+  const [rule, setRule] = useState({ botId: '*', toolRef: '', effect: '*', scope: '*', behaviour: 'ask' });
   const patch = (body: unknown) => a.run(() => request('/api/approvals/team', 'PATCH', body));
-  return <HyperStatus resource={r}><div className="grid gap-3">{r.data?.team ? <>
+  return <HyperStatus resource={r}><div className="grid gap-3">{r.data?.enabled === false && <p role="alert">Approvals are disabled on this deployment.</p>}{r.data?.team ? <>
     {(['enforceAutoReview', 'customRulesEnabled'] as const).map(key => <label key={key}><input type="checkbox" checked={r.data!.team![key]} disabled={a.busy} onChange={e => void patch({ [key]: e.target.checked })} /> {key === 'enforceAutoReview' ? 'Require automatic review' : 'Allow custom rules'}</label>)}
     <label>Host commands <select value={r.data.team.hostCommandsCap} disabled={a.busy} onChange={e => void patch({ hostCommandsCap: e.target.value })}>{['ask', 'allow', 'never'].map(v => <option key={v}>{v}</option>)}</select></label>
     {['deleting', 'sending', 'sharing', 'publishing', 'payments', 'credentials', 'security_settings'].map(kind => <label key={kind}>{kind} <select disabled={a.busy} value={r.data!.team!.actionKinds?.[kind] ?? 'open'} onChange={e => void patch({ actionKinds: { [kind]: e.target.value } })}>{['open', 'ask', 'hand_off'].map(v => <option key={v}>{v}</option>)}</select></label>)}
     </> : <p>Team controls are unavailable for this account or edition.</p>}
-    {!r.data?.teamRules.length && <p>No team rules.</p>}{r.data?.teamRules.map(row => <article className="rounded border p-3" key={row.id}><HyperEvidence value={row} /><select aria-label="Rule behavior" disabled={a.busy} value={row.behaviour} onChange={e => void a.run(() => request(`/api/approvals/team/rules/${encodeURIComponent(row.id)}`, 'PATCH', { behaviour: e.target.value }))}>{['allow', 'pre_approved', 'ask', 'hand_off'].map(v => <option key={v}>{v}</option>)}</select><Button variant="destructive" disabled={a.busy} onClick={() => { if (window.confirm('Remove this team rule?')) void a.run(() => request(`/api/approvals/team/rules/${encodeURIComponent(row.id)}`, 'DELETE')); }}>Remove</Button></article>)}
-    <form className="grid gap-2" onSubmit={e => { e.preventDefault(); void a.run(() => request('/api/approvals/team/rules', 'POST', rule)); }}><h3>Add team rule</h3>{(['botId', 'toolRef', 'effect', 'scope'] as const).map(key => <label key={key}>{key}<input className="rounded border bg-background p-2" required value={rule[key]} onChange={e => setRule({ ...rule, [key]: e.target.value })} /></label>)}<select aria-label="New rule behavior" value={rule.behaviour} onChange={e => setRule({ ...rule, behaviour: e.target.value })}>{['allow', 'pre_approved', 'ask', 'hand_off'].map(v => <option key={v}>{v}</option>)}</select><Button disabled={a.busy || !r.data?.team} type="submit">Add rule</Button></form><HyperSharedUseRequests /><HyperError message={a.error} /></div></HyperStatus>;
+    {!r.data?.teamRules.length && <p>No team rules.</p>}{r.data?.teamRules.map(row => <article className="rounded border p-3" key={row.id}><strong>{row.toolRef}</strong><p>Bot: {row.botId === '*' ? 'Every Bot' : choices.data?.bots.find(b => b.id === row.botId)?.name || row.botId} · Action: {row.effect} · Target: {row.scope}</p><select aria-label="Rule behavior" disabled={a.busy} value={row.behaviour} onChange={e => void a.run(() => request(`/api/approvals/team/rules/${encodeURIComponent(row.id)}`, 'PATCH', { behaviour: e.target.value }))}>{['allow', 'pre_approved', 'ask', 'hand_off'].map(v => <option key={v}>{v}</option>)}</select><Button variant="destructive" disabled={a.busy} onClick={() => { if (window.confirm('Remove this team rule?')) void a.run(() => request(`/api/approvals/team/rules/${encodeURIComponent(row.id)}`, 'DELETE')); }}>Remove</Button></article>)}
+    <form className="grid gap-2" onSubmit={e => { e.preventDefault(); void a.run(() => request('/api/approvals/team/rules', 'POST', rule).then(() => setRule({ botId: '*', toolRef: '', effect: '*', scope: '*', behaviour: 'ask' }))); }}><h3>Add team rule</h3><p>Use * to match anything. Tool examples: composio-gmail/*, computer_click, host/*. A target of *.example.com matches every page on that site.</p><HyperStatus resource={choices}>{null}</HyperStatus>{(['botId', 'toolRef', 'effect', 'scope'] as const).map(key => <label key={key}>{key}<input className="rounded border bg-background p-2" required list={`team-rule-${key}`} value={rule[key]} onChange={e => setRule({ ...rule, [key]: e.target.value })} /><datalist id={`team-rule-${key}`}>{key === 'botId' ? choices.data?.bots.map(b => <option key={b.id} value={b.id}>{b.name}</option>) : key === 'toolRef' ? choices.data?.apps.flatMap(app => app.tools.map(t => <option key={`${app.id}/${t.name}`} value={`${app.id}/${t.name}`}>{app.name}: {t.name}</option>)) : key === 'effect' ? ['*', 'read', 'write', 'destructive', 'delegate'].map(v => <option key={v}>{v}</option>) : null}</datalist></label>)}<select aria-label="New rule behavior" value={rule.behaviour} onChange={e => setRule({ ...rule, behaviour: e.target.value })}>{['allow', 'pre_approved', 'ask', 'hand_off'].map(v => <option key={v}>{v}</option>)}</select><Button disabled={a.busy || !r.data?.team || !rule.toolRef.trim() || r.data?.enabled === false} type="submit">Add rule</Button></form><HyperSharedUseRequests /><HyperError message={a.error} /></div></HyperStatus>;
 }
 
 // Adapted from boundaries_.new, boundaries_.$index and lib/computers/policy-translate.
@@ -87,7 +97,7 @@ export function HyperBoundaryEditor({ policy, original, reload, template }: { po
   };
   return <details className="rounded border p-3" onToggle={e => setOpen(e.currentTarget.open)}><summary>{original ? 'Edit rule and review recent activity' : template ? 'Use this template' : 'Add a custom or described boundary'}</summary><div className="grid gap-3 pt-3">
     {template && <p>{template.cost}</p>}
-    <label>Describe what to stop<textarea disabled={a.busy} className="w-full rounded border bg-background p-2" value={text} onChange={e => setText(e.target.value)} /></label>
+    <label>Describe what to stop<textarea disabled={a.busy} className="w-full rounded border bg-background p-2" value={text} maxLength={1000} onChange={e => setText(e.target.value)} /></label>
     <Button disabled={a.busy || !text.trim()} onClick={() => void a.run(async () => { const result = await request<NonNullable<typeof reading> & { effect: string }>('/api/computers/policy-translate', 'POST', { text }); setReading(result); setExpression(result.rule); if (!name.trim()) setName(text.slice(0, 80)); if (!description.trim()) setDescription(result.summary?.slice(0, 300) || ''); })}>Write boundary</Button>
     {reading && <><HyperEvidence value={reading} />{reading.rule !== expression && <p>The expression has changed since this reading.</p>}</>}
     <label>Name<input className="w-full rounded border bg-background p-2" maxLength={80} disabled={a.busy} value={name} onChange={e => setName(e.target.value)} /></label>

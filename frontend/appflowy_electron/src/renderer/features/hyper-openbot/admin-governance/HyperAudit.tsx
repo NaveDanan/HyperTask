@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { hyperOpenBotFetch, HYPER_OPENBOT_ORIGIN } from '../transport';
 import { hyperGovernanceRequest as request, hyperAuditExportPath } from './HyperGovernanceApi';
-import { HyperStatus, HyperError, HyperResult, useHyperAction, useHyperResource } from './HyperGovernanceSection';
+import { HyperStatus, HyperError, HyperResult, useHyperAction, useHyperResource } from './HyperGovernanceUi';
 import { HyperRecordingSettings } from './HyperEnterpriseSettings';
 import { HyperVerdict, HyperWhatIf } from './HyperWhatIf';
 import { whatIfExplainable, type WhatIfAction, type WhatIfResult } from './HyperWhatIfModel';

@@ -1,7 +1,7 @@
 // Adapted from OpenBot admin/controls/{sign-in-section,recording-section}. Copyright (c) 2026 CopilotKit. MIT licensed.
 import { Button } from '../../../components/ui/button';
 import { hyperGovernanceRequest as request } from './HyperGovernanceApi';
-import { HyperStatus, HyperError, useHyperAction, useHyperResource } from './HyperGovernanceSection';
+import { HyperStatus, HyperError, useHyperAction, useHyperResource } from './HyperGovernanceUi';
 type HyperControls = { settings: { ssoRequired: boolean; actionRecording: boolean }; scim: { configured: boolean; baseUrl: string | null }; otel: { configured: boolean }; actionRecordRetentionDays: number };
 export function HyperSignInSettings() {
   const r = useHyperResource<HyperControls>('/api/admin/enterprise');
