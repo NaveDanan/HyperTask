@@ -21,7 +21,7 @@ export function HyperBotDetailTabs({ bot, openConversation }: { bot: HyperBotPro
   const Extra = HYPER_BOT_EXTRA_TABS.find(item => item.id === tab)?.component;
   return <section className="grid gap-4 border-t border-border pt-4">
     <nav aria-label="Bot details" className="flex flex-wrap gap-2">{[{ id: 'setup', label: 'Setup' }, { id: 'apps', label: 'Apps' }, { id: 'sharing', label: 'Sharing' }, { id: 'access', label: 'Access' }, { id: 'approvals', label: 'Approvals' }, { id: 'skills', label: 'Skills' }, { id: 'reach', label: 'Reaching you' }, { id: 'activity', label: 'Activity' }, ...HYPER_BOT_EXTRA_TABS].map(item => <Button key={item.id} variant={tab === item.id ? 'secondary' : 'ghost'} aria-pressed={tab === item.id} onClick={() => setTab(item.id)}>{item.label}</Button>)}</nav>
-    {tab === 'setup' ? <HyperBotSetupTab agentId={bot.id} /> : tab === 'activity' ? <HyperBotActivityTab agentId={bot.id} openConversation={openConversation} selectTab={setTab} /> : tab === 'reach' ? <HyperReachability agentId={bot.id} /> : tab === 'approvals' ? <HyperBotApprovalsTab agentId={bot.id} /> : tab === 'skills' ? <HyperBotSkillsTab agentId={bot.id} mine={bot.mine} /> : tab === 'access' ? <HyperBotHandoffTab agentId={bot.id} /> : Extra ? <Extra agentId={bot.id} /> : <HyperBotRemoteTab key={`${bot.id}:${tab}`} bot={bot} tab={tab} />}
+    {tab === 'setup' ? <HyperBotSetupTab agentId={bot.id} /> : tab === 'activity' ? <HyperBotActivityTab agentId={bot.id} openConversation={openConversation} selectTab={setTab} /> : tab === 'reach' ? <HyperReachability agentId={bot.id} /> : tab === 'approvals' ? <HyperBotApprovalsTab agentId={bot.id} /> : tab === 'skills' ? <HyperBotSkillsTab agentId={bot.id} mine={bot.mine} /> : tab === 'access' ? <HyperBotHandoffTab agentId={bot.id} /> : Extra ? <Extra agentId={bot.id} /> : tab === 'apps' || tab === 'sharing' ? <HyperBotRemoteTab key={`${bot.id}:${tab}`} bot={bot} tab={tab} /> : <p>This tab is waiting for its area integration.</p>}
   </section>;
 }
 function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) {
@@ -46,14 +46,14 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
       setTeam(data); setAdmin(me.user.role === 'admin');
       const current = data.teamBots.find(row => row.id === bot.id);
       setAudience(current?.audience ?? 'team'); setEmails(current?.people?.join(', ') ?? ''); setGroups(current?.groups?.join(', ') ?? '');
-    })).catch(() => { if (live) setError('Unable to load this Bot tab. Access may be refused.'); }).finally(() => { if (live) setPending(false); });
+    })).catch(() => { if (live) { setApps(undefined); setTeam(undefined); setAdmin(false); setError('Unable to load this Bot tab. Access may be refused.'); } }).finally(() => { if (live) setPending(false); });
     return () => { live = false; };
   }, [bot.id, tab, revision]);
   async function mutate(action: () => Promise<unknown>) {
     if (lock.current) return;
     lock.current = true; setPending(true); setError('');
     try { await action(); } catch { setError('The change was refused or could not be saved.'); }
-    finally { lock.current = false; setPending(false); setRevision(v => v + 1); }
+    finally { lock.current = false; setRevision(v => v + 1); }
   }
   const split = (text: string) => text.split(',').map(value => value.trim()).filter(Boolean);
   const published = team?.teamBots.find(row => row.id === bot.id);

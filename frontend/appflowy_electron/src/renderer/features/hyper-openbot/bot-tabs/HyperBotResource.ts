@@ -15,7 +15,7 @@ export function useHyperBotResource<T>(load: () => Promise<T>, key: string, inte
       reading = true;
       const version = ++sequence.current;
       try { const value = await load(); if (live && version === sequence.current) setData(value); }
-      catch { if (live && version === sequence.current) setError('Unable to load. Access may be refused.'); }
+      catch { if (live && version === sequence.current) { setData(undefined); setError('Unable to load. Access may be refused.'); } }
       finally { reading = false; if (live && version === sequence.current) setPending(false); }
     };
     setPending(true); void refresh();

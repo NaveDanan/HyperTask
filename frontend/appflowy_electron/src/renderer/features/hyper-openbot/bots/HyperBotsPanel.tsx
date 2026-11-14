@@ -125,7 +125,7 @@ export function HyperBotEditor({ bot, onSaved, onRemoved, onClose, onOpenConvers
         })}>Delete my data and reset</Button>
         <Button variant="outline" onClick={() => setResetPlan(undefined)}>Cancel reset</Button>
       </div>}
-      {bot.canManage && <Button variant="outline" onClick={() => void run(async () => { const result = await hyperOpenBotRequest<{ agent: HyperBotProfile }>(`${HyperAgentPath(bot.id)}/duplicate`, 'POST'); onSaved(result.agent); })}>Duplicate Bot</Button>}
+      {<Button variant="outline" onClick={() => void run(async () => { const result = await hyperOpenBotRequest<{ agent: HyperBotProfile }>(`${HyperAgentPath(bot.id)}/duplicate`, 'POST'); onSaved(result.agent); })}>Duplicate Bot</Button>}
       {bot.canManage && <>{confirmDelete ? <div className="grid gap-2"><p className="text-sm">Delete {bot.name} for everyone? This cannot be undone. Existing conversations stay readable.</p><Button variant="destructive" onClick={() => void run(async () => { await hyperOpenBotRequest(HyperAgentPath(bot.id), 'DELETE'); onRemoved(); })}>Delete permanently</Button><Button variant="outline" onClick={() => setConfirmDelete(false)}>Cancel</Button></div> : <Button variant="destructive" onClick={() => setConfirmDelete(true)}>Delete Bot…</Button>}</>}
     </fieldset>}
   </div>;
