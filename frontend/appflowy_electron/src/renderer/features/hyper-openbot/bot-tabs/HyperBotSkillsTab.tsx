@@ -7,7 +7,7 @@ export function HyperBotSkillsTab({ agentId, mine }: { agentId: string; mine: bo
   const state = useHyperBotResource(async () => {
     const held = await request<{ skills: HyperSkill[] }>(`/api/plugins/for/${encodeURIComponent(agentId)}`);
     if (!mine) return { held: held.skills, own: [] as HyperSkill[] };
-    const [page, me] = await Promise.all([request<{ skills: HyperSkill[] }>('/api/plugins'), request<{ user: { id: string } }>('/api/auth/me')]);
+    const [page, me] = await Promise.all([request<{ skills: HyperSkill[] }>('/api/plugins'), request<{ user: { id: string } }>('/api/me')]);
     return { held: held.skills, own: page.skills.filter(skill => skill.ownerUserId === me.user.id) };
   }, agentId);
   return <section className="grid gap-3"><h3>Skills</h3><p>Type / in a conversation to run a skill.</p>{state.pending && <p role="status">Loading…</p>}{state.error && <p role="alert" className="text-destructive">{state.error}</p>}<Button disabled={state.pending} variant="outline" onClick={state.refresh}>Refresh</Button>
