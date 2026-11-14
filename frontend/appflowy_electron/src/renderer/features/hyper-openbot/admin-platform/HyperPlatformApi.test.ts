@@ -18,3 +18,17 @@ it('validates connector key ID and encodes revoke IDs', async () => {
   await hyperRevokeCredential('key?test');
   expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/admin/credentials/key%3Ftest/revoke', 'POST');
 });
+
+import { hyperLoadCheckInMetrics, hyperSetCheckInLimit, hyperSetCheckIns } from './HyperProactiveApi';
+it('uses upstream proactive metrics and organization control payloads', async () => {
+  await hyperLoadCheckInMetrics(30);
+  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/admin/proactive?days=30');
+  await hyperSetCheckIns(false);
+  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/admin/enterprise/capabilities', 'PUT', { scopeKind: 'organization', scopeId: '', capability: 'proactive', allowed: false });
+});
+it('validates the daily limit before transport', async () => {
+  for (const value of [0, 1441, 1.5, NaN]) expect(() => hyperSetCheckInLimit(value)).toThrow();
+  expect(hyperOpenBotRequest).not.toHaveBeenCalled();
+  await hyperSetCheckInLimit(24);
+  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/admin/enterprise/settings/proactiveDailyRuns', 'PUT', { value: 24 });
+});
