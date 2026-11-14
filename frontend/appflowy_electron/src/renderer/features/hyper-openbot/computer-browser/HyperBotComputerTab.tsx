@@ -17,13 +17,13 @@ export function HyperBotComputerTab({ agentId }: { agentId: string }) {
     setControl(undefined); void poll(); return () => { active = false; clearTimeout(timer); };
   }, [agentId]);
   async function change(release: boolean) { setBusy(true); setError(''); try {
-    setControl(release && control?.request ? await hyperReleaseControl(agentId, control.request.id) : await hyperTakeControl(agentId, control?.request?.id));
+    setControl(release && control?.request ? await hyperReleaseControl(agentId, control.request.id) : await hyperTakeControl(agentId, control?.request && ['waiting', 'taken'].includes(control.request.status) ? control.request.id : undefined));
   } catch { setError('Control change failed or was refused. Refresh and try again.'); } finally { setBusy(false); } }
   return <section className="flex flex-col gap-3 p-4">
     {control?.request && <p role="status">Handoff: {control.request.status}</p>}
     {control?.request?.source !== 'manual' && control?.reason && <p>{control.reason}</p>}
     {error && <p role="alert" className="text-destructive">{error}</p>}
-    <div className="flex gap-2"><Button disabled={!control || busy || control.transitioning} onClick={() => void change(false)}>Take control</Button><Button variant="outline" disabled={!control?.request || busy || control.holder !== 'human'} onClick={() => void change(true)}>Hand back</Button>{control?.request && !['completed', 'cancelled', 'expired'].includes(control.request.status) && <Button variant="outline" disabled={busy || control.transitioning} onClick={() => { setBusy(true); void hyperOpenBotRequest<HyperControl>(`/api/computers/${encodeURIComponent(agentId)}/control/cancel`, 'POST', { requestId: control.request!.id }).then(setControl).catch(() => setError('The handoff could not be declined.')).finally(() => setBusy(false)); }}>Decline handoff</Button>}</div>
+    <div className="flex gap-2"><Button disabled={!control || busy || control.transitioning || control.holder === 'human'} onClick={() => void change(false)}>Take control</Button><Button variant="outline" disabled={!control?.request || busy || control.holder !== 'human'} onClick={() => void change(true)}>Hand back</Button>{control?.request && !['completed', 'cancelled', 'expired'].includes(control.request.status) && <Button variant="outline" disabled={busy || control.transitioning} onClick={() => { setBusy(true); void hyperOpenBotRequest<HyperControl>(`/api/computers/${encodeURIComponent(agentId)}/control/cancel`, 'POST', { requestId: control.request!.id }).then(setControl).catch(() => setError('The handoff could not be declined.')).finally(() => setBusy(false)); }}>Decline handoff</Button>}</div>
     <HyperPrivateHandoffs key={agentId} agentId={agentId} control={control} onOpenBrowser={() => setTab('browser')} />
     <nav aria-label="Computer views" className="flex gap-2">{(['browser', 'terminal', 'files', 'folders'] as const).map(item => <Button variant={tab === item ? 'default' : 'outline'} key={item} onClick={() => setTab(item)}>{item}</Button>)}</nav>
     {tab === 'browser' && <HyperBrowserView key={agentId} agentId={agentId}/>}

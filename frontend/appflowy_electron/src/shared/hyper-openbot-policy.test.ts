@@ -70,3 +70,7 @@ it('computer-browser folder access permits its API and rejects traversal and for
   for (const path of ['/api/host-access', '/api/host-access/grants', '/api/host-access/grants/folder-id', '/api/host-access/stop', '/api/computers/a/files/download?path=report.txt', '/api/browser/narration']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/host-access/%2fprivate', '/api/host-access/../private', 'file:///api/host-access', '/api/host-access\\private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+it('computer-browser permits opaque cursors and nested download queries without weakening route checks', () => {
+  for (const path of ['/api/recorder/recordings?cursor=a%2Fb%3Fnext%3D1', '/api/computers/bot/files/download?path=reports%2Freport.txt']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/computers%2Fbot/files/download?path=a', '/api/private?path=/api/browser', '/api/browser/%2e%2e/private?cursor=a']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});

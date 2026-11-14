@@ -66,12 +66,15 @@ function ask(id: string, message: unknown): Promise<unknown> {
   return new Promise((resolve) => {
     const runtime = runtimeOf();
     if (!runtime?.sendMessage) return resolve(undefined);
+    const timer = setTimeout(() => resolve(undefined), DEFAULT_DETECT_TIMEOUT_MS);
     try {
       runtime.sendMessage(id, message, (answer) => {
+        clearTimeout(timer);
         // Reading lastError is what tells Chrome the failure was handled.
         resolve(runtime.lastError ? undefined : answer);
       });
     } catch {
+      clearTimeout(timer);
       resolve(undefined);
     }
   });

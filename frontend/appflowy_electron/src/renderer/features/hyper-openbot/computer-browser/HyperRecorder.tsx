@@ -6,10 +6,11 @@ import { hyperOpenBotRequest } from '../transport';
 import { findRecorderHere, sendConnectCode, sendRecorderPage, askConnectWait, connectRefusalSentence, CONFIRM_WINDOW_MS, type RecorderHere } from './HyperRecorderBridge';
 export type HyperRecordingsPage = { recordings: { id: string; title: string | null; recordedAt: string; ended: string; reason: string | null }[]; nextCursor: string | null; unavailable?: string };
 export const hyperReadRecordings = (cursor = '') => hyperOpenBotRequest<HyperRecordingsPage>(`/api/recorder/recordings${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
+class HyperRecorderConnectRefusal extends Error {}
 export async function hyperConnectRecorder(id: string) {
   const { code } = await hyperOpenBotRequest<{ code: string }>('/api/recorder/connect-codes', 'POST', { via: 'web' });
   const answer = await sendConnectCode(id, code);
-  if (!answer.ok) throw new Error(connectRefusalSentence(answer.error, answer.retryAfterMs));
+  if (!answer.ok) throw new HyperRecorderConnectRefusal(connectRefusalSentence(answer.error, answer.retryAfterMs));
   return answer;
 }
 export function HyperRecorder() {
@@ -26,7 +27,7 @@ export function HyperRecorder() {
     void poll(); return () => { live = false; clearTimeout(timer); };
   }, []);
   useEffect(() => { let live = true; let timer: ReturnType<typeof setTimeout>; async function poll() { const version = revision.current; try { const loaded: HyperRecordingsPage[] = []; let cursor = ''; for (let index = 0; index < Math.max(1, pagesRef.current.length); index++) { const page = await hyperReadRecordings(cursor); loaded.push(page.unavailable ? { ...page, recordings: pagesRef.current[index]?.recordings || [] } : page); if (!page.nextCursor || page.unavailable) break; cursor = page.nextCursor; } if (live && version === revision.current) setPages(loaded); } catch { if (live) setError('Recordings could not be loaded. Retry.'); } finally { if (live) timer = setTimeout(() => void poll(), 10000); } } void poll(); return () => { live = false; clearTimeout(timer); }; }, []);
-  async function act(action: () => Promise<unknown>) { if (busy) return; setBusy(true); setError(''); try { await action(); await refreshHere(); } catch { setError('Recorder request failed or was refused. Please retry.'); } finally { setBusy(false); } }
+  async function act(action: () => Promise<unknown>) { if (busy) return; setBusy(true); setError(''); try { await action(); await refreshHere(); } catch (error) { setError(error instanceof HyperRecorderConnectRefusal ? error.message : 'Recorder request failed or was refused. Please retry.'); } finally { setBusy(false); } }
   const connected = here?.kind === 'connected' ? here : undefined; const recording = connected?.state.phase === 'recording'; const last = pages.at(-1);
   return <section className="space-y-3 rounded-lg border p-4"><h3 className="font-semibold">Recorder</h3>{error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}{!here && <p>Finding Recorder…</p>}
     {here?.kind === 'unreachable' && <p>This desktop window cannot reach browser extensions. Open OpenBot in your browser to connect its Recorder. No Recorder store page is published for this environment.</p>}
