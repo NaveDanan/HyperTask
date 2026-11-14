@@ -88,11 +88,11 @@ export function HyperApprovalCard(props: Waiting<ApprovalArgs> & { name?: string
         if (!respond) return;
         setSending(true);
         // Words instead of a yes or no go back as the answer itself; the Bot reads `note`.
-        await respond(
+        try { await respond(
           value === OTHER
             ? { decision: "other", note: text }
             : { decision: value },
-        );
+        ); } finally {setSending(false);}
       }}
       options={[
         {
@@ -188,14 +188,14 @@ export function HyperChoiceCard(props: Waiting<ChoiceArgs>) {
       onSubmit={async (value, text) => {
         if (!respond) return;
         setSending(true);
-        await respond(
+        try { await respond(
           value === OTHER
             ? { answer: text }
             : {
                 choice: value,
                 label: options.find((option) => option.id === value)?.label,
               },
-        );
+        ); } finally {setSending(false);}
       }}
       options={options.map((option) => ({
         value: option.id,

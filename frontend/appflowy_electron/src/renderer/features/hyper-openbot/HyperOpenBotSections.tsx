@@ -7,7 +7,8 @@ export interface HyperOpenBotSectionContext {
   /** Start a new conversation with one or more Bots. */
   initialDraftSupported?: boolean;
   startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): Promise<void>;
-  navigate?(destinationId: string): void;
+  navigate?(destinationId: string, intent?: { path: string }): void;
+  navigationIntent?: { path: string };
 }
 export interface HyperOpenBotSection {
   readonly id: string;
@@ -17,9 +18,9 @@ export interface HyperOpenBotSection {
 }
 
 /** Lazily load an area module whose default export renders the section. Call once per slot entry. */
-export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext }> }>) {
+export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext; path?: string }> }>) {
   const Section = lazy(load);
-  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section context={context} /></Suspense>;
+  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section key={context.navigationIntent?.path} context={context} path={context.navigationIntent?.path} /></Suspense>;
 }
 
 /** Parity sections added beside Conversations, Bots, Skills and Connections. Each area owns its slot. */
@@ -44,6 +45,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   { id: 'computer', label: 'Computer', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperComputerSettings')) },
   { id: 'bot-computer', label: 'Bot computer', group: 'bots', render: hyperLazySection(() => import('./computer-browser/HyperComputerDestination')) },
   // slot: screens
+  { id: 'screens', label: 'Screens', group: 'personal', render: hyperLazySection(() => import('./screens-gen/HyperScreensDestination')) },
   { id: 'components-gallery', label: 'Components gallery', group: 'personal', render: hyperLazySection(() => import('./screens-gen/HyperGallerySection')) },
   { id: 'components-admin', label: 'UI components', group: 'admin', render: hyperLazySection(() => import('./screens-gen/HyperAdminComponentsSection')) },
   { id: 'components-playground', label: 'Component playground', group: 'admin', render: hyperLazySection(() => import('./screens-gen/HyperPlaygroundSection')) },

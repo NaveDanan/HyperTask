@@ -104,3 +104,16 @@ describe('Hyper original gallery registration and lifecycle', () => {
     expect(request).toHaveBeenCalledTimes(1);
   });
 });
+
+import { hyperParseScreenDestination } from './HyperScreensDestination';
+describe('Hyper canonical screens destination', () => {
+  it('keeps nested gallery and admin detail names and playground', () => {
+    expect(hyperParseScreenDestination('/settings/components-gallery/askChoice')).toEqual({kind: 'gallery', name: 'askChoice'});
+    expect(hyperParseScreenDestination('/admin/components/showTable')).toEqual({kind: 'admin', name: 'showTable'});
+    expect(hyperParseScreenDestination('/admin/playground')).toEqual({kind: 'playground'});
+  });
+  it('keeps screen arguments and requires an explicit server-checked Bot', () => {
+    expect(hyperParseScreenDestination('/s/custom_card?agentId=bot&args=%7B%22title%22%3A%22Hi%22%7D')).toEqual({kind: 'screen', name: 'custom_card', agentId: 'bot', args: {title: 'Hi'}});
+    for (const path of ['//evil/path', 'https://evil/path', '/s/x?args=[]', '/s/%2fsecret', '/unknown']) expect(hyperParseScreenDestination(path)).toEqual({kind: 'missing'});
+  });
+});

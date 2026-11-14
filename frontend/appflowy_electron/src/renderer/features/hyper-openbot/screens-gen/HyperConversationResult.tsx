@@ -1,13 +1,18 @@
 // Adapted from OpenBot lib/copilot/gallery-tools.tsx and sandboxed-tools.tsx.
 // Copyright (c) 2026 CopilotKit. MIT license, see ../LICENSE.
+import { HyperGenerativeActivity } from './HyperGenerativeActivity';
 import { useHyperGalleryCall, hyperAnswerGalleryCall } from './HyperGalleryRuntime';
 import { HyperToolMessage, type HyperToolMessageProps } from '../transcript/HyperTranscript';
 import { hyperGalleryComponent } from './HyperGalleryRegistry';
 import { HyperInteractiveResult } from './HyperInteractiveResult';
 
 /** Identity must come from call provenance, never the selected channel or model arguments. */
-export function HyperConversationResult({tool, callingBotId}: {tool: HyperToolMessageProps; callingBotId?: string}) {
+export function HyperConversationResult({tool, callingBotId, ask}: {tool: HyperToolMessageProps; callingBotId?: string; ask?: (text: string) => void}) {
   const pending = useHyperGalleryCall(tool.id);
+  if (tool.label === 'open-generative-ui') {
+    try {return <HyperGenerativeActivity content={JSON.parse(tool.arguments ?? '{}')} />;}
+    catch {return <p role="alert">The generated screen could not be read.</p>;}
+  }
   const known = hyperGalleryComponent(tool.label) || tool.label.startsWith('custom_');
   if (!known) return <HyperToolMessage {...tool} />;
   let result = tool.result;
@@ -22,5 +27,5 @@ export function HyperConversationResult({tool, callingBotId}: {tool: HyperToolMe
   } catch {
     return <p role={tool.status === 'running' ? 'status' : 'alert'}>{tool.status === 'running' ? `Drawing ${tool.label}…` : 'This component received unreadable arguments.'}</p>;
   }
-  return <HyperInteractiveResult name={tool.label} agentId={callingBotId ?? ''} args={args} complete={tool.status === 'complete' || !!pending} result={result} respond={pending ? async value => {hyperAnswerGalleryCall(tool.id, value);} : undefined} />;
+  return <HyperInteractiveResult name={tool.label} agentId={pending?.botId ?? callingBotId ?? ''} ask={ask} args={args} complete={tool.status !== 'running' || !!pending} result={result} respond={pending ? async value => {hyperAnswerGalleryCall(tool.id, value);} : undefined} />;
 }

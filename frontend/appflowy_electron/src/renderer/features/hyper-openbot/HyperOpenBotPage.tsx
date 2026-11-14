@@ -120,7 +120,8 @@ function HyperChannelChat({ channel, serviceReady, registerReceiver }: { channel
     return () => { current = false; generation.current++; join.cancel(); watching.unsubscribe(); watchErrors.unsubscribe(); releaseApproval(); };
   }, [agent, copilotkit, isReady, channel.threadId, historyRevision, serviceReady]);
   const running = sending || agent.isRunning;
-  const messages: HyperTranscriptMessage[] = agent.messages.flatMap(message => {
+  const messages: HyperTranscriptMessage[] = agent.messages.flatMap<HyperTranscriptMessage>(message => {
+    if (message.role === 'activity' && message.activityType === 'open-generative-ui') return [{id: message.id, role: 'assistant' as const, content: '', tools: [{id: message.id, label: 'open-generative-ui', arguments: JSON.stringify(message.content), status: 'complete' as const}]}];
     // System instructions remain in the agent context, outside the visible transcript.
     if (message.role !== 'user' && message.role !== 'assistant') return [];
     const tools = 'toolCalls' in message ? message.toolCalls?.map(call => {
@@ -162,7 +163,7 @@ function HyperChannelChat({ channel, serviceReady, registerReceiver }: { channel
       finally { setSending(false); }
     } })} />
     <HyperDeliveryControls channelId={channel.id} bots={channel.agentIds.map(id => ({ id, name: id }))} enabled={serviceReady} />
-    <HyperTranscript renderTool={tool => <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
+    <HyperTranscript renderTool={tool => <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} ask={!running && serviceReady && !restoring && !reconnectRequired ? text => {void sendDraft({text, attachments: []}).catch(() => setError("The follow-up could not be sent."));} : undefined} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     <HyperConversationActions threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
     <HyperComposer className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} getAttachmentCount={() => getDraft().attachments.length} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => hyperUploadDraftFiles(files, async file => {
       const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
@@ -179,6 +180,7 @@ function HyperChannelChat({ channel, serviceReady, registerReceiver }: { channel
 }
 function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; serviceReady: boolean }) {
   const [screen, setScreen] = useState<string>('conversations');
+  const [navigationIntent, setNavigationIntent] = useState<{path: string}>();
   const [channels, setChannels] = useState<HyperChannel[]>([]);
   const [channel, setChannel] = useState<HyperChannel>();
   const [error, setError] = useState<string>();
@@ -255,12 +257,12 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
   }
   const tabs: readonly { id: string; label: string }[] = [{ id: 'conversations', label: 'Conversations' }, { id: 'bots', label: 'Bots' }, { id: 'skills', label: 'Skills' }, { id: 'connections', label: 'Connections' }, ...HYPER_OPENBOT_SECTIONS];
   const section = HYPER_OPENBOT_SECTIONS.find(each => each.id === screen);
-  const context: HyperOpenBotSectionContext = { openConversation: id => void openAny(id), initialDraftSupported: true, startConversation: start, navigate: id => { if (!serviceRef.current) return; const destination = id.split(/[/?]/)[0]; if (tabs.some(tab => tab.id === destination)) { cancelStart(); selectionVersion.current++; setScreen(destination); setChannel(undefined); } } };
+  const context: HyperOpenBotSectionContext = { openConversation: id => void openAny(id), initialDraftSupported: true, startConversation: start, navigationIntent, navigate: (id, intent) => { if (!serviceRef.current) return; const destination = id.split(/[/?]/)[0]; if (tabs.some(tab => tab.id === destination)) { cancelStart(); selectionVersion.current++; setScreen(destination); setNavigationIntent(intent); setChannel(undefined); } } };
   return <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />
     <HyperGalleryTools />
     <nav aria-label="OpenBot" className="flex shrink-0 flex-wrap gap-1 border-b border-border p-2">
-      {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { cancelStart(); selectionVersion.current++; setScreen(tab.id); setChannel(undefined); }}>{tab.label}</Button>)}
+      {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { cancelStart(); selectionVersion.current++; setScreen(tab.id); setNavigationIntent(undefined); setChannel(undefined); }}>{tab.label}</Button>)}
       {screen === 'conversations' && <Button variant="ghost" onClick={() => void refresh()}>Refresh</Button>}
     </nav>
     {error && <p role="alert" className="p-2 text-sm text-destructive">{error}</p>}
