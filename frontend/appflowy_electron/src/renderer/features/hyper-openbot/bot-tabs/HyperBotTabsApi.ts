@@ -15,5 +15,6 @@ export const HyperBotTabsApi = {
   cancelRequest: (id: string) => request(`/api/plugins/access-requests/${segment(id)}`, 'DELETE'),
   team: () => request<HyperTeamBots>('/api/team-bots'),
   publish: (id: string, audience: 'team' | 'people', emails: string[], groups: string[]) => request(`/api/team-bots/${segment(id)}/publication`, 'PUT', { audience, emails: audience === 'people' ? emails : [], groups: audience === 'people' ? groups : [] }),
+  assign: (id: string, group: string, remove = false) => request(`/api/team-bots/${segment(id)}/assignments${remove ? `/${segment(group)}` : ''}`, remove ? 'DELETE' : 'POST', remove ? undefined : { group }),
   unpublish: (id: string) => request(`/api/team-bots/${segment(id)}/publication`, 'DELETE'),
 };

@@ -1,4 +1,5 @@
 // Adapted from OpenBot. Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
+import { hyperOpenBotRequest } from '../transport';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,12 +30,14 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
   const [audience, setAudience] = useState<'team' | 'people'>('team');
   const [emails, setEmails] = useState('');
   const [groups, setGroups] = useState('');
+  const [assignment, setAssignment] = useState('');
+  const [admin, setAdmin] = useState(false);
   useEffect(() => {
     let live = true;
     setPending(true);
-    void (tab === 'apps' ? api.apps(bot.id).then(rows => { if (live) setApps(rows); }) : api.team().then(data => {
+    void (tab === 'apps' ? api.apps(bot.id).then(rows => { if (live) setApps(rows); }) : Promise.all([api.team(), hyperOpenBotRequest<{ user: { role: string } }>('/api/me')]).then(([data, me]) => {
       if (!live) return;
-      setTeam(data);
+      setTeam(data); setAdmin(me.user.role === 'admin');
       const current = data.teamBots.find(row => row.id === bot.id);
       setAudience(current?.audience ?? 'team'); setEmails(current?.people?.join(', ') ?? ''); setGroups(current?.groups?.join(', ') ?? '');
     })).catch(() => { if (live) setError('Unable to load this Bot tab. Access may be refused.'); }).finally(() => { if (live) setPending(false); });
@@ -62,6 +65,7 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
     {tab === 'sharing' && team && <><p>{published ? published.audience === 'team' ? 'Published to the whole team.' : `Published to ${[...(published.people ?? []), ...(published.groups ?? [])].join(', ')}.` : 'Not published.'}</p>
       <p className="text-sm text-muted-foreground">Each person's conversations remain private.</p>
       {published && !published.visibleToTeam && <p>Set a real name and description before teammates can see this Bot.</p>}
+      {admin && published && <section className="grid gap-2"><h4>Assign to groups</h4><p>Pins this Bot for every member. Use * for the whole team.</p>{published.assignments?.map(group => <div key={group}>{group}<Button variant="outline" disabled={pending} onClick={() => void mutate(() => api.assign(bot.id, group, true))}>Remove assignment</Button></div>)}<form className="flex gap-2" onSubmit={event => { event.preventDefault(); void mutate(() => api.assign(bot.id, assignment.trim())); }}><Input aria-label="Group assignment" required value={assignment} onChange={e => setAssignment(e.target.value)} /><Button disabled={pending || !assignment.trim()}>Assign</Button></form></section>}
       {bot.mine && (published || team.publishable.some(row => row.id === bot.id)) && <form className="grid gap-3" onSubmit={event => { event.preventDefault(); void mutate(() => api.publish(bot.id, audience, split(emails), split(groups))); }}>
         <label><input type="checkbox" checked={audience === 'people'} onChange={e => setAudience(e.target.checked ? 'people' : 'team')} /> Publish to specific people or groups</label>
         {audience === 'people' && <><label>People by email<Input value={emails} onChange={e => setEmails(e.target.value)} placeholder="Comma separated" /></label><label>Groups<Input value={groups} onChange={e => setGroups(e.target.value)} placeholder="Comma separated" /></label></>}

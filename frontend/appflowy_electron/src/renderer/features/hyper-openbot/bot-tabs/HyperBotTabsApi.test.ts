@@ -27,3 +27,8 @@ it('bot-tabs publishes exact audience payloads and clears unused people', async 
   await api.unpublish('desk');
   expect(hyperOpenBotRequest).toHaveBeenLastCalledWith('/api/team-bots/desk/publication', 'DELETE');
 });
+it('bot-tabs assigns and removes group assignments with encoded names', async () => {
+  await api.assign('desk', 'support team'); await api.assign('desk', 'support team', true);
+  expect(hyperOpenBotRequest).toHaveBeenNthCalledWith(1, '/api/team-bots/desk/assignments', 'POST', { group: 'support team' });
+  expect(hyperOpenBotRequest).toHaveBeenNthCalledWith(2, '/api/team-bots/desk/assignments/support%20team', 'DELETE', undefined);
+});
