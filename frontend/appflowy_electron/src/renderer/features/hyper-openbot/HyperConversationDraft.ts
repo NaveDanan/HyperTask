@@ -3,6 +3,7 @@ import type { HyperOpenBotServiceState } from '@shared/HyperOpenBotService';
 
 export type HyperDraftAttachment = HyperComposerAttachment & { mimeType: string };
 export interface HyperConversationDraft {
+  readonly commandIds?: readonly string[];
   readonly text: string;
   readonly attachments: readonly HyperDraftAttachment[];
   readonly uploadGroup: string;
@@ -11,7 +12,7 @@ export interface HyperConversationDraft {
 const EMPTY: HyperConversationDraft = Object.freeze({ text: '', attachments: Object.freeze([]), uploadGroup: '' });
 function snapshot(value: HyperConversationDraft): HyperConversationDraft {
   // Retain server references and display metadata, never File objects, bytes or credentials.
-  return Object.freeze({ text: value.text, uploadGroup: value.uploadGroup, attachments: Object.freeze(value.attachments.map(file => Object.freeze({ id: file.id, name: file.name, mimeType: file.mimeType, status: file.status, ...(file.error ? { error: file.error } : {}) }))), ...(value.retry ? { retry: Object.freeze({ id: value.retry.id, text: value.retry.text, files: value.retry.files }) } : {}) });
+  return Object.freeze({ text: value.text, ...(value.commandIds ? { commandIds: Object.freeze([...value.commandIds]) } : {}), uploadGroup: value.uploadGroup, attachments: Object.freeze(value.attachments.map(file => Object.freeze({ id: file.id, name: file.name, mimeType: file.mimeType, status: file.status, ...(file.error ? { error: file.error } : {}) }))), ...(value.retry ? { retry: Object.freeze({ id: value.retry.id, text: value.retry.text, files: value.retry.files }) } : {}) });
 }
 
 /** Renderer-session drafts survive native page navigation and expire at the main auth boundary. */
@@ -49,4 +50,27 @@ export class HyperConversationDraftCache {
 
 export function hyperObserveDraftIdentity(cache: HyperConversationDraftCache, subscribe: (listener: (state: HyperOpenBotServiceState) => void) => () => void) {
   return subscribe(state => { if (['signed_out', 'profile_required', 'unsupported'].includes(state.problem)) cache.invalidate(); });
+}
+
+export const HYPER_PENDING_ATTACHMENT = 'pending:';
+type DraftAttachments = (change: (current: readonly HyperDraftAttachment[]) => readonly HyperDraftAttachment[]) => void;
+/**
+ * Reserve channel-scoped placeholders before uploading so a reopened composer still blocks Send.
+ * A placeholder removed while its upload runs causes the uploaded server attachment to be discarded.
+ */
+export async function hyperUploadDraftFiles(files: readonly File[], upload: (file: File) => Promise<HyperDraftAttachment>, update: DraftAttachments, discard: (id: string) => void) {
+  const pending = files.map(file => ({ id: HYPER_PENDING_ATTACHMENT + crypto.randomUUID(), name: file.name, mimeType: file.type || 'application/octet-stream', status: 'uploading' as const }));
+  update(current => [...current, ...pending]);
+  let index = 0;
+  try {
+    for (; index < files.length; index++) {
+      const ready = await upload(files[index]), placeholder = pending[index].id;
+      let kept = false;
+      update(current => { kept = current.some(file => file.id === placeholder); return kept ? current.map(file => file.id === placeholder ? ready : file) : current; });
+      if (!kept) discard(ready.id);
+    }
+  } finally {
+    const unsettled = new Set(pending.slice(index).map(file => file.id));
+    if (unsettled.size) update(current => current.filter(file => !unsettled.has(file.id)));
+  }
 }

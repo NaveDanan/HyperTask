@@ -1,5 +1,6 @@
 // Adapted from OpenBot components/settings/{learning-sharing,learning-review}.tsx.
 // Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
+import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -8,14 +9,15 @@ import { HyperLearningDetail } from './HyperLearningDetail';
 import { HyperLearningProposals } from './HyperLearningSection';
 import { HyperMemoryStatus, useHyperMemoryData, useHyperMemoryAction } from './HyperMemorySection';
 import type { PersonalReview, PersonalLearningSharing } from './HyperLearningTypes';
-export function HyperPersonalLearningSection({onOpenRecordings}:{onOpenRecordings?:()=>void}) {
+export function HyperPersonalLearningSection({context,onOpenRecordings:openRecordings}:{context?:HyperOpenBotSectionContext;onOpenRecordings?:()=>void}) {
+ const onOpenRecordings=openRecordings??(context?.navigate?()=>context.navigate?.('browser?recordings=1'):undefined);
  const capabilities=useHyperMemoryData<{edition?:string}>('/api/capabilities');
  const personal=capabilities.data?.edition==='personal';
  const sharing=useHyperMemoryData<PersonalLearningSharing>('/api/settings/learning');
  const review=useHyperMemoryData<PersonalReview>('/api/settings/learning/review',undefined,10000);
  const action=useHyperMemoryAction(()=>{sharing.reload();review.reload();});
  const [detail,setDetail]=useState('');
- const previousWaiting=useRef<number>();
+ const previousWaiting=useRef<number | undefined>(undefined);
  const waiting=review.data?.sources.reduce((count,source)=>count+(source.proposals??[]).filter(item=>item.status==='pending_review').length,0);
  useEffect(()=>{if(waiting!==undefined){if((previousWaiting.current!==undefined&&waiting<previousWaiting.current)||(review.data?.approved??0)>0)sharing.reload();previousWaiting.current=waiting;}},[review.data]);
  const groups=[...new Set(review.data?.sources.map(source=>source.label)??[])];

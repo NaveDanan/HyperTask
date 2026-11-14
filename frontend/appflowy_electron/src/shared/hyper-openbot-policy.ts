@@ -2,7 +2,7 @@
 const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   'channels', 'agents', 'bots', 'plugins', 'models', 'attachments', 'threads', 'copilotkit', 'skills', 'connections', 'approvals', 'decisions', 'capabilities',
   // slot: conversations
-  /* conversations */
+  'groups', 'team-bots', 'me', 'delivery', 'audio', 'voice',
   // slot: routines
   /* routines */
   // slot: memory
@@ -10,21 +10,21 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: bot-tabs
   /* bot-tabs */
   // slot: approvals-inbox
-  /* approvals-inbox */
+  'delivery', 'team-bots/consents$',
   // slot: vault
-  /* vault */
+  'passwords', 'sign-in-requests', 'admin/credentials',
   // slot: computer-browser
-  /* computer-browser */
+  'computers', 'browser', 'recorder', 'host-access',
   // slot: screens
   /* screens */
   // slot: settings
-  /* settings */
+  'settings/instructions', 'settings/preferences', 'me', 'proactive/settings', 'responsibilities/sources/github', 'admin/audit-events', 'v2/organizations/default/bots',
   // slot: admin-governance
-  /* admin-governance */
+  'me', 'admin/people', 'admin/enterprise', 'admin/identity-providers', 'admin/audit-events', 'admin/what-if', 'auth/sso/register', 'computers/policy', 'computers/policy-dry-run', 'computers/policy-translate',
   // slot: admin-platform
   /* admin-platform */
   // slot: onboarding
-  /* onboarding */
+  'me', 'setup', 'settings/preferences', 'route',
 ];
 /** Exact paths outside the families above. */
 const HYPER_OPENBOT_EXACT_ROUTES: readonly RegExp[] = [

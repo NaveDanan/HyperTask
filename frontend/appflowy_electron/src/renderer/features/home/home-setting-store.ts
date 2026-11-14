@@ -63,7 +63,7 @@ export const homeSettingActions = {
     if (small === get().isScreenSmall) return;
     const { menuStatus } = get();
     if (small && menuStatus === MenuStatus.expanded) set({ isScreenSmall: small, menuStatus: MenuStatus.hidden });
-    else if (!small && menuStatus === MenuStatus.hidden) set({ isScreenSmall: small, menuStatus: MenuStatus.expanded });
+    else if (!small) set({ isScreenSmall: small, menuStatus: useAppearanceStore.getState().appearance.isMenuCollapsed ? MenuStatus.hidden : MenuStatus.expanded });
     else set({ isScreenSmall: small });
   },
   resizeStart() {
@@ -80,6 +80,7 @@ export const homeSettingActions = {
 
 export const MINIMUM_SIDEBAR_WIDTH = 268;
 export const NOTIFICATION_PANEL_WIDTH = 380;
+export const SIDEBAR_RAIL_WIDTH = 56;
 
 /** HomeLayout (home/home_layout.dart). */
 export function useHomeLayout(windowWidth: number) {
@@ -91,7 +92,8 @@ export function useHomeLayout(windowWidth: number) {
     menuWidth,
     showMenu,
     menuIsDrawer,
-    homePageLOffset: showMenu && !menuIsDrawer ? menuWidth : 0,
+    railWidth: SIDEBAR_RAIL_WIDTH,
+    homePageLOffset: showMenu && !menuIsDrawer ? menuWidth : SIDEBAR_RAIL_WIDTH,
     menuSpacing: !showMenu && navigator.userAgent.includes('Mac') ? 80 : 0,
     animDuration: state.resizeType === 'drag' ? 30 : 350,
     showNotificationPanel: !state.isNotificationPanelCollapsed,
