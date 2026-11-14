@@ -20,3 +20,23 @@ Merged parent 13298d5 without changing its API, voice, notification or upload se
 ## Validation limits
 
 All validation uses locked dependencies on Node 24.18.1 and mocked transport. No live backend, desktop launch, deployment or real credentials. Browser consent completion requires the parent main-only callback integration and is not claimed as end-to-end verified. No independent delegated review was started, as instructed. Local source/contract review and automated checks are recorded in commits.
+
+## Route inventory
+
+Renderer calls use the parent transport exclusively. Identifiers are encoded; query payloads remain queries.
+
+- GET/POST `/api/admin/credentials`; POST `/api/admin/credentials/:id/revoke` via Vault.
+- GET `/api/models/available`, `/api/admin/enterprise`, `/api/admin/enterprise/models/usage?days=30`, `/api/capabilities`.
+- PUT `/api/admin/enterprise/settings/{modelAllowlist,proactiveDailyRuns,inactiveComputerDays,mcpAllowlist}` with `{value}`; PUT `/api/admin/enterprise/capabilities` with organization proactive scope.
+- GET `/api/admin/proactive?days=7|30`; GET/POST `/api/proactive/settings`; PATCH/DELETE `/api/proactive/settings/:id`; POST `/api/proactive/settings/:id/run`; GET `/api/proactive/suggestions`; POST `/api/proactive/suggestions/:id/{start,dismiss}`.
+- GET/POST `/api/computers/fleet`; POST `/api/browser/clear`; GET `/api/host-access`; POST `/api/host-access/grants`; DELETE `/api/host-access/grants/:id`; POST `/api/host-access/stop`.
+- POST `/api/admin/enterprise/computers/terminate-inactive`; PUT `/api/admin/enterprise/network`; DELETE `/api/admin/enterprise/network/{organization,group}`; POST `/api/admin/enterprise/network/{translate,replay}`.
+- GET/POST `/api/sandboxed`; POST `/api/sandboxed/:name/publish`; DELETE `/api/sandboxed/:name`.
+- GET `/api/plugins`, `/api/plugins/connections`, `/api/plugins/composio/apps?q=...`; POST `/api/plugins/composio/apps`, `/api/plugins/servers`, `/api/plugins/servers/by-url`; DELETE `/api/plugins/servers/:id`.
+- POST `/api/plugins/servers/:id/{connect,refresh,oauth-client}`; PUT `/api/plugins/servers/:id/{account-mode,owner-grants}`; POST `/api/plugins/servers/:id/connection/{confirm,recheck}`; GET `/api/plugins/servers/:id/connection/siblings`; DELETE `/api/plugins/servers/:id/connection`.
+- GET `/api/plugins/servers/:id/accounts`; POST `/api/plugins/servers/:id/accounts/:account/default`; DELETE `/api/plugins/servers/:id/accounts/:account`.
+- POST/DELETE `/api/plugins/grants`; POST `/api/plugins/skills`; DELETE `/api/plugins/skills/:slug`; GET `/api/agents` and `?hidden=true`; GET `/api/channels` and cursor pages.
+- GET `/api/approvals/shared-use` and `/api/approvals/shared-use/bot/:id`; POST `/api/approvals/shared-use/:id/{approve,decline}`.
+- GET/POST `/api/plugins/access-requests`; DELETE `/api/plugins/access-requests/:id`; POST `/api/plugins/access-requests/:id/{approve,dismiss}`; GET `/api/plugins/for/:bot/apps/:app`; POST `/api/plugins/for/:bot/apps/:app/approve`; POST/DELETE `/api/plugins/for/:bot/apps/:app/give`.
+
+Shared edits are confined to this area's registry entries, allowlist slot, appended policy tests and conflict reconciliation preserving parent tests. Existing parent families permit some of these paths too. Added own slot families are sandboxed, admin/credentials, admin/proactive, proactive/settings, proactive/suggestions, computers/fleet, host-access, browser/clear and called enterprise settings/network/metrics paths. Parent broader governance allowlisting remains unchanged.

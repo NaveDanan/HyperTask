@@ -45,3 +45,11 @@ it('enforces server title and summary bounds and preserves explicit global admin
   await hyperSaveSkill({ ...draft, global: true });
   expect(request).toHaveBeenCalledWith('/api/plugins/skills', 'POST', expect.objectContaining({ global: true }));
 });
+
+import { hyperSkillSelectionFromPath } from './HyperSkillsNavigation';
+it('maps upstream personal/admin skill destinations without exposing unrelated query data', () => {
+  expect(hyperSkillSelectionFromPath('/skills?edit=standup&code=synthetic')).toEqual({ page: 'skill', slug: 'standup' });
+  expect(hyperSkillSelectionFromPath('/admin/skills/new')).toEqual({ page: 'new' });
+  expect(hyperSkillSelectionFromPath('/settings/skills/standup')).toEqual({ page: 'skill', slug: 'standup' });
+  expect(hyperSkillSelectionFromPath('/skills/invalid/extra')).toBeUndefined();
+});
