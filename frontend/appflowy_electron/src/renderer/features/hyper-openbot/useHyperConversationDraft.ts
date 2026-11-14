@@ -2,6 +2,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { HyperConversationDraftCache, hyperObserveDraftIdentity } from './HyperConversationDraft';
 
 const cache = new HyperConversationDraftCache();
+export const hyperAcquireConversationDraft = (channelId: string) => cache.acquire(channelId);
 let observing = false;
 export function useHyperConversationDraft(channelId: string) {
   const lease = useMemo(() => {
@@ -13,5 +14,5 @@ export function useHyperConversationDraft(channelId: string) {
     }
     return cache.acquire(channelId);
   }, [channelId]);
-  return { draft: useSyncExternalStore(lease.subscribe, lease.get, lease.get), updateDraft: lease.update, prepareSubmission: lease.prepareSubmission };
+  return { draft: useSyncExternalStore(lease.subscribe, lease.get, lease.get), getDraft: lease.get, assertDraftCurrent: lease.assertCurrent, updateDraft: lease.update, prepareSubmission: lease.prepareSubmission };
 }

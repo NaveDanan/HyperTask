@@ -23,6 +23,21 @@ it('delivers split Unicode JSON and stream events without exposing credentials',
 it('refuses arbitrary renderer hosts before invoking the bridge', async () => {
   await expect(hyperOpenBotFetch('https://example.org/api/channels')).rejects.toThrow('origin refused');
 });
+it('marks serialized API bodies as JSON without adding credential headers', async () => {
+  let listener: (event: HyperOpenBotChunk) => void = () => {};
+  const start = vi.fn(async (request: HyperOpenBotRequest) => {
+    listener({ id: request.id, chunk: new TextEncoder().encode('{}'), done: true });
+    return { status: 200, headers: { 'content-type': 'application/json' } };
+  });
+  vi.stubGlobal('window', { appflowy: { hyperOpenBot: { start, onChunk: (fn: typeof listener) => { listener = fn; return () => {}; }, cancel: vi.fn() } } });
+  await hyperOpenBotRequest('/api/channels', 'POST', { name: 'שלום' });
+  expect(start.mock.calls[0][0].contentType).toBe('application/json');
+  expect(start.mock.calls[0][0].body).toBeInstanceOf(Uint8Array);
+  expect(new TextDecoder().decode(start.mock.calls[0][0].body as Uint8Array)).toBe('{"name":"שלום"}');
+  expect(start.mock.calls[0][0]).not.toHaveProperty('headers');
+  await hyperOpenBotRequest('/api/channels');
+  expect(start.mock.calls[1][0].contentType).toBeUndefined();
+});
 it('preserves arbitrary attachment bytes across IPC', async () => {
   let listener: (event: HyperOpenBotChunk) => void = () => {};
   const bytes = new Uint8Array([0, 255, 128, 195, 40]);

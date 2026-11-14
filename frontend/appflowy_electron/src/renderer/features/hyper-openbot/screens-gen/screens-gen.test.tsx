@@ -7,7 +7,7 @@ import { hyperOpenBotRequest } from '../transport';
 import { hyperScreensApi as api } from './HyperScreensApi';
 import { HyperConversationResult } from './HyperConversationResult';
 const request = vi.mocked(hyperOpenBotRequest);
-beforeEach(() => request.mockReset());
+beforeEach(() => {request.mockReset();});
 describe('Hyper screens permission transport', () => {
   it('sends exact calling Bot and data function grants', async () => {
     request.mockResolvedValue({allowed: true});
