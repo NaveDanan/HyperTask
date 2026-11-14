@@ -127,3 +127,21 @@ export const HyperRemoveRule = (id: string) => request('/api/approvals/rules/' +
 export const HyperRevokeGrant = (id: string) => request('/api/approvals/conversation-grants/' + encodeURIComponent(id), 'DELETE');
 
 export const HyperClearSharedBotConsents = () => request('/api/team-bots/consents', 'DELETE');
+
+/** Resolve older inbox items too: the channel roster is cursor-paginated upstream. */
+export async function HyperFindConversation(threadId: string): Promise<string | undefined> {
+  let cursor: string | null = null;
+  const seen = new Set<string>();
+  do {
+    const page: { channels: { id: string; threadId: string }[]; nextCursor: string | null } =
+      await request('/api/channels' + (cursor ? '?cursor=' + encodeURIComponent(cursor) : ''));
+    const channel = page.channels.find(row => row.threadId === threadId);
+    if (channel) return channel.id;
+    cursor = page.nextCursor;
+    if (cursor && seen.has(cursor)) throw new Error('Channel pagination did not advance');
+    if (cursor) seen.add(cursor);
+  } while (cursor);
+  return undefined;
+}
+export const HyperChangeRule = (id: string, behaviour: RuleBehaviour) =>
+  request('/api/approvals/rules/' + encodeURIComponent(id), 'PATCH', { behaviour });

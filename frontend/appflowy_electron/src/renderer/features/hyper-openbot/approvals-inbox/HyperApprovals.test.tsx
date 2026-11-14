@@ -73,3 +73,43 @@ describe('Hyper approvals policy and failure contracts', () => {
     expect(hyperOpenBotRequest).toHaveBeenLastCalledWith('/api/team-bots/consents', 'DELETE');
   });
 });
+
+import { HyperRunMutation } from './HyperMutation';
+import { HyperFindConversation, HyperChangeRule } from './HyperApprovalsApi';
+import { HyperDecisionHistory } from './HyperDecisionHistory';
+describe('Hyper authoritative inbox results', () => {
+  it('distinguishes refused writes from accepted writes with failed readback', async () => {
+    const read = vi.fn().mockResolvedValue({});
+    expect(await HyperRunMutation(async () => { throw Error('refused'); }, read)).toBe('refused');
+    expect(read).not.toHaveBeenCalled();
+    const write = vi.fn().mockResolvedValue({});
+    expect(await HyperRunMutation(write, async () => { throw Error('offline'); })).toBe('unconfirmed');
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(await HyperRunMutation(write, read)).toBe('confirmed');
+  });
+  it('resolves conversations across channel pages', async () => {
+    vi.mocked(hyperOpenBotRequest).mockResolvedValueOnce({ channels: [], nextCursor: 'older page' })
+      .mockResolvedValueOnce({ channels: [{ id: 'channel', threadId: 'thread' }], nextCursor: null });
+    expect(await HyperFindConversation('thread')).toBe('channel');
+    expect(hyperOpenBotRequest).toHaveBeenLastCalledWith('/api/channels?cursor=older%20page');
+  });
+  it('does not invent a conversation when missing and rejects pagination loops', async () => {
+    vi.mocked(hyperOpenBotRequest).mockResolvedValue({ channels: [], nextCursor: null });
+    expect(await HyperFindConversation('gone')).toBeUndefined();
+    vi.mocked(hyperOpenBotRequest).mockResolvedValue({ channels: [], nextCursor: 'same' });
+    await expect(HyperFindConversation('gone')).rejects.toThrow('pagination');
+  });
+  it('changes only rule behaviour, preserving account-specific server data', async () => {
+    await HyperChangeRule('rule', 'ask');
+    expect(hyperOpenBotRequest).toHaveBeenLastCalledWith('/api/approvals/rules/rule', 'PATCH', { behaviour: 'ask' });
+  });
+  it('shows authoritative decision history without claiming execution', () => {
+    const request = { id: 'r', status: 'approved', decision: 'allow_once' as const, createdAt: '2026-01-01', action: { botId: 'b', threadId: 't', toolRef: 'send', effect: 'write', scope: 'mail', args: {}, target: {} } };
+    const html = renderToStaticMarkup(<HyperDecisionHistory requests={[request]} open={vi.fn()} />);
+    expect(html).toContain('Allowed once');
+    expect(html).toContain('approved');
+    expect(html).not.toContain('completed');
+    expect(html).not.toContain('type="radio"');
+    expect(renderToStaticMarkup(<HyperDecisionHistory requests={[]} open={vi.fn()} />)).toContain('No decisions yet.');
+  });
+});
