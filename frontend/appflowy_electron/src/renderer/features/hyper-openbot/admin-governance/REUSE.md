@@ -44,3 +44,12 @@ Pages use local navigation and disclosure panels instead of upstream TanStack UR
 The native section context exposes conversation actions only, so links from verdicts to Apps/Computers and the overview's other specialists' pages cannot programmatically select those registry sections. Those sections are reached through the native section selector. The three verdict destinations owned here navigate locally. This is a shared-navigation interface limitation, not a missing governance API flow. External identity account-linking belongs to Settings; no assigned admin route calls those personal identity APIs.
 
 Validation uses Node 24 and the existing locked dependency tree. No live backend, Electron launch, deployment action, credentials, push or PR is involved. Automated verification covers contracts and server-rendered presentation; live role/account/provider state is intentionally not exercised.
+
+## Verification on 2026-11-15
+
+- `npm run typecheck`: passed.
+- Focused governance and policy tests: 33 passed across three files.
+- Full `npm test`: 597 passed, five skipped; 76 test files passed, two skipped.
+- `npm run build`: passed. The existing launcher static/dynamic import warning remains outside this area.
+- `git diff --check`: passed.
+- Static review checked assigned upstream request/response contracts, role/edition gates, asynchronous stale-result guards, rule replay attribution, secret lifetime, inert remote output and shared-slot ownership. The permission impact count is all evaluated members, not only changed members; a regression test covers that distinction.
