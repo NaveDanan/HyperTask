@@ -39,7 +39,6 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     priorServiceReady.current = serviceReady;
     if (recovering) {
       reconnecting.current = true; setReconnectRequired(true); setRestoring(true); setError(undefined);
-      setHistoryRevision(value => value + 1);
     }
   }, [serviceReady]);
   const [sending, setSending] = useState(false);
@@ -58,7 +57,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     void Promise.all([request<{ models: HyperModelOption[]; default: string }>('/api/models'), request<HyperModelPick>(`/api/channels/${channel.id}/model`)]).then(([catalogue, saved]) => { setModels(catalogue.models); setPick({ model: saved.model || catalogue.default, effort: saved.effort }); }).catch(error => setError(String(error)));
   }, [channel.id]);
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || !serviceReady) return;
     let current = true;
     hyperPrepareRuntimeAgent(agent);
     const releaseApproval = hyperObserveApprovalAgent(agent);
@@ -99,7 +98,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
       finally { if (current) setRestoring(false); }
     })();
     return () => { current = false; generation.current++; join.cancel(); watching.unsubscribe(); watchErrors.unsubscribe(); releaseApproval(); };
-  }, [agent, copilotkit, isReady, channel.threadId, historyRevision]);
+  }, [agent, copilotkit, isReady, channel.threadId, historyRevision, serviceReady]);
   const running = sending || agent.isRunning;
   const messages: HyperTranscriptMessage[] = agent.messages.flatMap(message => {
     // System instructions remain in the agent context, outside the visible transcript.
@@ -114,11 +113,11 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
   // The existing workspace support bubble occupies the bottom-right corner.
   // Keep the composer controls above it, including in the minimum-size window.
   return <div className="flex h-full min-h-0 flex-col pb-12">
-    {error && <div className="flex items-center gap-3 p-3"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" disabled={running || restoring} onClick={() => { reconnecting.current = true; setError(undefined); setHistoryRevision(value => value + 1); }}>Reconnect</Button></div>}
+    {error && serviceReady && <div className="flex items-center gap-3 p-3"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" disabled={running || restoring} onClick={() => { reconnecting.current = true; setError(undefined); setHistoryRevision(value => value + 1); }}>Reconnect</Button></div>}
     <div className="flex justify-end border-b border-border px-4 py-1"><Button variant="ghost" aria-expanded={showComputer} onClick={() => setShowComputer(value => !value)}>Computer</Button></div>
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
     <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
-    <HyperConversationActions threadId={channel.threadId} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
+    <HyperConversationActions threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
     <HyperComposer className="m-4" recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => setAttachments(previous => previous.filter(file => !ids.includes(file.id)))} onFiles={async files => {
       const staged: (HyperComposerAttachment & { mimeType: string })[] = [];
       try { for (const file of files) {
