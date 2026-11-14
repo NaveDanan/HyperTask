@@ -38,7 +38,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: screens
   /* screens */
   // slot: settings
-  /* settings */
+  { id: 'settings', label: 'Settings', group: 'personal', render: hyperLazySection(() => import('./settings/HyperSettingsSection')) },
   // slot: admin-governance
   /* admin-governance */
   // slot: admin-platform
