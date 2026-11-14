@@ -121,17 +121,17 @@ For action and fault reproduction, follow [the action procedure](HYPER_OPENBOT_A
 
 The owner has asked to finish parity, resolve review findings and merge before the next stage. This instruction authorizes that work; it is not evidence that unfinished features passed acceptance.
 
-Vault and the Linux window-controls/sidebar fixes are integrated into the PR branch. Vault adds saved-login management, key creation/replacement/revocation and private sign-in requests, including verification codes, saved-login confirmation and takeover. Browser navigation from a sign-in request still needs the computer/browser area. The caption buttons now cover Linux and Windows, while macOS keeps its native controls. The sidebar collapses to a keyboard-accessible icon rail with the existing Chat entry. These additions have automated coverage; the integrated native UI still needs verification.
+All thirteen specialist source branches are integrated into the PR branch. Vault adds saved-login management, key creation/replacement/revocation and private sign-in requests, including verification codes, saved-login confirmation and takeover, with a shared Bot-computer destination. The caption buttons cover Linux and Windows, while macOS keeps its native controls. The sidebar collapses to a keyboard-accessible icon rail with the existing Chat entry. These additions have automated coverage; integrated native verification remains pending.
 
 The upload review fixes retain channel-scoped uploading placeholders and count each file once toward the eight-file limit, including rapid picks before React renders again. The regression exercises the real composer file-input handler and the draft cache. The native smoke list check also accepts consecutive numbered items, and the broker safeguard starts waiting for child exit before descriptor inspection.
 
-Settings, Onboarding and the Approvals inbox code are also integrated. They add personal Activity, profile/preferences, repository settings, native Home/Setup/tour, approval history, standing-rule recovery and notification settings. Home draft transfer is now awaited through creation, upload and optional send, with failure/cancellation recovery. Groups, delivery controls, dictation and both voice transports are integrated; queue/marks/subagent behavior and durable voice outbox still need completion.
+Settings, Onboarding and Approvals add personal Activity, profile/preferences, repository settings, native Home/Setup/tour, approval history, standing-rule recovery and notification settings. Home draft transfer is awaited through creation, upload and optional send, with failure/cancellation recovery. Groups, delivery controls, dictation, both voice transports, queue/marks/subagent behavior and authenticated durable voice recovery are integrated.
 
-Computer/browser includes live controls, terminal/files/folders, narration, recorder pairing/history, private handoffs and a shared Bot computer destination from Bots/Vault. Admin governance adds People, inherited permissions, boundaries/replay, SSO/SCIM controls, audit/what-if, team rules/shared-use decisions and reviewer guidance. Memory/Learning adds facts/sources, review/sharing, container participation, delivery details, capability changes and recording provenance. Deep links, conversation emphasis, global notifications and the remaining Bot/routine/interactive-result/admin-platform work continue.
+Computer/browser includes live controls, terminal/files/folders, narration, recorder pairing/history, private handoffs and the shared Bot computer destination. Governance adds People, inherited permissions, boundaries/replay, SSO/SCIM controls, audit/what-if, team rules/shared-use decisions and reviewer guidance. Memory/Learning adds facts/sources, review/sharing, container participation, delivery details, capability changes and recording provenance. Bot detail/attention tabs, routines/responsibilities, all fifteen gallery tools, sandboxed screens and provider/plugin/skill administration are integrated. Protected main-owned callback-key/browser-return handling and full nested detail-page/access-component wiring still remain.
 
 The voice broker preserves the configured x.ai model query in main, permits only the original provider destination/model parameter and returns only expected WebRTC SDP fields. Canonical-path checks keep headers and masking active when a request includes a query string. Tests cover these boundaries. Tauri-only local update/container/native-speech controls have no equivalent in this remote architecture and remain explicit environment limits.
 
-Current validation on Node 24.18.1: typecheck, production build, 810 tests and 13 smoke-script safeguards pass. One opt-in simulated-IPC live test is skipped; the four real-core tests ran. The upstream terminal packages `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0 are now locked; existing package versions were unchanged. The remaining parity areas are still in progress. The table below describes the earlier owner-demo baseline, not a claim of current full parity.
+Current validation on Node 24.18.1: typecheck, production build, 1012 tests and 13 smoke-script safeguards pass. One opt-in simulated-IPC live test is skipped; the four real-core tests ran. The upstream terminal packages `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0 are locked; existing package versions were unchanged. Current review fixes have failing-before/passing-after regressions. The following matrix describes integrated code, not a claim that every new screen passed native acceptance.
 
 The complete original OpenBot backend and Intelligence run on the VM. HyperTask exposes a selected part of the original app's roughly ninety routes at the pinned source. The main-process route allowlist in [hyper-openbot-policy.ts](../src/shared/hyper-openbot-policy.ts) admits only the API families those native screens use, so unlisted features are unreachable from HyperTask even though the backend provides them. Phase 1 scoped chat, agents, tools, approvals, streaming and service lifecycle; the epic directs later work toward HyperTask components rather than duplicate OpenBot screens.
 
@@ -144,22 +144,22 @@ The complete original OpenBot backend and Intelligence run on the VM. HyperTask 
 | Bot questions | Available |
 | Bots: roster, create, profile editing, Pause/Resume, notifications, hidden Bots | Available |
 | Skills: create, edit, delete, grant to Bots | Available |
-| Connections: directory, Add app, MCP server by URL, start external sign-in | Basic directory and sign-in initiation |
-| Bot computer | Read-only status and screenshots. No remote input, terminal or take-over |
+| Connections: directory, Add app, MCP server by URL, start external sign-in | Integrated accounts, grants and setup; main browser-return and nested-page integration pending |
+| Bot computer | Integrated status, screenshots, live input/takeover, terminal, files/folders, narration and recording; native verification pending |
 | Original computer tools (navigate, read, snapshot, type, click, key, list/read/write files, run command, scroll) | Available through the original approval gate |
-| Group conversations with several Bots | Not available |
-| Routines: schedules, goals, check-ins | Not available |
-| Memory and Automatic Learning | Not available |
-| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Not available |
-| Cross-conversation approvals inbox | Not available |
-| Vault and passwords | Not available |
-| Bot browser page | Not available |
-| Generated interactive screens opened as pages | Not available |
-| Personal settings: notifications, learning, browsers, this computer, connected accounts | Not available |
-| Administration: people, permissions, boundaries, audit, providers, credentials, plugins (Arcade/Composio), computers, playground, what-if | Not available |
-| Onboarding wizard and starter tour | Not available |
+| Group conversations with several Bots | Integrated; native verification pending |
+| Routines: schedules, goals, check-ins | Integrated, including Bot routine/responsibility tabs; native verification pending |
+| Memory and Automatic Learning | Integrated facts, sources, review, sharing, participation and capability controls; native verification pending |
+| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Integrated; protected callback-key generation/rotation and cross-area wiring pending |
+| Cross-conversation approvals inbox | Integrated with decisions/questions, standing rules, history and routing; native verification pending |
+| Vault and passwords | Integrated with key/login management and private sign-in forms; native verification pending |
+| Bot browser page | Integrated with recorder pairing/history and live controls; native verification pending |
+| Generated interactive screens opened as pages | Fifteen tools, SDK registration, decision lifecycle, grant checks and sandboxed screens integrated; native verification pending |
+| Personal settings: notifications, learning, browsers, this computer, connected accounts | Integrated for the remote backend; nested-page integration and native verification pending; Tauri-only local controls remain unavailable |
+| Administration: people, permissions, boundaries, audit, providers, credentials, plugins (Arcade/Composio), computers, playground, what-if | Integrated; protected callback return, deep-link integration and native verification pending |
+| Onboarding wizard and starter tour | Integrated with Home drafts and native destinations; native verification pending |
 
-This table records the state at the owner's review. Each parity addition extends the route allowlist with explicit tests, adapts the screen to HyperTask's design system and updates its row.
+This table supersedes the earlier owner's-demo difference list. It separates source integration from actual native acceptance. The owner requested completing these workflows before merge; that gate remains open.
 
 ## Offline boundary, dependencies and notices
 

@@ -42,7 +42,7 @@ The adapted audit cells and pure protocol/wording helpers below preserve upstrea
 
 ## Integration dependencies and deliberate platform adaptations
 
-Parent must supply `context.navigate(sectionId, { path })` for destination buttons and legacy forwarding. `HYPER_SETTINGS_DESTINATION_IDS`, `hyperSettingsDestination` and `HyperSettingsContext` are public exports. `HyperSettingsSection` accepts optional `path` to preserve legacy route and Activity Bot intent. Without navigate, destination buttons are disabled. Registered section IDs are the original allocated slot IDs; parent owns final registration and routing.
+Parent supplies `context.navigate(sectionId, { path })` for destination buttons and legacy forwarding. `HYPER_SETTINGS_DESTINATION_IDS`, `hyperSettingsDestination` and `HyperSettingsContext` are public exports. `HyperSettingsSection` accepts optional `path` to preserve legacy route and Activity Bot intent. The registry is the canonical naming source: Approvals uses `approvals`, Setup uses `setup`, Computer uses `computer`, connected browsers use `connected-browsers` and the gallery uses `components-gallery`. Destination arrays derive from the same constants, and regression tests require every emitted ID to be registered. The parent retains earlier allocation aliases for compatibility. Nested destination components still require their own path consumers.
 
 Excluded screens remain owned by their specialists: notifications/approvals → approvals-inbox, vault/passwords/credentials/accounts → vault, computer/browsers/this-computer → computer-browser, memory/learning → memory, setup → onboarding, gallery → screens, skills → skills, apps → connections. This folder supplies destinations, not duplicate implementations.
 

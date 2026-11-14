@@ -1,7 +1,7 @@
 # Hyper OpenBot integration progress
 
 Tracking epic: [#2](https://github.com/NaveDanan/HyperTask/issues/2).
-Updated: 2026-11-14.
+Updated: 2026-11-15.
 
 ## Delivery rules
 
@@ -136,6 +136,15 @@ Documents and datasets still use pre-existing placeholder editing bodies. Their 
 - Integrated Memory/Learning at `1789165`: facts/sources, review/sharing, container/participation settings, delivery details, capability translation/preview/batch changes and recording provenance. Skill-sharing decisions require a fresh skill read and current request timestamp.
 - Parent fixes `2fa401a` and `4f536f3` apply voice headers/masking by canonical pathname, retain the upstream x.ai model query in main, reject unrelated destinations/query parameters and return only the WebRTC SDP contract. The IPC/broker regressions fail before the fixes and pass afterward. Provider secrets remain in main.
 - Current integrated validation on Node 24.18.1: typecheck/build pass, 810 tests pass with one optional skip, all four real-core tests ran, and 13 smoke safeguards pass. New parity screens still need native verification and final review. The smaller batch continues Conversations, Bot tabs and Routines; interactive-result and admin-platform branches retain unfinished work.
+
+### Full source integration and review fixes
+
+- All thirteen specialist branches are integrated into PR #14's branch, including the completed conversation queue/marks/voice recovery at `fd4a917`, routines at `3d6ca9f`, Bot tabs at `b63c8f6`, interactive screens at `408905b` and admin-platform at `f8f1730`. Bot Memory, Computer, Routines and Responsibilities tabs are mounted; the routine navigation provider is present.
+- Fixed the current CodeRabbit privacy/correctness findings in `13298d5`, `cf070cd` and `0104a32`: notice session/turn invalidation and timeout bounds, upload lease checks, starter draft isolation, Setup retry, Settings state merging and repository readback errors, approval routing generations/retry targets/field locks, audit caps/outcomes, and Vault/sign-in response ownership. Regression tests exercise the real handlers and failed before the fixes. Home initial transfer and parent navigation already existed, so those two older findings are superseded.
+- `779c2cd` extends sensitive route checks to decoded pathnames and refuses callback-token creation through generic renderer HTTP. A protected main-only handoff must implement generation/rotation before that feature can be advertised. No one-time key may enter renderer state or generic response bytes.
+- Remaining production integration is main-owned callback-key/browser-return handling and nested detail-page consumption/access components. Native verification and exact-final-head Codex code/security review remain gates. Platform-only Tauri features remain explicit remote-environment limitations.
+- GitHub's checks on `63f4755` were CodeRabbit NEUTRAL and Macroscope SKIPPED, not two completed code reviews. Macroscope's estimate exceeded the configured $10 per-review limit; billing and ignore configuration were not changed. The expanded branch still requires Codex and native verification.
+- Combined source validation: 1012 tests pass with one optional skip, four real-core tests ran, 13 smoke safeguards pass, and typecheck/build pass on Node 24.18.1. The current support matrix now distinguishes implemented code from pending native verification and the two remaining protected-interface/detail-wiring tasks.
 
 ## Queue
 
