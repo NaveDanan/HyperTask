@@ -4,6 +4,18 @@ it('restricts requests to original OpenBot routes on the fixed tunnel', () => {
   for (const path of ['/api/channels', '/api/copilotkit/agent/run', '/api/channels/id/attachments', '/api/approvals?thread=id']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['http://evil/api/channels', '//evil/api/channels', '/api/channels/../credentials', '/api/channels/%2e%2e/credentials', '/api/channels/%252e%252e/credentials', '/api/jira', '/api/channels\\..\\secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+it('admin-platform allows credential contracts and rejects unrelated admin families and traversal', () => {
+  for (const path of ['/api/admin/credentials', '/api/admin/credentials/id/revoke', '/api/models/available', '/api/plugins/servers/id/refresh']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/admin/users', '/api/admin/credentials-other', '/api/admin/credentials/../users', '/api/admin/credentials/%2e%2e/users']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+it('admin-platform check-in contracts allow only the enterprise paths used here', () => {
+  for (const path of ['/api/admin/proactive?days=7', '/api/admin/enterprise', '/api/admin/enterprise/capabilities', '/api/admin/enterprise/settings/proactiveDailyRuns']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/admin/proactive-other', '/api/admin/enterprise-other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+it('admin-platform allows playground and model controls without unrelated settings', () => {
+  for (const path of ['/api/sandboxed', '/api/sandboxed/custom_example/publish', '/api/admin/enterprise/models/usage?days=30', '/api/admin/enterprise/settings/modelAllowlist']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/sandboxed-other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
 
 it('bot-tabs permits team publication and rejects unrelated and traversal paths', () => {
   expect(hyperOpenBotPathAllowed('/api/team-bots')).toBe(true);
@@ -125,4 +137,9 @@ it('routines slot allows its API families and refuses adjacent or escaped routes
 it('bot-tabs permits routine counts without adjacent route families or escaped paths', () => {
   expect(hyperOpenBotPathAllowed('/api/routines')).toBe(true);
   for (const path of ['/api/routines-other', '/api/tasks-other', '/api/proactive/suggestions-other', '/api/routines/%2e%2e/private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
+it('admin-platform permits computer administration and personal check-ins with family boundaries', () => {
+  for (const path of ['/api/computers/fleet', '/api/host-access/grants', '/api/admin/enterprise/network/replay', '/api/admin/enterprise/settings/inactiveComputerDays', '/api/proactive/suggestions/item/start']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/proactive-other', '/api/sandboxed-other', '/api/admin/proactive-other', '/api/plugins-other', '/api/host-access/../secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });

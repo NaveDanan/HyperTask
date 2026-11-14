@@ -2,27 +2,29 @@
 import { hyperOpenBotRequest } from '../transport';
 
 export type HyperSkill = { slug: string; title: string; summary: string; instructions: string; tools?: string[]; grantedTo: string[]; ownerUserId: string | null };
-export type HyperSkillDraft = Pick<HyperSkill, 'slug' | 'title' | 'summary' | 'instructions'> & { tools: string[] };
+export type HyperSkillDraft = Pick<HyperSkill, 'slug' | 'title' | 'summary' | 'instructions'> & { tools: string[]; global?: boolean };
 export type HyperSkillBot = { id: string; name: string; mine: boolean; hidden?: boolean };
 export type HyperSkillCatalogue = { skills: HyperSkill[]; servers: { id: string; title: string; tools: { ref: string; name: string; description: string; effect: string }[] }[] };
-export async function hyperLoadSkills() {
+export async function hyperLoadSkills(admin = false) {
   const [catalogue, visible, hidden] = await Promise.all([
     hyperOpenBotRequest<HyperSkillCatalogue>('/api/plugins'),
     hyperOpenBotRequest<{ agents: HyperSkillBot[] }>('/api/agents'),
     hyperOpenBotRequest<{ agents: HyperSkillBot[] }>('/api/agents?hidden=true'),
   ]);
-  const bots = [...new Map([...visible.agents, ...hidden.agents.map(bot => ({ ...bot, hidden: true }))].filter(bot => bot.mine).map(bot => [bot.id, bot])).values()];
+  const bots = [...new Map([...visible.agents, ...hidden.agents.map(bot => ({ ...bot, hidden: true }))].filter(bot => admin || bot.mine).map(bot => [bot.id, bot])).values()];
   return { catalogue, bots };
 }
 export function hyperValidateSkill(draft: HyperSkillDraft) {
   if (!/^[a-z0-9][a-z0-9-]{0,38}[a-z0-9]$/.test(draft.slug)) return 'Command must be 2–40 lowercase letters, numbers or hyphens, starting and ending with a letter or number.';
+  if (draft.title.trim().length > 120) return 'Title must be 120 characters or fewer.';
+  if (draft.summary.trim().length > 200) return 'One-liner must be 200 characters or fewer.';
   if (!draft.title.trim() || !draft.instructions.trim()) return 'Title and instructions are required.';
   return null;
 }
 export async function hyperSaveSkill(draft: HyperSkillDraft) {
   const error = hyperValidateSkill(draft);
   if (error) throw new Error(error);
-  return hyperOpenBotRequest<{ skills: HyperSkill[] }>('/api/plugins/skills', 'POST', { ...draft, title: draft.title.trim(), instructions: draft.instructions.trim() });
+  return hyperOpenBotRequest<{ skills: HyperSkill[] }>('/api/plugins/skills', 'POST', { ...draft, slug: draft.slug.trim(), summary: draft.summary.trim(), title: draft.title.trim(), instructions: draft.instructions.trim() });
 }
 export function hyperDeleteSkill(slug: string) { return hyperOpenBotRequest(`/api/plugins/skills/${encodeURIComponent(slug)}`, 'DELETE'); }
 export function hyperSetSkillGrant(slug: string, agentId: string, granted: boolean) {
