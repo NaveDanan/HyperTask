@@ -21,21 +21,20 @@ test('wire null means the current default, while missing fields cannot prove a m
   assert.throws(() => hyperNativeModelId({}, 'default-model'));
 });
 
-test('both argv and rewritten Electron titles require the exact owned app, profile and port', () => {
-  const args = ['electron', '/checkout/app', '--user-data-dir=/private/smoke/electron', '--remote-debugging-port=9222'];
+test('pipe process ownership requires the exact app, profile and session and rejects TCP flags', () => {
+  const session = 'a'.repeat(32);
+  const args = ['electron', '/checkout/app', '--user-data-dir=/private/smoke/electron', '--remote-debugging-pipe', `--hyper-native-smoke-session=${session}`];
   for (const form of [args, [args.join(' ')]]) {
-    assert.ok(hyperOwnsNativeCommand(form, '/checkout/app', '/private/smoke', 9222));
-    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/ap', '/private/smoke', 9222));
-    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/app', '/private/smoke', 922));
-    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/app', '/private/real-user', 9222));
+    assert.ok(hyperOwnsNativeCommand(form, '/checkout/app', '/private/smoke', session));
+    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/ap', '/private/smoke', session));
+    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/app', '/private/real-user', session));
+    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/app', '/private/smoke', 'b'.repeat(32)));
   }
+  assert.ok(!hyperOwnsNativeCommand([...args, '--remote-debugging-port=9222'], '/checkout/app', '/private/smoke', session));
 });
-
-test('CDP can attach only to an explicit credential-free HTTP loopback endpoint', () => {
-  assert.equal(hyperNativeCdpUrl('http://127.0.0.1:9222'), 'http://127.0.0.1:9222');
-  assert.equal(hyperNativeCdpUrl('http://[::1]:9222'), 'http://[::1]:9222');
-  for (const value of ['https://example.com:9222', 'http://localhost:9222', 'http://0.0.0.0:9222', 'http://127.0.0.1', 'http://name:secret@127.0.0.1:9222', 'http://127.0.0.1:9222/path', 'http://127.0.0.1:9222/?token=x', 'http://127.0.0.1:9222/#x'])
-    assert.throws(() => hyperNativeCdpUrl(value));
+test('CDP requires a private smoke Unix socket and rejects all TCP endpoints and path escapes', () => {
+  assert.equal(hyperNativeCdpUrl('/tmp/hyper-native-smoke-abc/cdp.sock'), 'ws+unix:///tmp/hyper-native-smoke-abc/cdp.sock:/cdp');
+  for (const value of ['http://127.0.0.1:9222', 'ws://127.0.0.1:9222/cdp', '/tmp/other/cdp.sock', '/tmp/hyper-native-smoke-abc/../cdp.sock', '/tmp/hyper-native-smoke-abc/cdp.sock:/other']) assert.throws(() => hyperNativeCdpUrl(value));
 });
 test('live proof ignores other IPC sockets and strips routing metadata', () => {
   const own = records();

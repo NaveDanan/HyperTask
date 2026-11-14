@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // HyperTask native acceptance runner. Original OpenBot notices remain in the ported modules.
 import { createRequire } from 'node:module';
-import { open, readFile, readdir } from 'node:fs/promises';
+import { open, readFile, readdir, lstat } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { hyperPrivateSmokePath } from './HyperNativeSmokeBroker.mjs';
 import { eventFromFrame, proveStream, waitForHistoryPair } from './HyperOpenBotBaseline.mjs';
 
 class HyperSmokeError extends Error {}
@@ -13,15 +14,14 @@ const validId = value => typeof value === 'string' && /^[\w.:-]{1,256}$/.test(va
 const normalize = value => value.replace(/\s+/g, ' ').trim();
 const appDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-export function hyperNativeCdpUrl(value) {
-  let url; try { url = new URL(value); } catch { fail('Invalid loopback CDP endpoint'); }
-  if (url.protocol !== 'http:' || !['127.0.0.1', '[::1]'].includes(url.hostname) || !url.port || url.username || url.password || url.pathname !== '/' || url.search || url.hash)
-    fail('CDP must use an explicit HTTP loopback port without credentials, path or query');
-  return url.origin;
+export function hyperNativeCdpUrl(socketPath) {
+  if (typeof socketPath !== 'string' || !/^\/tmp\/hyper-native-smoke-[\w-]+\/cdp\.sock$/.test(socketPath)) fail('CDP requires a private smoke Unix socket; TCP is not supported');
+  return `ws+unix://${socketPath}:/cdp`;
 }
 
-export function hyperOwnsNativeCommand(arguments_, app, profile, port) {
-  const expected = [app, `--user-data-dir=${resolve(profile, 'electron')}`, `--remote-debugging-port=${port}`];
+export function hyperOwnsNativeCommand(arguments_, app, profile, sessionId) {
+  if (!/^[a-f0-9]{32}$/.test(sessionId ?? '') || arguments_.some(value => value.includes('--remote-debugging-port') || value.includes('--inspect'))) return false;
+  const expected = [app, `--user-data-dir=${resolve(profile, 'electron')}`, '--remote-debugging-pipe', `--hyper-native-smoke-session=${sessionId}`];
   if (expected.every(value => arguments_.includes(value))) return true;
   return arguments_.length === 1 && expected.every(value => new RegExp(`(?:^|\\s)${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\s|$)`).test(arguments_[0]));
 }
@@ -103,7 +103,7 @@ node scripts/HyperNativeOpenBotSmoke.mjs --phase after --status <updated-launch-
 Optional before flags: --model <catalogue-id> --effort <supported-effort>.
 Uses the existing selected/default model unless supplied; exercises a switch through another
 available model first. Output files are exclusively created with mode 0600. The status file
-must identify this checkout's Electron process, disposable profile, PID and debugPort.
+must identify this checkout's Electron process, disposable profile, PID, private pipe session and single-use Unix socket.
 Linux development connection only. No browser install or download is performed.`;
 
 function argumentsOf(argv) {
@@ -123,9 +123,13 @@ function argumentsOf(argv) {
 async function ownedLaunch(file) {
   if (process.platform !== 'linux') fail('This native development runner currently supports Linux only');
   const status = JSON.parse(await readFile(file, 'utf8'));
-  if (!Number.isSafeInteger(status.pid) || status.pid < 1 || !Number.isInteger(status.debugPort) || status.debugPort < 1 || status.debugPort > 65535 || typeof status.profile !== 'string' || !/^[a-f0-9]{40}$/.test(status.buildHead ?? '')) fail('Invalid owned launch status');
+  if (!Number.isSafeInteger(status.pid) || status.pid < 1 || status.transport !== 'pipe' || !/^[a-f0-9]{32}$/.test(status.sessionId ?? '') || typeof status.profile !== 'string' || !/^[a-f0-9]{40}$/.test(status.buildHead ?? '')) fail('Invalid owned launch status');
   const cmdline = (await readFile(`/proc/${status.pid}/cmdline`)).toString().split('\0').filter(Boolean);
-  if (!hyperOwnsNativeCommand(cmdline, appDirectory, status.profile, status.debugPort)) fail('Status does not identify this checkout and its owned profile');
+  if (!hyperOwnsNativeCommand(cmdline, appDirectory, status.profile, status.sessionId)) fail('Status does not identify this checkout and its owned profile');
+  hyperNativeCdpUrl(status.debugSocket);
+  await hyperPrivateSmokePath(status.debugSocket);
+  const socket = await lstat(status.debugSocket);
+  if (!socket.isSocket() || socket.uid !== process.getuid() || (socket.mode & 0o777) !== 0o600) fail('Private smoke socket is not owned and protected');
   let children = [];
   const deadline = Date.now() + 30000;
   do {
@@ -247,7 +251,7 @@ async function observeTurn(page, channel, prompt, previousRunIds) {
 
 async function run(args) {
   const launch = await ownedLaunch(args.status);
-  const endpoint = hyperNativeCdpUrl(`http://127.0.0.1:${launch.debugPort}`);
+  const endpoint = hyperNativeCdpUrl(launch.debugSocket);
   const before = args.phase === 'after' ? hyperValidateNativeBefore(JSON.parse(await readFile(args.before, 'utf8'))) : undefined;
   if (before && (before.profileDigest !== launch.profileDigest || before.appPid === launch.pid || before.corePid === launch.corePid)) fail('After phase requires a real app/core restart with the same profile');
   const output = await open(resolve(args.output), 'wx', 0o600);
