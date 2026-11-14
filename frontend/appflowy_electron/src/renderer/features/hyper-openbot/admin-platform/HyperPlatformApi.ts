@@ -14,3 +14,11 @@ export function hyperCreateCredential(draft: HyperCredentialDraft) {
 export const hyperRevokeCredential = (id: string) => hyperOpenBotRequest(`/api/admin/credentials/${encodeURIComponent(id)}/revoke`, 'POST');
 export interface HyperModels { provider: string; source: string; exposure: string; default: string; listed: boolean; models: { id: string; label: string; efforts?: string[]; defaultEffort?: string }[] }
 export const hyperLoadProvider = () => hyperOpenBotRequest<HyperModels>('/api/models/available');
+export interface HyperProviderControls { builtInModel: string | null; settings: { modelAllowlist: { enabled: boolean; models: string[] } } }
+export interface HyperModelUsage { summary: { model: string; source: string; runs: number; people: number; refused: number; lastUsedAt: string }[] }
+export const hyperLoadProviderControls = () => hyperOpenBotRequest<HyperProviderControls>('/api/admin/enterprise');
+export const hyperLoadModelUsage = () => hyperOpenBotRequest<HyperModelUsage>('/api/admin/enterprise/models/usage?days=30');
+export function hyperSaveModelAllowlist(value: HyperProviderControls['settings']['modelAllowlist']) {
+  if (value.models.some(name => !/^[^\s/]+\/\S+$/.test(name))) throw new Error('Use provider/model names.');
+  return hyperOpenBotRequest('/api/admin/enterprise/settings/modelAllowlist', 'PUT', { value });
+}

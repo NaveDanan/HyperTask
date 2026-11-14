@@ -2,16 +2,16 @@
 import { hyperOpenBotRequest } from '../transport';
 
 export type HyperSkill = { slug: string; title: string; summary: string; instructions: string; tools?: string[]; grantedTo: string[]; ownerUserId: string | null };
-export type HyperSkillDraft = Pick<HyperSkill, 'slug' | 'title' | 'summary' | 'instructions'> & { tools: string[] };
+export type HyperSkillDraft = Pick<HyperSkill, 'slug' | 'title' | 'summary' | 'instructions'> & { tools: string[]; global?: boolean };
 export type HyperSkillBot = { id: string; name: string; mine: boolean; hidden?: boolean };
 export type HyperSkillCatalogue = { skills: HyperSkill[]; servers: { id: string; title: string; tools: { ref: string; name: string; description: string; effect: string }[] }[] };
-export async function hyperLoadSkills() {
+export async function hyperLoadSkills(admin = false) {
   const [catalogue, visible, hidden] = await Promise.all([
     hyperOpenBotRequest<HyperSkillCatalogue>('/api/plugins'),
     hyperOpenBotRequest<{ agents: HyperSkillBot[] }>('/api/agents'),
     hyperOpenBotRequest<{ agents: HyperSkillBot[] }>('/api/agents?hidden=true'),
   ]);
-  const bots = [...new Map([...visible.agents, ...hidden.agents.map(bot => ({ ...bot, hidden: true }))].filter(bot => bot.mine).map(bot => [bot.id, bot])).values()];
+  const bots = [...new Map([...visible.agents, ...hidden.agents.map(bot => ({ ...bot, hidden: true }))].filter(bot => admin || bot.mine).map(bot => [bot.id, bot])).values()];
   return { catalogue, bots };
 }
 export function hyperValidateSkill(draft: HyperSkillDraft) {

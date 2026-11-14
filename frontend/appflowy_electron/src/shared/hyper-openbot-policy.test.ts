@@ -12,3 +12,7 @@ it('admin-platform check-in contracts allow only the enterprise paths used here'
   for (const path of ['/api/admin/proactive?days=7', '/api/admin/enterprise', '/api/admin/enterprise/capabilities', '/api/admin/enterprise/settings/proactiveDailyRuns']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/admin/proactive-other', '/api/admin/enterprise/people', '/api/admin/enterprise/settings/other', '/api/admin/enterprise/capabilities/other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+it('admin-platform allows playground and model controls without unrelated settings', () => {
+  for (const path of ['/api/sandboxed', '/api/sandboxed/custom_example/publish', '/api/admin/enterprise/models/usage?days=30', '/api/admin/enterprise/settings/modelAllowlist']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/admin/enterprise/settings/scim', '/api/sandboxed-other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});

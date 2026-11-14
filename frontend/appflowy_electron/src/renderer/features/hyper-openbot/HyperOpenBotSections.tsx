@@ -47,6 +47,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   { id: 'admin-plugins', label: 'Plugins', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperPluginsSection')) },
   { id: 'admin-skills', label: 'Skills', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperSkillsSection')) },
   { id: 'admin-proactive', label: 'Routines', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperProactiveSection')) },
+  { id: 'admin-playground', label: 'Playground', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperPlaygroundSection')) },
   // slot: onboarding
   /* onboarding */
 ];
