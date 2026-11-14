@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-14T11:55:58.094385+00:00",
+  "recordedAt": "2026-11-14T12:15:34.666291+00:00",
   "issue": 5,
   "pullRequest": 11,
-  "codeHeadObserved": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
+  "codeHeadObserved": "63054806317331f81582aff027585e08197a86a1",
   "product": "HyperTask",
   "environment": "Real Electron 44.10.2 window on the local Linux PC, original OpenBot and Intelligence on the authorized VM",
   "scope": "Native chat send/stream/save/app-restart/reopen and appearance/navigation observations; further issue #6 tool/approval acceptance is separate.",
   "before": {
-    "startedAt": "2026-11-14T11:45:49.208Z",
-    "observedAt": "2026-11-14T11:45:56.732Z",
-    "head": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
+    "startedAt": "2026-11-14T12:13:46.835Z",
+    "observedAt": "2026-11-14T12:13:56.103Z",
+    "head": "63054806317331f81582aff027585e08197a86a1",
     "actualElectronWindow": true,
     "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
-    "channelId": "channel_e27a11c7-3770-451c-95d5-251da6b048f8",
-    "threadId": "49c8cef5-0fb2-8149-af78-08ec3c5d53c5",
+    "channelId": "channel_22def8f2-c59e-4459-ac75-74724609b23a",
+    "threadId": "49c8cef5-0fb2-8050-ae61-037b3cdefad6",
     "botId": "picked-harness",
-    "runId": "9d05ba3a-019f-4fb4-88e9-c9181183e6da",
-    "userMessageId": "198e5830-86b0-46d8-8cb4-92bd7b9f7026",
-    "assistantMessageId": "resp_0ce0b6b74a3de6fc016af849f0d55c87d2be68d4d9941e6a5b",
-    "textDeliveries": 102,
+    "runId": "04771d83-77d9-48cb-bf1d-da36dca6df03",
+    "userMessageId": "d2652c81-8821-4a90-858e-e7fd68c08f91",
+    "assistantMessageId": "resp_054c0467c5a61788016af85080064487d29cdea872f7486d9b",
+    "textDeliveries": 95,
     "statuses": {
       "channel": 200,
       "history": 200
@@ -28,32 +28,32 @@
     "errors": []
   },
   "beforeTextHashes": {
-    "promptSha256": "72f74f3e1c23bd7f0ef99efd914811a92fab0e111bca3f25049b4ba5cf67fe3c",
-    "answerSha256": "fa69055dd726610404dfe53ad1cae957087901e244c43586b3849d9bc86a7a69",
-    "answerCharacters": 497
+    "promptSha256": "add63ce711aa519fc8d0b9f45289122451b0908b8be8dedaf644f9198eec8b4b",
+    "answerSha256": "3554ab3c82fc34755c7907200c495eb2cadce82b3325d5aebae1d072b6864f26",
+    "answerCharacters": 477
   },
   "beforeStream": {
-    "textDeliveries": 102,
-    "firstEventAt": "2026-11-14T11:45:53.629Z",
-    "lastEventAt": "2026-11-14T11:45:55.471Z",
-    "captureSha256": "3e572c0889b24e2e6f4949257db4a50a9765435f0c5d4c7f560683020c0a0f2f"
+    "textDeliveries": 95,
+    "firstEventAt": "2026-11-14T12:13:52.970Z",
+    "lastEventAt": "2026-11-14T12:13:54.675Z",
+    "captureSha256": "37eba5d17253de512535b9dfef36a76a820f3aabf832564a5445ae8c11d79fc7"
   },
   "after": {
-    "observedAt": "2026-11-14T11:46:36.790Z",
-    "head": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
+    "observedAt": "2026-11-14T12:14:37.862Z",
+    "head": "63054806317331f81582aff027585e08197a86a1",
     "actualElectronWindow": true,
     "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
-    "channelId": "channel_e27a11c7-3770-451c-95d5-251da6b048f8",
-    "threadId": "49c8cef5-0fb2-8149-af78-08ec3c5d53c5",
-    "userMessageId": "198e5830-86b0-46d8-8cb4-92bd7b9f7026",
-    "assistantMessageId": "resp_0ce0b6b74a3de6fc016af849f0d55c87d2be68d4d9941e6a5b",
+    "channelId": "channel_22def8f2-c59e-4459-ac75-74724609b23a",
+    "threadId": "49c8cef5-0fb2-8050-ae61-037b3cdefad6",
+    "userMessageId": "d2652c81-8821-4a90-858e-e7fd68c08f91",
+    "assistantMessageId": "resp_054c0467c5a61788016af85080064487d29cdea872f7486d9b",
     "sameNativeViewChannelThreadAndMessageIds": true,
     "exactSavedUiText": true,
     "noReplacementPromptSent": true,
     "historyStatus": 200,
     "errors": []
   },
-  "afterCaptureSha256": "3ce00a3fbdf574e573a8e7e1e7af4786524da8fb0a92ec4edc62b1baa85b1b60",
+  "afterCaptureSha256": "1bde3ad1da7b3430b15c947d11081efed14b04441891a4a8c0106d053d347e73",
   "appearance": {
     "observedAt": "2026-11-14T10:47:59.570Z",
     "head": "0a347138a468d1c4f997126dd81bba5351578e92",
@@ -85,7 +85,7 @@
     "typecheck": "pass",
     "frontendBuild": "pass",
     "fullVitest": {
-      "passed": 516,
+      "passed": 525,
       "skipped": 1,
       "skippedReason": "Opt-in simulated-IPC live backend test; actual native Electron live test ran separately."
     },
@@ -212,7 +212,7 @@
     "regression": "Missing idle content restored; longer completed live text retained; active agent not written"
   },
   "codeHeadObservedScope": "Full plain-chat before/after pair; later targeted regressions retain their own code heads",
-  "latestReviewCodeHeadObserved": "efd309f691a5628d876cfcfca7364e0bcaa35d51",
+  "latestReviewCodeHeadObserved": "63054806317331f81582aff027585e08197a86a1",
   "markdownImages": {
     "observedAt": "2026-11-14T11:54:42.614Z",
     "head": "efd309f691a5628d876cfcfca7364e0bcaa35d51",
@@ -234,5 +234,43 @@
   "toolCallRecovery": {
     "merge": "By tool-call ID, retaining independently longer arguments and both live-only/stored-only calls",
     "regression": "Reproduced shortening a complete call when another call improved or was added; recovery entry point now preserves it"
+  },
+  "componentStateRegressions": {
+    "observedAt": "2026-11-14T12:11:48.841Z",
+    "head": "63054806317331f81582aff027585e08197a86a1",
+    "scope": "Compiled production React components in isolated Chromium with mocked backend; not native/live tool acceptance",
+    "cases": [
+      "question_literal_sentinel_and_free_text",
+      "bot_draft_survives_pending_successful_failed_refresh",
+      "bot_stale_save_and_pin_keep_new_selection_draft",
+      "disconnect_confirmation_never_transfers_to_added_server",
+      "approval_rows_remain_independently_locked_and_stale_poll_ignored",
+      "transcript_noop_wheel_still_follows_and_selection_blocks_follow",
+      "chat_discovery_and_creation_ignore_workspace_switches"
+    ],
+    "errors": [],
+    "captureSha256": "a3a44c16fa3d6691bb8ab6977a5489ed75d816377956bfee3c1dad8835b5c0f4",
+    "fixtureBundleSha256": "941298c5eb67c559694c6b0f87e63aa448737f560ea7a29961832162f1f4282a",
+    "fixtureDriverSha256": "1dc8a877b33412f923e76771b0181b5a2479bfdff18f579245c40ccaec57fb87"
+  },
+  "codeRabbitFollowUp": {
+    "reviewSummaryHead": "45f7577970f5dc0afef4da85bd1478e9bcf94678",
+    "findings": 16,
+    "codeFixesHead": "63054806317331f81582aff027585e08197a86a1",
+    "documentationAlreadyFixedIn": "1edb31d2a0c5241db6566f075a7dc09a30707baa",
+    "reportedPreMergeChecksPassed": 4,
+    "reportedReviewCoverage": "Incomplete: eight files could not be fully reviewed",
+    "changes": [
+      "POSIX-only permission assertions and explicit Linux tunnel mocks",
+      "literal question options separated from free-text sentinel",
+      "Bot editor survives refresh and rejects old editor selection callbacks",
+      "disconnect confirmation tied to server key",
+      "approval response generations and per-row pending locks",
+      "null tool outcome validation and structured skipped actions",
+      "snapshot required for referenced key presses",
+      "selection-aware scroll follow and no-op gesture handling",
+      "defensive HTTP error parsing",
+      "Chat completion guards across workspace changes"
+    ]
   }
 }

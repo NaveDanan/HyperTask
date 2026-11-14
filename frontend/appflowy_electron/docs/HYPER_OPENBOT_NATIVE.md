@@ -30,21 +30,21 @@ The current transport is a Linux development configuration for `agent@100.104.17
 
 ## Actual native observations
 
-[HYPER_OPENBOT_NATIVE.runtime.json](HYPER_OPENBOT_NATIVE.runtime.json) records exact code/capture identities and hashes. The full plain-chat/restart observation was `5cae909b0778b91cbfd7cf92ec6b37f3981a699a`, including the rebuilt core identity query. The later image-policy check ran on `efd309f691a5628d876cfcfca7364e0bcaa35d51`; each regression records its own source commit.
+[HYPER_OPENBOT_NATIVE.runtime.json](HYPER_OPENBOT_NATIVE.runtime.json) records exact code/capture identities and hashes. The full plain-chat/restart observation was `63054806317331f81582aff027585e08197a86a1`, including the rebuilt core identity query. The separate image-policy check ran on `efd309f691a5628d876cfcfca7364e0bcaa35d51`; each regression records its own source commit.
 
 | Check | Observed result |
 | --- | --- |
 | App | Actual Electron 44.10.2 process and native Rust core; isolated scratch profile |
 | Navigation | Visible Chat entry creates/reopens an existing native Chat view |
 | Sending | Normal Send pointer click through the native composer |
-| Streaming | 102 distinct live AG-UI text deliveries over the real private Phoenix connection |
-| Saved content | Exact 497-character answer and prompt match authoritative HTTP 200 history and native UI |
+| Streaming | 95 distinct live AG-UI text deliveries over the real private Phoenix connection |
+| Saved content | Exact 477-character answer and prompt match authoritative HTTP 200 history and native UI |
 | App restart | Same native view, channel, thread, Bot, user/assistant message IDs and text reopened without a replacement prompt |
 | Renderer | No page errors observed during send/reopen |
 | Appearance | Actual light, dark and Lavender token/screenshot checks passed; default Auto scheme restored |
 | Navigation regression | Jira opened without credential changes; returning to Chat showed the same saved message |
 | Async selection | Actual pending model save locks both pickers, retains the draft and saves the requested model; a late channel creation preserves newer navigation and remembered selection |
-| Automated checks | Typecheck, production frontend build and 516 tests passed; one opt-in simulated-IPC live test skipped |
+| Automated checks | Typecheck, production frontend build and 525 tests passed; one opt-in simulated-IPC live test skipped |
 
 The optional bridge-only test uses a simulated Electron IPC host with the real backend. Its earlier pass is recorded separately and is not substituted for the native-window observations above. The full suite included real-core integration checks using the rebuilt identity-query binary. The concurrency checks paused and resumed only the scratch app's private SSH child; the reference and T3 forwards were untouched.
 
@@ -65,3 +65,5 @@ Launch a development window with `APPFLOWY_SUPPORT_DIR`, Electron user-data and 
 Open Chat through native navigation, start a conversation with `picked-harness`, send uniquely marked disposable plain text and observe live AG-UI events. Compare the assembled response with native transcript rows and authoritative saved message IDs/text. Allow the original history store its bounded final-write delay. Quit/relaunch the app with the same scratch profile, then require the same view/conversation/message IDs and displayed text without sending again. Keep session files, logs and raw captures private; the committed record contains sanitized results and hashes.
 
 Approved and denied tools, interrupted runs, connection failures, portable startup/shutdown/configuration and full phase-1 end-to-end acceptance remain tracked by issues #6, #7 and #8. No Knowledge Graph, Intelligence replacement or permanent offline claim is included.
+
+CodeRabbit follow-up fixes preserve Bot drafts across pending, successful and failed refreshes; reject old editor completions; scope disconnect confirmation to its server; and keep approval rows independently locked while rejecting stale inbox responses. Question option labels cannot collide with free-text mode. Null runtime results, skipped steps, key snapshot requirements and HTTP status diagnostics have regressions. Transcript follow uses actual scroll position and preserves text selection, and Chat discovery/creation ignores workspace changes. Seven isolated Chromium scenarios use the production components with a mocked backend; they passed and do not establish live action/approval acceptance. POSIX permission assertions are excluded on Windows and tunnel tests explicitly select their Linux implementation; no native Windows run is claimed.
