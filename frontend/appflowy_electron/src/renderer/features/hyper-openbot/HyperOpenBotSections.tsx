@@ -34,7 +34,8 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: vault
   /* vault */
   // slot: computer-browser
-  /* computer-browser */
+  { id: 'browser', label: 'Browser', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperBrowserSection')) },
+  { id: 'connected-browsers', label: 'Connected browsers', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperBrowsersSection')) },
   // slot: screens
   /* screens */
   // slot: settings
