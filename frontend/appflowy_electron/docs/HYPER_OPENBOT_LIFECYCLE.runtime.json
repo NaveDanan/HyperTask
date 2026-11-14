@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "issue": 7,
+  "state": "validated_awaiting_review",
+  "branch": "hyper/openbot-lifecycle",
+  "base": {
+    "pullRequest": 12,
+    "mergeCommit": "bb158354c712dd6401072bbe8dfd63db74e604fd"
+  },
+  "implementationCommit": "741613f2ba8739bceb4ab910e8d61665bb817243",
+  "supportedConnection": {
+    "desktop": "Linux Electron development build",
+    "backend": "existing authorized personal MMEMS-mems01 deployment",
+    "nativeOwner": "original local HyperTask profile only",
+    "remoteNativeProfiles": "unsupported_fail_closed",
+    "ownershipTransfer": "unsupported_no_reset",
+    "automaticProvisioning": false,
+    "runtime": "original OpenBot and CopilotKit Intelligence",
+    "originalSourceCommit": "f8af37ab73e96784f174a11104505a965e722cab",
+    "termsAcceptedBy": "account holder",
+    "modelAuthentication": "ChatGPT OAuth; no API key"
+  },
+  "repositoryValidation": {
+    "passedTests": 558,
+    "skippedTests": 1,
+    "skipReason": "opt-in simulated-IPC live test",
+    "typecheck": "passed",
+    "frontendBuild": "passed",
+    "existingNativeCoreTests": "passed using unchanged APPFLOWY_CORE_BINARY",
+    "simulatedReadinessScenarios": 10,
+    "realLicenseOrCredentialDisruption": false
+  },
+  "nativeLifecycle": {
+    "capturedCommit": "27d33affd6e06a1e92fb2f3d3f1b3370aa524013",
+    "startedAt": "2026-11-14T14:24:54.295Z",
+    "finishedAt": "2026-11-14T14:28:34.980Z",
+    "actualElectronWindow": true,
+    "stages": [
+      {
+        "name": "automatic_native_ready",
+        "at": "2026-11-14T14:24:55.713Z"
+      },
+      {
+        "name": "idempotent_start_preserved",
+        "at": "2026-11-14T14:24:58.006Z"
+      },
+      {
+        "name": "native_stop_requested",
+        "at": "2026-11-14T14:24:58.260Z"
+      },
+      {
+        "name": "owned_services_stopped_core_and_draft_preserved",
+        "at": "2026-11-14T14:25:46.918Z"
+      },
+      {
+        "name": "native_start_requested",
+        "at": "2026-11-14T14:25:46.956Z"
+      },
+      {
+        "name": "native_start_and_reconnect_ready",
+        "at": "2026-11-14T14:26:43.484Z"
+      },
+      {
+        "name": "native_restart_requested",
+        "at": "2026-11-14T14:26:43.646Z"
+      },
+      {
+        "name": "native_restart_and_reconnect_ready",
+        "at": "2026-11-14T14:28:27.492Z"
+      }
+    ],
+    "idempotentStartPreserved": true,
+    "coreUnaffectedWhileStopped": true,
+    "sameContainersImagesAndStores": true,
+    "sharedAppFlowyUnchanged": true,
+    "ownerBindingPreserved": true,
+    "savedConversationPreserved": true,
+    "draftPreservedAcrossStopStartRestart": true,
+    "nativeSendAfterRestart": true,
+    "intentionalStopHasNoRawIpcError": true,
+    "configFileMode": "0600",
+    "pageErrors": []
+  },
+  "nativeStartup": {
+    "capturedCommit": "470085ef57932f4fcd4fc4ff1870bb5a449d5c83",
+    "explicitStopHeldWhileAutoStartEnabled": true,
+    "newAppAutomaticallyStartedStoppedDeployment": true,
+    "disabledPreferenceRetainedAfterAppRestart": true,
+    "ownerBindingPreserved": true,
+    "startupPreferenceRestored": true,
+    "driverLimit": "initial in-process relaunch driver was interrupted; separate before/after drivers completed verification"
+  },
+  "privateEvidence": {
+    "HyperNativeLifecycle.json": {
+      "sha256": "0a2cc28d3abd2d90b1050e6fa714c07abba92d8cfe956b38673e5d60e71f5483",
+      "committed": false
+    },
+    "HyperNativeStartup.json": {
+      "sha256": "e156f26209a8c34cb0d2ff7519cad3ed9a63fcaf17567360b6c0e23b896edd07",
+      "committed": false
+    },
+    "HyperNativeServicesStopped.png": {
+      "sha256": "fab5902ffa3754c44cde5d9d618b1c533a47ccceb911f53fe6f7da91d9cba55e",
+      "committed": false
+    },
+    "HyperNativeServicesRecovered.png": {
+      "sha256": "c522735ce1429d7b04a06d3f0a11816301a9bb75039b7e0d7c0eeb69249d6f54",
+      "committed": false
+    },
+    "HyperNativeLifecycleTest.mjs": {
+      "sha256": "348a71d0c2307bf8ce97896c32e5a0c6a993529d532ae814d38784ffcbe1fd97",
+      "committed": false
+    }
+  },
+  "unchangedCoreBinarySha256": "a630e4600c7774c75e08b1d7c63768a147c68effe81c30071cf35bfa10aef064",
+  "limitations": [
+    "Fixed provisioned personal VM; no generic target selection or installer",
+    "Remote profiles and authenticated server provenance remain unsupported",
+    "Provider readiness checks OAuth-store presence, not token validity",
+    "Closing desktop leaves VM services running; explicit Stop owns shutdown",
+    "Linux rootful Docker remains outside documented macOS preview",
+    "Process-only development --no-sandbox launch; no production packaging claim",
+    "No permanent offline support or Intelligence replacement"
+  ]
+}

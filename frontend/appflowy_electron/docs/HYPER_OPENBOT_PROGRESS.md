@@ -104,10 +104,13 @@ Native approved/denied actions, Stop/continue, restart restoration, real runtime
 
 ## Current step: issue #7
 
-The `hyper/openbot-lifecycle` branch starts from the #12 squash merge. A main-owned controller, fixed scoped VM helper and native readiness/lifecycle panel are implemented for the existing personal deployment. The renderer receives a closed action set and sanitized readiness only. The read-only VM probe passed all ten checks; no lifecycle operation has run through the new controller yet.
+The `hyper/openbot-lifecycle` branch starts from the #12 squash merge. Main owns a fixed scoped VM helper, readiness gating, native Stop/Start/Restart confirmation and a persistent automatic-start preference. The renderer receives closed actions and sanitized checks only. No new backend installation, cluster, image rebuild or Rust rebuild was needed.
 
-Initial controller/transport/IPC policy checks and typecheck pass. Native start/stop/restart, idempotence, retained conversations/drafts and store preservation still need live acceptance before filing the issue #7 PR. This remains a provisioned Linux development connection to the authorized VM, with original Intelligence, human-owned agreement/model sign-in and the existing local native owner boundary. No shared K3s, AppFlowy service or source/runtime replacement is authorized by this work.
+Real native Stop/Start/Restart, idempotent attach, draft and exact saved-conversation preservation passed. The same container/image/mount identities returned, the existing Rust core remained available while AI stopped, and shared AppFlowy services were unchanged. A native app restart automatically started the deliberately stopped deployment. The disabled startup preference survived another app/core restart. The owner binding remained unchanged throughout.
 
+The full frontend suite passes 558 tests with one opt-in simulated-IPC live skip, plus typecheck/build. Ten controlled prerequisite scenarios cover missing Docker/deployment, unsafe ownership/public bindings, stopped/unhealthy services, Intelligence, licensing and provider setup. These are simulated faults, separate from the real native lifecycle evidence. [The lifecycle note](HYPER_OPENBOT_LIFECYCLE.md) documents the supported connection, diagnostics, evidence and reproduction steps.
+
+This remains a provisioned Linux development connection to the authorized personal VM. Original Intelligence, the human-owned agreement/model sign-in and the original local native-owner boundary remain required. Same-owner network recovery is supported; remote native-account provenance and ownership transfer remain unsupported and fail closed. No shared K3s, AppFlowy service or source/runtime replacement is part of this change. Final issue #7 PR review/merge remains pending, followed by #8.
 
 ## Queue
 
@@ -117,7 +120,7 @@ Initial controller/transport/IPC policy checks and typecheck pass. Native start/
 | [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Merged in PR #10 |
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11 merged as d026839; issue closed |
 | [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12 merged as bb158354; issue closed |
-| [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Main-owned controller implemented; native lifecycle acceptance pending |
+| [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Native lifecycle/startup validated; PR review/merge pending |
 | [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Waiting for #7 |
 
 ## Working-copy note

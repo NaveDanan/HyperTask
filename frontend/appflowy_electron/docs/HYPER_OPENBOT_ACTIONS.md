@@ -49,7 +49,7 @@ The desktop reuses the matching installed dependency graph, Electron 44.10.2 and
 6. Exercise one nonexistent-file read. For a real run failure, briefly stop only the owned harness with a guaranteed `finally` restoration, require the native error/draft, restore that same container and wait for health before retrying. Do not change provider credentials to manufacture a failure.
 7. Wait for both approval requests to finish and revoke only the temporary rule. Confirm preferences and owned services are restored. Keep raw evidence private; commit sanitized identities and hashes.
 
-Service lifecycle/configuration, trusted reconnect and authenticated remote-account provenance remain issue #7. Broader phase-1 acceptance remains issue #8. Neither Knowledge Graph work nor an Intelligence replacement is included.
+Service lifecycle and same-owner network recovery are documented in [issue #7](HYPER_OPENBOT_LIFECYCLE.md). Remote native-account provenance and backend ownership transfer remain unsupported. Broader phase-1 acceptance remains issue #8. Neither Knowledge Graph work nor an Intelligence replacement is included.
 
 ## Review follow-up
 
