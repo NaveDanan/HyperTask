@@ -42,3 +42,8 @@ export const HyperLoadDelivery = () => request<HyperReachability>('/api/delivery
 export const HyperLoadRouting = async () => (await request<{ routing: HyperRouting }>('/api/bots/routing')).routing;
 export const HyperRouteUpdates = (kind: HyperKind, transports: 'all' | HyperTransport[]) => request('/api/bots/routing/' + kind, 'PUT', { transports });
 export const HyperRemoveDevice = (id: string) => request('/api/delivery/devices/' + encodeURIComponent(id), 'DELETE');
+
+export const HyperKindLabels: Record<HyperKind, string> = { progress: 'Progress', decision: 'Decisions', question: 'Questions', attention: 'Something needs you' };
+export const HyperTransportLabels: Record<HyperTransport, string> = { push: 'Push', slack: 'Slack', teams: 'Microsoft Teams', sms: 'SMS' };
+export const HyperDeliveryKindLabels = { reply: 'Progress', approval: 'Decision', question: 'Question', attention: 'Something needs you' };
+export const HyperDeliveryStateLabels = { queued: 'Waiting to send', running: 'Sending', accepted: 'Sending', sent: 'Sent', delivered: 'Delivered', failed: 'Failed', unknown: 'Not confirmed', opted_out: 'Not sent' };

@@ -18,6 +18,7 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
   const [delivery, setDelivery] = useState<notify.HyperReachability>();
   const [routing, setRouting] = useState<notify.HyperRouting>();
   const [error, setError] = useState('');
+  const [editionFailed, setEditionFailed] = useState(false);
   const [personal, setPersonal] = useState<boolean>();
   const pendingRuleReset = useRef(false);
   const [ruleFormVersion, setRuleFormVersion] = useState(0);
@@ -36,10 +37,14 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
       if (alive.current && current === version.current) { setInbox(value); if (pendingRuleReset.current) { pendingRuleReset.current = false; setRuleFormVersion(v => v + 1); } if (unconfirmedTarget.current !== 'notifications') setUnconfirmed(false); }
     } catch (cause) { if (alive.current && current === version.current) setError('Approvals could not be loaded. Check your connection or access and retry.'); if (propagate) throw cause; }
   }
-  useEffect(() => { alive.current = true; void request<{ edition: string }>('/api/capabilities').then(data => { if (alive.current) setPersonal(data.edition === 'personal'); }).catch(() => {}); void refresh(); const timer = setInterval(() => { if (!mutationLock.current) void refresh(); }, 10000); return () => { alive.current = false; version.current++; clearInterval(timer); }; }, []);
+  async function loadEdition() {
+    try { const data = await request<{ edition: string }>('/api/capabilities'); if (alive.current) { setPersonal(data.edition === 'personal'); setEditionFailed(false); } }
+    catch { if (alive.current) setEditionFailed(true); }
+  }
+  useEffect(() => { alive.current = true; void loadEdition(); void refresh(); const timer = setInterval(() => { if (!mutationLock.current) void refresh(); }, 10000); return () => { alive.current = false; version.current++; clearInterval(timer); }; }, []);
   async function loadNotifications() { const [d, r] = await Promise.all([notify.HyperLoadDelivery(), notify.HyperLoadRouting()]); if (alive.current) { setDelivery(d); setRouting(r); setUnconfirmed(false); } }
   async function mutate(action: () => Promise<unknown>, target: 'inbox' | 'notifications' | 'none' = 'inbox') {
-    if (mutationLock.current) return false;
+    if (mutationLock.current || unconfirmed) return false;
     mutationLock.current = true;
     setBusy(true); setError('');
     const result = await HyperRunMutation(action, () => target === 'notifications' ? loadNotifications() : target === 'none' ? Promise.resolve() : refresh(true));
@@ -66,8 +71,8 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
   const pending = inbox?.requests.filter(row => row.status === 'pending') ?? [];
   return <div className="space-y-6 overflow-auto p-6 text-sm">
     <h1 className="text-xl font-semibold">Approvals</h1>
-    <nav className="flex gap-2" aria-label="Approval sections">{['Inbox', 'Standing rules', 'Notifications'].map(name => <Button key={name} variant={tab === name ? 'secondary' : 'ghost'} onClick={() => { setTab(name); if (name === 'Notifications') void loadNotifications().catch(() => setError('Notifications could not be loaded.')); }}>{name}</Button>)}</nav>
-    {error && <div role="alert" className="text-destructive">{error} <Button variant="outline" onClick={() => { setError(''); if (tab !== 'Notifications') void refresh(); if (tab === 'Notifications') void loadNotifications().catch(() => setError('Notifications could not be loaded.')); }}>Retry</Button></div>}
+    <nav className="flex gap-2" aria-label="Approval sections">{['Inbox', 'Standing rules', 'Notifications'].map(name => <Button key={name} disabled={writing} variant={tab === name ? 'secondary' : 'ghost'} onClick={() => { setTab(name); if (name === 'Notifications') void loadNotifications().catch(() => setError('Notifications could not be loaded.')); }}>{name}</Button>)}</nav>
+    {error && <div role="alert" className="text-destructive">{error} <Button variant="outline" disabled={writing} onClick={() => { setError(''); if (tab !== 'Notifications') void refresh(); if (tab === 'Notifications') void loadNotifications().catch(() => setError('Notifications could not be loaded.')); }}>Retry</Button></div>}
     {!inbox && !error && <p role="status">Loading approvals…</p>}
     {tab === 'Inbox' && inbox && <>
       {!pending.length && !inbox.questions.length && <p>Nothing needs your answer.</p>}
@@ -79,6 +84,7 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
       <h2 className="font-semibold">Before a Bot acts</h2>
       <label className="flex gap-2"><input type="checkbox" checked={inbox.enabled} disabled={busy} onChange={e => void mutate(() => api.HyperPreferences({ enabled: e.target.checked }))} />Ask before taking action</label>
       {inbox.preferences && <><label className="flex gap-2"><input type="checkbox" checked={inbox.team?.enforceAutoReview || inbox.preferences.autoReview} disabled={busy || inbox.team?.enforceAutoReview} onChange={e => void mutate(() => api.HyperPreferences({ autoReview: e.target.checked }))} />Auto-review {inbox.team?.enforceAutoReview && '(Required by your admin)'}</label><label>Commands on your computer <select className="rounded border border-border bg-background p-2" value={inbox.preferences.hostCommands} disabled={busy} onChange={e => void mutate(() => api.HyperPreferences({ hostCommands: e.target.value as api.HyperHostCommandPolicy }))}>{Object.entries({ ask: 'Ask every time', allow: 'Always allow', never: 'Never' }).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>{inbox.hostCommands !== inbox.preferences.hostCommands && <p>Your admin limits commands to {inbox.hostCommands}.</p>}</>}
+      {editionFailed && <p role="alert">Shared Bot preferences could not be checked. <Button variant="outline" onClick={() => void loadEdition()}>Retry</Button></p>}
       {personal === false && <div><h2 className="font-semibold">Shared Bots</h2><p>{reset ? 'Reset. Each shared Bot will ask again.' : 'Forget every answer about apps you let shared Bots use, so each shared Bot asks again.'}</p><Button variant="outline" disabled={busy} onClick={() => void mutate(api.HyperClearSharedBotConsents, 'none').then(ok => { if (ok) setReset(true); })}>Reset</Button></div>}
       <h2 className="font-semibold">Standing rules</h2><p>The strictest matching rule wins. An ask rule beats an allow rule. Team rules are locked.</p>
       {inbox.team?.customRulesEnabled === false && <p>Your admin has turned off personal rules. Saved rules are kept but do not apply.</p>}
@@ -90,9 +96,9 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
     {tab === 'Notifications' && (!delivery || !routing ? <p>Loading notifications…</p> : <>
       <HyperNotificationSettings /><h2 className="font-semibold">Where updates go</h2>
       {!notify.HyperTransports.some(t => delivery.available[t]) && <p>Updates stay in HyperTask. Push, Slack, Microsoft Teams and SMS appear once configured on the server.</p>}
-      {notify.HyperKinds.map(kind => <fieldset key={kind} className="flex gap-4"><legend>{kind}</legend>{notify.HyperTransports.filter(t => delivery.available[t]).map(t => <label key={t}><input type="checkbox" disabled={busy} checked={routing[kind] === 'all' || routing[kind].includes(t)} onChange={e => { const next = notify.HyperTransports.filter(value => value === t ? e.target.checked : routing[kind] === 'all' || routing[kind].includes(value)); void mutate(() => notify.HyperRouteUpdates(kind, next.length === 4 ? 'all' : next), 'notifications'); }} /> {t}</label>)}</fieldset>)}
-      <h2 className="font-semibold">Your devices</h2><p>Sign in to the OpenBot app on your phone and turn on notifications to add it here.</p>{!delivery.devices.length && <p>No devices yet.</p>}{delivery.devices.map(device => <div key={device.id}>{device.platform}<Button disabled={busy} variant="outline" onClick={() => void mutate(() => notify.HyperRemoveDevice(device.id), 'notifications')}>Remove</Button></div>)}
-      <h2 className="font-semibold">Recent deliveries</h2>{!delivery.deliveries.length && <p>No deliveries yet.</p>}{delivery.deliveries.map(row => <div key={row.id} className="rounded border border-border p-3">{row.kind} · {row.transport} · {row.state} · {new Date(row.createdAt).toLocaleString()}{row.error && <p className="text-destructive">Delivery failed. Check the server configuration.</p>}</div>)}
+      {notify.HyperTransports.some(t => delivery.available[t]) && notify.HyperKinds.map(kind => <fieldset key={kind} className="flex gap-4"><legend>{notify.HyperKindLabels[kind]}</legend>{notify.HyperTransports.filter(t => delivery.available[t]).map(t => <label key={t}><input type="checkbox" disabled={busy} checked={routing[kind] === 'all' || routing[kind].includes(t)} onChange={e => { const next = notify.HyperTransports.filter(value => value === t ? e.target.checked : routing[kind] === 'all' || routing[kind].includes(value)); void mutate(() => notify.HyperRouteUpdates(kind, next.length === 4 ? 'all' : next), 'notifications'); }} /> {notify.HyperTransportLabels[t]}</label>)}</fieldset>)}
+      <h2 className="font-semibold">Your devices</h2><p>Sign in to the OpenBot app on your phone and turn on notifications to add it here.</p>{!delivery.devices.length && <p>No devices yet.</p>}{delivery.devices.map(device => <div key={device.id}>{device.platform === 'ios' ? 'iOS' : 'Android'}<Button disabled={busy} variant="outline" onClick={() => void mutate(() => notify.HyperRemoveDevice(device.id), 'notifications')}>Remove</Button></div>)}
+      <h2 className="font-semibold">Recent deliveries</h2>{!delivery.deliveries.length && <p>No deliveries yet.</p>}{delivery.deliveries.map(row => <div key={row.id} className="rounded border border-border p-3">{notify.HyperDeliveryKindLabels[row.kind]} · {notify.HyperTransportLabels[row.transport]} · {notify.HyperDeliveryStateLabels[row.state]} · {new Date(row.createdAt).toLocaleString()}{row.error && <p className="text-destructive">Delivery failed. Check the server configuration.</p>}</div>)}
     </>)}
   </div>;
 }
