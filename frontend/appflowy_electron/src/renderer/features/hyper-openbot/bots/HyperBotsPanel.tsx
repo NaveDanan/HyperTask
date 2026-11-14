@@ -65,6 +65,8 @@ export function HyperBotEditor({ bot, onSaved, onRemoved, onClose, onOpenConvers
   const lifecycleMatches = lifecycleState.botId === bot?.id;
   const lifecyclePending = Boolean(bot) && (!lifecycleMatches || lifecycleState.pending);
   const lifecycle = lifecycleMatches ? lifecycleState.data : undefined;
+  const [edition, setEdition] = useState<string>();
+  useEffect(() => { let live = true; void hyperOpenBotRequest<{ edition: string }>('/api/capabilities').then(value => { if (live) setEdition(value.edition); }).catch(() => {}); return () => { live = false; }; }, []);
   const [giveable, setGiveable] = useState<{ key: string; displayName: string }[]>([]);
   const [leftOut, setLeftOut] = useState<string[]>([]);
   const [appsError, setAppsError] = useState('');
@@ -92,14 +94,15 @@ export function HyperBotEditor({ bot, onSaved, onRemoved, onClose, onOpenConvers
     <div className="flex items-center justify-between gap-3"><h2 className="text-base font-semibold">{bot ? 'Bot profile' : 'Create Bot'}</h2><Button variant="ghost" disabled={busy} onClick={onClose}>Close</Button></div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
     {!editable && <p className="text-sm text-muted-foreground">This Bot is shared with you. Its owner manages the profile.</p>}
-    <form className="flex flex-col gap-4" onSubmit={e => { e.preventDefault(); void run(async () => { const saved = await HyperSaveBot(draft, bot); if (!bot) await Promise.allSettled(giveable.filter(app => !leftOut.includes(app.key)).map(app => hyperOpenBotRequest(`/api/plugins/for/${encodeURIComponent(saved.id)}/apps/${encodeURIComponent(app.key)}/give`, 'POST'))); onSaved(saved); setNotice('Profile saved.'); }); }}>
+    <form className="flex flex-col gap-4" onSubmit={e => { e.preventDefault(); void run(async () => { const saved = await HyperSaveBot(!bot && edition === 'personal' ? { ...draft, visibility: 'private' } : draft, bot); if (!bot) await Promise.allSettled(giveable.filter(app => !leftOut.includes(app.key)).map(app => hyperOpenBotRequest(`/api/plugins/for/${encodeURIComponent(saved.id)}/apps/${encodeURIComponent(app.key)}/give`, 'POST'))); onSaved(saved); setNotice('Profile saved.'); }); }}>
       <fieldset disabled={busy || !editable} className="flex min-w-0 flex-col gap-4">
         <label className="grid gap-2 text-sm">Name<Input required maxLength={80} value={draft.name} onChange={e => change('name', e.target.value)} /></label>
         <label className="grid gap-2 text-sm">Title<Input maxLength={120} value={draft.title} onChange={e => change('title', e.target.value)} /></label>
         <label className="grid gap-2 text-sm">Role description<Textarea required maxLength={1000} rows={5} value={draft.roleDescription} onChange={e => change('roleDescription', e.target.value)} /></label>
         {draft.instructions !== undefined && <label className="grid gap-2 text-sm">Instructions<Textarea required maxLength={1000} rows={5} value={draft.instructions} onChange={e => change('instructions', e.target.value)} /></label>}
-        {!bot?.systemOwned && <label className="grid gap-2 text-sm">Visibility<Select value={draft.visibility} disabled={busy || !editable} onValueChange={value => { if (value) change('visibility', value); }}><SelectTrigger aria-label="Visibility"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="private">Private</SelectItem><SelectItem value="public">Public · shared with the organization</SelectItem></SelectContent></Select></label>}
+        {edition !== undefined && edition !== 'personal' && !bot?.systemOwned && <label className="grid gap-2 text-sm">Visibility<Select value={draft.visibility} disabled={busy || !editable} onValueChange={value => { if (value) change('visibility', value); }}><SelectTrigger aria-label="Visibility"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="private">Private</SelectItem><SelectItem value="public">Public · shared with the organization</SelectItem></SelectContent></Select></label>}
         {!bot && <section className="grid gap-2"><h3>Your apps</h3>{appsError && <p role="alert">{appsError}</p>}{giveable.map(app => <label key={app.key}><input type="checkbox" checked={!leftOut.includes(app.key)} onChange={e => setLeftOut(old => e.target.checked ? old.filter(key => key !== app.key) : [...old, app.key])} />{app.displayName}</label>)}</section>}
+        {bot?.isolationActive && <p className="text-sm">Making this Bot public lets everyone use its signed-in accounts and files.</p>}
         {editable && <Button type="submit">{busy ? 'Saving…' : bot ? 'Save profile' : 'Create Bot'}</Button>}
       </fieldset>
     </form>

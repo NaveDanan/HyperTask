@@ -10,7 +10,7 @@ import type { HyperBotProfile } from '../bots/HyperBotsApi';
 it('bot-tabs waits for server flags before offering writes', () => {
   const html = renderToStaticMarkup(<HyperBotDetailTabs bot={{ id: 'desk', canManage: false } as HyperBotProfile} />);
   expect(html).toContain('Loading');
-  for (const label of ['Apps', 'Sharing', 'Access', 'Approvals', 'Skills', 'Activity', 'Reaching you']) expect(html).toContain(label);
+  for (const label of ['Apps', 'Sharing', 'Setup', 'Approvals', 'Skills', 'Activity', 'Reaching you']) expect(html).toContain(label);
   expect(html).not.toContain('Give app'); expect(html).not.toContain('Publish to specific');
 });
 it('bot-tabs displays loading without granting handoff, skill or approval permissions', () => {
