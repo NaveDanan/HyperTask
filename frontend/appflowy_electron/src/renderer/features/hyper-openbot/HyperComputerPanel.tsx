@@ -17,7 +17,7 @@ export function HyperComputerPanel({ botId, steps }: { botId: string; steps: rea
         if (status.state === 'ready') {
           const read = await readScreenshot(encodeURIComponent(botId)); if (!current) return;
           setScreen(read.frame ? `data:image/png;base64,${read.frame.base64}` : undefined); setError(read.error);
-        } else setScreen(undefined);
+        } else { setScreen(undefined); setError(undefined); }
       } catch (error) { if (current) setError(String(error)); }
       finally { if (current) timer = setTimeout(() => void refresh(), 2500); }
     }

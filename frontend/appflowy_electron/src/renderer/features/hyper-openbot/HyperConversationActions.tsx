@@ -12,7 +12,8 @@ export function HyperConversationActions({ threadId, onResolved }: { threadId: s
   const [inbox, setInbox] = useState<HyperInbox>();
   const [pending, setPending] = useState<string>();
   const [error, setError] = useState<string>();
-  async function refresh() { try { const next = await request<HyperInbox>('/api/approvals'); const waiting = next.requests.some(row => row.action.threadId === threadId && ['pending', 'approved', 'denied', 'consumed'].includes(row.status)) || next.questions.some(row => row.threadId === threadId); if (hadWaiting.current && !waiting) resolved.current?.(); hadWaiting.current = waiting; setInbox(next); } catch (error) { setError(String(error)); } }
+  const [pollError, setPollError] = useState<string>();
+  async function refresh() { try { const next = await request<HyperInbox>('/api/approvals'); setPollError(undefined); const waiting = next.requests.some(row => row.action.threadId === threadId && ['pending', 'approved', 'denied', 'consumed'].includes(row.status)) || next.questions.some(row => row.threadId === threadId); if (hadWaiting.current && !waiting) resolved.current?.(); hadWaiting.current = waiting; setInbox(next); } catch (error) { setPollError(String(error)); } }
   useEffect(() => { let current = true; let timer: ReturnType<typeof setTimeout>; const poll = async () => { await refresh(); if (current) timer = setTimeout(() => void poll(), 4000); }; void poll(); return () => { current = false; clearTimeout(timer); }; }, [threadId]);
   async function save(id: string, path: string, body?: unknown) {
     setPending(id); setError(undefined);
@@ -21,7 +22,7 @@ export function HyperConversationActions({ threadId, onResolved }: { threadId: s
     finally { setPending(undefined); }
   }
   return <div className="max-h-96 space-y-3 overflow-y-auto px-4">
-    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    {(error || pollError) && <p role="alert" className="text-sm text-destructive">{error || pollError}</p>}
     {inbox?.requests.filter(row => row.action.threadId === threadId && row.status === 'pending').map(row => <HyperApproval key={row.id} request={{ id: row.id, title: `${row.action.effect}: ${row.action.scope || row.action.toolRef}`, reason: row.action.policy?.reason, handOff: row.action.policy?.behaviour === 'hand_off', offersStandingRule: row.action.policy?.closed === false }} submitting={pending === row.id} onDecide={(id, decision) => void save(id, `/api/approvals/${encodeURIComponent(id)}/decision`, { decision })} />)}
     {inbox?.questions.filter(row => row.threadId === threadId).map(row => <HyperQuestion key={row.id} id={row.id} parts={row.parts?.length ? row.parts : [{ header: '', question: row.question }]} submitting={pending === row.id} onAnswer={(id, response) => void save(id, `/api/approvals/questions/${encodeURIComponent(id)}/respond`, { response })} onDismiss={id => void save(id, `/api/approvals/questions/${encodeURIComponent(id)}/dismiss`)} />)}
   </div>;

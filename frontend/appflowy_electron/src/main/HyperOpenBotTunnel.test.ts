@@ -1,0 +1,30 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+const mocks = vi.hoisted(() => ({ mkdtemp: vi.fn(), chmod: vi.fn(), rm: vi.fn(), stat: vi.fn(), spawn: vi.fn() }));
+vi.mock('node:fs/promises', () => ({ default: { ...mocks } }));
+vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
+vi.mock('electron', () => ({ app: { once: () => {} }, session: { defaultSession: { cookies: { get: vi.fn() } } } }));
+import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath } from './HyperOpenBotTunnel';
+beforeEach(() => { closeHyperOpenBotTunnel(); vi.clearAllMocks(); mocks.rm.mockResolvedValue(undefined); mocks.chmod.mockResolvedValue(undefined); });
+it('does not spawn SSH after close cancels an outstanding directory allocation', async () => {
+  let allocate: (path: string) => void = () => {};
+  mocks.mkdtemp.mockImplementationOnce(() => new Promise(resolve => { allocate = resolve; }));
+  const attempt = hyperOpenBotSocketPath();
+  const rejected = expect(attempt).rejects.toThrow('cancelled');
+  closeHyperOpenBotTunnel(); allocate('/private/cancelled');
+  await rejected;
+  expect(mocks.spawn).not.toHaveBeenCalled();
+  expect(mocks.rm).toHaveBeenCalledWith('/private/cancelled', { recursive: true, force: true });
+});
+it('cancels after chmod and does not clear a newer pending startup', async () => {
+  let finishChmod: () => void = () => {};
+  mocks.mkdtemp.mockResolvedValueOnce('/private/old').mockImplementationOnce(() => new Promise(() => {}));
+  mocks.chmod.mockImplementationOnce(() => new Promise<void>(resolve => { finishChmod = resolve; }));
+  const old = hyperOpenBotSocketPath(); const rejected = expect(old).rejects.toThrow('cancelled');
+  await vi.waitFor(() => expect(mocks.chmod).toHaveBeenCalledOnce());
+  closeHyperOpenBotTunnel(); const newer = hyperOpenBotSocketPath();
+  finishChmod(); await rejected;
+  expect(hyperOpenBotSocketPath()).toBe(newer);
+  expect(mocks.spawn).not.toHaveBeenCalled();
+  expect(mocks.rm).toHaveBeenCalledWith('/private/old', { recursive: true, force: true });
+  closeHyperOpenBotTunnel();
+});

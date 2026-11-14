@@ -7,12 +7,14 @@ import { Readable } from 'node:stream';
 import { app, session } from 'electron';
 const ORIGIN = 'http://127.0.0.1:3010';
 let starting: Promise<string> | undefined;
+let generation = 0;
 let child: ChildProcess | undefined;
 let directory: string | undefined;
 const connections = new Set<{ destroy(error?: Error): unknown }>();
 /** Fixed authorized development VM. The main process owns a private Unix SSH forward;
  * the public 3010 reference tunnel is never used by this transport. */
 export function closeHyperOpenBotTunnel() {
+  generation++;
   const process = child; child = undefined; starting = undefined;
   for (const connection of connections) connection.destroy(new Error('OpenBot tunnel closed'));
   connections.clear(); process?.kill('SIGTERM');
@@ -20,13 +22,20 @@ export function closeHyperOpenBotTunnel() {
 }
 export function hyperOpenBotSocketPath(): Promise<string> {
   if (starting) return starting;
+  const version = generation;
+  let ownedDirectory: string | undefined;
+  let ownedChild: ChildProcess | undefined;
+  const assertCurrent = () => { if (version !== generation) throw new Error('Private OpenBot SSH startup cancelled'); };
   starting = (async () => {
     if (process.platform !== 'linux') throw new Error('Private OpenBot SSH transport currently requires Linux');
-    directory = await fs.mkdtemp(path.join(os.tmpdir(), 'hypertask-openbot-'));
-    await fs.chmod(directory, 0o700);
-    const socketPath = path.join(directory, 'gateway.sock');
+    ownedDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'hypertask-openbot-'));
+    assertCurrent();
+    await fs.chmod(ownedDirectory, 0o700);
+    assertCurrent();
+    directory = ownedDirectory;
+    const socketPath = path.join(ownedDirectory, 'gateway.sock');
     const ssh = spawn('/usr/bin/ssh', ['-NT', '-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=3', '-L', `${socketPath}:127.0.0.1:3010`, 'agent@100.104.170.51'], { stdio: 'ignore' });
-    child = ssh;
+    ownedChild = ssh; child = ssh;
     ssh.once('exit', () => { if (child === ssh) closeHyperOpenBotTunnel(); });
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => finish(new Error('Private OpenBot SSH tunnel did not open')), 15000);
@@ -35,8 +44,14 @@ export function hyperOpenBotSocketPath(): Promise<string> {
       function finish(error?: Error) { clearTimeout(timeout); clearInterval(interval); ssh.off('error', failed); ssh.off('exit', failed); error ? reject(error) : resolve(); }
       ssh.once('error', failed); ssh.once('exit', failed);
     });
+    assertCurrent();
     return socketPath;
-  })().catch(error => { closeHyperOpenBotTunnel(); throw error; });
+  })().catch(async error => {
+    // An obsolete startup cleans up only its own resources, never a newer attempt's globals.
+    if (version === generation) closeHyperOpenBotTunnel();
+    else { ownedChild?.kill('SIGTERM'); if (ownedDirectory) await fs.rm(ownedDirectory, { recursive: true, force: true }); }
+    throw error;
+  });
   return starting;
 }
 app.once('before-quit', closeHyperOpenBotTunnel);

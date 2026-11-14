@@ -10,6 +10,7 @@ import { createNewPage, toggleCommandPalette } from '@/features/home/notifiers';
 import { localToolPlugin, trashPlugin } from '@/features/tabs/plugin';
 import { tabsActions, useTabsStore } from '@/features/tabs/tabs-store';
 import { hintTooltip, isMac } from './components';
+import { ViewBackendService } from '@/features/view/view-service';
 import { FolderEventCreateView } from '@/backend/events';
 import { sectionsActions, useSectionsStore } from './stores/sections-store';
 
@@ -86,6 +87,10 @@ export function HyperChatButton() {
     if (saved) { tabsActions.openView(saved); return; }
     setPending(true); setError(undefined);
     try {
+      const all = await ViewBackendService.getAllViews();
+      if (!all.ok) throw new Error('Existing Chat pages could not be loaded. Try again.');
+      const nested = findChat(all.value.items);
+      if (nested) { tabsActions.openView(nested); return; }
       const workspace = useWorkspaceStore.getState();
       const parentViewId = sidebarSpace.store.getState().currentSpace?.id ?? workspace.currentWorkspace?.workspaceId;
       if (!parentViewId) throw new Error('Choose a workspace to open Chat.');
