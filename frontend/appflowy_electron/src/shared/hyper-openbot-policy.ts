@@ -22,7 +22,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: admin-governance
   'me', 'admin/people', 'admin/enterprise', 'admin/identity-providers', 'admin/audit-events', 'admin/what-if', 'auth/sso/register', 'computers/policy', 'computers/policy-dry-run', 'computers/policy-translate',
   // slot: admin-platform
-  'sandboxed', 'admin/credentials', 'admin/proactive', 'admin/enterprise(?:$|/capabilities$|/models/usage$|/settings/(?:proactiveDailyRuns|modelAllowlist)$)',
+  'proactive/settings', 'proactive/suggestions', 'computers/fleet$', 'host-access', 'browser/clear$', 'sandboxed', 'admin/credentials', 'admin/proactive', 'admin/enterprise(?:$|/capabilities$|/models/usage$|/network|/computers/terminate-inactive$|/settings/(?:proactiveDailyRuns|modelAllowlist|inactiveComputerDays)$)',
   // slot: onboarding
   'me', 'setup', 'settings/preferences', 'route',
 ];

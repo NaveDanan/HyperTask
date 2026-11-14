@@ -61,7 +61,7 @@ it('settings permits settings and profile routes and refuses unrelated routes an
 
 it('settings automation permits only the requested nested families', () => {
   for (const path of ['/api/proactive/settings', '/api/responsibilities/sources/github', '/api/responsibilities/sources/github/id']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
-  for (const path of ['/api/proactive/suggestions', '/api/responsibilities', '/api/responsibilities/sources/slack', '/api/responsibilities/sources/github-evil', '/api/responsibilities/sources/github/%2e%2e']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+  for (const path of ['/api/proactive-other', '/api/responsibilities', '/api/responsibilities/sources/slack', '/api/responsibilities/sources/github-evil', '/api/responsibilities/sources/github/%2e%2e']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
 
 it('settings activity and governance share approved routes without permitting adjacent administration', () => {
@@ -107,4 +107,8 @@ it('computer-browser permits opaque cursors and nested download queries without 
 it('memory slot permits learning permission and recording subflows without adjacent families', () => {
  for (const path of ['/api/admin/enterprise', '/api/admin/enterprise/capabilities/translate', '/api/admin/enterprise/capabilities/preview', '/api/admin/enterprise/capabilities/batch', '/api/admin/enterprise/settings/skillSharing', '/api/recorder/recordings?cursor=next', '/api/admin/learning/status/bot', '/api/admin/learning/container', '/api/settings/learning/auto-approve']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
  for (const path of ['/api/settings/learning-other', '/api/admin/learning-other', '/api/recorder-other', '/api/admin/enterprise-other', '/api/admin/enterprise/capabilities/%2e%2e/secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+it('admin-platform permits computer administration and personal check-ins with family boundaries', () => {
+  for (const path of ['/api/computers/fleet', '/api/host-access/grants', '/api/admin/enterprise/network/replay', '/api/admin/enterprise/settings/inactiveComputerDays', '/api/proactive/suggestions/item/start']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/proactive-other', '/api/sandboxed-other', '/api/admin/proactive-other', '/api/plugins-other', '/api/host-access/../secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });

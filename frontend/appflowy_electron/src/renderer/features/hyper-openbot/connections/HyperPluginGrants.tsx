@@ -1,0 +1,41 @@
+// Adapted from OpenBot manage/plugin-{bot,tool}-page.tsx, MIT Copyright (c) 2026 CopilotKit.
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { hyperOpenBotRequest } from '../transport';
+import { hyperLoadPluginBots, hyperPluginGrant, type HyperPluginBot, type HyperSharedApproval, type HyperConnectionSelection } from './HyperPluginDetailsApi';
+import type { HyperConnectionServer } from './HyperConnectionsApi';
+export function HyperSharedApprovalFields({ value, onChange, disabled = false }: { value: HyperSharedApproval; onChange(value: HyperSharedApproval): void; disabled?: boolean }) {
+  return <fieldset disabled={disabled} className="space-y-2"><label className="block">Audience<select value={value.audience} onChange={e => onChange({ ...value, audience: e.target.value as HyperSharedApproval['audience'] })}><option value="owner">Owner only</option><option value="people">Named people and groups</option><option value="team">Everyone</option></select></label><label className="flex gap-2"><input type="checkbox" checked={value.outsideInput} onChange={e => onChange({ ...value, outsideInput: e.target.checked })} />Allow outside input</label>{value.audience === 'people' && <><label className="block">User IDs, comma separated<Input value={value.members.filter(m => m.kind === 'user').map(m => m.value).join(',')} onChange={e => onChange({ ...value, members: [...value.members.filter(m => m.kind !== 'user'), ...e.target.value.split(',').map(value => ({ kind: 'user' as const, value: value.trim() })).filter(m => m.value)] })} /></label><label className="block">Groups, comma separated<Input value={value.members.filter(m => m.kind === 'group').map(m => m.value).join(',')} onChange={e => onChange({ ...value, members: [...value.members.filter(m => m.kind !== 'group'), ...e.target.value.split(',').map(value => ({ kind: 'group' as const, value: value.trim() })).filter(m => m.value)] })} /></label></>}</fieldset>;
+}
+export function HyperPluginGrants({ server, busy, selection, navigate, run }: { server: HyperConnectionServer; busy: boolean; selection?: HyperConnectionSelection; navigate(value: HyperConnectionSelection): void; run(action: () => Promise<void>): Promise<void> }) {
+  const [bots, setBots] = useState<HyperPluginBot[]>();
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [pending, setPending] = useState<{ ref: string; bot: string }>();
+  const [approval, setApproval] = useState<HyperSharedApproval>({ audience: 'owner', outsideInput: false, members: [] });
+  const [progress, setProgress] = useState('');
+  useEffect(() => { let active = true; hyperLoadPluginBots().then(value => { if (active) setBots(value); }).catch(() => { if (active) setError('Could not load Bots. Refresh this app to retry.'); }); return () => { active = false; }; }, [server.id]);
+  const chosenBot = selection?.page === 'bot' ? selection.agentId : undefined;
+  const chosenTool = selection?.page === 'tool' ? selection.tool : undefined;
+  const tools = server.tools.filter(t => !chosenTool || t.name === chosenTool);
+  const alwaysOn = server.id === 'routines';
+  async function change(ref: string, bot: string, granted: boolean) {
+    if (granted && server.accountMode === 'shared') {
+      await run(async () => {
+        const exposure = await hyperOpenBotRequest<{ apps: { serverId: string; approval: HyperSharedApproval | null; needed: HyperSharedApproval; covered: boolean }[] }>(`/api/approvals/shared-use/bot/${encodeURIComponent(bot)}`);
+        const app = exposure.apps.find(a => a.serverId === server.id);
+        if (app?.covered) await hyperPluginGrant(ref, bot, true);
+        else { setApproval(app?.approval ?? app?.needed ?? { audience: 'owner', outsideInput: false, members: [] }); setPending({ ref, bot }); }
+      });
+    } else await run(async () => { await hyperPluginGrant(ref, bot, granted); });
+  }
+  const holders = new Set([...server.tools.flatMap(t => t.grantedTo ?? []), ...(server.withdrawn?.flatMap(t => t.grantedTo) ?? [])]);
+  const roster: HyperPluginBot[] = [...(bots ?? []).filter(b => !b.hidden || holders.has(b.id)), ...[...holders].filter(id => !bots?.some(b => b.id === id)).map(id => ({ id, name: 'Bot no longer here', hidden: true }))];
+  return <div className="space-y-3"><h2 className="font-medium">Bot and tool access</h2>{error && <p role="alert" className="text-destructive">{error}</p>}{!bots && !error && <p role="status">Loading Bots…</p>}{!chosenBot && !chosenTool && roster.map(bot => <Button variant="outline" key={bot.id} onClick={() => navigate({ page: 'bot', key: server.id, agentId: bot.id })}>{bot.name}{bot.hidden ? ' · hidden' : ''}</Button>)}
+    {(chosenBot || chosenTool) && <Button variant="outline" onClick={() => navigate({ page: 'app', key: server.id })}>Back to app</Button>}{chosenBot && <h3>{bots?.find(b => b.id === chosenBot)?.name ?? chosenBot}</h3>}{chosenBot && !alwaysOn && server.accountMode !== 'shared' && <Button disabled={busy || !bots} onClick={() => void run(async () => { const reads = server.tools.filter(t => t.effect === 'read'); let done = 0; try { for (const tool of reads) { await hyperPluginGrant(tool.ref ?? `${server.id}/${tool.name}`, chosenBot, true); setProgress(`${++done}/${reads.length}`); } } finally { setProgress(''); } })}>Grant every read-only action · {server.tools.filter(t => t.effect === 'read').length}</Button>}{progress && <p role="status">Granting {progress}</p>}
+    <Input aria-label="Search tools" value={search} onChange={e => setSearch(e.target.value)} />{!tools.length && <p>{chosenTool ? 'Tool not found. It may have been withdrawn.' : 'No tools reported.'}</p>}{(['read', 'write'] as const).map(effect => <div key={effect}><h3>{effect === 'read' ? 'Reads' : 'Changes things, including unknown actions'}</h3>{tools.filter(t => (t.effect === 'read' ? 'read' : 'write') === effect && `${t.name} ${t.description}`.toLowerCase().includes(search.toLowerCase())).map(tool => <div key={tool.name} className="space-y-2 rounded-lg border border-border p-4"><Button variant="ghost" onClick={() => navigate({ page: 'tool', key: server.id, tool: tool.name })}>{tool.name}</Button><p>{tool.description}</p>{tool.destructive && <p className="text-destructive">Vendor marks this action as destructive.</p>}{chosenTool && <pre className="overflow-x-auto text-xs">{JSON.stringify(tool.inputSchema ?? {}, null, 2)}</pre>}{(chosenBot ? roster.filter(b => b.id === chosenBot) : chosenTool ? roster : []).map(bot => <label key={bot.id} className="flex gap-2"><input type="checkbox" checked={alwaysOn || !!tool.grantedTo?.includes(bot.id)} disabled={busy || alwaysOn || !bots || !bots.some(b => b.id === bot.id)} onChange={e => void change(tool.ref ?? `${server.id}/${tool.name}`, bot.id, e.target.checked)} />{bot.name}{bot.hidden ? ' · hidden' : ''}{!bot.hasCallbackToken && <span className="text-muted-foreground">Callback authentication also requires a Bot credential or deployment callback secret.</span>}</label>)}</div>)}</div>)}
+    {server.withdrawn?.map(tool => <div key={tool.ref} className="rounded-lg border border-border p-3"><p>{tool.name} · Withdrawn. Held grants are not offered; they become active again if the vendor restores this tool.</p>{tool.grantedTo.map(bot => <Button key={bot} disabled={busy} variant="outline" onClick={() => void run(async () => { await hyperPluginGrant(tool.ref, bot, false); })}>Revoke from {bots?.find(b => b.id === bot)?.name ?? bot}</Button>)}</div>)}
+    {pending && <div role="alertdialog" aria-label="Approve shared app access" className="space-y-3 rounded-lg border border-border p-4"><p>This Bot will use the deployment's shared account. Approve its audience and outside input before granting access.</p><HyperSharedApprovalFields value={approval} onChange={setApproval} disabled={busy} /><Button disabled={busy || (approval.audience === 'people' && !approval.members.length)} onClick={() => void run(async () => { await hyperPluginGrant(pending.ref, pending.bot, true, approval); setPending(undefined); })}>Approve and grant</Button><Button disabled={busy} variant="outline" onClick={() => setPending(undefined)}>Cancel</Button></div>}
+  </div>;
+}
