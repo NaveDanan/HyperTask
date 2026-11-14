@@ -8,6 +8,7 @@ import { HyperSkillsPanel } from './skills';
 import { readThreadMessages } from './HyperThreadMessages';
 import { mergeStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
+import { hyperToolOutcome } from './HyperToolOutcome';
 import { HyperConversationActions } from './HyperConversationActions';
 import { Button } from '@/components/ui/button';
 import { HyperOpenBotProvider } from './provider';
@@ -63,21 +64,26 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
     })();
     return () => { current = false; generation.current++; watching.unsubscribe(); releaseApproval(); };
   }, [agent, copilotkit, isReady, channel.threadId, historyRevision]);
+  const running = sending || agent.isRunning;
   const messages: HyperTranscriptMessage[] = agent.messages.flatMap(message => {
-    if (message.role !== 'user' && message.role !== 'assistant' && message.role !== 'system') return [];
+    // System instructions remain in the agent context, outside the visible transcript.
+    if (message.role !== 'user' && message.role !== 'assistant') return [];
     const tools = 'toolCalls' in message ? message.toolCalls?.map(call => {
       const result = agent.messages.find(each => each.role === 'tool' && each.toolCallId === call.id);
-      return { id: call.id, label: call.function.name, arguments: call.function.arguments, result: result && typeof result.content === 'string' ? result.content : undefined, status: result ? 'complete' as const : agent.isRunning ? 'running' as const : 'not-yet' as const };
+      const content = result && typeof result.content === 'string' ? result.content : undefined;
+      return { id: call.id, label: call.function.name, arguments: call.function.arguments, result: content, status: hyperToolOutcome(content, agent.isRunning) };
     }) : undefined;
     return [{ id: message.id, role: message.role, content: hyperMessageContent(message.content).text, attachments: hyperMessageContent(message.content).attachments, tools, live: sending, streaming: sending && agent.isRunning }];
   });
-  return <div className="flex h-full min-h-0 flex-col">
+  // The existing workspace support bubble occupies the bottom-right corner.
+  // Keep the composer controls above it, including in the minimum-size window.
+  return <div className="flex h-full min-h-0 flex-col pb-12">
     {error && <p role="alert" className="p-3 text-sm text-destructive">{error}</p>}
     <div className="flex justify-end border-b border-border px-4 py-1"><Button variant="ghost" aria-expanded={showComputer} onClick={() => setShowComputer(value => !value)}>Computer</Button></div>
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
-    <HyperTranscript messages={messages} busy={sending} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
-    <HyperConversationActions threadId={channel.threadId} onResolved={() => { if (!sending) setHistoryRevision(value => value + 1); }} />
-    <HyperComposer className="m-4" autoFocus disabled={!isReady || restoring || !channel.active} pending={sending} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => setAttachments(previous => previous.filter(file => !ids.includes(file.id)))} onFiles={async files => {
+    <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
+    <HyperConversationActions threadId={channel.threadId} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
+    <HyperComposer className="m-4" autoFocus disabled={!isReady || restoring || !channel.active} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => setAttachments(previous => previous.filter(file => !ids.includes(file.id)))} onFiles={async files => {
       const staged: (HyperComposerAttachment & { mimeType: string })[] = [];
       try { for (const file of files) {
         const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
@@ -107,33 +113,35 @@ function HyperOpenBotWorkspace({ viewId }: { viewId: string }) {
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const version = useRef(0);
+  const selectionVersion = useRef(0);
   async function refresh(restoreInitial = false) {
-    const current = ++version.current; setLoading(true); setError(undefined);
+    const current = ++version.current, selection = selectionVersion.current; setLoading(true); setError(undefined);
     try {
       const list = await hyperLoadAllChannels();
       if (current !== version.current) return;
       setChannels(list.channels);
-      if (restoreInitial) {
+      if (restoreInitial && selection === selectionVersion.current) {
         const remembered = localStorage.getItem(`hyper-openbot.channel.${viewId}`);
         if (remembered) {
           const found = list.channels.find(each => each.id === remembered);
           if (found) setChannel(found);
-          else { const saved = await request<{ channel: HyperChannel }>(`/api/channels/${encodeURIComponent(remembered)}`); if (current === version.current) setChannel(saved.channel); }
+          else { const saved = await request<{ channel: HyperChannel }>(`/api/channels/${encodeURIComponent(remembered)}`); if (current === version.current && selection === selectionVersion.current) setChannel(saved.channel); }
         }
       }
     } catch (error) { if (current === version.current) setError(String(error)); }
     finally { if (current === version.current) setLoading(false); }
   }
   useEffect(() => { void refresh(true); return () => { version.current++; }; }, [viewId]);
-  function open(id: string) { const found = channels.find(each => each.id === id); if (found) { setChannel(found); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
+  function open(id: string) { selectionVersion.current++; const found = channels.find(each => each.id === id); if (found) { setChannel(found); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
   async function start(botId: string) {
+    selectionVersion.current++;
     try { const value = await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds: [botId] }); setChannels(previous => [value.channel, ...previous]); setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); }
     catch (error) { setError(String(error)); }
   }
   return <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />
     <nav aria-label="OpenBot" className="flex shrink-0 gap-1 border-b border-border p-2">
-      {(['conversations', 'bots', 'skills', 'connections'] as const).map(tab => <Button key={tab} variant={screen === tab && !channel ? 'secondary' : 'ghost'} onClick={() => { version.current++; setLoading(false); setScreen(tab); setChannel(undefined); }}>{tab === 'conversations' ? 'Conversations' : tab === 'bots' ? 'Bots' : tab === 'skills' ? 'Skills' : 'Connections'}</Button>)}
+      {(['conversations', 'bots', 'skills', 'connections'] as const).map(tab => <Button key={tab} variant={screen === tab && !channel ? 'secondary' : 'ghost'} onClick={() => { selectionVersion.current++; setScreen(tab); setChannel(undefined); }}>{tab === 'conversations' ? 'Conversations' : tab === 'bots' ? 'Bots' : tab === 'skills' ? 'Skills' : 'Connections'}</Button>)}
       {screen === 'conversations' && <Button variant="ghost" onClick={() => void refresh()}>Refresh</Button>}
     </nav>
     {error && <p role="alert" className="p-2 text-sm text-destructive">{error}</p>}
