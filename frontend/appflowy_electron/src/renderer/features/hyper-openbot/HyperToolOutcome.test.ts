@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { DECLINED_BY_PERSON, HANDLED_BY_PERSON, NOT_RUN_AFTER_FAILURE, OUTCOME_UNKNOWN } from './HyperApprovalOutcomes';
+import { ALREADY_WAITING, DECLINED_BY_PERSON, HANDLED_BY_PERSON, NOT_RUN_AFTER_FAILURE, OUTCOME_UNKNOWN } from './HyperApprovalOutcomes';
 import { hyperToolOutcome, hyperToolResultForPerson } from './HyperToolOutcome';
 it('distinguishes answered refusals, failures and waiting steps from performed work', () => {
   expect(hyperToolOutcome('{"refused":true}', false)).toBe('refused');
@@ -22,4 +22,9 @@ it('recognizes the original durable approval protocol without labelling a denied
   expect(hyperToolOutcome('Refused. This connection is not permitted.', false)).toBe('refused');
   expect(hyperToolOutcome('Error: File not found.', false)).toBe('failed');
   expect(hyperToolOutcome('A report about someone who declined an action.', false)).toBe('complete');
+});
+
+it('keeps an already-waiting approval incomplete in both original wire forms', () => {
+  for (const result of [ALREADY_WAITING, JSON.stringify(ALREADY_WAITING)])
+    expect(hyperToolOutcome(result, false)).toBe('not-yet');
 });

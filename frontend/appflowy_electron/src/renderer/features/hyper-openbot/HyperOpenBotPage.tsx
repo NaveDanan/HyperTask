@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
 import { HyperRunConnectionError } from './HyperRunConnection';
-import { hyperRunWithRecovery, hyperWatchGatewayActivity } from './HyperRun';
+import { hyperRunWithRecovery, hyperWatchGatewayActivity, hyperWatchGatewayErrors } from './HyperRun';
 import { HyperComputerPanel } from './HyperComputerPanel';
 import { HyperSkillsPanel } from './skills';
 import { readThreadMessages } from './HyperThreadMessages';
@@ -54,23 +54,41 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
     const releaseApproval = hyperObserveApprovalAgent(agent);
     const version = ++generation.current;
     setRestoring(true);
+    // Capture this attempt; an error must block sends without starting another join.
+    const reconnectAttempt = reconnecting.current || reconnectRequired;
+    let connectFailed = false;
+    const watchErrors = hyperWatchGatewayErrors(copilotkit, agent, error => {
+      if (!current || version !== generation.current) return;
+      connectFailed = true; setError(error.message); setReconnectRequired(true);
+    });
     const watching = hyperWatchGatewayActivity(agent);
     const join = hyperGatewayJoin(() => hyperWhileObserved(agent, () => copilotkit.connectAgent({ agent })), () => {
       if (current && version === generation.current && !watching.isAnswering()) agent.detachActiveRun();
-    });
+    }, 5000, watching.isConnected);
     void (async () => {
       try {
         // A bounded gateway join precedes the durable read. Never replace live text with a partial store copy.
-        await join.promise;
+        const joined = await join.promise;
         if (!current || version !== generation.current) return;
         const stored = await readThreadMessages(channel.threadId, channel.agentIds[0]);
         if (!current || version !== generation.current) return;
         if (stored.availability === 'unavailable') setError('Conversation history could not be loaded. Retry by reopening the conversation.');
-        else { setReconnectRequired(false); if (reconnecting.current) { reconnecting.current = false; setRecoveryVersion(value => value + 1); } if (!watching.isAnswering()) hyperRestoreStoredMessages(agent, stored.messages); if (stored.unreadable) setError(`${stored.unreadable} stored messages could not be read.`); }
+        else {
+          // History availability alone does not confirm the gateway. Keep retry visible after a deadline.
+          if (connectFailed || (reconnectAttempt && joined !== 'connected')) {
+            setReconnectRequired(true);
+            setError('OpenBot reconnect was not confirmed. Try Reconnect again. Your draft is kept.');
+          } else {
+            setReconnectRequired(false);
+            if (reconnecting.current) { reconnecting.current = false; setRecoveryVersion(value => value + 1); }
+          }
+          if (!watching.isAnswering()) hyperRestoreStoredMessages(agent, stored.messages);
+          if (stored.unreadable) setError(`${stored.unreadable} stored messages could not be read.`);
+        }
       } catch (error) { if (current) setError(String(error)); }
       finally { if (current) setRestoring(false); }
     })();
-    return () => { current = false; generation.current++; join.cancel(); watching.unsubscribe(); releaseApproval(); };
+    return () => { current = false; generation.current++; join.cancel(); watching.unsubscribe(); watchErrors.unsubscribe(); releaseApproval(); };
   }, [agent, copilotkit, isReady, channel.threadId, historyRevision]);
   const running = sending || agent.isRunning;
   const messages: HyperTranscriptMessage[] = agent.messages.flatMap(message => {
