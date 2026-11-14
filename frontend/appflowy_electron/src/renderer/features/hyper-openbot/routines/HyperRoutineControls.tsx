@@ -11,3 +11,9 @@ export function HyperRead<T>({path,field,children,interval=10000}:{path:string;f
  if(state.data===undefined)return <p role="status">Loading…</p>; return <>{children(state.data)}</>;
 }
 export function HyperAction({label,run,done,confirm,disabled=false}:{label:string;run:()=>Promise<unknown>;done:()=>void;confirm?:string;disabled?:boolean}) {const [busy,setBusy]=useState(false),[error,setError]=useState(''),[ask,setAsk]=useState(false);return <span className="inline-flex flex-wrap items-center gap-2"><Button variant="outline" disabled={busy||disabled} onClick={()=>{if(confirm&&!ask){setAsk(true);return;}setBusy(true);setError('');void Promise.resolve().then(run).then(()=>{setAsk(false);done();},e=>setError(e.message)).finally(()=>setBusy(false));}}>{busy?'Working…':ask?'Confirm '+label:label}</Button>{ask&&<><span>{confirm}</span><Button variant="ghost" onClick={()=>setAsk(false)}>Cancel</Button></>}{error&&<span role="alert" className="text-destructive">{error}</span>}</span>;}
+/** Personal preferences can block every check-in even when enterprise policy permits it. */
+export function useHyperCheckInsOff() {
+ const [off,setOff]=useState(false);
+ useEffect(()=>{let live=true;const load=()=>request<{preferences?:{proactive?:string};proactive?:string}>('/api/settings/preferences').then(result=>{if(live)setOff((result.preferences?.proactive??result.proactive)==='off');},()=>{});void load();const timer=setInterval(load,10000);return()=>{live=false;clearInterval(timer);};},[]);
+ return off;
+}
