@@ -24,7 +24,7 @@ export function HyperConversationActions({ threadId, onResolved, enabled = true 
     try { const next = await request<HyperInbox>('/api/approvals'); if (!current()) return; setPollError(undefined); const waiting = next.requests.some(row => row.action.threadId === threadId && ['pending', 'approved', 'denied', 'consumed'].includes(row.status)) || next.questions.some(row => row.threadId === threadId); if (hadWaiting.current && !waiting) resolved.current?.(); hadWaiting.current = waiting; setInbox(next); }
     catch (error) { if (current()) setPollError(String(error)); }
   }
-  useEffect(() => { alive.current = enabled; hadWaiting.current = false; setInbox(undefined); setError(undefined); setPollError(undefined); if (!enabled) return; let current = true; let timer: ReturnType<typeof setTimeout>; const poll = async () => { await refresh(); if (current) timer = setTimeout(() => void poll(), 4000); }; void poll(); return () => { alive.current = false; refreshVersion.current++; current = false; clearTimeout(timer); }; }, [threadId, enabled]);
+  useEffect(() => { alive.current = enabled; hadWaiting.current = false; setInbox(undefined); setPending(new Set(pendingIds.current)); setError(undefined); setPollError(undefined); if (!enabled) return; let current = true; let timer: ReturnType<typeof setTimeout>; const poll = async () => { await refresh(); if (current) timer = setTimeout(() => void poll(), 4000); }; void poll(); return () => { alive.current = false; refreshVersion.current++; current = false; clearTimeout(timer); }; }, [threadId, enabled]);
   async function save(id: string, path: string, body?: unknown) {
     if (pendingIds.current.has(id)) return;
     pendingIds.current.add(id); setPending(new Set(pendingIds.current)); setError(undefined);

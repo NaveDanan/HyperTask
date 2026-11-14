@@ -121,3 +121,14 @@ it('blocks new HTTP/socket work while services are not ready and cancels an esta
   await expect(ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'blocked-socket', '/api/intelligence/client/websocket?vsn=2.0.0', [])).rejects.toThrow('not ready');
   expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.path).not.toHaveBeenCalled();
 });
+it('does not restart the private tunnel when Stop interrupts a pending identity read', async () => {
+  let ready = true; const h = setup('a', () => ready);
+  const lease = await h.manager.acquire();
+  let finish!: (value: typeof lease) => void;
+  vi.spyOn(h.manager, 'acquire').mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const opening = ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'pending-owner', '/api/intelligence/client/websocket?vsn=2.0.0', []);
+  const rejected = expect(opening).rejects.toThrow();
+  ready = false; h.bridge.disconnect(); finish(lease);
+  await rejected;
+  expect(ipc.path).not.toHaveBeenCalled(); expect(ipc.sockets).toHaveLength(0);
+});

@@ -106,6 +106,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     const opening = { cancelled: false }; openingSockets.set(id, opening);
     try {
     const lease = await sessions.acquire();
+    if (!ready() || event.sender.isDestroyed() || opening.cancelled) throw new Error('AI services stopped or socket cancelled');
     const socketPath = await hyperOpenBotSocketPath();
     const cookie = await hyperOpenBotCookieHeader(lease);
     lease.assertCurrent();
