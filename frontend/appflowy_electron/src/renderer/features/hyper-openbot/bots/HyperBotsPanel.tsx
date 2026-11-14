@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { hyperOpenBotRequest } from '../transport';
 import { HyperAgentPath, HyperLifecyclePath, HyperListBots, HyperSaveBot, type HyperBotProfile, type HyperBotInput } from './HyperBotsApi';
 
+import { HyperSharedAppNotice } from '../bot-tabs/HyperSharedAppNotice';
 import { HyperBotAttentionBoard } from '../bot-tabs/HyperBotAttentionBoard';
 import { HyperBotDetailTabs } from '../bot-tabs/HyperBotDetailTabs';
 import { HyperBotLifecycleStore } from './HyperBotLifecycle';
@@ -101,6 +102,7 @@ export function HyperBotEditor({ bot, onSaved, onRemoved, onClose, onOpenConvers
         {editable && <Button type="submit">{busy ? 'Saving…' : bot ? 'Save profile' : 'Create Bot'}</Button>}
       </fieldset>
     </form>
+    {bot?.canManage && <HyperSharedAppNotice agentId={bot.id} />}
     {bot && <HyperBotAttentionBoard agentId={bot.id} openConversation={onOpenConversation} />}
     {bot && <HyperBotDetailTabs bot={bot} openConversation={onOpenConversation} />}
     {bot && <fieldset disabled={busy || lifecyclePending} className="flex flex-col gap-3 border-t border-border pt-4"><legend className="text-sm font-medium">Your settings for this Bot</legend>

@@ -2,7 +2,7 @@
 import { hyperOpenBotRequest as request } from '../transport';
 const segment = encodeURIComponent;
 export interface HyperBotApp {
-  key: string; displayName: string; state: string; accountHolder: 'you' | 'owner' | null;
+  account?: 'personal' | 'shared' | 'deployment'; key: string; displayName: string; state: string; accountHolder: 'you' | 'owner' | null;
   asksFirst: boolean; givenByOwner: boolean; needsConnect: boolean;
   requestKind: string | null; request: { id: string } | null;
 }
