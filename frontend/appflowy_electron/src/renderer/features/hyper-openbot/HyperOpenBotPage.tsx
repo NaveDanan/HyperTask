@@ -1,3 +1,5 @@
+import { HyperGalleryTools, hyperPrepareGalleryAgent } from './screens-gen/HyperGalleryRuntime';
+import { hyperRuntimeBotOf } from './runtime';
 import { HyperConversationResult } from './screens-gen';
 import { HyperServiceStatus, useHyperOpenBotService } from './HyperServiceStatus';
 // OpenBot channel/provider integration adapted from pinned f8af37a. Copyright (c) 2026 CopilotKit, MIT.
@@ -69,6 +71,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     if (!isReady || !serviceReady) return;
     let current = true;
     hyperPrepareRuntimeAgent(agent);
+    hyperPrepareGalleryAgent(agent);
     const releaseApproval = hyperObserveApprovalAgent(agent);
     const version = ++generation.current;
     setRestoring(true);
@@ -125,7 +128,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     {error && serviceReady && <div className="flex items-center gap-3 p-3"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" disabled={running || restoring} onClick={() => { reconnecting.current = true; setError(undefined); setHistoryRevision(value => value + 1); }}>Reconnect</Button></div>}
     <div className="flex justify-end border-b border-border px-4 py-1"><Button variant="ghost" aria-expanded={showComputer} onClick={() => setShowComputer(value => !value)}>Computer</Button></div>
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
-    <HyperTranscript renderTool={tool => <HyperConversationResult tool={tool} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
+    <HyperTranscript renderTool={tool => <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     <HyperConversationActions threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
     <HyperComposer className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={async files => {
       const staged: (HyperComposerAttachment & { mimeType: string })[] = [];
@@ -194,6 +197,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
   const context: HyperOpenBotSectionContext = { openConversation: id => void openAny(id), startConversation: ids => void start(ids) };
   return <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />
+    <HyperGalleryTools />
     <nav aria-label="OpenBot" className="flex shrink-0 flex-wrap gap-1 border-b border-border p-2">
       {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { selectionVersion.current++; setScreen(tab.id); setChannel(undefined); }}>{tab.label}</Button>)}
       {screen === 'conversations' && <Button variant="ghost" onClick={() => void refresh()}>Refresh</Button>}

@@ -38,6 +38,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: screens
   { id: 'components-gallery', label: 'Components gallery', group: 'personal', render: hyperLazySection(() => import('./screens-gen/HyperGallerySection')) },
   { id: 'components-admin', label: 'UI components', group: 'admin', render: hyperLazySection(() => import('./screens-gen/HyperAdminComponentsSection')) },
+  { id: 'components-playground', label: 'Component playground', group: 'admin', render: hyperLazySection(() => import('./screens-gen/HyperPlaygroundSection')) },
   // slot: settings
   /* settings */
   // slot: admin-governance
