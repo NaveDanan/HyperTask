@@ -187,3 +187,45 @@ export type BotTask = {
 };
 
 
+export type TriggerKind =
+  | "webhook"
+  | "github"
+  | "linear"
+  | "sentry"
+  | "pagerduty"
+  | "email"
+  | "slack";
+export type TriggerFilter = {
+  eventTypes: string[];
+  field?: { path: string; equals: string };
+};
+export type TriggerConfig =
+  | {
+      kind: "webhook" | "linear" | "sentry" | "pagerduty";
+      filter: TriggerFilter;
+    }
+  | { kind: "github"; repository?: string; filter: TriggerFilter }
+  | { kind: "email"; allowedSenders: string[]; filter: TriggerFilter }
+  | {
+      kind: "slack";
+      teamId: string;
+      mode: "mention" | "phrase" | "reaction" | "message";
+      phrases: string[];
+      reactions: string[];
+      channels: string[];
+    };
+export type TriggerRecord = {
+  id: string;
+  responsibilityId: string;
+  kind: TriggerKind;
+  config: TriggerConfig;
+  hasSecret: boolean;
+  /** Paused triggers acknowledge deliveries but never start a run. */
+  enabled: boolean;
+  /** Public path to POST to, for webhook and provider kinds. */
+  path: string | null;
+  /** Inbound address, for email when the deployment has inbound email configured. */
+  address: string | null;
+  emailConfigured?: boolean;
+  createdAt: string;
+};

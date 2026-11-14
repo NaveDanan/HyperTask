@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { hyperOpenBotRequest as request } from '../transport';
 const selectClass = 'rounded-md border border-border bg-background p-2 text-sm';
-export function HyperSelect({label,value,options,onChange}:{label:string;value:string;options:[string,string][];onChange:(v:string)=>void}) { return <label className="grid gap-1 text-sm">{label}<select className={selectClass} value={value} onChange={e=>onChange(e.target.value)}>{options.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>; }
+export function HyperSelect({label,value,options,onChange,disabledValues=[]}:{label:string;value:string;options:[string,string][];onChange:(v:string)=>void;disabledValues?:readonly string[]}) { return <label className="grid gap-1 text-sm">{label}<select className={selectClass} value={value} onChange={e=>onChange(e.target.value)}>{options.map(([v,l])=><option key={v} value={v} disabled={disabledValues.includes(v)}>{l}</option>)}</select></label>; }
 export function HyperRead<T>({path,field,children,interval=10000}:{path:string;field?:string;children:(data:T)=>React.ReactNode;interval?:number}) {
  const [state,setState]=useState<{data?:T;error?:string}>({}); const [retry,setRetry]=useState(0);
  useEffect(()=>{setState({});let live=true; const load=()=>request<Record<string,unknown>>(path).then(body=>{if(live)setState({data:(field?body[field]:body) as T});},e=>{if(live)setState({error:e.message});}); void load(); const timer=setInterval(load,interval); return ()=>{live=false;clearInterval(timer);};},[path,field,retry,interval]);
