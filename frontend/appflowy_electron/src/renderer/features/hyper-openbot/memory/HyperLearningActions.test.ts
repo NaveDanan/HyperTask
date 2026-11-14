@@ -17,16 +17,17 @@ it('participation saves omit approval settings and preserve null exclusions and 
 it('sharing refuses an unread skill, a different skill, or a removed request without a write',async()=>{
  const open={name:'Person',userId:'person',skillName:'skill',requestedAt:'old'};
  await expect(hyperDecideSharing(open,[open],undefined,'approve')).rejects.toThrow('Read');
- await expect(hyperDecideSharing(open,[open],'/api/admin/learning/people/other/skills/skill','approve')).rejects.toThrow('Read');
- await expect(hyperDecideSharing(open,[], '/api/admin/learning/people/person/skills/skill','decline')).rejects.toThrow('Read');
+ await expect(hyperDecideSharing(open,[open],{path:'/api/admin/learning/people/other/skills/skill',requestedAt:'old'},'approve')).rejects.toThrow('Read');
+ await expect(hyperDecideSharing(open,[], {path:'/api/admin/learning/people/person/skills/skill',requestedAt:'old'},'decline')).rejects.toThrow('Read');
+ await expect(hyperDecideSharing(open,[{...open,requestedAt:'new'}],{path:'/api/admin/learning/people/person/skills/skill',requestedAt:'old'},'approve')).rejects.toThrow('Read');
  expect(request).not.toHaveBeenCalled();
 });
 it('sharing uses the current server stamp rather than the stamp captured on opening',async()=>{
  const open={name:'Person',userId:'person one',skillName:'skill one',requestedAt:'old'};
- await hyperDecideSharing(open,[{...open,requestedAt:'current'}],'/api/admin/learning/people/person%20one/skills/skill%20one','approve');
+ await hyperDecideSharing(open,[{...open,requestedAt:'current'}],{path:'/api/admin/learning/people/person%20one/skills/skill%20one',requestedAt:'current'},'approve');
  expect(request).toHaveBeenCalledWith('/api/admin/learning/sharing-requests/person%20one/skill%20one/approve','POST',{requestedAt:'current'});
  request.mockRejectedValue(new Error('conflict'));
- await expect(hyperDecideSharing(open,[open],'/api/admin/learning/people/person%20one/skills/skill%20one','decline')).rejects.toThrow('conflict');
+ await expect(hyperDecideSharing(open,[open],{path:'/api/admin/learning/people/person%20one/skills/skill%20one',requestedAt:'old'},'decline')).rejects.toThrow('conflict');
 });
 it('capability description, preview and atomic save preserve upstream payloads and server validation',async()=>{
  const changes=[{scopeKind:'group' as const,scopeId:'Support',capability:'useBots' as const,allowed:true}];

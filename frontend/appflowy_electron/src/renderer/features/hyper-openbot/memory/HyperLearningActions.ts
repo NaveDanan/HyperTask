@@ -8,10 +8,10 @@ export function hyperSaveParticipation(settings: LearningSettings): Promise<{set
   enabled:settings.enabled,defaultTarget:settings.defaultTarget,agents:settings.agents,
  });
 }
-export function hyperDecideSharing(open: SharingRequest, rows: SharingRequest[] | undefined, readSkillPath: string | undefined, decision: 'approve'|'decline') {
+export function hyperDecideSharing(open: SharingRequest, rows: SharingRequest[] | undefined, readSkill: {path:string;requestedAt:string} | undefined, decision: 'approve'|'decline') {
  const path=`/api/admin/learning/people/${encodeURIComponent(open.userId)}/skills/${encodeURIComponent(open.skillName)}`;
  const current=rows?.find(row=>row.userId===open.userId&&row.skillName===open.skillName);
- if (!current || readSkillPath!==path) return Promise.reject(new Error('Read the requested skill before deciding.'));
+ if (!current || readSkill?.path!==path || readSkill.requestedAt!==current.requestedAt) return Promise.reject(new Error('Read the requested skill before deciding.'));
  return hyperOpenBotRequest(`/api/admin/learning/sharing-requests/${encodeURIComponent(open.userId)}/${encodeURIComponent(open.skillName)}/${decision}`,'POST',{requestedAt:current.requestedAt});
 }
 export function hyperSafeMemoryLink(value: string | null | undefined): string | undefined {
