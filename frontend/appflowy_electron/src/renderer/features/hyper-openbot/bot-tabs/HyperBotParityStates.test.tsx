@@ -66,3 +66,12 @@ it('revokes callback authority without requesting or exposing a token', async ()
   await mock.clicks.get('Revoke callback key')!();
   expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/agents/desk/callback-token', 'DELETE');
 });
+
+it('distinguishes account-scoped and Bot-pattern approval rules', () => {
+  mock.data = { teamRules: [], rules: [{ id: 'account', botId: 'desk*', toolRef: 'mail/send', effect: 'write', scope: '*', account: 'work@example.test', behaviour: 'ask' }], preferences: {} };
+  const html = renderToStaticMarkup(<HyperBotApprovalsTab agentId="desk" />);
+  expect(html).toContain('Account: work@example.test');
+  expect(html).toContain('Bots matching desk*');
+  expect(html).toContain('value="*"');
+  expect(html).toContain('composio-gmail/*');
+});
