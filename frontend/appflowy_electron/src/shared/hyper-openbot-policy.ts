@@ -18,7 +18,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: screens
   /* screens */
   // slot: settings
-  /* settings */
+  'settings/instructions', 'settings/preferences', 'me', 'proactive/settings', 'responsibilities/sources/github', 'admin/audit-events', 'v2/organizations/default/bots',
   // slot: admin-governance
   /* admin-governance */
   // slot: admin-platform
