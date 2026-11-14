@@ -1,18 +1,19 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-14T06:51:50.119264+00:00",
-  "status": "local_preparation_complete_human_agreement_required",
+  "recordedAt": "2026-11-14T07:40:36.332508+00:00",
+  "status": "original_installer_stopped_at_available_memory_check",
   "scope": "Current Linux PC only. No live OpenBot/Intelligence application acceptance or reproducible rebuild is claimed.",
   "host": {
     "name": "naved-IdeaPad-5-14IIL05",
     "system": "Ubuntu 24.04.5 LTS",
     "cpus": 8,
     "memoryTotalBytes": 7984033792,
-    "memoryAvailableSnapshotBytes": 5307551744,
-    "freeDiskBytes": 50951151616,
+    "memoryAvailableSnapshotBytes": 4042702848,
+    "freeDiskBytes": 50755850240,
     "installerDiskMinimumBytes": 42949672960,
     "diskMinimumMet": true,
-    "fullInstallerResourceCheck": "not_run"
+    "fullInstallerResourceCheck": "failed_available_memory",
+    "memoryAvailableObservedAt": "2026-11-14T07:40:36.332508+00:00"
   },
   "source": {
     "repository": "https://github.com/CopilotKit/OpenBot",
@@ -48,12 +49,13 @@
     "accountStatus": "signed_in",
     "terms": {
       "status": "required",
-      "accepted": false,
+      "accepted": true,
       "preflight": {
         "status": "pass"
       },
       "exitCode": 0
-    }
+    },
+    "termsVerifiedAt": "2026-11-14T07:40:36.332508+00:00"
   },
   "docker": {
     "engineVersion": "29.9.3",
@@ -200,10 +202,24 @@
     "sameThreadReopen": "not_run"
   },
   "limits": [
-    "Terms acceptance is still required before original Intelligence installation.",
+    "The account holder accepted the official agreement. Available memory stopped installation before any application stack was created.",
     "Linux runtime evaluation remains outside the documented macOS preview.",
     "Mutable base images and ranged Python dependencies prevent a bit-for-bit rebuild claim.",
     "Full application lifecycle commands and live proof remain incomplete.",
     "Historical Windows preparation does not prove this PC is ready or authorize execution there."
-  ]
+  ],
+  "intelligenceSetup": {
+    "cliVersion": "4.34.0",
+    "command": "copilotkit local setup --defer-model --json",
+    "result": "stopped_before_stack_record_or_cluster_creation",
+    "failureStep": "Docker available-resource check",
+    "reportedMemoryTotalGiB": 7.4,
+    "reportedMemoryAvailableGiB": 3.2,
+    "requiredMemoryAvailableGiB": 4,
+    "reportPrecision": "Installer floors GiB values to one decimal place. This is the observed text-mode failure, not the later idle snapshot.",
+    "evaluationLicenseRequest": "returned before the resource check",
+    "checksBypassed": false,
+    "cleanup": "No rollback, deletion or stack recreation performed.",
+    "retry": "Same app directory and --defer-model; preserve any saved inputs."
+  }
 }
