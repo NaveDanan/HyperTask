@@ -28,7 +28,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: memory
   /* memory */
   // slot: bot-tabs
-  // Bot detail tabs are integrated into the existing Bots section.
+  { id: 'reachability', label: 'Reaching you', group: 'personal', render: hyperLazySection(() => import('./bot-tabs/HyperReachability')) },
   // slot: approvals-inbox
   /* approvals-inbox */
   // slot: vault
