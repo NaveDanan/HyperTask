@@ -1,6 +1,10 @@
 import { Observable } from 'rxjs';
 import type { BaseEvent, RunAgentInput } from '@ag-ui/core';
 
+export class HyperRunConnectionError extends Error {
+  constructor() { super('OpenBot connection interrupted. Reconnect to recover the response. Your draft is kept.'); this.name = 'HyperRunConnectionError'; }
+}
+
 type HyperRunConnection = Pick<RunAgentInput, 'threadId' | 'runId'>;
 const listeners = new Set<(connection: HyperRunConnection) => void>();
 
@@ -15,7 +19,7 @@ export function hyperWithRunConnection<T extends BaseEvent>(input: HyperRunConne
     let connection = input;
     const lost = (closed: HyperRunConnection) => {
       if (closed.threadId === connection.threadId && closed.runId === connection.runId)
-        subscriber.error(new Error('OpenBot connection interrupted. Reconnect to recover the response. Your draft is kept.'));
+        subscriber.error(new HyperRunConnectionError());
     };
     listeners.add(lost);
     const subscription = source.subscribe({

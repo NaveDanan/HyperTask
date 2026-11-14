@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { Subject } from 'rxjs';
-import { hyperRunConnectionLost, hyperWithRunConnection } from './HyperRunConnection';
+import { HyperRunConnectionError, hyperRunConnectionLost, hyperWithRunConnection } from './HyperRunConnection';
+import { hyperRunWithRecovery } from './HyperRun';
 import { HyperOpenBotSocket } from './socket';
 import type { HyperOpenBotSocketEvent } from '@shared/api';
 import type { BaseEvent } from '@ag-ui/core';
@@ -51,4 +52,11 @@ it('does not mistake an intentional Stop or cleanup for a connection failure', (
   const subscription = hyperWithRunConnection({ threadId: 't', runId: 'r' }, new Subject<BaseEvent>()).subscribe({ error });
   const b = bridge(); b.socket.close(); b.close();
   expect(error).not.toHaveBeenCalled(); subscription.unsubscribe();
+});
+
+it('preserves the connection failure type through a resolving SDK call for the reconnect barrier', async () => {
+  let events: any;
+  const error = new HyperRunConnectionError();
+  const agent = { subscribe: (value: unknown) => { events = value; return { unsubscribe: vi.fn() }; } };
+  await expect(hyperRunWithRecovery(agent as never, async () => { events.onRunInitialized(); events.onRunFailed({ error }); }, () => false)).rejects.toBe(error);
 });

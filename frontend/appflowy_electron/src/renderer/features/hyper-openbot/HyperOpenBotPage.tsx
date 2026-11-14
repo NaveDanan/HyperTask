@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
-import { hyperRunWithRecovery } from './HyperRun';
+import { HyperRunConnectionError } from './HyperRunConnection';
+import { hyperRunWithRecovery, hyperWatchGatewayActivity } from './HyperRun';
 import { HyperComputerPanel } from './HyperComputerPanel';
 import { HyperSkillsPanel } from './skills';
 import { readThreadMessages } from './HyperThreadMessages';
@@ -28,6 +29,9 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
   const { agent, isReady } = useAgent({ agentId: `channel:${channel.id}`, runtimeAgentId: channel.agentIds[0], threadId: channel.threadId });
   const [error, setError] = useState<string>();
   const [restoring, setRestoring] = useState(true);
+  const [reconnectRequired, setReconnectRequired] = useState(false);
+  const [recoveryVersion, setRecoveryVersion] = useState(0);
+  const reconnecting = useRef(false);
   const [sending, setSending] = useState(false);
   const [historyRevision, setHistoryRevision] = useState(0);
   const [showComputer, setShowComputer] = useState(false);
@@ -50,10 +54,9 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
     const releaseApproval = hyperObserveApprovalAgent(agent);
     const version = ++generation.current;
     setRestoring(true);
-    let answering = false;
-    const watching = agent.subscribe({ onRunStartedEvent: () => { answering = true; }, onRunFinishedEvent: () => { answering = false; }, onRunFailed: () => { answering = false; } });
+    const watching = hyperWatchGatewayActivity(agent);
     const join = hyperGatewayJoin(() => hyperWhileObserved(agent, () => copilotkit.connectAgent({ agent })), () => {
-      if (current && version === generation.current && !answering) agent.detachActiveRun();
+      if (current && version === generation.current && !watching.isAnswering()) agent.detachActiveRun();
     });
     void (async () => {
       try {
@@ -63,7 +66,7 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
         const stored = await readThreadMessages(channel.threadId, channel.agentIds[0]);
         if (!current || version !== generation.current) return;
         if (stored.availability === 'unavailable') setError('Conversation history could not be loaded. Retry by reopening the conversation.');
-        else { if (!answering) hyperRestoreStoredMessages(agent, stored.messages); if (stored.unreadable) setError(`${stored.unreadable} stored messages could not be read.`); }
+        else { setReconnectRequired(false); if (reconnecting.current) { reconnecting.current = false; setRecoveryVersion(value => value + 1); } if (!watching.isAnswering()) hyperRestoreStoredMessages(agent, stored.messages); if (stored.unreadable) setError(`${stored.unreadable} stored messages could not be read.`); }
       } catch (error) { if (current) setError(String(error)); }
       finally { if (current) setRestoring(false); }
     })();
@@ -83,12 +86,12 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
   // The existing workspace support bubble occupies the bottom-right corner.
   // Keep the composer controls above it, including in the minimum-size window.
   return <div className="flex h-full min-h-0 flex-col pb-12">
-    {error && <div className="flex items-center gap-3 p-3"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" disabled={running || restoring} onClick={() => { setError(undefined); setHistoryRevision(value => value + 1); }}>Reconnect</Button></div>}
+    {error && <div className="flex items-center gap-3 p-3"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" disabled={running || restoring} onClick={() => { reconnecting.current = true; setError(undefined); setHistoryRevision(value => value + 1); }}>Reconnect</Button></div>}
     <div className="flex justify-end border-b border-border px-4 py-1"><Button variant="ghost" aria-expanded={showComputer} onClick={() => setShowComputer(value => !value)}>Computer</Button></div>
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
     <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     <HyperConversationActions threadId={channel.threadId} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
-    <HyperComposer className="m-4" autoFocus disabled={!isReady || restoring || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => setAttachments(previous => previous.filter(file => !ids.includes(file.id)))} onFiles={async files => {
+    <HyperComposer className="m-4" recoveryVersion={recoveryVersion} autoFocus disabled={!isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => setAttachments(previous => previous.filter(file => !ids.includes(file.id)))} onFiles={async files => {
       const staged: (HyperComposerAttachment & { mimeType: string })[] = [];
       try { for (const file of files) {
         const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
@@ -110,7 +113,7 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
       retry.current = sent;
       if (!agent.messages.some(message => message.id === sent.id)) agent.addMessage({ id: sent.id, role: 'user', content: attachments.length ? [{ type: 'text' as const, text: draft.text.trim() }, ...attachments.map(file => ({ type: file.mimeType.startsWith('image/') ? 'image' as const : 'document' as const, source: { type: 'url' as const, value: `/api/attachments/${file.id}`, mimeType: file.mimeType }, metadata: { attachmentId: file.id, filename: file.name } }))] : draft.text.trim() });
       try { await hyperRunWithRecovery(agent, () => hyperWhileObserved(agent, () => copilotkit.runAgent({ agent })), () => stopped.current); retry.current = undefined; }
-      catch (error) { setError(String(error)); throw error; }
+      catch (error) { if (error instanceof HyperRunConnectionError) setReconnectRequired(true); setError(String(error)); throw error; }
       finally { setSending(false); }
     }} />
   </div>;

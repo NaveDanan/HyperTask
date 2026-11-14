@@ -3,7 +3,7 @@ import { readableTurns } from './HyperThreadMessages';
 import { hyperRestoreStoredMessages, mergeStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
-import { hyperGatewayJoin, hyperRunWithRecovery } from './HyperRun';
+import { hyperGatewayJoin, hyperRunWithRecovery, hyperWatchGatewayActivity } from './HyperRun';
 afterEach(() => vi.useRealTimers());
 it('normalizes actual persisted tool dialect and counts corrupt history', () => {
   const result = readableTurns([{ id: 'call', role: 'assistant', content: null, toolCalls: [{ id: 'c1', name: 'lookup', args: { q: 'test' } }] }, { id: 'bad', role: 'user', content: null }]);
@@ -118,4 +118,16 @@ it('successful joins clear their deadline and an overdue active join invokes it 
   await vi.advanceTimersByTimeAsync(5000);
   await overdue.promise;
   expect(detach).toHaveBeenCalledTimes(1);
+});
+
+it.each(['onTextMessageContentEvent', 'onToolCallStartEvent', 'onToolCallArgsEvent', 'onToolCallResultEvent'])('keeps a cursor-based reconnect alive when %s arrives without RUN_STARTED', async event => {
+  vi.useFakeTimers();
+  let events: any; const unsubscribe = vi.fn(), detach = vi.fn();
+  const watching = hyperWatchGatewayActivity({ subscribe: (value: unknown) => { events = value; return { unsubscribe }; } } as never);
+  const join = hyperGatewayJoin(() => new Promise(() => {}), () => { if (!watching.isAnswering()) detach(); });
+  events[event]();
+  await vi.advanceTimersByTimeAsync(5000); await join.promise;
+  expect(detach).not.toHaveBeenCalled(); expect(watching.isAnswering()).toBe(true);
+  events.onRunFinishedEvent(); expect(watching.isAnswering()).toBe(false);
+  watching.unsubscribe(); expect(unsubscribe).toHaveBeenCalledOnce();
 });

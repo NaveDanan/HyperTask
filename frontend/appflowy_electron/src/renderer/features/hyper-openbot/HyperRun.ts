@@ -17,10 +17,22 @@ export function hyperGatewayJoin(join: () => Promise<unknown>, onDeadline: () =>
   return { promise, cancel() { active = false; clearTimeout(timer); release(); } };
 }
 
+/** A cursor-based reconnect may start with a text/tool delta and omit RUN_STARTED. */
+export function hyperWatchGatewayActivity(agent: Pick<AbstractAgent, 'subscribe'>) {
+  let answering = false;
+  const progress = () => { answering = true; };
+  const idle = () => { answering = false; };
+  const subscription = agent.subscribe({ onRunStartedEvent: progress,
+    onTextMessageContentEvent: progress, onToolCallStartEvent: progress,
+    onToolCallArgsEvent: progress, onToolCallResultEvent: progress,
+    onRunFinishedEvent: idle, onRunFailed: idle, onRunErrorEvent: idle });
+  return { isAnswering: () => answering, unsubscribe: () => subscription.unsubscribe() };
+}
+
 /** SDK runAgent catches failures and resolves; only its events establish a successful send. */
 export async function hyperRunWithRecovery(agent: Pick<AbstractAgent, 'subscribe'>, execute: () => Promise<unknown>, stopped: () => boolean) {
-  let failure: string | undefined; let initialized = false;
-  const watch = agent.subscribe({ onRunInitialized: () => { initialized = true; }, onRunErrorEvent: ({ event }) => { failure = event.message || 'OpenBot run failed'; }, onRunFailed: ({ error }) => { if (!stopped()) failure = String(error); } });
-  try { await execute(); if (!stopped() && (failure || !initialized)) throw new Error(failure ?? 'OpenBot did not start the run. Your draft is kept for retry.'); }
+  let failure: Error | undefined; let initialized = false;
+  const watch = agent.subscribe({ onRunInitialized: () => { initialized = true; }, onRunErrorEvent: ({ event }) => { failure = new Error(event.message || 'OpenBot run failed'); }, onRunFailed: ({ error }) => { if (!stopped()) failure = error instanceof Error ? error : new Error(String(error)); } });
+  try { await execute(); if (!stopped() && (failure || !initialized)) throw failure ?? new Error('OpenBot did not start the run. Your draft is kept for retry.'); }
   finally { watch.unsubscribe(); }
 }
