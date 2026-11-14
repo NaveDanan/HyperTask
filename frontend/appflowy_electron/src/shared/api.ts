@@ -95,7 +95,14 @@ export interface GoogleFontFace {
   data: Uint8Array;
 }
 
+export interface HyperOpenBotRequest { id: string; path: string; method: string; body?: string | Uint8Array; contentType?: string }
+export interface HyperOpenBotChunk { id: string; chunk?: string; done?: boolean; error?: string }
 export interface AppFlowyApi {
+  hyperOpenBot: {
+    start(request: HyperOpenBotRequest): Promise<{ status: number; headers: Record<string, string> }>;
+    cancel(id: string): void;
+    onChunk(listener: (event: HyperOpenBotChunk) => void): () => void;
+  };
   core: {
     init(config: CoreInitConfig): Promise<number>;
     request(event: string, payload: Uint8Array): Promise<CoreReply>;

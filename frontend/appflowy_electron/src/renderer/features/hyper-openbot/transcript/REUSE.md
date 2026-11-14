@@ -9,7 +9,7 @@ HyperTask adaptations preserve the protocol identifiers passed in through props.
 | --- | --- | --- |
 | `citations.tsx` | `app/src/lib/markdown.tsx` | Document host/type recognition and citation chips; Tabler icons replaced with existing Lucide icons. |
 | `paced-reveal.ts` | `app/src/components/channels/paced-reveal.ts` | Word-boundary pacing, tail settling, catch-up timing and stalled-frame fallback. Motion preference uses native matchMedia. |
-| `HyperMarkdown.tsx` | `app/src/lib/markdown.tsx` | Reply single-line breaks, safe external links and code rendering contract. Local React parser replaces unavailable Streamdown dependencies. |
+| `HyperMarkdown.tsx` | `app/src/lib/markdown.tsx` | Reply single-line breaks, safe external links and code rendering contract. Original Streamdown runtime and code plugin preserve CommonMark and syntax highlighting. |
 | `HyperTranscript.tsx` | `app/src/components/channels/tool-line.tsx` | Expandable native details and distinct running, refused, failed, not-yet and person-completed states. |
 | `HyperTranscript.tsx` | `app/src/components/channels/chat-transcript.tsx` | User/reply rendering, restoring skeleton, thinking/working and stopped states. API/SDK access replaced by data and render callbacks. |
 | `HyperTranscript.tsx` | `app/src/components/channels/follow-intent.tsx` | Follow-latest threshold and pause while selecting text; adapted to native overflow container and ResizeObserver. |

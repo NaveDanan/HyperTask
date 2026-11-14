@@ -8,6 +8,11 @@ function on<T>(channel: string, listener: (value: T) => void): () => void {
 }
 
 const api: AppFlowyApi = {
+  hyperOpenBot: {
+    start: (request) => ipcRenderer.invoke('hyper-openbot:start', request),
+    cancel: (id) => ipcRenderer.send('hyper-openbot:cancel', id),
+    onChunk: (listener) => on('hyper-openbot:chunk', listener),
+  },
   core: {
     init: (config) => ipcRenderer.invoke(C.CoreInit, config),
     request: (event, payload) => ipcRenderer.invoke(C.CoreRequest, event, payload),

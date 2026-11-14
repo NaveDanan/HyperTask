@@ -1,3 +1,4 @@
+import { registerHyperOpenBotIpc } from './hyper-openbot';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -118,6 +119,7 @@ function focusWindow() {
 }
 
 function registerIpc() {
+  registerHyperOpenBotIpc(() => mainWindow);
   ipcMain.handle(C.CoreInit, async (_, config: CoreInitConfig) => {
     await startCore();
     return core.init(config);
