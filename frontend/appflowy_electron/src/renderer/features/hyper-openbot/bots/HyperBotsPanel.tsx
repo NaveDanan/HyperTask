@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { hyperOpenBotRequest } from '../transport';
 import { HyperAgentPath, HyperLifecyclePath, HyperListBots, HyperSaveBot, type HyperBotProfile, type HyperBotInput } from './HyperBotsApi';
 
+import { HyperBotAttentionBoard } from '../bot-tabs/HyperBotAttentionBoard';
 import { HyperBotDetailTabs } from '../bot-tabs/HyperBotDetailTabs';
 import { HyperBotLifecycleStore } from './HyperBotLifecycle';
 
@@ -43,6 +44,7 @@ export function HyperBotsPanel({ onChat }: { onChat: (botId: string) => void }) 
       <label className="flex shrink-0 items-center gap-2 text-sm"><input type="checkbox" checked={hidden} onChange={e => { setHidden(e.target.checked); select(null); }} />Hidden Bots</label></div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {loading && <p role="status" className="text-sm text-muted-foreground">Loading Bots…</p>}
+    {!hidden && <HyperBotAttentionBoard />}
     <div className="grid gap-5 lg:grid-cols-2">
       <div className="flex flex-col gap-2">{!loading && !error && bots.filter(bot => `${bot.name} ${bot.title}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => Number(b.pinned || b.assignedToMe) - Number(a.pinned || a.assignedToMe) || Number(b.mine) - Number(a.mine) || a.name.localeCompare(b.name)).map(bot => <article key={bot.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
         <div className="min-w-0 flex-1"><Button variant="link" className="max-w-full truncate px-0" onClick={() => select(bot)}>{bot.name}</Button><p className="text-xs text-muted-foreground">{bot.title || bot.roleDescription}</p>
