@@ -12,7 +12,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: approvals-inbox
   /* approvals-inbox */
   // slot: vault
-  /* vault */
+  'passwords', 'sign-in-requests', 'admin/credentials',
   // slot: computer-browser
   /* computer-browser */
   // slot: screens
