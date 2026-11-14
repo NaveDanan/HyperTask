@@ -53,3 +53,4 @@ export async function hyperStartGroup<T extends { id: string }>(agentIds: string
 }
 export type HyperConsentDecision = 'allow_once' | 'allow_always' | 'allow_all_team_bots' | 'skip';
 export const hyperTeamConsent = (botId: string, serverId: string, decision: HyperConsentDecision) => request(`/api/team-bots/${encodeURIComponent(botId)}/consents`, 'POST', { serverId, decision });
+export const hyperRenameConversation = (id: string, title: string) => request(`/api/channels/${encodeURIComponent(id)}/title`, 'PUT', { title: title.trim() || null });

@@ -11,13 +11,15 @@ export function HyperDictationControl({ disabled, onText, onLiveStart, onLiveTex
   const liveCallbacks = useRef({ onLiveStart, onLiveText }); liveCallbacks.current = { onLiveStart, onLiveText };
   const [live] = useState(() => new HyperLiveDictation({ source: () => liveDictationSource(), language: () => navigator.language || 'en-US', onStart: () => liveCallbacks.current.onLiveStart?.(), onText: text => liveCallbacks.current.onLiveText?.(text) }));
   const liveState = useSyncExternalStore(live.subscribe, live.getSnapshot);
-  const [available, setAvailable] = useState(false);
+  const [available, setAvailable] = useState<boolean>();
   const [session] = useState(() => new HyperDictationSession({ record: startRecording, transcribe: transcribeRecording, onTranscript: text => callback.current(text) }));
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot);
   useEffect(() => { let current = true; void hyperOpenBotRequest<{ transcription?: boolean }>('/api/capabilities').then(value => { if (current) setAvailable(!!value.transcription); }).catch(() => undefined); return () => { current = false; session.cancel(); }; }, [session]);
   useEffect(() => { if (disabled) session.cancel(); }, [disabled, session]);
   useEffect(() => { registerStop?.(cancel => { if (live.active) { if (cancel) live.release(); else live.stop(); return true; } if (session.getSnapshot().phase === 'recording') { if (cancel) session.cancel(); else void session.finish(); return true; } return false; }); return () => { registerStop?.(undefined); live.release(); }; }, [live, session, registerStop]);
   useEffect(() => { if (disabled) live.release(); }, [disabled, live]);
+  useEffect(() => { if (available) live.release(); }, [available, live]);
+  if (available === undefined) return null;
   if (!available) return liveDictationSource() ? <div className="flex gap-2"><Button type="button" disabled={disabled} variant="ghost" onClick={() => live.active ? live.stop() : void live.start()}>{live.active ? 'Stop dictation' : 'Dictate'}</Button>{liveState.phase === 'error' && <p role="alert">{liveState.error}</p>}</div> : null;
   if (!recordingSupported()) return null;
   return <div className="flex flex-wrap items-center gap-2" onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); session.cancel(); } }}>

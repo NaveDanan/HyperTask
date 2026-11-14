@@ -39,7 +39,9 @@ it('parks during a turn, restores a refused drain without spinning, and joins th
   submit(render({ value: 'correction', pending: true, onSubmit: sent, onConsumeAttachments: consume, attachments: [{ id: 'file', name: 'file', status: 'ready' }] }));
   expect(sent).not.toHaveBeenCalled(); expect(consume).toHaveBeenCalledWith(['file']);
   render({ value: '', pending: false, onSubmit: sent }); expect(sent).toHaveBeenCalledTimes(1);
+  render({ value: '', pending: true, onSubmit: sent });
   first.reject(new Error('refused')); await vi.waitFor(() => expect(hooks.state.some(value => value === 'refused')).toBe(true));
+  render({ value: '', pending: true, onSubmit: sent });
   render({ value: '', pending: false, onSubmit: sent }); expect(sent).toHaveBeenCalledTimes(1);
   submit(render({ value: 'then this', pending: false, onSubmit: sent }));
   expect(sent).toHaveBeenCalledTimes(2); expect(sent.mock.calls[1][0].text).toContain('correction'); expect(sent.mock.calls[1][0].text).toContain('then this');
@@ -52,4 +54,12 @@ it('does not park attachments already owned by the active send', async () => {
   submit(render({ value: 'correction', pending: true, onSubmit: sent, attachments, onConsumeAttachments: consume }));
   expect(consume).toHaveBeenCalledWith([]); expect(sent).toHaveBeenCalledTimes(1);
   first.resolve();
+});
+it('counts parked files against the attachment limit even with a live owner-count callback', () => {
+  const attachments = Array.from({ length: 8 }, (_, index) => ({ id: `file-${index}`, name: 'file', status: 'ready' as const }));
+  submit(render({ value: 'queued', pending: true, onSubmit: vi.fn(), attachments }));
+  const onFiles = vi.fn(); const tree = render({ value: 'another', pending: true, onSubmit: vi.fn(), attachments: [], getAttachmentCount: () => 0, onFiles });
+  const picker = find(tree, element => element.type === 'input' && element.props.type === 'file')!;
+  (picker.props.onChange as (event: { target: { files: File[]; value: string } }) => void)({ target: { files: [new File(['one'], 'one.txt', { type: 'text/plain' })], value: '' } });
+  expect(onFiles).not.toHaveBeenCalled();
 });

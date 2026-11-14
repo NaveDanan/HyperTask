@@ -74,7 +74,8 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   initialValue = '', value, onTextChange, recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
   const [localCommands, setLocalCommands] = useState<readonly string[]>([]);
   const selectedCommands = commandIds ?? localCommands;
-  const setSelectedCommands = (change: string[] | ((current: readonly string[]) => string[])) => { const next = typeof change === 'function' ? change(selectedCommands) : change; if (onCommandIdsChange) onCommandIdsChange(next); else setLocalCommands(next); };
+  const commandsRef = useRef(selectedCommands); commandsRef.current = selectedCommands;
+  const setSelectedCommands = (change: string[] | ((current: readonly string[]) => string[])) => { const next = typeof change === 'function' ? change(commandsRef.current) : change; commandsRef.current = next; if (onCommandIdsChange) onCommandIdsChange(next); else setLocalCommands(next); };
   const [localText, setLocalText] = useState(initialValue);
   const text = value ?? localText;
   const setText = value !== undefined && onTextChange ? onTextChange : setLocalText;
@@ -105,7 +106,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     // Channel placeholders already include in-flight files. Read the live owner count
     // so even another pick before React rerenders cannot count them twice or overflow.
     const stagedCount = getAttachmentCount ? getAttachmentCount() : attachments.length + reservations.current;
-    const screened = HyperScreenPickedFiles(files, { alreadyStaged: stagedCount + queuedAttachmentCount });
+    const screened = HyperScreenPickedFiles(files, { alreadyStaged: stagedCount + queuedAttachmentCount + queue.current.reduce((count, message) => count + message.attachments.length, 0) });
     setRejected((current) => [...current, ...screened.rejected]);
     if (!screened.accepted.length) return;
     reservations.current += screened.accepted.length;
@@ -120,13 +121,14 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   const [queued, setQueued] = useState<readonly HyperQueuedMessage[]>([]);
   const queue = useRef<readonly HyperQueuedMessage[]>([]);
   const queueHeldAfterFailure = useRef(false);
+  const previousPending = useRef(pending);
   const activeAttachments = useRef<readonly string[]>([]);
   const activeSnapshot = useRef<string | undefined>(undefined);
   const latest = useRef({ onSubmit, onDiscardAttachment }); latest.current = { onSubmit, onDiscardAttachment };
   const [selectedAgent, setSelectedAgent] = useState('');
   function transition(action: Parameters<typeof hyperReduceQueue>[1]) {
     const next = hyperReduceQueue(queue.current, action); queue.current = next.queue; setQueued(next.queue);
-    if (next.droppedAttachments.length) setError('Only eight files can be sent together. Extra queued files were released.');
+    if (next.droppedAttachments.length) { setError('Only eight files can be sent together. Extra queued files were released.'); onConsumeAttachments?.(next.droppedAttachments.map(file => file.id)); }
     next.droppedAttachments.forEach(file => latest.current.onDiscardAttachment?.(file.id)); return next;
   }
   async function runQueued(next: ReturnType<typeof hyperReduceQueue>) {
@@ -137,7 +139,9 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     finally { inFlight.current = false; activeSnapshot.current = undefined; activeAttachments.current = []; setSubmitting(false); }
   }
   useEffect(() => {
-    if (pending) { queueHeldAfterFailure.current = false; return; }
+    if (pending && !previousPending.current) queueHeldAfterFailure.current = false;
+    previousPending.current = pending;
+    if (pending) return;
     if (inFlight.current || queueHeldAfterFailure.current || !queue.current.length) return;
     void runQueued(transition({ type: 'settle' })).catch(() => {});
   }, [pending, submitting]);
@@ -151,12 +155,11 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     const next = transition({ type: 'submit', id: crypto.randomUUID(), draft: snapshot, busy });
     if (busy) { setText(''); setSelectedCommands([]); onConsumeAttachments?.(snapshot.attachments.map(file => file.id)); return; }
     const originalText = text;
-    setText('');
+    setText(''); setSelectedCommands([]);
     try {
       queueHeldAfterFailure.current = false; await runQueued(next);
-      setSelectedCommands([]);
       onConsumeAttachments?.(snapshot.attachments.map(file => file.id)); input.current?.focus();
-    } catch { setText(current => current || originalText); /* Stable retry identity remains available. */ }
+    } catch { setText(current => current || originalText); if (!commandsRef.current.length) setSelectedCommands(snapshot.commandIds); /* Stable retry identity remains available. */ }
   };
   const stop = async () => {
     if (!onStop || stoppingRef.current) return;
@@ -191,7 +194,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     {!!rejected.length && <ul aria-label="Files not added" className="space-y-1 py-2">{rejected.map((file) => <li key={file.id} className="flex items-center gap-2 text-sm text-destructive"><span role="alert">{file.reason}</span><Button type="button" size="icon-xs" variant="ghost" aria-label={`Dismiss rejection for ${file.name}`} onClick={() => setRejected((current) => current.filter((item) => item.id !== file.id))}><X /></Button></li>)}</ul>}
     <div className="flex flex-wrap items-center gap-2">
       {onFiles && <><input ref={picker} type="file" multiple className="hidden" tabIndex={-1} aria-label="Choose attachments" accept="image/png,image/jpeg,image/gif,image/webp,text/plain,text/markdown,text/csv,application/json" onChange={(event) => { void stage(Array.from(event.target.files ?? [])); event.target.value = ''; }} /><Button type="button" variant="ghost" size="icon-sm" aria-label="Attach files" disabled={disabled} onClick={() => picker.current?.click()}><Paperclip /></Button></>}
-      <HyperDictationControl registerStop={registerDictationStop} onLiveStart={() => { liveBase.current = text; }} onLiveText={words => setText([liveBase.current.trimEnd(), words].filter(Boolean).join(' '))} disabled={disabled || pending || submitting} onText={words => setText(current => [current.trimEnd(), words].filter(Boolean).join(' '))} />
+      <HyperDictationControl registerStop={registerDictationStop} onLiveStart={() => { liveBase.current = text; }} onLiveText={words => setText([liveBase.current.trimEnd(), words].filter(Boolean).join(' '))} disabled={disabled} onText={words => setText(current => [current.trimEnd(), words].filter(Boolean).join(' '))} />
       {!!agents.length && <label>To <select aria-label="Mention a Bot" value={selectedAgent} onChange={event => setSelectedAgent(event.target.value)}><option value="">Default recipient</option>{agents.map(bot => <option key={bot.id} value={bot.id}>@{bot.name}</option>)}</select></label>}
       {!!commands.length && <label>Skill <select aria-label="Add skill command" value="" onChange={event => { const id = event.target.value; if (id) setSelectedCommands(current => [...new Set([...current, id])]); }}><option value="">Choose a skill</option>{commands.map(command => <option key={command.id} value={command.id}>/{command.id} · {command.label}</option>)}</select></label>}
       {modelPicker && <HyperModelPicker {...modelPicker} disabled={disabled || modelPicker.disabled} onPicked={() => { modelPicker.onPicked?.(); input.current?.focus(); }} />}
