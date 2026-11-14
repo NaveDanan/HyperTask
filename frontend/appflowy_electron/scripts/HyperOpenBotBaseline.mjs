@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 const TYPES = new Set(['RUN_STARTED', 'TEXT_MESSAGE_START', 'TEXT_MESSAGE_CONTENT', 'TEXT_MESSAGE_END', 'RUN_FINISHED', 'RUN_ERROR']);
 const id = x => typeof x === 'string' && x.length > 0 && x.length <= 256 && /^[\w.:-]+$/.test(x);
 class BaselineError extends Error {}
+class HistoryPendingError extends BaselineError {}
 const fail = message => { throw new BaselineError(message); };
 
 // CopilotKit core 1.85.0 observes Phoenix's "ag_ui_event" payloads. Decode only that
@@ -66,11 +67,31 @@ export function historyPair(status, body, prompt, answer, expected) {
   if (body.messages.some(m => !m || !id(m.id) || typeof m.role !== 'string')) fail('Malformed history message');
   const users = body.messages.filter(m => m.role === 'user' && m.content === prompt);
   const assistants = body.messages.filter(m => m.role === 'assistant' && m.content === answer);
-  if (users.length !== 1 || assistants.length !== 1) fail('History does not contain the exact prompt and answer');
+  if (users.length !== 1 || assistants.length !== 1) throw new HistoryPendingError('History does not contain the exact prompt and answer');
   const user = { id: users[0].id, role: 'user', text: prompt };
   const assistant = { id: assistants[0].id, role: 'assistant', text: answer };
   if (expected && (expected.user.id !== user.id || expected.assistant.id !== assistant.id)) fail('History message IDs changed');
   return { user, assistant };
+}
+
+// RUN_FINISHED precedes Intelligence's final history write. Wait for that write,
+// retaining exact text/identity checks and a deadline for every HTTP request.
+export async function waitForHistoryPair(read, prompt, answer, expected, timeout = 30000) {
+  const started = Date.now(), deadline = started + timeout;
+  let attempts = 0;
+  while (Date.now() < deadline) {
+    const response = await read(Math.max(1, deadline - Date.now()));
+    attempts++;
+    try {
+      const messages = historyPair(response.status, response.value, prompt, answer, expected);
+      if (Date.now() >= deadline) break;
+      return { status: response.status, messages, attempts, elapsedMs: Date.now() - started };
+    } catch (error) {
+      if (!(error instanceof HistoryPendingError)) throw error;
+    }
+    await new Promise(resolve => setTimeout(resolve, Math.min(250, Math.max(0, deadline - Date.now()))));
+  }
+  fail('Authoritative history did not settle to the exact prompt, answer and message IDs before the deadline');
 }
 
 // The original transcript identifies each row by its saved message ID. Markdown
@@ -140,8 +161,8 @@ async function run({ phase, options, origin }) {
     if (new URL(page.url()).origin !== origin) fail('App redirected away from the loopback origin');
     const botId = before?.botId ?? options['bot-id'];
     let channelId = before?.channelId, threadId = before?.threadId;
-    async function json(method, path, body) {
-      const response = await context.request[method](origin + path, body ? { data: body, maxRedirects: 0 } : { maxRedirects: 0 });
+    async function json(method, path, body, timeout = 30000) {
+      const response = await context.request[method](origin + path, { ...(body ? { data: body } : {}), maxRedirects: 0, timeout });
       let value; try { value = await response.json(); } catch { fail('API returned malformed JSON'); }
       return { status: response.status(), value };
     }
@@ -184,8 +205,9 @@ async function run({ phase, options, origin }) {
     const channel = await json('get', `/api/channels/${encodeURIComponent(channelId)}`);
     const c = channel.value?.channel;
     if (channel.status !== 200 || c?.id !== channelId || c?.threadId !== threadId || !Array.isArray(c.agentIds) || c.agentIds.length !== 1 || c.agentIds[0] !== botId) fail('Channel mapping unavailable or changed');
-    const history = await json('get', `/api/copilotkit/threads/${encodeURIComponent(threadId)}/messages?agentId=${encodeURIComponent(botId)}`);
-    const messages = historyPair(history.status, history.value, prompt, answer, before?.messages);
+    const expected = before?.messages ?? { user: { id: userMessageId }, assistant: { id: proveStream(events, threadId, runId).messageId } };
+    const history = await waitForHistoryPair(timeout => json('get', `/api/copilotkit/threads/${encodeURIComponent(threadId)}/messages?agentId=${encodeURIComponent(botId)}`, undefined, timeout), prompt, answer, expected);
+    const messages = history.messages;
     if (phase === 'before' && messages.user.id !== userMessageId) fail('History user ID differs from submitted run');
     if (messages.assistant.id !== proveStream(events, threadId, runId).messageId) fail('Stream and saved assistant IDs differ');
     const result = artifact({ phase, observedAt: new Date().toISOString(), channelId, threadId, botId, runId, prompt, answer, messages, statuses: { channel: channel.status, messages: history.status }, events });

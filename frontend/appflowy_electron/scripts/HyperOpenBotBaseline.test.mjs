@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { artifact, eventFromFrame, historyPair, proveStream } from './HyperOpenBotBaseline.mjs';
+import { artifact, eventFromFrame, historyPair, proveStream, waitForHistoryPair } from './HyperOpenBotBaseline.mjs';
 
 const at = '2026-11-13T00:00:00.000Z';
 const event = (type, delivery, extra = {}) => ({ type, delivery, at, ...extra });
@@ -46,6 +46,24 @@ test('history must be available, well formed and match both IDs', () => {
   assert.equal(pair.assistant.id, 'answer');
   for (const [status, data] of [[502, body], [200, {}], [200, { messages: [] }], [200, { messages: [null] }]]) assert.throws(() => historyPair(status, data, 'prompt', 'Hello world'));
   assert.throws(() => historyPair(200, body, 'prompt', 'Hello world', { ...pair, user: { id: 'changed' }, assistant: pair.assistant }));
+});
+
+test('waits for the authoritative final write without accepting partial text or changed identities', async () => {
+  const complete = { messages: [{ id: 'user', role: 'user', content: 'prompt' }, { id: 'answer', role: 'assistant', content: 'Hello world' }] };
+  const expected = historyPair(200, complete, 'prompt', 'Hello world');
+  let reads = 0;
+  const result = await waitForHistoryPair(async remaining => {
+    assert.ok(remaining > 0 && remaining <= 1000);
+    return { status: 200, value: ++reads === 1 ? { messages: [complete.messages[0], { ...complete.messages[1], content: 'Hello' }] } : complete };
+  }, 'prompt', 'Hello world', expected, 1000);
+  assert.deepEqual(result.messages, expected);
+  assert.equal(result.attempts, 2);
+  await assert.rejects(waitForHistoryPair(async () => ({ status: 200, value: { messages: [complete.messages[0]] } }), 'prompt', 'Hello world', expected, 20), /did not settle/);
+  for (const response of [{ status: 502, value: complete }, { status: 200, value: { messages: [null] } }, { status: 200, value: { messages: [complete.messages[0], { ...complete.messages[1], id: 'changed' }] } }]) {
+    let calls = 0;
+    await assert.rejects(waitForHistoryPair(async () => { calls++; return response; }, 'prompt', 'Hello world', expected, 1000));
+    assert.equal(calls, 1);
+  }
 });
 
 test('artifact drops extra secret-bearing properties', () => {

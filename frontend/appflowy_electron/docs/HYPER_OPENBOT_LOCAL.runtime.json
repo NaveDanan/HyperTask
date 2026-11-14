@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "recordedAt": "2026-11-14T08:18:35.192618+00:00",
   "status": "local_intelligence_ready_then_stopped_for_authorized_vm_offload",
-  "scope": "Historical preparation on the current Linux PC. User now authorizes heavy backend execution on agent@MEMS-mems01; HyperTask desktop remains on this PC. VM deployment and integrated app acceptance are not established.",
+  "scope": "Historical preparation on the current Linux PC. Heavy backend services now run on the user-authorized MMEMS-mems01 VM, with original-client acceptance recorded separately in HYPER_OPENBOT_VM.runtime.json. HyperTask desktop remains on this PC; native integration acceptance is separate.",
   "host": {
     "name": "naved-IdeaPad-5-14IIL05",
     "system": "Ubuntu 24.04.5 LTS",
@@ -207,7 +207,7 @@
     "sameThreadReopen": "not_run"
   },
   "limits": [
-    "Local Intelligence reached ready and was stopped with data preserved for the requested VM move. VM installation and integrated HyperTask chat remain unverified.",
+    "The local Intelligence stack remains stopped with data preserved. VM deployment and original-client restart proof are recorded separately; this historical local snapshot does not establish integrated HyperTask acceptance.",
     "Linux runtime evaluation remains outside the documented macOS preview.",
     "Mutable base images and ranged Python dependencies prevent a bit-for-bit rebuild claim.",
     "Full application lifecycle commands and live proof remain incomplete.",
@@ -244,18 +244,19 @@
   "backendTarget": {
     "requestedByUser": "agent@mmems-mems01",
     "authorization": "Heavy backend services may run on this VM; desktop stays on this PC.",
-    "environmentLink": "requested_pending",
-    "vmCapacityVerified": false,
-    "vmProvisioned": false,
-    "connection": "Tailscale address supplied by the user; updated link request pending"
+    "environmentLink": "verified_full_access",
+    "vmCapacityVerified": true,
+    "vmProvisioned": true,
+    "connection": "Loopback SSH forward to the authorized Tailscale VM; T3 uses a separate forward.",
+    "runtimeEvidence": "HYPER_OPENBOT_VM.runtime.json"
   },
   "hyperTaskDesktop": {
-    "coreBuild": "in_progress",
+    "coreBuild": "pass",
     "toolchain": "1.85.0",
     "jobs": 2,
     "debugInfo": false,
     "incremental": false,
-    "appLaunched": "not_run",
+    "appLaunched": "development_window_verified",
     "openbotChatIntegration": "not_implemented",
     "integratedEndToEnd": "not_run",
     "frontendBuild": "pass",
@@ -267,6 +268,10 @@
       "sha256": "d41631bb752815a8196261d1030c096591c59678c8adfbf2e6a740a691b49e80",
       "installation": "Private extraction; system packages unchanged",
       "realRocksdbHeaderParse": "Fails without the include directory and passes with it"
-    }
+    },
+    "coreBuiltAt": "2026-11-14T08:46:49.440697+00:00",
+    "launchProfile": "Isolated scratch profile; existing HyperTask data not used",
+    "uiObservation": "Actual Electron renderer shows HyperTask navigation and the Blank page tab.",
+    "launchLimitation": "Development launch flag only; no source or system sandbox settings changed. Required because the NPM Electron setuid helper is not root-owned 4755."
   }
 }
