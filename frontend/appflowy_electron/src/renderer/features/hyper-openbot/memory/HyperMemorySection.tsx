@@ -1,3 +1,5 @@
+import { hyperMemorySelectionFromPath } from './HyperMemoryNavigation';
+import { HyperMemorySources } from './HyperMemorySources';
 // Adapted from OpenBot. Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -41,14 +43,18 @@ export function useHyperMemoryAction(reload: () => void) {
  const [busy,setBusy]=useState(false); const [error,setError]=useState(''); const pending=useRef(false);
  return { busy,error, run: async (action: () => Promise<unknown>) => { if(pending.current)return false;pending.current=true;setBusy(true); setError(''); try { await action(); reload(); return true; } catch { setError('The server could not save this change. Check your permissions and try again.'); return false; } finally { pending.current=false;setBusy(false); } } };
 }
-export default function HyperMemorySection({context}:{context?:HyperOpenBotSectionContext}) {
+export default function HyperMemorySection({context,path}:{path?:string;context?:HyperOpenBotSectionContext}) {
+ const [selection,setSelection]=useState(()=>hyperMemorySelectionFromPath(path));
  const capabilities=useHyperMemoryData<{edition?:string}>('/api/capabilities');
- const memories=useHyperMemoryData<MemoryRecord[]>(!capabilities.loading&&capabilities.data?.edition!=='personal'?'/api/memory':null,'memories');
- const bots=useHyperMemoryData<{id:string;name:string}[]>(!capabilities.loading&&capabilities.data?.edition!=='personal'?'/api/agents':null,'agents');
+ const factsAvailable=selection.page==='facts'&&!capabilities.loading&&!capabilities.error&&!!capabilities.data&&capabilities.data.edition!=='personal';
+ const memories=useHyperMemoryData<MemoryRecord[]>(factsAvailable?'/api/memory':null,'memories');
+ const bots=useHyperMemoryData<{id:string;name:string}[]>(factsAvailable?'/api/agents':null,'agents');
  const action=useHyperMemoryAction(memories.reload); const [content,setContent]=useState(''); const [editing,setEditing]=useState<string>();
- if(capabilities.loading)return <HyperMemoryStatus {...capabilities}/>;
+ if(capabilities.loading||capabilities.error)return <HyperMemoryStatus {...capabilities}/>;
  if(capabilities.data?.edition==='personal') return <section className="p-6"><p>Memory is unavailable in the personal edition. Use your Bot's Routines instead.</p><Button onClick={()=>context?.navigate?.('bots')}>Bots</Button></section>;
- return <section className="mx-auto flex max-w-4xl flex-col gap-4 p-6"><h2 className="text-lg font-semibold">Memory</h2><p>Facts you add are shared with all Bots; learned facts stay with the Bot that learned them.</p>
+ if(selection.page==='missing')return <section className="p-6"><p role="alert">This Memory destination is unavailable.</p><Button onClick={()=>setSelection({page:'facts'})}>Back to memory</Button></section>;
+ if(selection.page==='sources'||selection.page==='source')return <HyperMemorySources selection={selection} onSelect={setSelection}/>;
+ return <section className="mx-auto flex max-w-4xl flex-col gap-4 p-6"><h2 className="text-lg font-semibold">Memory</h2><Button variant="outline" onClick={()=>setSelection({page:'sources'})}>Memory sources</Button><p>Facts you add are shared with all Bots; learned facts stay with the Bot that learned them.</p>
  <form className="grid gap-2" onSubmit={event=>{event.preventDefault(); void action.run(()=> editing ? updateMemory(editing,{content}) : createMemory(content)).then(ok=>{if(ok){setContent('');setEditing(undefined);}});}}><label htmlFor="hyper-memory-content">{editing?'Edit memory':'Remember a fact'}</label><Textarea id="hyper-memory-content" required maxLength={6000} value={content} onChange={event=>setContent(event.target.value)}/><div className="flex gap-2"><Button disabled={action.busy||!content.trim()}>{editing?'Save':'Remember'}</Button>{editing&&<Button type="button" variant="outline" onClick={()=>{setEditing(undefined);setContent('');}}>Cancel</Button>}</div></form>
  <HyperMemoryStatus {...memories}/>{action.error&&<p role="alert">{action.error}</p>}{memories.error&&<Button onClick={memories.reload}>Retry</Button>}
  {memories.data?.length===0&&<p>No memories yet. Add one with Remember a fact.</p>}
