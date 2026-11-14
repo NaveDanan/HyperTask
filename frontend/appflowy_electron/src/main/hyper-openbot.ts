@@ -120,8 +120,8 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     const cookie = await hyperOpenBotCookieHeader(lease);
     lease.assertCurrent();
     if (event.sender.isDestroyed() || opening.cancelled) throw new Error('Renderer closed or socket cancelled');
-    const voiceSecret = path.startsWith('/api/voice/socket/') ? voiceBroker.take(path, event.sender.id) : undefined;
-    const socket = new WebSocket(voiceSecret ? 'wss://api.x.ai/v1/realtime' : `ws+unix://${socketPath}:${path}`, voiceSecret ? [`xai-client-secret.${voiceSecret}`] : protocols, { origin: ORIGIN, headers: voiceSecret ? {} : { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
+     const voice = path.startsWith('/api/voice/socket/') ? voiceBroker.take(path, event.sender.id) : undefined;
+     const socket = new WebSocket(voice ? voice.destination : `ws+unix://${socketPath}:${path}`, voice ? [`xai-client-secret.${voice.secret}`] : protocols, { origin: ORIGIN, headers: voice ? {} : { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
     sockets.set(id, socket);
     const abort = () => socket.terminate();
     lease.signal.addEventListener('abort', abort, { once: true });
