@@ -1,3 +1,6 @@
+export type HyperCallbackKeyAction = 'create' | 'rotate' | 'revoke';
+export interface HyperCallbackKeyResult { status: 'issued' | 'revoked' | 'cancelled' | 'refused' | 'failed' }
+export interface HyperNativeDestination { kind: 'connections'; confirmation: 'native-confirmed'; serverId?: string }
 import type { HyperOpenBotServiceAction, HyperOpenBotServiceState } from './HyperOpenBotService';
 // The API the preload script exposes to the renderer as `window.appflowy`.
 
@@ -101,6 +104,8 @@ export interface HyperOpenBotChunk { id: string; chunk?: Uint8Array; done?: bool
 export interface HyperOpenBotSocketEvent { id: string; type: 'open' | 'message' | 'error' | 'close'; data?: string | Uint8Array; code?: number; reason?: string }
 export interface AppFlowyApi {
   hyperOpenBot: {
+    callbackKey(input: { action: HyperCallbackKeyAction; agentId: string }): Promise<HyperCallbackKeyResult>;
+    onNativeDestination(listener: (destination: HyperNativeDestination) => void): () => void;
     service: {
       state(): Promise<HyperOpenBotServiceState>;
       run(action: HyperOpenBotServiceAction): Promise<HyperOpenBotServiceState>;

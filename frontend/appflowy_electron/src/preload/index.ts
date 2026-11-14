@@ -9,6 +9,8 @@ function on<T>(channel: string, listener: (value: T) => void): () => void {
 
 const api: AppFlowyApi = {
   hyperOpenBot: {
+    callbackKey: input => ipcRenderer.invoke('hyper-openbot:callback-key', input),
+    onNativeDestination: listener => on('hyper-openbot:native-destination', listener),
     service: {
       state: () => ipcRenderer.invoke('hyper-openbot:service-state'),
       run: action => ipcRenderer.invoke('hyper-openbot:service-action', action),
@@ -114,4 +116,4 @@ const api: AppFlowyApi = {
   },
 };
 
-contextBridge.exposeInMainWorld('appflowy', api);
+if (process.isMainFrame) contextBridge.exposeInMainWorld('appflowy', api);

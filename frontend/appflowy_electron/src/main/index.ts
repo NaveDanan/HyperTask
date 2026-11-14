@@ -1,3 +1,4 @@
+import { hyperClassifyBrowserReturn } from './HyperBrowserReturn';
 import type { HyperOpenBotService } from './HyperOpenBotService';
 import { createHyperOpenBotService } from './HyperOpenBotBackend';
 import { registerHyperOpenBotServiceIpc } from './HyperOpenBotServiceIpc';
@@ -38,9 +39,23 @@ const core = new CoreProcess(coreBinaryPath(appRoot, app.isPackaged));
 let coreStarted: Promise<void> | null = null;
 let mainWindow: BrowserWindow | null = null;
 let launchDeepLink: string | null = findDeepLink(process.argv);
+let pendingBrowserReturn = launchDeepLink !== null && hyperClassifyBrowserReturn(launchDeepLink) === 'return';
+if (launchDeepLink && hyperClassifyBrowserReturn(launchDeepLink) !== 'ordinary') launchDeepLink = null;
+let handleBrowserReturn: (() => Promise<void>) | undefined;
+function deliverDeepLink(url: string) {
+  const kind = hyperClassifyBrowserReturn(url);
+  if (kind === 'reject') return;
+  if (kind === 'return') {
+    if (handleBrowserReturn && mainWindow) void handleBrowserReturn();
+    else pendingBrowserReturn = true;
+    return;
+  }
+  if (mainWindow) mainWindow.webContents.send(C.AppDeepLink, url);
+  else launchDeepLink = url;
+}
 
 function findDeepLink(argv: string[]): string | null {
-  return argv.find((arg) => arg.startsWith(`${DEEP_LINK_SCHEME}:`)) ?? null;
+  return argv.find((arg) => (arg.startsWith(`${DEEP_LINK_SCHEME}:`) || /^openbot:/i.test(arg))) ?? null;
 }
 
 function startCore(): Promise<void> {
@@ -127,6 +142,25 @@ function registerIpc() {
   const openBotBridge = registerHyperOpenBotIpc(() => mainWindow, openBotSessions, () => openBotService?.snapshot().ready === true);
   openBotService = createHyperOpenBotService(app.getPath('userData'), openBotSessions, openBotBridge.disconnect);
   registerHyperOpenBotServiceIpc(() => mainWindow, openBotService);
+  let returnBusy = false;
+  handleBrowserReturn = async () => {
+    if (returnBusy) return;
+    const owner = mainWindow;
+    if (!owner || owner.isDestroyed() || !openBotService?.snapshot().ready) return;
+    returnBusy = true;
+    const controller = new AbortController();
+    const stop = () => controller.abort();
+    const unsubscribe = openBotSessions.onInvalidate(stop);
+    owner.webContents.once('destroyed', stop);
+    owner.webContents.once('did-start-navigation', stop);
+    try {
+      const lease = await openBotSessions.acquire();
+      const answer = await dialog.showMessageBox(owner, { title: 'HyperTask connections', message: 'Return to Connections?', detail: 'The browser returned from OpenBot. This does not confirm a successful connection. Check the account status in Connections.', buttons: ['Cancel', 'Open Connections'], defaultId: 0, cancelId: 0, signal: controller.signal });
+      await openBotSessions.acquire(); lease.assertCurrent();
+      if (answer.response === 1 && !controller.signal.aborted && mainWindow === owner && !owner.isDestroyed() && openBotService?.snapshot().ready) owner.webContents.send('hyper-openbot:native-destination', { kind: 'connections', confirmation: 'native-confirmed' });
+    } catch { /* Sensitive callback and native failures never enter renderer error strings. */ }
+    finally { returnBusy = false; unsubscribe(); owner.webContents.removeListener('destroyed', stop); owner.webContents.removeListener('did-start-navigation', stop); }
+  };
   core.on('exit', () => { void openBotSessions.beginNativeTransition().cleared.catch(() => {}); });
   ipcMain.handle(C.CoreInit, async (_, config: CoreInitConfig) => {
     const transition = openBotSessions.beginNativeTransition(false);
@@ -166,7 +200,9 @@ function registerIpc() {
     if (app.isPackaged) app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
     else app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME, process.execPath, [path.resolve(appRoot)]);
   });
-  ipcMain.handle(C.AppTakeLaunchDeepLink, () => {
+  ipcMain.handle(C.AppTakeLaunchDeepLink, (event) => {
+    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) return null;
+    if (pendingBrowserReturn) { pendingBrowserReturn = false; void handleBrowserReturn?.(); }
     const link = launchDeepLink;
     launchDeepLink = null;
     return link;
@@ -253,13 +289,12 @@ if (!app.requestSingleInstanceLock()) {
   // A second launch forwards its deep link to this instance and brings the window forward.
   app.on('second-instance', (_, argv) => {
     const link = findDeepLink(argv);
-    if (link) mainWindow?.webContents.send(C.AppDeepLink, link);
+    if (link) deliverDeepLink(link);
     focusWindow();
   });
   app.on('open-url', (event, url) => {
     event.preventDefault();
-    if (mainWindow) mainWindow.webContents.send(C.AppDeepLink, url);
-    else launchDeepLink = url;
+    deliverDeepLink(url);
   });
 
   app.whenReady().then(async () => {

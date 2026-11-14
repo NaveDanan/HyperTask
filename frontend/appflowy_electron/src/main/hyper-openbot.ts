@@ -1,3 +1,4 @@
+import { registerHyperNativeCredentials } from './HyperNativeCredentials';
 import { HyperVoiceBroker } from './HyperVoiceBroker';
 import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath, hyperOpenBotCookieHeader, hyperTunnelFetch } from './HyperOpenBotTunnel';
 import type { HyperOpenBotSession } from './HyperOpenBotSession';
@@ -56,6 +57,7 @@ export function registerHyperOpenBotFileIpc(userData: string) {
 }
 
 export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sessions: HyperOpenBotSession, ready: () => boolean = () => true) {
+  registerHyperNativeCredentials(window, sessions, ready);
   const voiceBroker = new HyperVoiceBroker();
   const running = new Map<string, AbortController>();
   const sockets = new Map<string, WebSocket>();

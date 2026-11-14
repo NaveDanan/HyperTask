@@ -46,7 +46,7 @@ it.each(['/api/voice/calls?nonce=test', '/api/voice/%63alls?nonce=test'])('appli
   expect(JSON.parse(payload).url).toMatch(/^wss:\/\/hyper-openbot\.invalid\/api\/voice\/socket\/[a-f0-9-]{36}$/);
   await h.manager.beginNativeTransition().cleared;
 });
-it.each(['/api/agents/bot/callback-token', '/api/agents/bot/callback%2Dtoken?nonce=test'])('refuses raw callback-key creation through generic renderer HTTP at %s', async route => {
+it.each(['/api/agents/bot/callback-token', '/api/agents/bot/callback-token?nonce=test', '/api/agents/%62ot/callback%2Dtoken?nonce=test', '/api/agents/bot/callback%2Dtoken?nonce=test'])('refuses raw callback-key creation through generic renderer HTTP at %s', async route => {
   const h = setup();
   ipc.fetch.mockResolvedValueOnce(new Response('{"token":"synthetic-secret"}'));
   await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'callback', path: route, method: 'POST' })).rejects.toThrow('protected native handoff');
