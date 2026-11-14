@@ -31,6 +31,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: memory
   /* memory */
   // slot: bot-tabs
+  { id: 'bot', label: 'Bot', group: 'bots', render: hyperLazySection(() => import('./bot-tabs/HyperBotSection')) },
   { id: 'needs-you', label: 'Needs you', group: 'work', render: hyperLazySection(() => import('./bot-tabs/HyperBotAttentionBoard')) },
   { id: 'external-agents', label: 'External agents', group: 'bots', render: hyperLazySection(() => import('./bot-tabs/HyperExternalAgents')) },
   { id: 'reachability', label: 'Reaching you', group: 'personal', render: hyperLazySection(() => import('./bot-tabs/HyperReachability')) },

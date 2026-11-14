@@ -16,12 +16,12 @@ import { HyperBotHandoffTab } from './HyperBotHandoffTab';
 import { HYPER_BOT_EXTRA_TABS } from './HyperBotExtraTabs';
 import { HyperBotTabsApi as api, type HyperBotApp, type HyperTeamBots } from './HyperBotTabsApi';
 
-export function HyperBotDetailTabs({ bot }: { bot: HyperBotProfile }) {
+export function HyperBotDetailTabs({ bot, openConversation }: { bot: HyperBotProfile; openConversation?: (id: string) => void }) {
   const [tab, setTab] = useState('apps');
   const Extra = HYPER_BOT_EXTRA_TABS.find(item => item.id === tab)?.component;
   return <section className="grid gap-4 border-t border-border pt-4">
     <nav aria-label="Bot details" className="flex flex-wrap gap-2">{[{ id: 'setup', label: 'Setup' }, { id: 'apps', label: 'Apps' }, { id: 'sharing', label: 'Sharing' }, { id: 'access', label: 'Access' }, { id: 'approvals', label: 'Approvals' }, { id: 'skills', label: 'Skills' }, { id: 'reach', label: 'Reaching you' }, { id: 'activity', label: 'Activity' }, ...HYPER_BOT_EXTRA_TABS].map(item => <Button key={item.id} variant={tab === item.id ? 'secondary' : 'ghost'} aria-pressed={tab === item.id} onClick={() => setTab(item.id)}>{item.label}</Button>)}</nav>
-    {tab === 'setup' ? <HyperBotSetupTab agentId={bot.id} /> : tab === 'activity' ? <HyperBotActivityTab agentId={bot.id} /> : tab === 'reach' ? <HyperReachability agentId={bot.id} /> : tab === 'approvals' ? <HyperBotApprovalsTab agentId={bot.id} /> : tab === 'skills' ? <HyperBotSkillsTab agentId={bot.id} mine={bot.mine} /> : tab === 'access' ? <HyperBotHandoffTab agentId={bot.id} /> : Extra ? <Extra agentId={bot.id} /> : <HyperBotRemoteTab key={`${bot.id}:${tab}`} bot={bot} tab={tab} />}
+    {tab === 'setup' ? <HyperBotSetupTab agentId={bot.id} /> : tab === 'activity' ? <HyperBotActivityTab agentId={bot.id} openConversation={openConversation} selectTab={setTab} /> : tab === 'reach' ? <HyperReachability agentId={bot.id} /> : tab === 'approvals' ? <HyperBotApprovalsTab agentId={bot.id} /> : tab === 'skills' ? <HyperBotSkillsTab agentId={bot.id} mine={bot.mine} /> : tab === 'access' ? <HyperBotHandoffTab agentId={bot.id} /> : Extra ? <Extra agentId={bot.id} /> : <HyperBotRemoteTab key={`${bot.id}:${tab}`} bot={bot} tab={tab} />}
   </section>;
 }
 function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) {

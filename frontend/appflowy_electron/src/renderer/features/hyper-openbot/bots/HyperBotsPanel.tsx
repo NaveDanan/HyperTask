@@ -56,7 +56,7 @@ export function HyperBotsPanel({ onChat }: { onChat: (botId: string) => void }) 
   </section>;
 }
 
-function HyperBotEditor({ bot, onSaved, onRemoved, onClose }: { bot?: HyperBotProfile; onSaved: (bot: HyperBotProfile) => void; onRemoved: () => void; onClose: () => void }) {
+export function HyperBotEditor({ bot, onSaved, onRemoved, onClose, onOpenConversation }: { bot?: HyperBotProfile; onSaved: (bot: HyperBotProfile) => void; onRemoved: () => void; onClose: () => void; onOpenConversation?: (id: string) => void }) {
   const [draft, setDraft] = useState<HyperBotInput>(bot ? { name: bot.name, title: bot.title, roleDescription: bot.roleDescription, visibility: bot.visibility, ...(bot.instructions === undefined ? {} : { instructions: bot.instructions }) } : HyperEmptyInput);
   const [lifecycleStore] = useState(() => new HyperBotLifecycleStore());
   const lifecycleState = useSyncExternalStore(lifecycleStore.subscribe, lifecycleStore.getSnapshot);
@@ -101,7 +101,8 @@ function HyperBotEditor({ bot, onSaved, onRemoved, onClose }: { bot?: HyperBotPr
         {editable && <Button type="submit">{busy ? 'Saving…' : bot ? 'Save profile' : 'Create Bot'}</Button>}
       </fieldset>
     </form>
-    {bot && <HyperBotDetailTabs bot={bot} />}
+    {bot && <HyperBotAttentionBoard agentId={bot.id} openConversation={onOpenConversation} />}
+    {bot && <HyperBotDetailTabs bot={bot} openConversation={onOpenConversation} />}
     {bot && <fieldset disabled={busy || lifecyclePending} className="flex flex-col gap-3 border-t border-border pt-4"><legend className="text-sm font-medium">Your settings for this Bot</legend>
       {lifecycle ? <><p className="text-xs text-muted-foreground">Pause stops work done in your name. Other people's work continues.</p>
         <Button variant="outline" onClick={() => void lifecycleStore.change(bot.id, lifecycle.paused ? 'resume' : 'pause')}>{lifecycle.paused ? 'Resume' : 'Pause'} for me</Button>
