@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-13T17:43:36Z",
+  "status": "prepared_accounts_required",
+  "evidenceScope": "Observed preparation only. No live application acceptance or reproducible rebuild is claimed.",
+  "source": {
+    "repository": "https://github.com/CopilotKit/OpenBot",
+    "commit": "f8af37ab73e96784f174a11104505a965e722cab",
+    "trackedSourceClean": true,
+    "buildInputSha256": {
+      "server/Dockerfile": "1e1c312b4a683c377805be7a13abf223b327194cd727ef0a063f9de0f206c19e",
+      "agent-computer/Dockerfile": "17b98b310968502718a6d85f24585bac32cec18c2b1291cb5b2f0d49cf027ef0",
+      "supervisor/Dockerfile": "c291c8f303d47c25f125fc702281ac32805889ea681040177da9c62d0199c91c",
+      "bun.lock": "0187f72264f0685a5ddc62c5d1855dc8b36107b4013f13b7402b7365ee8f4da4",
+      "agent-computer/bun.lock": "c033b9c95cdedfb806672663bad4104d0d2119e056b9f98ebb6ae83f1c0bbfcb",
+      "supervisor/bun.lock": "574f65ac5624e68134044932f34ed740f0a313463345d6f96ee72f25804cd133",
+      "agent-langgraph-agui/Dockerfile": "7ca6a2caf1be65d7959b7161f20b05777460637204603fba5a2cf364f404534d",
+      "agent-langgraph-agui/requirements.txt": "818f4c8797e10d8032aa2efa29b2d207b6f8c18715d2d891b98206b726359f00",
+      "shared/model_providers.py": "ae500f6c2866d7fcb282fb9e8186e20c82b12138d34efd4f77952d23d3ab4420",
+      "shared/model-providers.json": "190f9a4e7f337e375312a5ee14a5635d9fe391395ca44fad5fb7b3fdba56c3c8"
+    }
+  },
+  "host": {
+    "kind": "Windows host / Ubuntu WSL 2",
+    "cpus": 20,
+    "engineMemoryBytes": 16692457472,
+    "physicalFreeBytes": {
+      "C": 155758395392,
+      "D": 148708409344
+    },
+    "linuxIntelligenceRuntimeSupport": "Accepted CLI engine path; outside the supported macOS preview; application runtime not validated."
+  },
+  "paths": {
+    "source": "/home/naved/HyperTask-OpenBot-baseline",
+    "tools": "/home/naved/.local/share/hypertask-openbot-baseline",
+    "dockerData": "/home/naved/.local/share/hypertask-openbot-baseline/docker/data",
+    "dockerSocket": "/home/naved/.local/share/hypertask-openbot-baseline/docker/run/docker.sock",
+    "dockerConfig": "/home/naved/.local/share/hypertask-openbot-baseline/docker/config",
+    "browserCache": "/home/naved/.local/share/hypertask-openbot-baseline/playwright",
+    "previousPreparationSource": "/mnt/d/pythonprojects/HyperTask-OpenBot-baseline"
+  },
+  "tools": {
+    "bun": {
+      "version": "1.4.3",
+      "archiveSha256": "efd069d474e6addceede0dc9c0981b4421cf35ceb3348e4b83462053a177281f"
+    },
+    "node": {
+      "version": "22.23.5",
+      "archiveSha256": "cdeb8670a0c81f51b4dc4ac61919f9b1ad917b304bf8221eb939570663d240f8"
+    },
+    "copilotkit": {
+      "version": "4.34.0",
+      "npmIntegrity": "sha512-v0COC7sUGWEuwVRcJ0Dxv6TRleelb1hqWaJBK1Yuv4QVMr86pQvVhXjjC4/vh5AIzpODz1ebcdrpIw0u+T+MKg==",
+      "packageLockSha256": "a21cde84b895bb52c7d712db1a5312ce09134fb3c98a1ec7bafd9bd9bf1faa6f",
+      "build": "42306449617",
+      "intelligenceCommit": "92ad7e488117cb669d06578b9d142971f7385ba3",
+      "copilotkitCommit": "114d64c00c762ca72992884273f83ddc009684e1",
+      "installScriptsIgnored": true,
+      "nativeDependenciesIndependentlyValidated": false
+    },
+    "docker": {
+      "engine": "29.9.3",
+      "serverCommit": "70efc0e",
+      "clientCommit": "5457199",
+      "containerd": "2.4.2",
+      "containerdCommit": "b7a25261e029d68978bbf290df0a62fc819b3c51",
+      "runc": "1.5.3",
+      "compose": "5.7.1",
+      "context": "default",
+      "selection": "Explicit DOCKER_HOST and DOCKER_CONFIG, no context switch",
+      "daemonHealthObserved": true,
+      "cliEnginePreflight": "pass",
+      "autoStartServiceInstalled": false
+    },
+    "playwright": {
+      "version": "1.62.1",
+      "chromium": "151.0.7922.34",
+      "chromiumRevision": 1234,
+      "ffmpegRevision": 1011,
+      "chromiumSha256": "0b20b130e7edd9dd51873be867761295fe0cfad490c2b9a64f95bd3cfc08fa71",
+      "headlessShellSha256": "e11fc9ce65c96313476f7ee9844b6fb6a9220fb048693cfe9eee00acf4170a9f",
+      "launchCloseCheck": "pass",
+      "requiresEnv": "PLAYWRIGHT_BROWSERS_PATH"
+    }
+  },
+  "privateDockerPackageSha256": {
+    "docker-ce_5:29.9.3-1~ubuntu.24.04~noble": "c546181f0bc5f1d19085d764a3219aa86069468dbee4743fae420ee8a31809a4",
+    "docker-ce-cli_5:29.9.3-1~ubuntu.24.04~noble": "24f78a893cece8d345c4e90b5163907c047b996b747265f873743e8b0b0546d4",
+    "containerd.io_2.4.2-4~ubuntu.24.04~noble": "15cc3d6c64422ed278f60cb3c9a5df760a3de38055affc335c6ee40c12411b75",
+    "docker-buildx-plugin_0.39.0-1~ubuntu.24.04~noble": "165c2fe237325eb6e2dbda40e94870386e7c3990279a916dae3f122842ed8dc6",
+    "docker-compose-plugin_5.7.1-1~ubuntu.24.04~noble": "c2f6549958ca64466da9e31a6d488e19f5a1bf475a4425df9e4c3a010d5950ac"
+  },
+  "dependencyInstall": {
+    "command": "bun install --frozen-lockfile",
+    "result": "pass",
+    "source": "/home/naved/HyperTask-OpenBot-baseline",
+    "packageCount": 1366,
+    "elapsedSeconds": 3.13,
+    "previousInstall": {
+      "source": "/mnt/d/pythonprojects/HyperTask-OpenBot-baseline",
+      "result": "pass",
+      "packageCount": 891,
+      "elapsedSeconds": 527.37
+    }
+  },
+  "images": [
+    {
+      "tag": "hypertask-openbot-baseline-server:f8af37ab",
+      "localImageId": "sha256:e56cebe3011ab85379a68509dfc5a65b1ce5764bc4c865b1ba6b83d445e6966d"
+    },
+    {
+      "tag": "hypertask-openbot-baseline-computer:f8af37ab",
+      "localImageId": "sha256:e2dc543bc29b2a72cb714f342f8c9b18e6a9fbc75a62a53e3da14bc5b6c1273f"
+    },
+    {
+      "tag": "hypertask-openbot-baseline-supervisor:f8af37ab",
+      "localImageId": "sha256:05fa50a811e3389cde0cb10b4c7ef98145edc66f3d22a399599e5ea272a929c0"
+    },
+    {
+      "tag": "hypertask-openbot-baseline-langgraph-agui:f8af37ab",
+      "localImageId": "sha256:cc12a24f739a7b42a907c29babf90453989e7e7823c88dc2549e34a2edf2d14c",
+      "sourceCommit": "f8af37ab73e96784f174a11104505a965e722cab",
+      "resolvedBase": "python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
+      "resolvedPythonPackageCount": 70,
+      "privatePythonFreezeSha256": "9aee2c52640945761d11cad7f8fb136e21cb26ce30fc77fb3135c2ada571e448"
+    }
+  ],
+  "pulledHarness": {
+    "image": "ghcr.io/copilotkit/openbot-agent-langgraph-agui@sha256:90f82fba0814e69118c3a5250690b1c2b4517e705bb73ac3981ab71698f8e430",
+    "release": "v1.0.1",
+    "sourceCommit": "380826f41b6379a87ab54f0ae2675ce82a40b832",
+    "releaseManifestSha256": "fd07e80e71491628a7ea036a7c18495b45547f3d985ac5ed9b57e4f09af1fb0d",
+    "compatibility": "not_verified; source differs from audited checkout",
+    "selection": "Retained reference only; matching-source local harness is now built."
+  },
+  "runner": {
+    "commit": "a2860f3a4c417336fdc5706b380a4279e3a96787",
+    "sha256": "fa64b3fb2b5b45a66c6c987acfd3446341b4c1b6016ff62a0adf1263f1380f6d",
+    "path": "/home/naved/.local/share/hypertask-openbot-baseline/evidence/runner-a2860f3/HyperOpenBotBaseline.mjs",
+    "directoryMode": "0700",
+    "fileMode": "0600",
+    "syntax": "pass",
+    "help": "pass",
+    "liveExecution": "not_run",
+    "browserRegression": {
+      "result": "pass",
+      "testCount": 1,
+      "skipped": 0,
+      "node": "22.23.5",
+      "chromium": "151.0.7922.34",
+      "chromiumRevision": 1234,
+      "scope": "DOM fixture only; no live application or provider acceptance"
+    }
+  },
+  "accountState": {
+    "copilotkit": "signed_in",
+    "localEvaluationTermsAccepted": false,
+    "chatgptOauthStore": "absent",
+    "modelAuthChoice": "ChatGPT OAuth; no API key",
+    "earlierPrivateCards": "timed_out_without_completion",
+    "humanTermsCommand": "npx --prefer-offline --yes copilotkit@4.34.0 local accept-terms",
+    "observedAt": "2026-11-13T17:37:51Z",
+    "latestPrivateCards": "CopilotKit device sign-in verified by official status. Existing ChatGPT approval remains pending without an auth store."
+  },
+  "applicationState": {
+    "openbotServicesStarted": false,
+    "intelligenceServicesStarted": false,
+    "applicationVolumesCreated": false,
+    "intelligenceClusterCreated": false,
+    "authContainer": "hypertask-openbot-baseline-chatgpt-signin",
+    "authCallbackBindings": [
+      "127.0.0.1:1455",
+      "[::1]:1455"
+    ]
+  },
+  "acceptance": {
+    "realProvider": "not_run",
+    "liveStreaming": "not_run",
+    "authoritativeSavedHistory": "not_run",
+    "openbotServiceRestart": "not_run",
+    "intelligenceServiceRestart": "not_run",
+    "sameThreadReopen": "not_run"
+  },
+  "limitations": [
+    "Mutable base-image tags and OS/Python package inputs mean image IDs/build-input hashes alone do not prove reproducible rebuilds.",
+    "Actual tested application/Intelligence start/stop/recovery commands do not exist yet.",
+    "No license/entitlement or model access has been established.",
+    "This preparation record must not close issue #4 or unlock issue #5."
+  ],
+  "humanTermsHelper": {
+    "sourceCommit": "cf3caf77452e943b3ea20955bff4cccbccfcdd6d",
+    "path": "/home/naved/.local/share/hypertask-openbot-baseline/tools/HyperOpenBotAccountSetup.sh",
+    "sha256": "767b847b3a48cd452f10633f86f75194cc8282865b6211e68099753edad55423",
+    "mode": "0700",
+    "syntax": "pass",
+    "help": "pass",
+    "agreementRunByAgent": false
+  }
+}

@@ -1,0 +1,626 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-14T10:05:56.579774+00:00",
+  "status": "original_client_stream_save_restart_both_reopen_pass",
+  "scope": "Original OpenBot and original Intelligence reference backend on the user-authorized VM. HyperTask desktop remains on the local PC. Native UI implementation is now authorized in parallel; integration acceptance is separate.",
+  "host": {
+    "name": "MMEMS-mems01",
+    "user": "agent",
+    "operatingSystem": "Ubuntu 22.04.4 LTS",
+    "cpus": 8,
+    "memoryTotalBytes": 16728969216,
+    "docker": "29.6.2",
+    "compose": "5.3.1",
+    "existingAppFlowyServices": "outside_scope_untouched"
+  },
+  "source": {
+    "repository": "https://github.com/CopilotKit/OpenBot",
+    "commit": "f8af37ab73e96784f174a11104505a965e722cab",
+    "runtimePath": "/home/agent/HyperTask-OpenBot-backend",
+    "distribution": "Git archive of pinned source, retaining LICENSE; no .git metadata",
+    "archiveSha256": "53621e69d782d7f3fcf9f45d4620deffc57575c3ce9b15f0822b1058b8f66877",
+    "regularFilesVerified": 4036,
+    "excludedTrackedConfiguration": [
+      ".gitignore"
+    ],
+    "runtimeSourcePatched": false,
+    "containerFileVerification": {
+      "server": {
+        "verifiedFiles": 1447,
+        "mismatches": []
+      },
+      "agent-harness": {
+        "verifiedFiles": 9,
+        "mismatches": []
+      },
+      "sourceCommit": "f8af37ab73e96784f174a11104505a965e722cab"
+    }
+  },
+  "tools": {
+    "node": "22.23.5",
+    "bun": "1.4.3",
+    "copilotkitCli": "4.34.0",
+    "runtimeSdk": "1.85.0"
+  },
+  "compose": {
+    "project": "hypertask-openbot-baseline",
+    "profiles": [
+      "harness",
+      "openbot"
+    ],
+    "services": [
+      {
+        "name": "server",
+        "image": "hypertask-openbot-baseline-server:f8af37ab",
+        "imageId": "sha256:ee240cba265c7063446fe17a3c142f93f76a5599920a72a0ad6757d3745a1655",
+        "repositoryDigests": [],
+        "mounts": [
+          {
+            "Type": "bind",
+            "Source": "/home/agent/HyperTask-OpenBot-backend/.openbot",
+            "Destination": "/openbot",
+            "RW": true
+          }
+        ],
+        "ports": {
+          "3001/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "3001"
+            },
+            {
+              "HostIp": "::1",
+              "HostPort": "3001"
+            },
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "3010"
+            },
+            {
+              "HostIp": "::1",
+              "HostPort": "3010"
+            }
+          ]
+        },
+        "networks": [
+          "hypertask-openbot-baseline_data",
+          "hypertask-openbot-baseline_default",
+          "k3d-local-e866e019ee833a9f6ad99038"
+        ]
+      },
+      {
+        "name": "agent-harness",
+        "image": "hypertask/openbot-agent-langgraph-agui:f8af37ab",
+        "imageId": "sha256:323b9c4f971be81841b2e4b80f7ee53bda7402fac281fba703a1f1403b1d1e21",
+        "repositoryDigests": [],
+        "mounts": [
+          {
+            "Type": "bind",
+            "Source": "/home/agent/.local/share/hypertask-openbot-backend/private/provider",
+            "Destination": "/root/.langchain",
+            "RW": true
+          }
+        ],
+        "ports": {
+          "4206/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4206"
+            },
+            {
+              "HostIp": "::1",
+              "HostPort": "4206"
+            }
+          ]
+        },
+        "networks": [
+          "hypertask-openbot-baseline_default"
+        ]
+      },
+      {
+        "name": "worker",
+        "image": "hypertask-openbot-baseline-server:f8af37ab",
+        "imageId": "sha256:ee240cba265c7063446fe17a3c142f93f76a5599920a72a0ad6757d3745a1655",
+        "repositoryDigests": [],
+        "mounts": [],
+        "ports": {
+          "3001/tcp": null
+        },
+        "networks": [
+          "hypertask-openbot-baseline_data"
+        ]
+      },
+      {
+        "name": "migrate",
+        "image": "hypertask-openbot-baseline-server:f8af37ab",
+        "imageId": "sha256:ee240cba265c7063446fe17a3c142f93f76a5599920a72a0ad6757d3745a1655",
+        "repositoryDigests": [],
+        "mounts": [],
+        "ports": {},
+        "networks": [
+          "hypertask-openbot-baseline_data"
+        ]
+      },
+      {
+        "name": "postgres",
+        "image": "pgvector/pgvector:pg17",
+        "imageId": "sha256:8bce63b3aa8181e9c040468016e7df9c82fb9400c40df9e731752bed2965d8ef",
+        "repositoryDigests": [
+          "pgvector/pgvector@sha256:b513c48566e4777cd3370451400000c78eda6a08131d68f4c31d4a76f27bd8fd"
+        ],
+        "mounts": [
+          {
+            "Type": "volume",
+            "Name": "hypertask-openbot-baseline_postgres-data",
+            "Source": "/var/lib/docker/volumes/hypertask-openbot-baseline_postgres-data/_data",
+            "Destination": "/var/lib/postgresql/data",
+            "RW": true
+          }
+        ],
+        "ports": {
+          "5432/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "35432"
+            },
+            {
+              "HostIp": "::1",
+              "HostPort": "35432"
+            }
+          ]
+        },
+        "networks": [
+          "hypertask-openbot-baseline_data"
+        ]
+      },
+      {
+        "name": "agent-computer",
+        "image": "hypertask-openbot-baseline-computer:f8af37ab",
+        "imageId": "sha256:a35850b80ae95df2a2531ed50bb7846fdd9d5ceb4306d6ce95e1d8daedd12c45",
+        "repositoryDigests": [],
+        "mounts": [
+          {
+            "Type": "volume",
+            "Name": "hypertask-openbot-baseline_agent-workspace",
+            "Source": "/var/lib/docker/volumes/hypertask-openbot-baseline_agent-workspace/_data",
+            "Destination": "/workspace",
+            "RW": true
+          },
+          {
+            "Type": "volume",
+            "Name": "hypertask-openbot-baseline_agent-profiles",
+            "Source": "/var/lib/docker/volumes/hypertask-openbot-baseline_agent-profiles/_data",
+            "Destination": "/profiles",
+            "RW": true
+          }
+        ],
+        "ports": {
+          "4100/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "4100"
+            },
+            {
+              "HostIp": "::1",
+              "HostPort": "4100"
+            }
+          ]
+        },
+        "networks": [
+          "hypertask-openbot-baseline_default"
+        ]
+      }
+    ]
+  },
+  "intelligence": {
+    "stack": "local-e866e019ee833a9f6ad99038",
+    "reported_release": "0.15.1",
+    "release_evidence": "HyperVmIntelligenceSetupStatus.json observed 2026-11-14T09:20:26.518506+00:00",
+    "node": "k3d-local-e866e019ee833a9f6ad99038-server-0",
+    "node_image_id": "sha256:efe65d76faac869ca7329373cb5a5c5676cb3dbfc0a48d0574c6f4d7fa285d2a",
+    "node_repo_digests": [
+      "rancher/k3s@sha256:53cf744fe2fabf140cee240d2db70d13a4f2d98f1a13c98f58f457f423096917"
+    ],
+    "node_mounts": [
+      {
+        "Type": "volume",
+        "Name": "24b8c15b81769095a78e8e81891de1755a05443038dbfcf9fb6c0ad43b5ae8c3",
+        "Source": "/var/lib/docker/volumes/24b8c15b81769095a78e8e81891de1755a05443038dbfcf9fb6c0ad43b5ae8c3/_data",
+        "Destination": "/var/lib/rancher/k3s",
+        "RW": true
+      },
+      {
+        "Type": "volume",
+        "Name": "76ba4f096eb005c1d7cb636889afb3f92545f1059fa2aba9e4bcf40c676c054e",
+        "Source": "/var/lib/docker/volumes/76ba4f096eb005c1d7cb636889afb3f92545f1059fa2aba9e4bcf40c676c054e/_data",
+        "Destination": "/var/log",
+        "RW": true
+      },
+      {
+        "Type": "volume",
+        "Name": "k3d-local-e866e019ee833a9f6ad99038-images",
+        "Source": "/var/lib/docker/volumes/k3d-local-e866e019ee833a9f6ad99038-images/_data",
+        "Destination": "/k3d/images",
+        "RW": true
+      },
+      {
+        "Type": "volume",
+        "Name": "64edaec2b4b8384c77f8b37bf9905bd5e1b556d6455d148e0923b4966a9810e6",
+        "Source": "/var/lib/docker/volumes/64edaec2b4b8384c77f8b37bf9905bd5e1b556d6455d148e0923b4966a9810e6/_data",
+        "Destination": "/var/lib/cni",
+        "RW": true
+      },
+      {
+        "Type": "volume",
+        "Name": "498f611621f22327b562635a638213ef4eab02d0d28a75e760d7a2a5d80723df",
+        "Source": "/var/lib/docker/volumes/498f611621f22327b562635a638213ef4eab02d0d28a75e760d7a2a5d80723df/_data",
+        "Destination": "/var/lib/kubelet",
+        "RW": true
+      }
+    ],
+    "pod_image_rows": [
+      {
+        "namespace": "default",
+        "pod": "cpki-app-api-cc4fc5564-j924g",
+        "spec_images": "app-api=ghcr.io/copilotkit/intelligence/app-api@sha256:b20929622307e648a6784f1989be266e81001b2912b2852dfff469962cbed431;",
+        "status_image_ids": "app-api=ghcr.io/copilotkit/intelligence/app-api@sha256:b20929622307e648a6784f1989be266e81001b2912b2852dfff469962cbed431;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-app-frontend-5688b4d7b4-ch7ff",
+        "spec_images": "app-frontend=ghcr.io/copilotkit/intelligence/app-frontend@sha256:57b1523f44d20602bcbeeffa6180d8224cdee565fc6dcea46789c998fd5dc7e8;",
+        "status_image_ids": "app-frontend=ghcr.io/copilotkit/intelligence/app-frontend@sha256:57b1523f44d20602bcbeeffa6180d8224cdee565fc6dcea46789c998fd5dc7e8;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-bootstrap-1-f10b272a-rrfzh",
+        "spec_images": "bootstrap=ghcr.io/copilotkit/intelligence/db-migrations@sha256:51d86440c8bdad5c7fd880f7affcf0d1d42cff4ff8f9b52d5f078f62ae29c8cb;",
+        "status_image_ids": "bootstrap=ghcr.io/copilotkit/intelligence/db-migrations@sha256:51d86440c8bdad5c7fd880f7affcf0d1d42cff4ff8f9b52d5f078f62ae29c8cb;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-learning-agent-855f74c799-tl5gl",
+        "spec_images": "learning-agent=ghcr.io/copilotkit/intelligence/app-api@sha256:b20929622307e648a6784f1989be266e81001b2912b2852dfff469962cbed431;",
+        "status_image_ids": "learning-agent=ghcr.io/copilotkit/intelligence/app-api@sha256:b20929622307e648a6784f1989be266e81001b2912b2852dfff469962cbed431;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-learning-reconciler-5965dbd88-9b562",
+        "spec_images": "learning-reconciler=ghcr.io/copilotkit/intelligence/app-api@sha256:b20929622307e648a6784f1989be266e81001b2912b2852dfff469962cbed431;",
+        "status_image_ids": "learning-reconciler=ghcr.io/copilotkit/intelligence/app-api@sha256:b20929622307e648a6784f1989be266e81001b2912b2852dfff469962cbed431;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-local-object-storage-0",
+        "spec_images": "object-storage=ghcr.io/copilotkit/intelligence/local-object-storage@sha256:1c2a56bcd21e6ef33b77ddefec998ba09b026c339af1c2827d312ee3df7b7280;",
+        "status_image_ids": "object-storage=ghcr.io/copilotkit/intelligence/local-object-storage-init@sha256:1c2a56bcd21e6ef33b77ddefec998ba09b026c339af1c2827d312ee3df7b7280;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-local-object-storage-init-c8ce4812-hggd9",
+        "spec_images": "create-bucket=ghcr.io/copilotkit/intelligence/local-object-storage-init@sha256:1c2a56bcd21e6ef33b77ddefec998ba09b026c339af1c2827d312ee3df7b7280;",
+        "status_image_ids": "create-bucket=ghcr.io/copilotkit/intelligence/local-object-storage-init@sha256:1c2a56bcd21e6ef33b77ddefec998ba09b026c339af1c2827d312ee3df7b7280;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-migrations-1-e9a27def-4ghfc",
+        "spec_images": "migrations=ghcr.io/copilotkit/intelligence/db-migrations@sha256:51d86440c8bdad5c7fd880f7affcf0d1d42cff4ff8f9b52d5f078f62ae29c8cb;",
+        "status_image_ids": "migrations=ghcr.io/copilotkit/intelligence/db-migrations@sha256:51d86440c8bdad5c7fd880f7affcf0d1d42cff4ff8f9b52d5f078f62ae29c8cb;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-postgresql-0",
+        "spec_images": "postgresql=ghcr.io/copilotkit/intelligence/postgres-pgvector@sha256:ac2bc37dcabd2ac2d3deb087365558518670dbad27e0fe3275f9c9ea3fbe42b1;",
+        "status_image_ids": "postgresql=ghcr.io/copilotkit/intelligence/postgres-pgvector@sha256:ac2bc37dcabd2ac2d3deb087365558518670dbad27e0fe3275f9c9ea3fbe42b1;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-realtime-gateway-64dd9887cd-9rz5z",
+        "spec_images": "realtime-gateway=ghcr.io/copilotkit/intelligence/realtime-gateway@sha256:a475f4d22499c9ea796659b5ceb57f359aefa365d244517797f3e5c67aa3d959;",
+        "status_image_ids": "realtime-gateway=ghcr.io/copilotkit/intelligence/realtime-gateway@sha256:a475f4d22499c9ea796659b5ceb57f359aefa365d244517797f3e5c67aa3d959;"
+      },
+      {
+        "namespace": "default",
+        "pod": "cpki-redis-subchart-master-0",
+        "spec_images": "redis=docker.io/bitnamilegacy/redis@sha256:a25b5d07a14ec13730022c7cd9bab6308d55ccd86b74af7315553c17be884889;",
+        "status_image_ids": "redis=docker.io/bitnamilegacy/redis@sha256:a25b5d07a14ec13730022c7cd9bab6308d55ccd86b74af7315553c17be884889;"
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "coredns-ccb96694c-k8m7p",
+        "spec_images": "coredns=rancher/mirrored-coredns-coredns:1.12.0;",
+        "status_image_ids": "coredns=docker.io/rancher/mirrored-coredns-coredns@sha256:82979ddf442c593027a57239ad90616deb874e90c365d1a96ad508c2104bdea5;"
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "local-path-provisioner-5cf85fd84d-88l7d",
+        "spec_images": "local-path-provisioner=rancher/local-path-provisioner:v0.0.30;",
+        "status_image_ids": "local-path-provisioner=docker.io/rancher/local-path-provisioner@sha256:9b914881170048f80ae9302f36e5b99b4a6b18af73a38adc1c66d12f65d360be;"
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "metrics-server-5985cbc9d7-4jb7n",
+        "spec_images": "metrics-server=rancher/mirrored-metrics-server:v0.7.2;",
+        "status_image_ids": "metrics-server=docker.io/rancher/mirrored-metrics-server@sha256:dccf8474fb910fef261d31d9483d7e4c1df7b86cf4d638fb6a7d7c88bd51600a;"
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "svclb-cpki-app-api-abf2304a-mq7lm",
+        "spec_images": "lb-tcp-8082=rancher/klipper-lb:v0.4.9;",
+        "status_image_ids": "lb-tcp-8082=docker.io/rancher/klipper-lb@sha256:dd380f5d89a52f2a07853ff17a6048f805c1f8113b50578f3efc3efb9bcf670a;"
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "svclb-cpki-app-frontend-312b386e-bbxcd",
+        "spec_images": "lb-tcp-8080=rancher/klipper-lb:v0.4.9;",
+        "status_image_ids": "lb-tcp-8080=docker.io/rancher/klipper-lb@sha256:dd380f5d89a52f2a07853ff17a6048f805c1f8113b50578f3efc3efb9bcf670a;"
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "svclb-cpki-realtime-gateway-9622d64e-hlmq5",
+        "spec_images": "lb-tcp-4401=rancher/klipper-lb:v0.4.9;",
+        "status_image_ids": "lb-tcp-4401=docker.io/rancher/klipper-lb@sha256:dd380f5d89a52f2a07853ff17a6048f805c1f8113b50578f3efc3efb9bcf670a;"
+      }
+    ],
+    "pvc_rows": [
+      {
+        "namespace": "default",
+        "claim": "data-cpki-local-object-storage-0",
+        "volume": "pvc-08078003-8a25-4e88-8db1-dd4a21e07c3a",
+        "phase": "Bound",
+        "reclaim_policy": "Delete",
+        "host_path": "Not exposed in PV hostPath field; backing storage path not determined."
+      },
+      {
+        "namespace": "default",
+        "claim": "data-cpki-postgresql-0",
+        "volume": "pvc-8e5722b4-4a88-4ae8-b9a7-7b932d93b894",
+        "phase": "Bound",
+        "reclaim_policy": "Delete",
+        "host_path": "Not exposed in PV hostPath field; backing storage path not determined."
+      },
+      {
+        "namespace": "default",
+        "claim": "redis-data-cpki-redis-subchart-master-0",
+        "volume": "pvc-c7a56d5e-3524-4cff-9c96-c04d50cc42f7",
+        "phase": "Bound",
+        "reclaim_policy": "Delete",
+        "host_path": "Not exposed in PV hostPath field; backing storage path not determined."
+      }
+    ],
+    "publishedPorts": [
+      {
+        "name": "/k3d-local-e866e019ee833a9f6ad99038-server-0",
+        "ports": {
+          "4401/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "44799"
+            }
+          ],
+          "6443/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "40129"
+            }
+          ],
+          "8080/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "43661"
+            }
+          ],
+          "8082/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "39785"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "connection": {
+    "desktopEndpoint": "http://127.0.0.1:3010",
+    "transport": "Loopback SSH forward to VM loopback, using existing Tailscale SSH access",
+    "browserGateway": "Original OpenBot /api/intelligence/client proxy, using the same origin",
+    "upstreamProxyConfiguration": "INTELLIGENCE_GATEWAY_PROXY=on; INTELLIGENCE_BROWSER_GATEWAY_WS_URL empty",
+    "containerNetwork": "Only server joins dedicated k3d Intelligence network; PostgreSQL/worker stay on data network",
+    "t3Link": "verified_full_access",
+    "t3TunnelPersistence": "background SSH forward; restart after desktop reboot"
+  },
+  "account": {
+    "copilotkit": "signed_in",
+    "humanTermsAcceptance": "original accepted record restored unmodified for the same account; official VM check accepted true and preflight pass",
+    "agreementAcceptedByAgent": false,
+    "provider": "ChatGPT OAuth",
+    "apiKeyUsed": false,
+    "modelCatalogCount": 8
+  },
+  "before": {
+    "observedAt": "2026-11-14T09:57:24.956Z",
+    "channelId": "channel_55895606-7af7-475a-b596-2932dbf49714",
+    "threadId": "49c8cef5-0fb2-8345-8c40-4679ccd42fc0",
+    "botId": "picked-harness",
+    "runId": "3f7502f0-7d93-4aee-b660-85a2bad6870e",
+    "userMessageId": "4df6827f-a587-49da-b925-83d4c9f26bb0",
+    "assistantMessageId": "resp_069ddb9c81fbe2c0016af83080918087d28ee3ff4fcee4d485",
+    "answerCharacters": 571,
+    "liveTextDeliveries": 104,
+    "channelStatus": 200,
+    "historyStatus": 200,
+    "exactStreamHistoryAndUiMatch": true,
+    "capture": "Private diagnostic clone adds only observation writes around unchanged runner assertions; no pass/fail relaxations.",
+    "captureSha256": "0ca0c7a4ec0c9df0a58e3dd8e7a994f467bd54f36f526b9e0ee890c237e723f1",
+    "artifactSha256": "9e09a6c1e367ac768d35b325c00f455b819893c5551ef198c6e7d19601981bbf",
+    "resolvedModel": "gpt-6.1-terra",
+    "resolvedModelEvidence": {
+      "source": "Authoritative stored events of the accepted thread after restart",
+      "path": "events[219].event.data.output.response_metadata.model",
+      "assistantMessageId": "resp_069ddb9c81fbe2c0016af83080918087d28ee3ff4fcee4d485",
+      "matchingResponseMessageId": true
+    }
+  },
+  "acceptance": {
+    "liveStreaming": "pass",
+    "authoritativeSavedHistory": "pass_before_and_after_restart",
+    "openbotServiceRestart": "pass",
+    "intelligenceServiceRestart": "pass",
+    "sameThreadReopen": "pass",
+    "integratedHyperTask": "not_run",
+    "realProvider": "pass_original_oauth_path"
+  },
+  "limits": [
+    "Linux/rootful Docker local evaluation remains outside the documented macOS preview.",
+    "Mutable base/OS/Python inputs limit rebuild reproducibility; observed image identities and source hashes are recorded.",
+    "Original live transcript check failed once while reopened saved UI was correct; no upstream source patched, and native integration must handle final-state consistency.",
+    "Automatic Learning was not configured; it is separate from the verified conversation store.",
+    "Reference-client proof does not establish native HyperTask integration or production packaging."
+  ],
+  "after": {
+    "observedAt": "2026-11-14T10:05:03.483Z",
+    "sameChannelThreadAndMessageIds": true,
+    "exactAnswerAndOriginalUiMatch": true,
+    "channelStatus": 200,
+    "historyStatus": 200,
+    "artifactSha256": "5796c8305e5ec5eafb993ade4300a327b0ef5d2522ec43ed003da64838a84d40",
+    "runnerSha256": "94db8a576e4532cbab963eb68286c5f807d085d17823c40a5ed7999751e3c008",
+    "noReplacementMessageSent": true
+  },
+  "restart": {
+    "directory": "/home/agent/.local/share/hypertask-openbot-backend/evidence/restart-20261114T095849Z",
+    "completedAt": "2026-11-14T10:05:00.132473+00:00",
+    "steps": [
+      {
+        "name": "openbot-stop",
+        "command": [
+          "docker",
+          "compose",
+          "-p",
+          "hypertask-openbot-baseline",
+          "-f",
+          "/home/agent/HyperTask-OpenBot-backend/docker-compose.yml",
+          "-f",
+          "/home/agent/.local/share/hypertask-openbot-backend/HyperVmCompose.json",
+          "--profile",
+          "harness",
+          "--profile",
+          "openbot",
+          "stop",
+          "--timeout",
+          "30",
+          "worker",
+          "server",
+          "agent-harness",
+          "agent-computer",
+          "postgres"
+        ],
+        "startedAt": "2026-11-14T09:58:50.020938+00:00",
+        "finishedAt": "2026-11-14T09:59:22.122829+00:00",
+        "exitCode": 0
+      },
+      {
+        "name": "intelligence-stop",
+        "command": [
+          "/home/agent/.local/share/hypertask-openbot-backend/cli/node_modules/.bin/copilotkit",
+          "local",
+          "stop",
+          "--stack",
+          "local-e866e019ee833a9f6ad99038",
+          "--json"
+        ],
+        "startedAt": "2026-11-14T09:59:22.369848+00:00",
+        "finishedAt": "2026-11-14T09:59:35.463809+00:00",
+        "exitCode": 0
+      },
+      {
+        "name": "intelligence-start",
+        "command": [
+          "/home/agent/.local/share/hypertask-openbot-backend/cli/node_modules/.bin/copilotkit",
+          "local",
+          "start",
+          "--stack",
+          "local-e866e019ee833a9f6ad99038",
+          "--json"
+        ],
+        "startedAt": "2026-11-14T09:59:35.660832+00:00",
+        "finishedAt": "2026-11-14T09:59:37.433665+00:00",
+        "exitCode": 2
+      },
+      {
+        "name": "restore-owned-k3d-bridge",
+        "command": [
+          "docker",
+          "start",
+          "k3d-local-e866e019ee833a9f6ad99038-server-0"
+        ],
+        "startedAt": "2026-11-14T10:02:05.729974+00:00",
+        "finishedAt": "2026-11-14T10:02:06.342957+00:00",
+        "exitCode": 0
+      },
+      {
+        "name": "intelligence-start-retry",
+        "command": [
+          "/home/agent/.local/share/hypertask-openbot-backend/cli/node_modules/.bin/copilotkit",
+          "local",
+          "start",
+          "--stack",
+          "local-e866e019ee833a9f6ad99038",
+          "--json"
+        ],
+        "startedAt": "2026-11-14T10:02:15.979062+00:00",
+        "finishedAt": "2026-11-14T10:02:47.965194+00:00",
+        "exitCode": 0
+      },
+      {
+        "name": "openbot-start",
+        "command": [
+          "docker",
+          "compose",
+          "-p",
+          "hypertask-openbot-baseline",
+          "-f",
+          "/home/agent/HyperTask-OpenBot-backend/docker-compose.yml",
+          "-f",
+          "/home/agent/.local/share/hypertask-openbot-backend/HyperVmCompose.json",
+          "--profile",
+          "harness",
+          "--profile",
+          "openbot",
+          "up",
+          "-d",
+          "--no-build",
+          "--pull",
+          "never",
+          "postgres",
+          "agent-computer",
+          "server",
+          "worker",
+          "agent-harness"
+        ],
+        "startedAt": "2026-11-14T10:02:47.965998+00:00",
+        "finishedAt": "2026-11-14T10:02:57.860605+00:00",
+        "exitCode": 0
+      }
+    ],
+    "bothServicesObservedStopped": true,
+    "sameContainerAndMountIdentities": true,
+    "mountComparison": "Compared by destination; Docker returns mount arrays in different orders.",
+    "recovery": "CLI start required restoring the saved k3d node first, because stopping the final network member removes the Linux bridge address needed by localAuthHosts. docker start of the same owned node restored it, then original CLI start succeeded without bypass or source changes.",
+    "healthStatus": 200,
+    "runtimeMode": "intelligence",
+    "runtimeVersion": "1.85.0",
+    "licenseStatus": "valid",
+    "afterClientProof": "pass"
+  },
+  "providerConfiguration": {
+    "observedAt": "2026-11-14T10:00:20.435260+00:00",
+    "botProvider": "openai",
+    "chatgptAuthFile": "/root/.langchain/chatgpt-auth.json",
+    "apiKeysSet": [],
+    "proxyOrReplayOverridesSet": [],
+    "providerDirectoryMount": true,
+    "configuredBotModel": "",
+    "resolvedModelForAcceptedRun": "gpt-6.1-terra"
+  }
+}
