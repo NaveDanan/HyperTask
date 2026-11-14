@@ -1,17 +1,15 @@
 // Adapted from OpenBot. Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { HYPER_OPENBOT_SECTIONS } from '../HyperOpenBotSections';
 import { HyperMayOpenSetup, HyperReadCapabilities, HyperReadSetup, HyperReadUser, HyperRecheckSetup, type HyperSetupChecklist } from './HyperOnboardingApi';
-const HyperBots = lazy(() => import('../bots/HyperBotsPanel').then(module => ({ default: module.HyperBotsPanel })));
-const HyperSkills = lazy(() => import('../skills/HyperSkillsPanel').then(module => ({ default: module.HyperSkillsPanel })));
-const HyperConnections = lazy(() => import('../connections/HyperConnectionsPanel').then(module => ({ default: module.HyperConnectionsPanel })));
+import { hyperConversationDestination } from '../conversations/HyperNavigation';
 export function HyperNativeDestination({ path, context }: { path: string; context: HyperOpenBotSectionContext }) {
-  const [opened, setOpened] = useState(false);
-  const id = path.startsWith('/connections') ? 'connections' : path.startsWith('/settings') ? 'settings' : path.startsWith('/admin') ? 'admin-platform' : path.split('/')[1];
-  const section = HYPER_OPENBOT_SECTIONS.find(item => item.id === id) ?? (id === 'bots' ? { label: 'Bots', render: () => <HyperBots onChat={botId => context.startConversation([botId])} /> } : id === 'skills' ? { label: 'Skills', render: () => <HyperSkills /> } : id === 'connections' ? { label: 'Connections', render: () => <HyperConnections /> } : undefined);
-  return opened && section ? <div><Button variant="ghost" onClick={() => setOpened(false)}>Back</Button><Suspense fallback={<p role="status">Loading…</p>}>{section.render(context)}</Suspense></div> : <Button variant="outline" disabled={!section} onClick={() => setOpened(true)}>{section ? `Open ${section.label}` : `Open ${path} from the native navigation`}</Button>;
+  const destination = hyperConversationDestination(path);
+  const section = HYPER_OPENBOT_SECTIONS.find(item => item.id === destination.sectionId);
+  const label = section?.label ?? ({ bots: 'Bots', skills: 'Skills', connections: 'Connections' } as Record<string, string>)[destination.sectionId];
+  return <Button variant="outline" disabled={!label || !context.navigate} onClick={() => context.navigate?.(destination.sectionId, { path: destination.path ?? path })}>{label ? `Open ${label}` : `Open ${path} from the native navigation`}</Button>;
 }
 export default function HyperSetupSection({ context }: { context: HyperOpenBotSectionContext }) {
   const [data, setData] = useState<HyperSetupChecklist>();

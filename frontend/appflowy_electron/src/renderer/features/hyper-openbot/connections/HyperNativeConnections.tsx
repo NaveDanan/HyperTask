@@ -1,10 +1,13 @@
 import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { HyperConnectionsPanel } from './HyperConnectionsPanel';
 import { hyperConnectionSelectionFromPath, type HyperConnectionSelection } from './HyperPluginDetailsApi';
-/** Main calls this only after consuming the external callback credentials. */
-export function hyperReceiveConnectionReturn(serverId: string, navigate: NonNullable<HyperOpenBotSectionContext['navigate']>) {
-  if (!/^[a-zA-Z0-9_:@.-]{1,200}$/.test(serverId)) return false;
-  navigate('connections', { path: `/connections/${encodeURIComponent(serverId)}` });
+/** Safe main confirmation is a navigation signal, never evidence of connection success. */
+export interface HyperNativeConnectionReturn { kind: 'connections'; confirmation: 'native-confirmed' }
+export interface HyperNativeConnectionBridge { onNativeDestination?(listener: (destination: HyperNativeConnectionReturn) => void): () => void }
+export function hyperReceiveConnectionReturn(destination: HyperNativeConnectionReturn, navigate: NonNullable<HyperOpenBotSectionContext['navigate']>, refresh: () => void) {
+  if (destination?.kind !== 'connections' || destination.confirmation !== 'native-confirmed') return false;
+  navigate('connections', { path: '/connections' });
+  refresh();
   return true;
 }
 export function hyperConnectionSelectionPath(selection: HyperConnectionSelection, admin = false): string {

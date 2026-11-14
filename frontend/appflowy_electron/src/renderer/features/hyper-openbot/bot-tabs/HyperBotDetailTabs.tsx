@@ -26,6 +26,7 @@ export function HyperBotDetailTabs({ bot, openConversation, initialTab }: { init
 function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) {
   const [connecting, setConnecting] = useState(false);
   const [editingApp, setEditingApp] = useState<string>();
+  const [connectionApp, setConnectionApp] = useState<string>();
   const [apps, setApps] = useState<HyperBotApp[]>();
   const [team, setTeam] = useState<HyperTeamBots>();
   const [error, setError] = useState('');
@@ -39,11 +40,10 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
   const [admin, setAdmin] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [personal, setPersonal] = useState(true);
   useEffect(() => {
     let live = true;
     setPending(true);
-    void (tab === 'apps' ? (async () => { const [rows, me, capabilities] = await Promise.all([api.apps(bot.id), hyperOpenBotRequest<{ user: { role: string } }>('/api/me'), hyperOpenBotRequest<{ edition: string }>('/api/capabilities')]); const personalEdition = capabilities.edition === 'personal'; const giveable = bot.mine && !personalEdition ? await hyperOpenBotRequest<{ apps: { key: string }[] }>('/api/plugins/giveable') : { apps: [] }; const extra = await Promise.all(giveable.apps.filter(app => !rows.some(row => row.key === app.key)).map(async app => (await hyperOpenBotRequest<{ app: HyperBotApp }>(`/api/plugins/for/${encodeURIComponent(bot.id)}/apps/${encodeURIComponent(app.key)}`)).app)); if (live) { setApps([...rows, ...extra]); setAdmin(me.user.role === 'admin'); setPersonal(personalEdition); } })() : Promise.all([api.team(), hyperOpenBotRequest<{ user: { role: string } }>('/api/me'), hyperOpenBotRequest<{ redirectUri: string | null }>('/api/plugins').catch(() => ({ redirectUri: null }))]).then(([data, me, plugins]) => {
+    void (tab === 'apps' ? (async () => { const [rows, me, capabilities] = await Promise.all([api.apps(bot.id), hyperOpenBotRequest<{ user: { role: string } }>('/api/me'), hyperOpenBotRequest<{ edition: string }>('/api/capabilities')]); const personalEdition = capabilities.edition === 'personal'; const giveable = bot.mine && !personalEdition ? await hyperOpenBotRequest<{ apps: { key: string }[] }>('/api/plugins/giveable') : { apps: [] }; const extra = await Promise.all(giveable.apps.filter(app => !rows.some(row => row.key === app.key)).map(async app => (await hyperOpenBotRequest<{ app: HyperBotApp }>(`/api/plugins/for/${encodeURIComponent(bot.id)}/apps/${encodeURIComponent(app.key)}`)).app)); if (live) { setApps([...rows, ...extra]); setAdmin(me.user.role === 'admin'); } })() : Promise.all([api.team(), hyperOpenBotRequest<{ user: { role: string } }>('/api/me'), hyperOpenBotRequest<{ redirectUri: string | null }>('/api/plugins').catch(() => ({ redirectUri: null }))]).then(([data, me, plugins]) => {
       if (!live) return;
       setShareLink(hyperTeamBotShareLink(plugins.redirectUri, bot.id)); setCopied(false); setTeam(data); setAdmin(me.user.role === 'admin');
       const current = data.teamBots.find(row => row.id === bot.id);
@@ -63,13 +63,8 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
     {pending && <p role="status">Loading…</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <Button variant="outline" disabled={pending} onClick={() => setRevision(v => v + 1)}>Refresh</Button>
-    {tab === 'apps' && apps && <><Button variant="outline" onClick={() => setConnecting(!connecting)}>{connecting ? 'Close connections' : 'Connect accounts'}</Button>{connecting && <HyperConnectionsPanel />}{apps.length === 0 && <p>No apps on this Bot.</p>}{apps.map(app => <article key={app.key} className="grid gap-2 rounded-lg border border-border p-3">
-      <h3 className="font-medium">{app.displayName}</h3><HyperAppAccessAction key={`${bot.id}:${app.key}`} agentId={bot.id} app={app.key} admin={admin} onOpenConnection={key => { setConnecting(true); setEditingApp(key); }} />{admin && <Button variant="outline" onClick={() => setEditingApp(editingApp === app.key ? undefined : app.key)}>Manage actions</Button>}{admin && app.requestKind && <Button disabled={pending} onClick={() => void mutate(() => hyperOpenBotRequest(`/api/plugins/for/${encodeURIComponent(bot.id)}/apps/${encodeURIComponent(app.key)}/approve`, 'POST'))}>Approve app access</Button>}{editingApp === app.key && <HyperBotAppGrants agentId={bot.id} app={app.key} shared={app.account === 'shared'} onSaved={() => setRevision(v => v + 1)} />}<p className="text-sm text-muted-foreground">{app.state.replaceAll('_', ' ')}{app.accountHolder === 'owner' ? ' · Uses the owner’s account' : ''}{app.asksFirst ? ' · Asks before first use' : ''}</p>
-      {app.needsConnect && <p>Connect your account on Connections first.</p>}
-      {!personal && app.state === 'owner_grantable' && !app.needsConnect && <Button disabled={pending} onClick={() => void mutate(() => api.give(bot.id, app.key))}>Give app</Button>}
-      {!personal && app.givenByOwner && bot.mine && <Button disabled={pending} variant="outline" onClick={() => void mutate(() => api.give(bot.id, app.key, true))}>Take back app</Button>}
-      {app.request ? <Button disabled={pending} variant="outline" onClick={() => void mutate(() => api.cancelRequest(app.request!.id))}>Withdraw request</Button> : app.requestKind && <Button disabled={pending} onClick={() => void mutate(() => api.request(bot.id, app.key))}>Request access</Button>}
-    </article>)}</>}
+    {tab === 'apps' && apps && <><Button variant="outline" onClick={() => setConnecting(!connecting)}>{connecting ? 'Close connections' : 'Connect accounts'}</Button>{connecting && <HyperConnectionsPanel selection={connectionApp ? { page: 'app', key: connectionApp } : undefined} />}{apps.length === 0 && <p>No apps on this Bot.</p>}{apps.map(app => <article key={app.key} className="grid gap-2 rounded-lg border border-border p-3">
+      <h3 className="font-medium">{app.displayName}</h3><HyperAppAccessAction key={`${bot.id}:${app.key}`} agentId={bot.id} app={app.key} admin={admin} onOpenConnection={key => { setConnecting(true); setConnectionApp(key); }} />{admin && <Button variant="outline" onClick={() => setEditingApp(editingApp === app.key ? undefined : app.key)}>Manage actions</Button>}{editingApp === app.key && <HyperBotAppGrants agentId={bot.id} app={app.key} shared={app.account === 'shared'} onSaved={() => setRevision(v => v + 1)} />}    </article>)}</>}
     {tab === 'sharing' && team && <><p>{published ? published.audience === 'team' ? 'Published to the whole team.' : `Published to ${[...(published.people ?? []), ...(published.groups ?? [])].join(', ')}.` : 'Not published.'}</p>
       <p className="text-sm text-muted-foreground">Each person's conversations remain private.</p>{published && (shareLink ? <Button variant="outline" onClick={() => { void navigator.clipboard.writeText(shareLink).then(() => setCopied(true)).catch(() => setError('The link could not be copied.')); }}>{copied ? 'Copied' : 'Copy link'}</Button> : <p>A share link needs a public server address.</p>)}
       {published && !published.visibleToTeam && <p>Set a real name and description before teammates can see this Bot.</p>}

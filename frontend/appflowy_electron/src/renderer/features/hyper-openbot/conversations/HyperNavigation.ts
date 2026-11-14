@@ -14,6 +14,7 @@ export function hyperConversationDestination(id: string, intent?: { path: string
     if (/^\/s\//.test(pathname)) sectionId = 'screens';
     if (/^\/(?:admin\/)?learning(?:\/|$)/.test(pathname)) sectionId = 'learning';
     if (/^\/settings\/learning(?:\/|$)/.test(pathname)) sectionId = 'personal-learning';
+    if (/^\/settings\/plugins(?:\/|$)/.test(pathname)) sectionId = 'connections';
     if (/^\/settings\/skills(?:\/|$)/.test(pathname)) sectionId = 'skills';
     if (/^\/bots\/[^/]+/.test(pathname)) sectionId = /\/computer(?:\/|$)/.test(pathname) ? 'bot-computer' : 'bot';
 

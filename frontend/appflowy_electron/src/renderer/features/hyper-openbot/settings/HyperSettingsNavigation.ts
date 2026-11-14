@@ -14,8 +14,8 @@ export function hyperSettingsDestination(path: string, edition: 'personal' | 'te
   const url = new URL(path, 'https://settings.invalid');
   if (url.origin !== 'https://settings.invalid' || !/^\/settings(?:\/|$)/.test(url.pathname)) return { sectionId: 'settings', path: '/settings' };
   const rest = url.pathname.replace(/^\/settings\/?/, '');
-  if (rest === 'skills') return { sectionId: 'skills', path: '/skills' };
-  if (rest.startsWith('skills/')) return edition === 'personal' ? { sectionId: 'skills', path: `/${rest}` } : { sectionId: 'settings', path: '/settings' };
+  if (rest === 'skills') return { sectionId: 'skills', path: '/skills' + url.search };
+  if (rest.startsWith('skills/')) return edition === 'personal' ? { sectionId: 'skills', path: `/${rest}${url.search}` } : { sectionId: 'settings', path: '/settings' };
   if (rest === 'plugins' || rest.startsWith('plugins/')) {
     if (edition !== 'personal') return { sectionId: 'settings', path: '/settings' };
     const tail = rest.slice('plugins'.length).replace(/^\/+|\/+$/g, '');

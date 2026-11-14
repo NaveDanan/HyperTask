@@ -49,4 +49,7 @@ export function HyperBrowserView({ agentId }: { agentId?: string }) {
     </>}
   </div>;
 }
-export default function HyperBrowserSection() { return <section className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-6"><h2 className="text-lg font-semibold">Browser</h2><HyperBrowserView /></section>; }
+export default function HyperBrowserSection({path}: {path?: string}) {
+  const match = path ? /^\/bots\/([^/?#]+)\/browser(?:[/?#]|$)/.exec(path) : null;
+  let agentId: string | undefined; try { agentId = match ? decodeURIComponent(match[1]) : undefined; } catch { return <p role="alert">Invalid Bot browser destination.</p>; }
+ return <section className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-6"><h2 className="text-lg font-semibold">Browser</h2><HyperBrowserView key={agentId} agentId={agentId} /></section>; }

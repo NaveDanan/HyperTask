@@ -1,3 +1,5 @@
+import { HyperAppAccessAction } from '../connections';
+import { readConnectPrompt, SHOW_APP_ACCESS_TOOL } from './HyperConnectPrompt';
 // Adapted from OpenBot lib/copilot/gallery-tools.tsx and sandboxed-tools.tsx.
 // Copyright (c) 2026 CopilotKit. MIT license, see ../LICENSE.
 import { HyperGenerativeActivity } from './HyperGenerativeActivity';
@@ -13,6 +15,10 @@ export function HyperConversationResult({tool, callingBotId, ask}: {tool: HyperT
     try {return <HyperGenerativeActivity content={JSON.parse(tool.arguments ?? '{}')} />;}
     catch {return <p role="alert">The generated screen could not be read.</p>;}
   }
+  let accessResult = tool.result;
+  try { const decoded: unknown = JSON.parse(accessResult ?? ''); if (typeof decoded === 'string') accessResult = decoded; } catch { /* Plain protocol result. */ }
+  const prompt = tool.label === SHOW_APP_ACCESS_TOOL || tool.status === 'refused' ? readConnectPrompt(accessResult) : null;
+  if (prompt && callingBotId && (!prompt.agentId || prompt.agentId === callingBotId)) return <HyperToolMessage {...tool}><HyperAppAccessAction key={`${callingBotId}:${prompt.serverId}`} agentId={callingBotId} app={prompt.serverId} refusal={prompt.reason === 'access' ? undefined : prompt.reason ?? 'connect'} /></HyperToolMessage>;
   const known = hyperGalleryComponent(tool.label) || tool.label.startsWith('custom_');
   if (!known) return <HyperToolMessage {...tool} />;
   let result = tool.result;

@@ -28,12 +28,15 @@ it('opens fixed skill detail and new without publishing personal skills', () => 
   node.props.onSelectionChange({ page: 'new' });
   expect(ctx.navigate).toHaveBeenCalledWith('skills', { path: '/skills/new' });
 });
-it('accepts only safe callback IDs and never forwards URL credentials', () => {
-  const navigate = vi.fn();
-  for (const value of ['https://vendor/callback?code=secret', 'mail?token=secret', 'mail#secret', '']) expect(hyperReceiveConnectionReturn(value, navigate)).toBe(false);
-  expect(navigate).not.toHaveBeenCalled();
-  expect(hyperReceiveConnectionReturn('mail', navigate)).toBe(true);
-  expect(navigate).toHaveBeenCalledWith('connections', { path: '/connections/mail' });
+it('routes only native-confirmed callbacks to the list and refreshes authoritative state', () => {
+  const navigate = vi.fn(), refresh = vi.fn();
+  expect(hyperReceiveConnectionReturn({kind:'connections', confirmation:'native-confirmed'}, navigate, refresh)).toBe(true);
+  expect(navigate).toHaveBeenCalledWith('connections', {path:'/connections'});
+  expect(refresh).toHaveBeenCalledOnce();
+  // Extra callback-shaped data never becomes a renderer URL or storage value.
+  const destination = {kind:'connections' as const, confirmation:'native-confirmed' as const, code:'synthetic', serverId:'untrusted'};
+  hyperReceiveConnectionReturn(destination, navigate, refresh);
+  expect(navigate).toHaveBeenLastCalledWith('connections', {path:'/connections'});
 });
 it('does not consume newer drafts, other identities or cancelled leases', () => {
   const store = new HyperHomeDraftStore(); const draft = { text: 'same text', files: [], commandIds: [], submit: true };
