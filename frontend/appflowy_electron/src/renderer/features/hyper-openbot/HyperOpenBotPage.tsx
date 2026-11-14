@@ -1,3 +1,5 @@
+import { HyperVoiceControls } from './conversations/HyperVoiceControls';
+import { voiceContext, askChannelAgent } from './conversations/HyperVoiceAgentBridge';
 import { HyperDeliveryControls } from './conversations/HyperDeliveryControls';
 import { HyperGroupChat, hyperStartGroup } from './conversations';
 import { HyperServiceStatus, useHyperOpenBotService } from './HyperServiceStatus';
@@ -126,6 +128,11 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     {error && serviceReady && <div className="flex items-center gap-3 p-3"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" disabled={running || restoring} onClick={() => { reconnecting.current = true; setError(undefined); setHistoryRevision(value => value + 1); }}>Reconnect</Button></div>}
     <div className="flex justify-end border-b border-border px-4 py-1"><Button variant="ghost" aria-expanded={showComputer} onClick={() => setShowComputer(value => !value)}>Computer</Button></div>
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
+    <HyperVoiceControls channelId={channel.id} disabled={!serviceReady || restoring || reconnectRequired} context={() => voiceContext(agent.messages)} anchorMessageId={() => agent.messages.at(-1)?.id ?? null} askAgent={(text, signal) => askChannelAgent(text, signal, { busy: () => running, send: async prompt => {
+      const id = crypto.randomUUID(); agent.addMessage({ id, role: 'user', content: prompt }); setSending(true); stopped.current = false;
+      try { await hyperRunWithRecovery(agent, () => hyperWhileObserved(agent, () => copilotkit.runAgent({ agent })), () => stopped.current); return agent.messages.filter(message => message.role === 'assistant').map(message => hyperMessageContent(message.content).text).at(-1) ?? ''; }
+      finally { setSending(false); }
+    } })} />
     <HyperDeliveryControls channelId={channel.id} bots={channel.agentIds.map(id => ({ id, name: id }))} enabled={serviceReady} />
     <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     <HyperConversationActions threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
