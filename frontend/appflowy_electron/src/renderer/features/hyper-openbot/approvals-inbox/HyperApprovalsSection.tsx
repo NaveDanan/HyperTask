@@ -42,7 +42,7 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
     catch { if (alive.current) setEditionFailed(true); }
   }
   useEffect(() => { alive.current = true; void loadEdition(); void refresh(); const timer = setInterval(() => { if (!mutationLock.current) void refresh(); }, 10000); return () => { alive.current = false; version.current++; clearInterval(timer); }; }, []);
-  async function loadNotifications() { const [d, r] = await Promise.all([notify.HyperLoadDelivery(), notify.HyperLoadRouting()]); if (alive.current) { setDelivery(d); setRouting(r); setUnconfirmed(false); } }
+  async function loadNotifications() { const [d, r] = await Promise.all([notify.HyperLoadDelivery(), notify.HyperLoadRouting()]); if (alive.current) { setDelivery(d); setRouting(r); if (unconfirmedTarget.current !== 'inbox') setUnconfirmed(false); } }
   async function mutate(action: () => Promise<unknown>, target: 'inbox' | 'notifications' | 'none' = 'inbox') {
     if (mutationLock.current || unconfirmed) return false;
     mutationLock.current = true;

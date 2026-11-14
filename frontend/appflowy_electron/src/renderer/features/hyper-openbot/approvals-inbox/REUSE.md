@@ -24,7 +24,7 @@ The upstream /_authed/_app/approvals.tsx route redirects to the Bots page. Hyper
 
 ## API contracts and policy ownership
 
-Read against server/src/approvals/routes.ts, server/src/team-bots/routes.ts, server/src/delivery/routes.ts, server/src/lifecycle/routes.ts, server/src/channels/routes.ts and server/src/deployment routes.
+Read against server/src/approvals/routes.ts, server/src/team-bots/routes.ts, server/src/delivery/routes.ts, server/src/agents/lifecycle-routes.ts, server/src/channels/routes.ts and the capabilities contract in app/src/lib/deployment/queries.ts.
 
 - GET /api/approvals
 - POST /api/approvals/:id/decision with { decision }
@@ -54,3 +54,13 @@ The conversations owner must call HyperNoticeChannelEvent(event, reads, context.
 Broader upstream parity remains outside this bounded notification/history step: the needs-you task/check-in board, global attention notification emitter, admin team settings/shared-account requests, English rule translation/batch/backtesting and reviewer guidance. Their upstream component files under components/approvals and components/needs-you are not represented by the current native section. They must not be counted as completed parity. Admin workflows overlap the admin-governance owner's surface; task/check-in actions overlap routines. No missing flow was replaced with a fabricated success.
 
 No live backend, Electron launch, credentials, deployments, push, PR, license acceptance, global CSS, CSP or webPreferences changes were used.
+
+## Validation for this bounded step
+
+- npm run typecheck: passed.
+- Focused vitest, approvals-inbox plus shared policy: 21 passed across 3 files.
+- npm test: 585 passed, 5 skipped across 78 files, including 2 skipped files.
+- npm run build: passed; existing dynamic/static import warnings remain.
+- git diff --check: passed.
+- Review performed locally without subagents. Read-back recovery stays scoped to the state that the accepted mutation changed, including across tab navigation.
+- No browser or live integration execution was performed. Exported event wiring described above remains an integration dependency.
