@@ -20,6 +20,12 @@ export function hyperNativeCdpUrl(value) {
   return url.origin;
 }
 
+export function hyperOwnsNativeCommand(arguments_, app, profile, port) {
+  const expected = [app, `--user-data-dir=${resolve(profile, 'electron')}`, `--remote-debugging-port=${port}`];
+  if (expected.every(value => arguments_.includes(value))) return true;
+  return arguments_.length === 1 && expected.every(value => new RegExp(`(?:^|\\s)${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\s|$)`).test(arguments_[0]));
+}
+
 /** A live run belongs to one IPC socket. Join replies and buffered histories prove nothing. */
 export function hyperNativeStream(records, threadId, previousRunIds = []) {
   const decoded = records.map(record => ({ socketId: record.socketId, event: eventFromFrame(record.frame, record.delivery, record.at) }));
@@ -99,8 +105,8 @@ async function ownedLaunch(file) {
   if (process.platform !== 'linux') fail('This native development runner currently supports Linux only');
   const status = JSON.parse(await readFile(file, 'utf8'));
   if (!Number.isSafeInteger(status.pid) || status.pid < 1 || !Number.isInteger(status.debugPort) || status.debugPort < 1 || status.debugPort > 65535 || typeof status.profile !== 'string' || !/^[a-f0-9]{40}$/.test(status.buildHead ?? '')) fail('Invalid owned launch status');
-  const cmdline = (await readFile(`/proc/${status.pid}/cmdline`)).toString().split('\0');
-  if (!cmdline.includes(appDirectory) || !cmdline.includes(`--user-data-dir=${resolve(status.profile, 'electron')}`) || !cmdline.includes(`--remote-debugging-port=${status.debugPort}`)) fail('Status does not identify this checkout and its owned profile');
+  const cmdline = (await readFile(`/proc/${status.pid}/cmdline`)).toString().split('\0').filter(Boolean);
+  if (!hyperOwnsNativeCommand(cmdline, appDirectory, status.profile, status.debugPort)) fail('Status does not identify this checkout and its owned profile');
   let children = [];
   const deadline = Date.now() + 30000;
   do {

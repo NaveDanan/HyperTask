@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hyperNativeCdpUrl, hyperNativeStream, hyperValidateNativeBefore } from './HyperNativeOpenBotSmoke.mjs';
+import { hyperNativeCdpUrl, hyperNativeStream, hyperValidateNativeBefore, hyperOwnsNativeCommand } from './HyperNativeOpenBotSmoke.mjs';
 
 const at = '2026-11-14T00:00:00Z';
 function events(runId = 'run-1', messageId = 'message-1') {
@@ -14,6 +14,16 @@ function events(runId = 'run-1', messageId = 'message-1') {
   ].map((event, i) => ({ ...event, delivery: i + 1, at }));
 }
 const records = (items = events(), socketId = 'socket-1') => items.map(event => ({ socketId, delivery: event.delivery, at, frame: JSON.stringify([null, null, 'private-routing-topic', 'ag_ui_event', event]) }));
+
+test('both argv and rewritten Electron titles require the exact owned app, profile and port', () => {
+  const args = ['electron', '/checkout/app', '--user-data-dir=/private/smoke/electron', '--remote-debugging-port=9222'];
+  for (const form of [args, [args.join(' ')]]) {
+    assert.ok(hyperOwnsNativeCommand(form, '/checkout/app', '/private/smoke', 9222));
+    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/ap', '/private/smoke', 9222));
+    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/app', '/private/smoke', 922));
+    assert.ok(!hyperOwnsNativeCommand(form, '/checkout/app', '/private/real-user', 9222));
+  }
+});
 
 test('CDP can attach only to an explicit credential-free HTTP loopback endpoint', () => {
   assert.equal(hyperNativeCdpUrl('http://127.0.0.1:9222'), 'http://127.0.0.1:9222');

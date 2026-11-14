@@ -9,6 +9,9 @@ spec=importlib.util.spec_from_file_location('hyper_launcher',sys.argv[1]);m=impo
 app=Path('/checkout/frontend');profile=Path('/private/smoke')
 args=['electron',str(app),'--user-data-dir=/private/smoke/electron','--remote-debugging-port=9222']
 assert m.owns_command(args,app,profile,9222)
+assert m.owns_command([' '.join(args)],app,profile,9222)
+assert not m.owns_command([' '.join(args)],Path('/checkout/front'),profile,9222)
+assert not m.owns_command([' '.join(args)],app,Path('/private/smok'),9222)
 assert not m.owns_command(args,Path('/checkout/other'),profile,9222)
 assert not m.owns_command(args,app,Path('/private/real-user'),9222)
 assert not m.owns_command(args,Path('/checkout/front'),profile,9222)

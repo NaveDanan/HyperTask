@@ -5,6 +5,7 @@ import datetime
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import socket
 import subprocess
@@ -14,8 +15,12 @@ import urllib.request
 
 
 def owns_command(arguments, app, profile, port):
-    return (str(app) in arguments and '--user-data-dir=' + str(profile / 'electron') in arguments
-            and '--remote-debugging-port=' + str(port) in arguments)
+    expected = [str(app), '--user-data-dir=' + str(profile / 'electron'), '--remote-debugging-port=' + str(port)]
+    if all(value in arguments for value in expected):
+        return True
+    # Linux Electron may expose its complete command as one rewritten process title.
+    # Require complete space-delimited values, not path-prefix/substr matches.
+    return len(arguments) == 1 and all(re.search(r'(?<!\S)' + re.escape(value) + r'(?!\S)', arguments[0]) for value in expected)
 
 
 def main():
@@ -50,7 +55,7 @@ def main():
         if proc.exists():
             if not args.restart:
                 raise RuntimeError('Owned app is still running; use --restart to replace it')
-            arguments = (proc / 'cmdline').read_bytes().decode().split('\0')
+            arguments = [value for value in (proc / 'cmdline').read_bytes().decode().split('\0') if value]
             if not owns_command(arguments, app, profile, previous.get('debugPort')):
                 raise RuntimeError('Refusing to signal a process outside the recorded app/profile/port')
             children = []
