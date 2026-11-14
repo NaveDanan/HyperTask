@@ -38,10 +38,29 @@ Settings support fleet GET/POST stop/reset/update, actual server state, confirma
 
 Narration preserves on-device-only recognition, language model installation by user gesture, phrase timing, speaking holds, mute/retry, network backoff and stop flush. Requests carry the original phrase/speaking schemas and stamp sentAt when sent. External narration is offered only for a Bot or a personal browser reporting external narration.
 
-## Integration boundary and remaining work
+## Final supported integration
 
-This is a bounded terminal/files/settings/narration unit, not a claim of complete area parity. Recorder extension discovery/connection and recording history pagination remain unported. Private secret handoffs and full help/recovery cards remain unported. The existing conversation computer panel remains the prior screenshot/activity view; the exported Bot computer tab offers browser/terminal/files/folder navigation.
+| Added local files | Exact upstream source |
+| --- | --- |
+| HyperRecorder.tsx | app/src/lib/recorder/queries.ts, mutations.ts; app/src/components/settings/browsers/browser-sections.tsx |
+| HyperRecorderBridge.ts, HyperRecorderPage.ts, HyperRecorderExtension.ts/json | app/src/lib/recorder/bridge.ts; shared/recorder-page.ts, recorder-extension.ts/json |
+| HyperRecorderBridge.test.ts | app/tests/recorder-bridge.test.ts |
+| HyperPrivateHandoffs.tsx | app/src/lib/computers/control.ts; app/src/components/computer/help-request-card.tsx; reuses native vault/HyperSignInForm.tsx |
+| HyperComputerDestination.tsx | app/src/routes/_authed/bots.$agentId.computer.tsx, adapted to native section navigation |
+| HyperRecorder.test.ts | Native mocked recorder API, private secret and navigation regressions |
 
-OpenBot's local This computer controls require its Tauri ShellIpc invoke/transformCallback bridge. This remote HyperTask integration exposes no equivalent permissioned host API. Upstream desktop restart/stop, diagnostics, local container memory, local update installation and native speech cannot be fabricated through backend routes. A future closed Electron bridge would need explicit operations, main-owned authenticated session and local runtime ownership checks, fixed runtime/container targets, user confirmation for destructive operations, bounded results and cancellation. Arbitrary shell commands are not an acceptable bridge. These controls remain unavailable here, as desktopShell is absent. The on-device Web Speech API reports unsupported when Electron cannot supply local recognition.
+Recorder discovery handles connected, unconnected, older, absent and unreachable extensions. Pairing mints the original via:web code, passes it only to the discovered extension and observes connected, waiting, closed, cancelled and expiry states. Refusals retain upstream fixed sentences, including throttling. No code is stored. Record/stop use the original extension messages. History follows server nextCursor, polls loaded pages, shows unavailable/error/empty states and retains loaded rows on unavailable responses. Extension calls have bounded waits.
 
-Shared edits are limited to this area's registry entries, policy family slot and appended policy tests, plus the owned main WebSocket route check. The main exact regex is duplicated intentionally to avoid importing renderer code into the composite Node project and is checked against the renderer policy by tests.
+Conversation computer panels retain passive non-waking screenshots and activity until the person opens the shared live Bot computer tab. The same tab provides browser, terminal, files, folder grants, handoff take/release/cancel and masked secret entry. Secret fields reset before submitting, and secret-bearing errors are generic. Pending website login requests reuse Vault's typed HyperSignInForm and onOpenBrowser callback, including code, saved-login, takeover, finish and decline states. Bots and Vault navigate to one computer destination; no second Bot detail editor is created.
+
+Settings reuse HyperTask's existing HyperServiceStatus/useHyperOpenBotService and main-owned service state/run/configure contracts for the configured owned VM. Start/check/stop/restart retain existing session/ownership checks and destructive confirmation. This work does not invoke live services. No arbitrary command IPC, remote HTML embedding, CSP relaxation or new credential storage is introduced.
+
+## Environment limits
+
+A native Electron page cannot discover extensions installed in a separate Chrome/Edge profile. The original bridge reports unreachable and explains using OpenBot in the browser or its Recorder toolbar. The pinned upstream configuration publishes neither a Chrome nor Edge store ID, so a store URL is not fabricated. If an extension runtime is exposed by a supported browser host, the complete upstream discovery/connection/record/stop flow runs. Live browser pages use the computer stream rather than embedding remote pages; extension store destinations use the existing external-browser opener. No iframe bypass is introduced.
+
+OpenBot Tauri local-only contracts have no remote equivalent: desktop check_update/install_update/dismiss_update, open_logs, per-local-process/container memory, and plugin speech_available/speech_start/speech_stop/speech_abort callbacks. Native Web Speech is used only where the runtime supports on-device recognition; otherwise it reports unsupported. These environment limits are explicit. Equivalent remote runtime lifecycle uses the existing closed HyperTask service API; no local Tauri operation is reported as successful.
+
+## Shared edits
+
+Besides the owned registry and allowlist slots and main/socket checks, minimal wiring changes touch HyperOpenBotPage.tsx, bots/HyperBotsPanel.tsx and vault/HyperVaultSection.tsx to pass typed computer navigation. HyperComputerPanel.tsx is owned by this area. The shared policy checks encoded traversal only in the pathname so nested file paths and opaque recording cursors can be query values. Canonical query-path guards in main and the parent's voice/computer socket guards are preserved. Tests cover query values and refused route traversal.

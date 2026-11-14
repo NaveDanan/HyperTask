@@ -20,6 +20,10 @@ it('bot-tabs allows attention tasks and findings and refuses traversal and unrel
   for (const path of ['/api/bots/attention', '/api/tasks', '/api/tasks/task/again', '/api/proactive/suggestions', '/api/proactive/suggestions/item/start']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/tasks/../secrets', '/api/proactive/%2e%2e/secrets', '/api/admin/arbitrary']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+it('memory slot allows memory and learning routes and refuses adjacent families', () => {
+ for (const path of ['/api/memory', '/api/memory/sources/available/bot', '/api/admin/learning/settings', '/api/admin/learning/people/person/proposals/p/approve', '/api/settings/learning/review', '/api/settings/learning/proposals/p?container=space']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+ for (const path of ['/api/memory-export', '/api/admin/learning-secrets', '/api/settings/learning-other', '/api/memory/%2e%2e/credentials']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
 it('conversations allows group and Team Bot contracts and refuses escapes', () => {
   for (const path of ['/api/groups', '/api/groups/id/members/person', '/api/team-bots/id/consents', '/api/me']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/groups/../secrets', '/api/groups/%2e%2e/secrets', '/api/group', '/api/team-bots-other', '/api/secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
@@ -96,4 +100,14 @@ it('admin-governance permits its API families and refuses adjacent or escaped pa
 it('admin-governance permits identity and approval subflows without adjacent auth/admin access', () => {
   for (const path of ['/api/me', '/api/capabilities', '/api/approvals/team', '/api/approvals/team/rules/batch', '/api/approvals/team/rules/backtest', '/api/approvals/shared-use/request/approve', '/api/approvals/team/guidance/check', '/api/admin/enterprise/settings/ssoRequired', '/api/admin/enterprise/people/id/terminate-computers']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/auth/sso/providers', '/api/admin/identity', '/api/admin/what-if-other', '/api/admin/enterprise-other', '/api/me-other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
+it('computer-browser permits opaque cursors and nested download queries without weakening route checks', () => {
+  for (const path of ['/api/recorder/recordings?cursor=a%2Fb%3Fnext%3D1', '/api/computers/bot/files/download?path=reports%2Freport.txt']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/computers%2Fbot/files/download?path=a', '/api/private?path=/api/browser', '/api/browser/%2e%2e/private?cursor=a']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
+it('memory slot permits learning permission and recording subflows without adjacent families', () => {
+ for (const path of ['/api/admin/enterprise', '/api/admin/enterprise/capabilities/translate', '/api/admin/enterprise/capabilities/preview', '/api/admin/enterprise/capabilities/batch', '/api/admin/enterprise/settings/skillSharing', '/api/recorder/recordings?cursor=next', '/api/admin/learning/status/bot', '/api/admin/learning/container', '/api/settings/learning/auto-approve']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+ for (const path of ['/api/settings/learning-other', '/api/admin/learning-other', '/api/recorder-other', '/api/admin/enterprise-other', '/api/admin/enterprise/capabilities/%2e%2e/secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });

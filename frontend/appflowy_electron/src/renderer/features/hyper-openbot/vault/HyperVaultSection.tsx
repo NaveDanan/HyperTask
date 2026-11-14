@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hyperVaultApi, type HyperKeys } from './HyperVaultApi';
+import { hyperOpenBotComputer } from '../computer-browser/HyperComputerDestination';
+import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { HyperSignInForm } from './HyperSignInForm';
 
-export default function HyperVaultSection() {
+export default function HyperVaultSection({ context }: { context?: HyperOpenBotSectionContext } = {}) {
   const [edition, setEdition] = useState('team');
   const [logins, setLogins] = useState<Awaited<ReturnType<typeof hyperVaultApi.logins>>>();
   const [keys, setKeys] = useState<HyperKeys>();
@@ -31,7 +33,7 @@ export default function HyperVaultSection() {
     {error && <p role="alert" className="text-destructive">{error}</p>}<Button variant="outline" disabled={busy} onClick={() => void load()}>Refresh</Button>
     <section className="space-y-3"><h3 className="font-medium">Logins</h3>{!logins ? <p>Loading saved logins…</p> : !logins.passwordManager ? <p>Saved logins are off. An admin turned them off. Your logins are kept but won't be offered.</p> : !logins.logins.length ? <p>No saved logins yet. Choose Save to Vault when you sign a Bot in to a website.</p> : logins.logins.map(login => <div key={login.id} className="flex items-center justify-between border-b border-border py-3"><div>{login.origin}<p className="text-muted-foreground">{login.username} · {login.lastUsedAt ? `last used ${new Date(login.lastUsedAt).toLocaleDateString()}` : 'never used'}</p></div><Button variant="ghost" disabled={busy} onClick={() => void act(() => hyperVaultApi.removeLogin(login.id))}>Delete login for {login.origin}</Button></div>)}</section>
     {edition === 'personal' && <section className="space-y-3"><h3 className="font-medium">Keys</h3><p>A saved key cannot be viewed again.</p><Button onClick={() => setAdding(true)}>Add key</Button>{!keys ? <p>Loading keys…</p> : !keys.credentials.length ? <p>No keys yet</p> : keys.credentials.map(key => <div key={key.id} className="flex items-center justify-between border-b border-border py-3"><span>{key.provider} · {key.kind} · {key.keyId} · {key.revokedAt ? 'revoked' : 'active'}</span><Button variant="outline" disabled={busy || !!key.revokedAt} onClick={() => void act(() => hyperVaultApi.revokeKey(key.id))}>Revoke</Button></div>)}</section>}
-    {requests.map(request => <HyperSignInForm key={request.id} requestId={request.id} />)}
+    {requests.map(request => <HyperSignInForm key={request.id} requestId={request.id} onOpenBrowser={id => hyperOpenBotComputer(id, context?.navigate)} />)}
   </div>;
 }
 

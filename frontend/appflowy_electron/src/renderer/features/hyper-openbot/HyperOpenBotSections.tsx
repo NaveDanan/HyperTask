@@ -29,7 +29,9 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: routines
   /* routines */
   // slot: memory
-  /* memory */
+  { id: 'memory', label: 'Memory', group: 'personal', render: hyperLazySection(() => import('./memory/HyperMemorySection')) },
+  { id: 'personal-learning', label: 'Your learned skills', group: 'personal', render: hyperLazySection(() => import('./memory/HyperPersonalLearningSection')) },
+  { id: 'learning', label: 'Learning', group: 'admin', render: hyperLazySection(() => import('./memory/HyperLearningSection')) },
   // slot: bot-tabs
   { id: 'bot', label: 'Bot', group: 'bots', render: hyperLazySection(() => import('./bot-tabs/HyperBotSection')) },
   { id: 'needs-you', label: 'Needs you', group: 'work', render: hyperLazySection(() => import('./bot-tabs/HyperBotAttentionBoard')) },
@@ -43,6 +45,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   { id: 'browser', label: 'Browser', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperBrowserSection')) },
   { id: 'connected-browsers', label: 'Connected browsers', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperBrowsersSection')) },
   { id: 'computer', label: 'Computer', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperComputerSettings')) },
+  { id: 'bot-computer', label: 'Bot computer', group: 'bots', render: hyperLazySection(() => import('./computer-browser/HyperComputerDestination')) },
   // slot: screens
   /* screens */
   // slot: settings
