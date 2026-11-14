@@ -1,5 +1,5 @@
 // Sidebar entries: search, new page, Jira, Templates and Trash.
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
 import { ViewLayoutPB, ViewSectionPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { NavItem } from '@/components/app/nav';
@@ -78,6 +78,9 @@ export function HyperChatButton() {
   const active = useTabsStore(state => state.tabs[state.currentIndex]?.plugin.type === 'chat');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
+  const workspaceId = useWorkspaceStore(state => state.currentWorkspace?.workspaceId);
+  const generation = useRef(0);
+  useEffect(() => { generation.current++; setPending(false); setError(undefined); return () => { generation.current++; }; }, [workspaceId]);
   async function open() {
     const existing = useTabsStore.getState().tabs.find(tab => tab.plugin.type === 'chat');
     if (existing) { tabsActions.openPlugin(existing.plugin); return; }
@@ -86,8 +89,12 @@ export function HyperChatButton() {
     const saved = findChat([...section.publicViews, ...section.privateViews]);
     if (saved) { tabsActions.openView(saved); return; }
     setPending(true); setError(undefined);
+    const version = ++generation.current;
+    const origin = useWorkspaceStore.getState().currentWorkspace?.workspaceId;
+    const current = () => version === generation.current && useWorkspaceStore.getState().currentWorkspace?.workspaceId === origin;
     try {
       const all = await ViewBackendService.getAllViews();
+      if (!current()) return;
       if (!all.ok) throw new Error('Existing Chat pages could not be loaded. Try again.');
       const nested = findChat(all.value.items);
       if (nested) { tabsActions.openView(nested); return; }
@@ -95,10 +102,11 @@ export function HyperChatButton() {
       const parentViewId = sidebarSpace.store.getState().currentSpace?.id ?? workspace.currentWorkspace?.workspaceId;
       if (!parentViewId) throw new Error('Choose a workspace to open Chat.');
       const result = await FolderEventCreateView({ parentViewId, name: 'Chat', layout: ViewLayoutPB.Chat, oneOfSection: { case: 'section', value: workspace.isCollabWorkspaceOn ? ViewSectionPB.Private : ViewSectionPB.Public } });
+      if (!current()) return;
       if (!result.ok) throw new Error('Chat could not be created. Try again.');
       tabsActions.openView(result.value);
-    } catch (error) { setError(error instanceof Error ? error.message : 'Chat could not be opened.'); }
-    finally { setPending(false); }
+    } catch (error) { if (current()) setError(error instanceof Error ? error.message : 'Chat could not be opened.'); }
+    finally { if (current()) setPending(false); }
   }
   return <><NavItem icon={<MessageSquareText />} label={pending ? 'Opening Chat…' : 'Chat'} active={active} onClick={() => { if (!pending) void open(); }} />{error && <p role="alert" className="px-3 text-xs text-destructive">{error}</p>}</>;
 }

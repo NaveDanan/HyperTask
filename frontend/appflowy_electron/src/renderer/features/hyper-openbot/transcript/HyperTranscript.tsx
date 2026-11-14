@@ -74,13 +74,19 @@ export function HyperTranscript({ messages, busy = false, restoring = false, sto
   const follow = () => { const el = viewport.current; if (el) el.scrollTop = el.scrollHeight; };
   useLayoutEffect(() => {
     if (!body.current) return;
-    const observer = new ResizeObserver(() => { if (following.current && !window.getSelection()?.toString()) follow(); });
+    const reconcile = () => {
+      if (following.current && !window.getSelection()?.toString()) follow();
+      const el = viewport.current;
+      if (el) setAtEnd(el.scrollHeight - el.scrollTop - el.clientHeight < 80);
+    };
+    const observer = new ResizeObserver(reconcile);
     observer.observe(body.current);
-    if (following.current) follow();
+    if (viewport.current) observer.observe(viewport.current);
+    reconcile();
     return () => observer.disconnect();
   }, [messages]);
   return <div className={cn('relative flex min-h-0 flex-1 flex-col', className)}>
-    <div ref={viewport} className="min-h-0 flex-1 overflow-y-auto" tabIndex={0} aria-label="Conversation" onWheel={event => { if (event.deltaY < 0) following.current = false; }} onKeyDown={event => { if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) following.current = false; }} onScroll={event => {
+    <div ref={viewport} className="min-h-0 flex-1 overflow-y-auto" tabIndex={0} aria-label="Conversation" onScroll={event => {
       const el = event.currentTarget;
       const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
       following.current = near; setAtEnd(near);

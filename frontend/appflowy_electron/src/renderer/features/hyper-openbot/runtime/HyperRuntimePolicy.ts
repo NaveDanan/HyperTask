@@ -3,6 +3,14 @@ export type HyperRuntimeFacts = {
   profile?: { visibility: string; canManage: boolean };
   capabilities?: { cloudBrowser?: boolean; cloudNetwork?: boolean; cloudComputer?: boolean };
 };
+export function hyperRuntimeOutcome(value: unknown): Record<string, unknown> {
+  try { if (typeof value === 'string') value = JSON.parse(value); } catch { return {}; }
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+export function hyperRuntimeResult(payload: unknown): unknown {
+  const value = hyperRuntimeOutcome(payload);
+  return value.result == null ? { ok: false, reason: 'The computer action returned no result.' } : value.result;
+}
 export function hyperRuntimeToolAllowed(name: string, facts: HyperRuntimeFacts): boolean {
   if (!facts.profile || !(facts.profile.visibility === 'public' || facts.profile.canManage)) return false;
   const cap = facts.capabilities;

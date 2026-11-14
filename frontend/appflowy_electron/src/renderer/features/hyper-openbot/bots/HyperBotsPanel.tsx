@@ -20,6 +20,9 @@ export function HyperBotsPanel({ onChat }: { onChat: (botId: string) => void }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
+  const selectionVersion = useRef(0);
+  const selection = selectionVersion.current;
+  const select = (value: HyperBotProfile | 'new' | null) => { selectionVersion.current++; setSelected(value); };
   useEffect(() => {
     let live = true;
     setLoading(true); setError('');
@@ -33,19 +36,20 @@ export function HyperBotsPanel({ onChat }: { onChat: (botId: string) => void }) 
   return <section className="mx-auto flex h-full w-full max-w-6xl flex-col gap-5 overflow-y-auto px-8 py-6">
     <header className="flex flex-wrap items-center gap-3"><Bot className="size-5" /><h1 className="text-lg font-semibold">Bots</h1>
       <Button className="ml-auto" variant="outline" disabled={loading} onClick={refresh}><RefreshCw className={loading ? 'animate-spin' : ''} />Refresh</Button>
-      <Button disabled={loading || !available} onClick={() => setSelected('new')}><Plus />New Bot</Button></header>
+      <Button disabled={loading || !available} onClick={() => select('new')}><Plus />New Bot</Button></header>
     {!loading && !available && <p className="text-sm text-muted-foreground">Native bot creation is unavailable on this deployment.</p>}
     <div className="flex items-center gap-3"><Input aria-label="Search Bots" placeholder="Search Bots" value={search} onChange={e => setSearch(e.target.value)} />
-      <label className="flex shrink-0 items-center gap-2 text-sm"><input type="checkbox" checked={hidden} onChange={e => { setHidden(e.target.checked); setSelected(null); }} />Hidden Bots</label></div>
+      <label className="flex shrink-0 items-center gap-2 text-sm"><input type="checkbox" checked={hidden} onChange={e => { setHidden(e.target.checked); select(null); }} />Hidden Bots</label></div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    {loading ? <p role="status" className="text-sm text-muted-foreground">Loading Bots…</p> : !error && <div className="grid gap-5 lg:grid-cols-2">
-      <div className="flex flex-col gap-2">{bots.filter(bot => `${bot.name} ${bot.title}`.toLowerCase().includes(search.toLowerCase())).map(bot => <article key={bot.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
-        <div className="min-w-0 flex-1"><Button variant="link" className="max-w-full truncate px-0" onClick={() => setSelected(bot)}>{bot.name}</Button><p className="text-xs text-muted-foreground">{bot.title || bot.roleDescription}</p>
+    {loading && <p role="status" className="text-sm text-muted-foreground">Loading Bots…</p>}
+    <div className="grid gap-5 lg:grid-cols-2">
+      <div className="flex flex-col gap-2">{!loading && !error && bots.filter(bot => `${bot.name} ${bot.title}`.toLowerCase().includes(search.toLowerCase())).map(bot => <article key={bot.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
+        <div className="min-w-0 flex-1"><Button variant="link" className="max-w-full truncate px-0" onClick={() => select(bot)}>{bot.name}</Button><p className="text-xs text-muted-foreground">{bot.title || bot.roleDescription}</p>
           <p className="mt-1 text-xs text-muted-foreground">{bot.mine ? 'Yours' : 'Shared'} · {bot.visibility}{bot.pinned ? ' · Pinned' : ''}{bot.assignedToMe ? ' · Assigned' : ''}</p></div>
         <Button variant="outline" onClick={() => onChat(bot.id)}>Chat</Button></article>)}
-        {bots.length === 0 && <p className="text-sm text-muted-foreground">{hidden ? 'No hidden Bots.' : 'No Bots yet. Create a Bot to get started.'}</p>}</div>
-      {selected && <HyperBotEditor key={selected === 'new' ? 'new' : selected.id} bot={selected === 'new' ? undefined : selected} onClose={() => setSelected(null)} onSaved={bot => { setSelected(bot); refresh(); }} onRemoved={() => { setSelected(null); refresh(); }} />}
-    </div>}
+        {!loading && !error && bots.length === 0 && <p className="text-sm text-muted-foreground">{hidden ? 'No hidden Bots.' : 'No Bots yet. Create a Bot to get started.'}</p>}</div>
+      {selected && <HyperBotEditor key={selected === 'new' ? 'new' : selected.id} bot={selected === 'new' ? undefined : selected} onClose={() => select(null)} onSaved={bot => { if (selection === selectionVersion.current) setSelected(bot); refresh(); }} onRemoved={() => { if (selection === selectionVersion.current) select(null); refresh(); }} />}
+    </div>
   </section>;
 }
 

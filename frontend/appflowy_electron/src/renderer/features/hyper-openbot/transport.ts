@@ -33,8 +33,15 @@ export const hyperOpenBotFetch: typeof fetch = async (input, init) => {
 
 export async function hyperOpenBotRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const response = await hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
-  if (response.status === 204) return undefined as T;
-  const value = await response.json();
-  if (!response.ok) throw new Error(value.error ?? value.detail ?? `OpenBot request failed (${response.status})`);
+  if ([204, 205].includes(response.status)) return undefined as T;
+  const text = await response.text();
+  let value: unknown;
+  try { value = text ? JSON.parse(text) : undefined; }
+  catch { if (response.ok) throw new Error(`OpenBot response was not valid JSON (${response.status})`); }
+  if (!response.ok) {
+    const object = value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+    const detail = [object.error, object.detail].find(item => typeof item === 'string' && item.trim());
+    throw new Error(`OpenBot request failed (${response.status})${detail ? `: ${detail}` : ''}`);
+  }
   return value as T;
 }

@@ -1,6 +1,6 @@
 // Adapted from OpenBot at f8af37ab73e96784f174a11104505a965e722cab.
 // MIT License. Copyright (c) 2026 CopilotKit. See ../LICENSE.
-const NOT_RUN_AFTER_FAILURE = "Not run: an earlier browser action in this step failed. Look at the page again before trying it.";
+const NOT_RUN_AFTER_FAILURE = Object.freeze({ ok: false, notPerformed: true, reason: "Not run: an earlier browser action in this step failed. Look at the page again before trying it." });
 function hyperReadOutcome(text: string): { ok?: boolean } | null { try { return JSON.parse(text); } catch { return null; } }
 type StepMessage = {
   id?: string;

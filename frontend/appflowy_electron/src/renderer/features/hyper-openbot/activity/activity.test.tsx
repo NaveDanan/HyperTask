@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { HyperApproval, HyperCommandOutput, HyperDecisionCard, HyperToolActivity, hyperPartsAnswer } from './index';
+import { HyperApproval, HyperCommandOutput, HyperDecisionCard, HyperQuestion, HyperToolActivity, hyperPartsAnswer } from './index';
 
 describe('Hyper activity ports', () => {
   it('keeps handoff choices separate from standing permissions', () => {
@@ -26,5 +26,12 @@ describe('Hyper activity ports', () => {
   });
   it('serializes multipart answers in upstream format', () => {
     expect(hyperPartsAnswer([{ header: 'Scope', question: 'Where?' }, { header: 'Time', question: 'When?' }], ['Here', 'Now'])).toBe('Scope: Here\nTime: Now');
+  });
+  it('keeps literal option labels separate from the free-text sentinel', () => {
+    const html = renderToStaticMarkup(<HyperQuestion id="literal-option" parts={[{ header: '', question: 'Choose', options: ['__other__'] }]} onAnswer={() => {}} />);
+    expect(html).toContain('value="choice:0"');
+    expect(html).not.toContain('value="__other__"');
+    expect(html.match(/checked=""/g)).toHaveLength(1);
+    expect(html).toContain('__other__');
   });
 });

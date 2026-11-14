@@ -100,8 +100,11 @@ it('persists the first owner privately across restart and signout, refusing a se
   const a = createHyperOpenBotSession(directory, async () => 'native-a'); await a.acquire();
   const file = path.join(directory, 'hyper-openbot-session', 'owner.json');
   const before = await fs.readFile(file, 'utf8');
-  expect(before).not.toContain('native-a'); expect((await fs.stat(file)).mode & 0o777).toBe(0o600);
-  expect((await fs.stat(path.dirname(file))).mode & 0o777).toBe(0o700);
+  expect(before).not.toContain('native-a');
+  if (process.platform !== 'win32') {
+    expect((await fs.stat(file)).mode & 0o777).toBe(0o600);
+    expect((await fs.stat(path.dirname(file))).mode & 0o777).toBe(0o700);
+  }
   await a.beginNativeTransition().cleared;
   expect(await fs.readFile(file, 'utf8')).toBe(before);
   electron.fromPartition.mockClear();

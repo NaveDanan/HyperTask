@@ -68,7 +68,7 @@ export const HYPER_COMPUTER_TOOLS = [
         .number()
         .optional()
         .describe("The snapshotId the ref came from, required if ref is given"),
-    }),
+    }).refine(value => value.ref === undefined || value.snapshotId !== undefined, { path: ['snapshotId'], message: 'snapshotId is required when ref is supplied' }),
   },
   { name: "computer_list_files",
     description:

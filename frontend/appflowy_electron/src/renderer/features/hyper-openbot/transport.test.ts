@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { hyperOpenBotFetch, HYPER_OPENBOT_ORIGIN } from './transport';
+import { hyperOpenBotFetch, hyperOpenBotRequest, HYPER_OPENBOT_ORIGIN } from './transport';
 import type { HyperOpenBotChunk, HyperOpenBotRequest } from '@shared/api';
 afterEach(() => vi.unstubAllGlobals());
 it('delivers split Unicode JSON and stream events without exposing credentials', async () => {
@@ -39,4 +39,24 @@ it('does not start a POST aborted during body serialization', async () => {
   await expect(hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + '/api/channels', { method: 'POST', body: '{}', signal: controller.signal })).rejects.toThrow();
   expect(start).not.toHaveBeenCalled();
   vi.restoreAllMocks();
+});
+function respond(status: number, text: string) {
+  let listener: (event: HyperOpenBotChunk) => void = () => {};
+  vi.stubGlobal('window', { appflowy: { hyperOpenBot: {
+    start: async ({ id }: HyperOpenBotRequest) => { listener({ id, chunk: new TextEncoder().encode(text), done: true }); return { status, headers: {} }; },
+    onChunk: (fn: typeof listener) => { listener = fn; return () => {}; }, cancel: vi.fn(),
+  } } });
+}
+it.each(['<html>Gateway unavailable</html>', '', 'null', '[]', '"plain error"', '{"error":null}'])('preserves status for malformed or non-object error body %s', async text => {
+  respond(502, text);
+  await expect(hyperOpenBotRequest('/api/approvals')).rejects.toThrow('OpenBot request failed (502)');
+});
+it('preserves valid JSON and server error details while supporting empty success bodies', async () => {
+  respond(403, '{"detail":"Access denied"}');
+  await expect(hyperOpenBotRequest('/api/approvals')).rejects.toThrow('OpenBot request failed (403): Access denied');
+  respond(200, '{"saved":true}');
+  await expect(hyperOpenBotRequest('/api/channels')).resolves.toEqual({ saved: true });
+  for (const status of [200, 204, 205]) { respond(status, ''); await expect(hyperOpenBotRequest('/api/channels')).resolves.toBeUndefined(); }
+  respond(200, 'null'); await expect(hyperOpenBotRequest('/api/channels')).resolves.toBeNull();
+  respond(200, '<html>Invalid success</html>'); await expect(hyperOpenBotRequest('/api/channels')).rejects.toThrow('not valid JSON (200)');
 });

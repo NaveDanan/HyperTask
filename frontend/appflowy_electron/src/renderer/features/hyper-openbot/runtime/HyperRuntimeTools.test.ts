@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { hyperRuntimeBotOf, hyperRuntimeFailure, hyperRuntimeToolAllowed } from './HyperRuntimePolicy';
+import { hyperRuntimeBotOf, hyperRuntimeFailure, hyperRuntimeOutcome, hyperRuntimeResult, hyperRuntimeToolAllowed } from './HyperRuntimePolicy';
+import { hyperToolOutcome } from '../HyperToolOutcome';
 import { hyperInStepOrder } from './HyperStepOrder';
 import { hyperFrontendApprovalSnapshot, hyperWithoutWaitingPlaceholders, hyperObserveApprovalAgent, hyperWhileObserved } from './HyperApprovalContext';
 import { HYPER_COMPUTER_TOOLS } from './HyperToolDefinitions';
@@ -48,13 +49,25 @@ describe('Hyper runtime policy compatibility', () => {
     await hyperInStepOrder({ computerId: 'bot-test', messages, toolCallId: 'a' }, async () => ({ ok: false, refused: true }));
     const answer = await hyperInStepOrder({ computerId: 'bot-test', messages, toolCallId: 'b' }, async () => { performed = true; return { ok: true }; });
     expect(performed).toBe(false);
-    expect(answer).toContain('earlier browser action');
+    expect(answer).toMatchObject({ ok: false, notPerformed: true, reason: expect.stringContaining('earlier browser action') });
+    expect(hyperToolOutcome(JSON.stringify(answer), false)).toBe('not-yet');
   });
   it('keeps snapshot refs required and excludes credential entry and unavailable takeover tools', () => {
     const click = HYPER_COMPUTER_TOOLS.find(tool => tool.name === 'computer_click')!;
     expect(click.parameters.safeParse({ ref: 'x' }).success).toBe(false);
     expect(click.parameters.safeParse({ ref: 'x', snapshotId: 1 }).success).toBe(true);
+    const key = HYPER_COMPUTER_TOOLS.find(tool => tool.name === 'computer_key')!;
+    expect(key.parameters.safeParse({ key: 'Enter', ref: 'x' }).success).toBe(false);
+    expect(key.parameters.safeParse({ key: 'Enter', ref: 'x', snapshotId: 1 }).success).toBe(true);
+    expect(key.parameters.safeParse({ key: 'Enter' }).success).toBe(true);
     expect(HYPER_COMPUTER_TOOLS.map(tool => tool.name)).not.toContain('computer_request_secret');
     expect(HYPER_COMPUTER_TOOLS.map(tool => tool.name)).not.toContain('computer_request_help');
+  });
+  it('normalizes null and scalar tool outcomes and rejects missing successful results', () => {
+    for (const value of [null, 'null', '[]', 'false', '17', 'not JSON']) expect(hyperRuntimeOutcome(value)).toEqual({});
+    expect(hyperRuntimeOutcome('{"waiting":true}')).toEqual({ waiting: true });
+    for (const payload of [null, {}, { result: null }, { result: undefined }]) expect(hyperRuntimeResult(payload)).toMatchObject({ ok: false, reason: expect.stringContaining('no result') });
+    expect(hyperRuntimeResult({ result: 'actual output' })).toBe('actual output');
+    expect(hyperRuntimeResult({ result: { ok: false } })).toEqual({ ok: false });
   });
 });

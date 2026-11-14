@@ -7,7 +7,7 @@ import { hyperFrontendApprovalSnapshot, HYPER_WAITING_FOR_PERSON } from './Hyper
 import { hyperInStepOrder } from './HyperStepOrder';
 import { HYPER_COMPUTER_TOOLS } from './HyperToolDefinitions';
 
-import { hyperRuntimeBotOf, hyperRuntimeFailure, hyperRuntimeToolAllowed, type HyperRuntimeFacts } from './HyperRuntimePolicy';
+import { hyperRuntimeBotOf, hyperRuntimeFailure, hyperRuntimeOutcome, hyperRuntimeResult, hyperRuntimeToolAllowed, type HyperRuntimeFacts } from './HyperRuntimePolicy';
 export type HyperRuntimeToolsProps = {
   /** Fetch current server-derived facts for the CALLING bot, never the selected screen. */
   resolveFacts: (botId: string) => Promise<HyperRuntimeFacts>;
@@ -41,8 +41,7 @@ function HyperRuntimeTool({ definition, options }: { definition: ReactFrontendTo
           return HYPER_WAITING_FOR_PERSON;
         }
         if (!response.ok) return hyperRuntimeFailure(response.status, payload);
-        if (!payload || typeof payload !== 'object' || !('result' in payload)) return { ok: false, reason: 'The computer action returned no result.' };
-        return payload.result;
+        return hyperRuntimeResult(payload);
         });
       } catch (error) {
         return { ok: false, ...(context.signal?.aborted ? { stopped: true } : {}), reason: error instanceof Error ? error.message : 'The computer could not be reached.' };
@@ -50,9 +49,8 @@ function HyperRuntimeTool({ definition, options }: { definition: ReactFrontendTo
     },
     // The transcript owns full result rendering. Never echo typed text or file contents here.
     render: ({ status, result }) => {
-      let outcome: { ok?: boolean; waiting?: boolean; refused?: boolean; starting?: boolean; stopped?: boolean; doneByPerson?: boolean } = {};
-      try { outcome = JSON.parse(result ?? '{}'); } catch { /* Some server results are plain text. */ }
-      const label = outcome.waiting ? 'Waiting for approval' : outcome.refused ? 'Computer action blocked' : outcome.starting ? 'Computer is starting. Action not performed.' : outcome.stopped ? 'Computer action stopped' : outcome.doneByPerson ? 'Completed by you' : outcome.ok === false ? 'Computer action failed' : status !== 'complete' ? 'Computer action in progress' : 'Computer action finished';
+      const outcome = hyperRuntimeOutcome(result);
+      const label = outcome.waiting ? 'Waiting for approval' : outcome.refused ? 'Computer action blocked' : outcome.starting ? 'Computer is starting. Action not performed.' : outcome.stopped ? 'Computer action stopped' : outcome.notPerformed ? 'Computer action not performed' : outcome.doneByPerson ? 'Completed by you' : outcome.ok === false ? 'Computer action failed' : status !== 'complete' ? 'Computer action in progress' : 'Computer action finished';
       return <p className="my-2 text-xs text-muted-foreground" role="status">{label}</p>;
     },
   });

@@ -7,8 +7,9 @@ vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
 vi.mock('node:http', () => ({ default: { request: mocks.request } }));
 vi.mock('electron', () => ({ app: { once: () => {} }, session: { defaultSession: { cookies: { get: vi.fn() } } } }));
 import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath, hyperTunnelFetch } from './HyperOpenBotTunnel';
-beforeEach(() => { closeHyperOpenBotTunnel(); vi.clearAllMocks(); mocks.rm.mockResolvedValue(undefined); mocks.chmod.mockResolvedValue(undefined); });
-afterEach(closeHyperOpenBotTunnel);
+const platform = Object.getOwnPropertyDescriptor(process, 'platform')!;
+beforeEach(() => { Object.defineProperty(process, 'platform', { ...platform, value: 'linux' }); closeHyperOpenBotTunnel(); vi.clearAllMocks(); mocks.rm.mockResolvedValue(undefined); mocks.chmod.mockResolvedValue(undefined); });
+afterEach(() => { closeHyperOpenBotTunnel(); Object.defineProperty(process, 'platform', platform); });
 it('does not spawn SSH after close cancels an outstanding directory allocation', async () => {
   let allocate: (path: string) => void = () => {};
   mocks.mkdtemp.mockImplementationOnce(() => new Promise(resolve => { allocate = resolve; }));

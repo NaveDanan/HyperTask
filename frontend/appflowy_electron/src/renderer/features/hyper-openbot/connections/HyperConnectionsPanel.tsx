@@ -17,7 +17,7 @@ export function HyperConnectionsPanel({}: Record<string, never>) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
   const [address, setAddress] = useState('');
-  const [disconnecting, setDisconnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const sequence = useRef(0);
   const load = useCallback(async () => {
     const request = ++sequence.current;
@@ -50,9 +50,9 @@ export function HyperConnectionsPanel({}: Record<string, never>) {
       <Plug className="size-5 text-muted-foreground" aria-hidden="true" />
       <div className="flex-1"><h1 className="text-lg font-semibold">{adding ? 'Add server' : row?.title ?? 'Connections'}</h1><p className="text-xs text-muted-foreground">Connect your accounts so Bots can use apps on your behalf.</p></div>
       <Button variant="outline" disabled={disabled} onClick={() => void load()}><RefreshCw className={loading ? 'animate-spin' : ''} />Refresh</Button>
-      {!adding && <Button onClick={() => { setAdding(true); setSelected(null); setError(''); }} disabled={busy}><Plus />Add server</Button>}
+      {!adding && <Button onClick={() => { setDisconnecting(null); setAdding(true); setSelected(null); setError(''); }} disabled={busy}><Plus />Add server</Button>}
     </header>
-    {(selected || adding) && <Button className="self-start" variant="ghost" disabled={busy} onClick={() => { setSelected(null); setAdding(false); setDisconnecting(false); }}><ArrowLeft />All connections</Button>}
+    {(selected || adding) && <Button className="self-start" variant="ghost" disabled={busy} onClick={() => { setSelected(null); setAdding(false); setDisconnecting(null); }}><ArrowLeft />All connections</Button>}
     {error && <p role="alert" className="rounded-lg border border-border bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
     {notice && <p role="status" className="rounded-lg bg-muted p-3 text-sm">{notice}</p>}
     {loading && <p role="status" className="text-sm text-muted-foreground">Loading connections…</p>}
@@ -73,16 +73,16 @@ export function HyperConnectionsPanel({}: Record<string, never>) {
         {!row.server && row.app && <Button disabled={disabled} onClick={() => void action(async () => { await hyperOpenBotRequest('/api/plugins/servers', 'POST', { key: row.key }); setNotice('App added. Open its connection to sign in if required.'); })}>Add app</Button>}
         {row.server && row.server.accountMode !== 'shared' && !row.server.sharedOnly && row.state !== 'On' && <Button disabled={disabled} onClick={() => void action(() => connect(row.key))}>{row.state === 'Connected' ? 'Connect again' : 'Connect account'}</Button>}
         {row.connections.some(c => c.holder !== 'deployment' && c.checkable) && <Button variant="outline" disabled={disabled} onClick={() => void action(async () => { await hyperOpenBotRequest(`${hyperServerPath(row.key)}/connection/recheck`, 'POST'); setNotice('Connection check completed.'); })}>Check connection</Button>}
-        {row.connections.some(c => c.holder !== 'deployment' && c.verified !== undefined) && <Button variant="destructive" disabled={disabled} onClick={() => setDisconnecting(true)}>Disconnect</Button>}
+        {row.connections.some(c => c.holder !== 'deployment' && c.verified !== undefined) && <Button variant="destructive" disabled={disabled} onClick={() => setDisconnecting(row.key)}>Disconnect</Button>}
         {(row.server?.docsUrl || row.app?.docsUrl) && <Button variant="outline" disabled={disabled} onClick={() => void action(async () => { await window.appflowy.shell.openExternal(hyperAuthorizationUrl((row.server?.docsUrl || row.app?.docsUrl)!)); })}><ExternalLink />Documentation</Button>}
       </div>
-      {disconnecting && <div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted p-3"><p className="text-sm">Disconnect this account at the provider?</p><Button variant="destructive" disabled={disabled} onClick={() => void action(async () => { await hyperOpenBotRequest(`${hyperServerPath(row.key)}/connection`, 'DELETE'); setDisconnecting(false); })}>Confirm disconnect</Button><Button variant="outline" disabled={disabled} onClick={() => setDisconnecting(false)}>Cancel</Button></div>}
+      {disconnecting === row.key && <div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted p-3"><p className="text-sm">Disconnect this account at the provider?</p><Button variant="destructive" disabled={disabled} onClick={() => void action(async () => { await hyperOpenBotRequest(`${hyperServerPath(row.key)}/connection`, 'DELETE'); setDisconnecting(null); })}>Confirm disconnect</Button><Button variant="outline" disabled={disabled} onClick={() => setDisconnecting(null)}>Cancel</Button></div>}
       {row.connections.map((c, i) => <div key={i} className="rounded-md bg-muted p-3 text-xs"><p>{c.holder === 'deployment' ? 'Team account' : 'Your account'}{c.displayName ? ` · ${c.displayName}` : ''}</p>{c.scope && <p className="mt-1 break-all text-muted-foreground">Granted scopes: {c.scope}</p>}{c.connectedAt && <p className="mt-1 text-muted-foreground">Connected {c.connectedAt}</p>}</div>)}
       <h2 className="text-sm font-medium">Tools</h2>
       {row.server?.tools.length ? <ul className="divide-y divide-border">{row.server.tools.map(tool => <li key={tool.name} className="py-3"><p className="text-sm font-medium">{tool.name}</p><p className="text-xs text-muted-foreground">{tool.description}</p>{tool.effect && <p className="text-xs text-muted-foreground">{tool.effect}</p>}</li>)}</ul> : <p className="text-sm text-muted-foreground">No tools reported by the service.</p>}
     </div> : !loading && !error && <>
       <Input aria-label="Search connections" placeholder="Search connections" value={search} onChange={e => setSearch(e.target.value)} />
-      {['Your apps', 'Available apps'].map(section => { const matching = rows.filter(r => (section === 'Available apps' ? r.state === 'Available' : r.state !== 'Available') && `${r.title} ${r.summary}`.toLowerCase().includes(search.toLowerCase())); return <div key={section}><h2 className="mb-3 text-sm font-medium">{section}</h2>{matching.length ? <div className="grid gap-3 md:grid-cols-2">{matching.map(item => <button type="button" key={item.key} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent focus-visible:outline focus-visible:outline-ring" onClick={() => { setSelected(item.key); setDisconnecting(false); }}><span className="text-sm font-medium">{item.title}</span><span className="text-xs text-muted-foreground">{item.summary}</span><span className="text-xs">{item.state}</span></button>)}</div> : <p className="text-sm text-muted-foreground">No apps to show.</p>}</div>; })}
+      {['Your apps', 'Available apps'].map(section => { const matching = rows.filter(r => (section === 'Available apps' ? r.state === 'Available' : r.state !== 'Available') && `${r.title} ${r.summary}`.toLowerCase().includes(search.toLowerCase())); return <div key={section}><h2 className="mb-3 text-sm font-medium">{section}</h2>{matching.length ? <div className="grid gap-3 md:grid-cols-2">{matching.map(item => <button type="button" key={item.key} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent focus-visible:outline focus-visible:outline-ring" onClick={() => { setSelected(item.key); setDisconnecting(null); }}><span className="text-sm font-medium">{item.title}</span><span className="text-xs text-muted-foreground">{item.summary}</span><span className="text-xs">{item.state}</span></button>)}</div> : <p className="text-sm text-muted-foreground">No apps to show.</p>}</div>; })}
     </>}
   </section>;
 }
