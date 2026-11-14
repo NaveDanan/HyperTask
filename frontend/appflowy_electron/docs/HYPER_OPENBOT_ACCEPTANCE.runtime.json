@@ -10,7 +10,7 @@
   "originalSourceCommit": "f8af37ab73e96784f174a11104505a965e722cab",
   "providerAuthentication": "ChatGPT OAuth; no API key",
   "repositoryValidation": {
-    "passedTests": 568,
+    "passedTests": 569,
     "skippedTests": 1,
     "skipReason": "opt-in simulated-IPC live test; actual native live tests ran separately",
     "nativeRunnerSafeguards": 7,
@@ -147,6 +147,14 @@
       "startedAt": null,
       "finishedAt": null,
       "status": "see_assertions"
+    },
+    {
+      "file": "HyperNativeRetryIdentityReview14-after-v2.json",
+      "sha256": "c1adff3d1326c89609ec620ecc03ea8f172b4062c29dc0b33e19c1f8a1d668e2",
+      "capturedCommit": "b3dec85da03bdfdda33a657e3546813ef9f0b7d5",
+      "startedAt": "2026-11-14T16:02:48.816Z",
+      "finishedAt": "2026-11-14T16:03:08.974Z",
+      "status": "passed"
     }
   ],
   "upstreamAndNotices": "HYPER_OPENBOT_AUDIT.md and ../src/renderer/features/hyper-openbot/REUSE.md, LICENSE and component mappings",
@@ -157,5 +165,14 @@
   "prReview": {
     "state": "pending",
     "policy": "Merge only the exact final head after clean Codex code/security reviews, resolved findings and passing checks."
+  },
+  "reviewFix": {
+    "comment": 4574473669,
+    "capturedCommit": "b3dec85da03bdfdda33a657e3546813ef9f0b7d5",
+    "reopenedBeforeOriginalCompletion": true,
+    "explicitRepeatHasDistinctUserIds": true,
+    "pageErrors": [],
+    "oldImplementationReproducedWithOneUserTurn": true,
+    "fix": "Choose retry identity from current shared draft at submission time, including clears by an older page."
   }
 }
