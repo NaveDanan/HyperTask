@@ -51,7 +51,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
   const [showComputer, setShowComputer] = useState(false);
   const stopped = useRef(false);
   const generation = useRef(0);
-  const { draft, updateDraft, prepareSubmission } = useHyperConversationDraft(channel.id);
+  const { draft, getDraft, updateDraft, prepareSubmission } = useHyperConversationDraft(channel.id);
   const { uploadGroup, attachments } = draft;
   const setAttachments = (change: (current: readonly HyperDraftAttachment[]) => readonly HyperDraftAttachment[]) => updateDraft(current => ({ ...current, attachments: change(current.attachments) }));
   const [models, setModels] = useState<HyperModelOption[]>([]);
@@ -127,7 +127,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
     <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     <HyperConversationActions threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
-    <HyperComposer className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => hyperUploadDraftFiles(files, async file => {
+    <HyperComposer className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} getAttachmentCount={() => getDraft().attachments.length} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => hyperUploadDraftFiles(files, async file => {
       const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
       const response = await hyperOpenBotFetch(`${HYPER_OPENBOT_ORIGIN}/api/channels/${channel.id}/attachments`, { method: 'POST', body: form });
       const saved = await response.json();

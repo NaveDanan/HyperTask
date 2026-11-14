@@ -38,6 +38,8 @@ export interface HyperComposerProps {
   /** The integration owns uploads, server IDs, previews and their cleanup. Resolve after staging. */
   onFiles?: (files: readonly File[]) => void | Promise<void>;
   attachments?: readonly HyperComposerAttachment[];
+  /** Current channel count when onFiles reserves placeholders synchronously in the owner draft. */
+  getAttachmentCount?: () => number;
   onRemoveAttachment?: (id: string) => void;
   /** Called after success with exactly the attachments consumed by this send. */
   onConsumeAttachments?: (ids: readonly string[]) => void;
@@ -59,7 +61,7 @@ export interface HyperComposerProps {
   className?: string;
 }
 const EMPTY_ATTACHMENTS: readonly HyperComposerAttachment[] = [];
-export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, onRemoveAttachment,
+export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, getAttachmentCount, onRemoveAttachment,
   onConsumeAttachments, onStop, pending = false, stoppable = pending, disabled = false, autoFocus = false,
   initialValue = '', value, onTextChange, recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
   const [localText, setLocalText] = useState(initialValue);
@@ -86,7 +88,10 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   const stage = async (files: readonly File[]) => {
     if (disabled || !files.length) return;
     if (!onFiles) { setError('Attachments are unavailable in this conversation.'); return; }
-    const screened = HyperScreenPickedFiles(files, { alreadyStaged: attachments.length + queuedAttachmentCount + reservations.current });
+    // Channel placeholders already include in-flight files. Read the live owner count
+    // so even another pick before React rerenders cannot count them twice or overflow.
+    const stagedCount = getAttachmentCount ? getAttachmentCount() : attachments.length + reservations.current;
+    const screened = HyperScreenPickedFiles(files, { alreadyStaged: stagedCount + queuedAttachmentCount });
     setRejected((current) => [...current, ...screened.rejected]);
     if (!screened.accepted.length) return;
     reservations.current += screened.accepted.length;
