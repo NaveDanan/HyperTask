@@ -4,17 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { HyperOpenBotSocket } from '../socket';
 import { hyperOpenBotRequest } from '../transport';
-import { hyperComputerPath } from './HyperComputerApi';
+import { hyperComputerPath, hyperReadControl } from './HyperComputerApi';
 import { connectScreen } from './HyperScreenConnection';
 export function HyperLiveScreen({ computerId, driving }: { computerId: string; driving: boolean }) {
   const [frame, setFrame] = useState<{ data: string; width: number; height: number }>();
   const [error, setError] = useState<string | null>(null); const [retry, setRetry] = useState(0);
   const queue = useRef(Promise.resolve());
+  const allowed = useRef(driving); allowed.current = driving;
+  const generation = useRef(0);
   useEffect(() => {
-    setFrame(undefined); let socket: HyperOpenBotSocket; let confirm = false;
+    generation.current++; setError(null); setFrame(undefined); let socket: HyperOpenBotSocket; let confirm = false;
     const connection = connectScreen({
       open: () => { socket = new HyperOpenBotSocket(`wss://hyper-openbot.invalid${hyperComputerPath(computerId)}/stream`); return socket; },
-      verifyOwnership: async () => false, onReady: () => {}, onDisconnect: () => setFrame(undefined), onProblem: setError,
+      verifyOwnership: async () => { const control = await hyperReadControl(computerId); return control.holder === 'human' && !control.transitioning; }, onReady: () => {}, onDisconnect: () => setFrame(undefined), onProblem: setError,
       onMessage: event => { try {
         const message = JSON.parse(String(event.data));
         if (!message || typeof message !== 'object') return;
@@ -28,11 +30,12 @@ export function HyperLiveScreen({ computerId, driving }: { computerId: string; d
         setFrame({ data: message.data, width, height });
       } catch { /* Ignore malformed frames. */ } },
     });
-    return () => connection.stop();
+    return () => { generation.current++; connection.stop(); };
   }, [computerId, retry]);
   function input(kind: string, body: unknown) {
-    if (!driving) return;
-    queue.current = queue.current.then(async () => { await hyperOpenBotRequest(`${hyperComputerPath(computerId)}/human/${kind}`, 'POST', body); }).catch(() => { setError('Input did not reach the computer.'); });
+    if (!allowed.current) return;
+    const epoch = generation.current;
+    queue.current = queue.current.then(async () => { if (!allowed.current || epoch !== generation.current) return; await hyperOpenBotRequest(`${hyperComputerPath(computerId)}/human/${kind}`, 'POST', body); }).catch(() => { setError('Input did not reach the computer.'); });
   }
   return <div className="flex flex-col gap-2">
     {error && <p role="alert">{error} <Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></p>}
