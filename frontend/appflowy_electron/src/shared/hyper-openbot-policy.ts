@@ -6,7 +6,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: routines
   /* routines */
   // slot: memory
-  /* memory */
+  'memory', 'admin/learning', 'settings/learning',
   // slot: bot-tabs
   /* bot-tabs */
   // slot: approvals-inbox
