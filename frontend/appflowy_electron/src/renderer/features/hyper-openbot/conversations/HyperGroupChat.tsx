@@ -1,3 +1,4 @@
+import { HyperDeliveryControls } from './HyperDeliveryControls';
 // Copyright (c) 2026 CopilotKit. SPDX-License-Identifier: MIT
 // Adapted from channels/group-chat.tsx and group-people.tsx. See REUSE.md.
 import { useEffect, useRef, useState, useLayoutEffect } from 'react';
@@ -26,7 +27,7 @@ export function HyperGroupChat({ channelId, serviceReady }: { channelId: string;
   const [email, setEmail] = useState('');
   const [pending, setPending] = useState(false);
   const [address, setAddress] = useState('');
-  const retry = useRef<{ text: string; agentId: string | null; id: string }>();
+  const retry = useRef<{ text: string; agentId: string | null; id: string } | undefined>(undefined);
   const viewport = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
   const landed = useRef(false);
@@ -63,6 +64,7 @@ export function HyperGroupChat({ channelId, serviceReady }: { channelId: string;
   const names = new Map(data.bots.map(bot => [bot.id, bot.name]));
   return <div className="flex h-full min-h-0 flex-col pb-12">
     <div className="flex items-center gap-2 border-b p-2"><span>{data.bots.map(bot => bot.name).join(', ')}</span><Button variant="ghost" onClick={() => setPeopleOpen(value => !value)}>{data.people.length} people</Button><Button variant="ghost" onClick={() => setRevision(value => value + 1)}>Refresh</Button></div>
+    <HyperDeliveryControls channelId={channelId} bots={data.bots} enabled={serviceReady} />
     {error && <p role="alert" className="p-3 text-destructive">{error}</p>}
     {peopleOpen && <div className="space-y-2 border-b p-3"><p>Everyone here sees the whole conversation.</p>{data.people.map(person => <div key={person.userId} className="flex items-center gap-3"><span>{person.userId === me ? 'You' : person.name ?? person.email}{person.creator ? ' · Started this group' : ''}</span>{(person.userId === me ? !person.creator : creator) && <Button disabled={pending || !serviceReady} variant="outline" onClick={() => void mutate(() => hyperRemoveGroupMember(channelId, person.userId))}>{person.userId === me ? 'Leave' : 'Remove'}</Button>}</div>)}<form className="flex gap-2" onSubmit={event => { event.preventDefault(); void mutate(async () => { await hyperAddGroupMember(channelId, email); setEmail(''); }); }}><Input type="email" required aria-label="Their email" value={email} onChange={event => setEmail(event.target.value)} /><Button disabled={pending || !email.trim() || !serviceReady}>Add</Button></form></div>}
     <div ref={viewport} onScroll={event => { const el = event.currentTarget; atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight <= 80; }} className="min-h-0 flex-1 overflow-y-auto p-4"><div className="mx-auto max-w-3xl space-y-5">{!data.messages.length && <p>Say something. Every Bot answers in turn, or choose one recipient below.</p>}{data.messages.map(message => <article key={message.id} data-speaker={message.agentId} className="space-y-1"><p className="text-xs text-muted-foreground">{message.agentId ? names.get(message.agentId) ?? 'A Bot no longer here' : message.ownerUserId === me ? 'You' : data.people.find(person => person.userId === message.ownerUserId)?.name ?? 'A teammate'}{message.answeredBy ? ` · answer from ${names.get(message.answeredBy) ?? 'another Bot'}` : ''}</p>{message.status === 'waiting' ? <p>{message.reason ?? 'Waiting for your response.'}</p> : message.consent ? message.ownerUserId === me ? <HyperTeamConsent {...message.consent} message={message.text} /> : <p>Asked a teammate for permission to use their own {message.consent.serverId} account.</p> : message.status === 'failed' ? <p role="alert" className="text-destructive">{message.text || "This Bot couldn't answer."}</p> : !message.text && ['queued', 'running'].includes(message.status) ? <p role="status">Thinking</p> : <HyperMarkdown content={message.text} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />}</article>)}</div></div>

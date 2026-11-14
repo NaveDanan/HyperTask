@@ -82,7 +82,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
       const response = await hyperTunnelFetch(request.path, {
         method: request.method, body: typeof request.body === 'string' ? request.body : request.body ? Buffer.from(request.body) : undefined,
         signal: controller.signal, lease,
-        headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN },
+        headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN, ...(request.path === '/api/audio/transcriptions' ? { 'x-openbot-dictation': '1' } : {}), ...(request.path === '/api/voice/calls' ? { 'x-openbot-voice': '1' } : {}) },
       });
       setTimeout(() => void (async () => {
         try {

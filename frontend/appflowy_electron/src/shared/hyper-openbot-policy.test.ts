@@ -12,3 +12,7 @@ it('conversations questions permits approval contracts and refuses sibling famil
   for (const path of ['/api/approvals', '/api/approvals/questions/q/respond', '/api/approvals/questions/q/dismiss']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/approvals-other', '/api/approvals/../secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+it('conversations delivery and audio permits called families and refuses escapes', () => {
+  for (const path of ['/api/delivery', '/api/delivery/opentag/start', '/api/delivery/sms/start', '/api/delivery/sms/confirm', '/api/delivery/bindings/id', '/api/delivery/devices/id', '/api/audio/transcriptions', '/api/voice/config', '/api/voice/calls', '/api/voice/sessions']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/delivery-other', '/api/audio/../secret', '/api/voice-other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
