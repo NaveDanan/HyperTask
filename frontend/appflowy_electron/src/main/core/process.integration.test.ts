@@ -16,6 +16,11 @@ import { AuthTypePB } from '@shared/protobuf/flowy-user/workspace_pb';
 import { CoreProcess } from './process';
 import { Status } from './protocol';
 import { coreBinaryPath } from './binary';
+import { CloseDocumentPayloadPBSchema, DocumentDataPBSchema, DocumentTextPBSchema, OpenDocumentPayloadPBSchema, TextDeltaPayloadPBSchema } from '@shared/protobuf/flowy-document/entities_pb';
+import { DatabasePBSchema, DatabaseViewIdPBSchema } from '@shared/protobuf/flowy-database2/database_entities_pb';
+import { GetFieldPayloadPBSchema, RepeatedFieldPBSchema } from '@shared/protobuf/flowy-database2/field_entities_pb';
+import { CreateRowPayloadPBSchema, RowMetaPBSchema } from '@shared/protobuf/flowy-database2/row_entities_pb';
+import { CellChangesetPBSchema, CellIdPBSchema, CellPBSchema } from '@shared/protobuf/flowy-database2/cell_entities_pb';
 
 // Runs against the real core binary built from rust-lib/electron-core.
 const binary = coreBinaryPath(path.resolve(__dirname, '../../..'), false);
@@ -24,6 +29,11 @@ const describeWithCore = fs.existsSync(binary) ? describe : describe.skip;
 describeWithCore('core process (real binary)', () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'appflowy-electron-test-'));
   const core = new CoreProcess(binary);
+  const configuration = {
+    root: dataDir, app_version: '0.11.4', custom_app_path: dataDir, origin_app_path: dataDir,
+    device_id: 'electron-integration-test', platform: 'windows', authenticator_type: 0,
+    appflowy_cloud_config: { base_url: '', ws_base_url: '', gotrue_url: '' }, envs: {},
+  };
   const notifications: Array<{ source: string; ty: number; id: string }> = [];
   core.on('notification', (bytes) => {
     const subject = fromBinary(SubscribeObjectSchema, bytes);
@@ -46,17 +56,7 @@ describeWithCore('core process (real binary)', () => {
 
   it('initializes and answers events like dart-ffi', async () => {
     await core.start(() => {});
-    const code = await core.init({
-      root: dataDir,
-      app_version: '0.11.4',
-      custom_app_path: dataDir,
-      origin_app_path: dataDir,
-      device_id: 'electron-integration-test',
-      platform: 'windows',
-      authenticator_type: 0,
-      appflowy_cloud_config: { base_url: '', ws_base_url: '', gotrue_url: '' },
-      envs: {},
-    });
+    const code = await core.init(configuration);
     expect(code).toBe(0);
 
     const date = await call('QueryDate', DateResultPBSchema, [DateQueryPBSchema, { query: 'tomorrow' }]);
@@ -124,5 +124,50 @@ describeWithCore('core process (real binary)', () => {
     // The stream ends with an empty state (onFinished); results arrive before it.
     expect(received.length).toBeGreaterThan(0);
     expect(received.at(-1)!.oneOfResponse.case).toBeUndefined();
+  });
+
+  it('preserves native document text and database cells across a real core restart', async () => {
+    const user = await call('GetUserProfile', UserProfilePBSchema);
+    const setting = await call('GetCurrentWorkspaceSetting', WorkspaceLatestPBSchema);
+    const views = await call('ReadWorkspaceViews', RepeatedViewPBSchema, [GetWorkspaceViewPBSchema, { value: setting.workspaceId }]);
+    const createView = (name: string, layout: ViewLayoutPB) => call('CreateView', ViewPBSchema, [CreateViewPayloadPBSchema, { parentViewId: views.items[0].id, name, layout, setAsCurrent: false }]);
+    async function write(event: string, input: [DescMessage, object]) {
+      const reply = await core.request(event, toBinary(input[0], create(input[0], input[1] as MessageInitShape<DescMessage>)));
+      if (reply.status !== Status.Ok) throw new Error(`${event} failed: ${fromBinary(FlowyErrorSchema, reply.payload).msg}`);
+    }
+
+    const document = await createView('Hyper document regression', ViewLayoutPB.Document);
+    const data = await call('OpenDocument', DocumentDataPBSchema, [OpenDocumentPayloadPBSchema, { documentId: document.id }]);
+    const paragraph = Object.values(data.blocks).find(block => block.ty === 'paragraph');
+    const textId = paragraph?.oneOfExternalId.case === 'externalId' ? paragraph.oneOfExternalId.value : undefined;
+    expect(textId).toBeTypeOf('string');
+    const marker = 'HyperTask document persistence שלום';
+    await write('ApplyTextDeltaEvent', [TextDeltaPayloadPBSchema, { documentId: document.id, textId, oneOfDelta: { case: 'delta', value: JSON.stringify([{ insert: marker }]) } }]);
+    const textBefore = await call('GetDocumentText', DocumentTextPBSchema, [OpenDocumentPayloadPBSchema, { documentId: document.id }]);
+    expect(textBefore.text).toContain(marker);
+
+    const grid = await createView('Hyper dataset regression', ViewLayoutPB.Grid);
+    await call('GetDatabase', DatabasePBSchema, [DatabaseViewIdPBSchema, { value: grid.id }]);
+    const fields = await call('GetFields', RepeatedFieldPBSchema, [GetFieldPayloadPBSchema, { viewId: grid.id }]);
+    const primary = fields.items.find(field => field.isPrimary)!;
+    expect(primary).toBeDefined();
+    const row = await call('CreateRow', RowMetaPBSchema, [CreateRowPayloadPBSchema, { viewId: grid.id, rowPosition: { position: 0 }, data: { [primary.id]: 'HyperTask row' } }]);
+    const cell = { viewId: grid.id, rowId: row.id, fieldId: primary.id };
+    const updated = 'HyperTask cell persistence שלום';
+    await write('UpdateCell', [CellChangesetPBSchema, { ...cell, cellChangeset: updated }]);
+    const cellBefore = await call('GetCell', CellPBSchema, [CellIdPBSchema, cell]);
+    expect(new TextDecoder().decode(cellBefore.data)).toBe(updated);
+    await write('CloseDocument', [CloseDocumentPayloadPBSchema, { documentId: document.id }]);
+
+    await core.stop(); await core.start(() => {}); expect(await core.init(configuration)).toBe(0);
+    expect((await call('GetUserProfile', UserProfilePBSchema)).id).toBe(user.id);
+    const restoredDocument = await call('OpenDocument', DocumentDataPBSchema, [OpenDocumentPayloadPBSchema, { documentId: document.id }]);
+    expect(restoredDocument.pageId).toBe(data.pageId);
+    const textAfter = await call('GetDocumentText', DocumentTextPBSchema, [OpenDocumentPayloadPBSchema, { documentId: document.id }]);
+    expect(textAfter.text).toBe(textBefore.text);
+    const restoredGrid = await call('GetDatabase', DatabasePBSchema, [DatabaseViewIdPBSchema, { value: grid.id }]);
+    expect(restoredGrid.rows.some(each => each.id === row.id)).toBe(true);
+    const cellAfter = await call('GetCell', CellPBSchema, [CellIdPBSchema, cell]);
+    expect(cellAfter.data).toEqual(cellBefore.data);
   });
 });
