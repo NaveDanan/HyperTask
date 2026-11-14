@@ -1,6 +1,7 @@
 // Adapted from OpenBot (MIT), Copyright (c) 2026 CopilotKit.
 // app/src/routes/_authed/settings/index.tsx and components/settings/{profile,standing-instructions,message-list-preference,settings-sidebar}.tsx
 import { useEffect, useState } from 'react';
+import { HyperSettingsAutomation } from './HyperSettingsAutomation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -66,7 +67,7 @@ export default function HyperSettingsSection({ context: _context }: { context: H
     return () => { active = false; };
   }, [attempt]);
   return <section className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 overflow-y-auto px-8 py-6"><h1 className="text-lg font-semibold tracking-tight">General settings</h1>
-    {error ? <div><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : !data ? <p role="status">Loading settings…</p> : <HyperSettingsGeneral {...data} onUser={user => setData({ ...data, user })} onInstructions={instructions => setData({ ...data, instructions })} onPreferences={preferences => setData({ ...data, preferences })} />}
+    {error ? <div><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : !data ? <p role="status">Loading settings…</p> : <><HyperSettingsGeneral {...data} onUser={user => setData({ ...data, user })} onInstructions={instructions => setData({ ...data, instructions })} onPreferences={preferences => setData({ ...data, preferences })} /><HyperSettingsAutomation preferences={data.preferences} onPreferences={preferences => setData(current => current && ({ ...current, preferences }))} /></>}
     <h2 className="text-sm font-medium">More settings</h2><p className="text-sm text-muted-foreground">Open these sections from the OpenBot navigation.</p><ul className="grid grid-cols-2 gap-2 text-sm">{HYPER_SETTINGS_DESTINATIONS.map(([label, id]) => <li key={label} data-section-id={id}>{label}</li>)}</ul>
   </section>;
 }

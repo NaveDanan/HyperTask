@@ -4,7 +4,17 @@ import { hyperOpenBotRequest } from '../transport';
 export const HYPER_INSTRUCTIONS_LIMIT = 4000;
 export interface HyperSettingsUser { id: string; name?: string | null; needsName?: boolean; role: 'admin' | 'user' }
 export interface HyperSettingsPreferences { messageListEmphasis: 'agent' | 'thread'; skin: 'openbot' | 'openduet' | 'opendots' | 'openfuse'; proactive: 'on' | 'off' }
+export interface HyperGithubBinding { id: string; repository: string; createdAt: string; webhookPath?: string }
 export const hyperSettingsApi = {
+  checkInsAllowed: async () => (await hyperOpenBotRequest<{ allowed: boolean }>('/api/proactive/settings')).allowed,
+  repositories: async () => (await hyperOpenBotRequest<{ bindings: HyperGithubBinding[] }>('/api/responsibilities/sources/github')).bindings,
+  connectRepository: async (repository: string, secret: string) => {
+    if (!repository.trim() || !secret) throw new Error('Supply a repository and webhook secret.');
+    // Never expose backend error text here: it could echo a submitted secret.
+    try { return (await hyperOpenBotRequest<{ binding: HyperGithubBinding }>('/api/responsibilities/sources/github', 'POST', { repository, secret })).binding; }
+    catch { throw new Error('Could not connect GitHub events. Check the repository and secret, then try again.'); }
+  },
+  disconnectRepository: (id: string) => hyperOpenBotRequest<void>(`/api/responsibilities/sources/github/${encodeURIComponent(id)}`, 'DELETE'),
   user: async () => (await hyperOpenBotRequest<{ user: HyperSettingsUser }>('/api/me')).user,
   instructions: async () => (await hyperOpenBotRequest<{ instructions: string }>('/api/settings/instructions')).instructions,
   preferences: async () => (await hyperOpenBotRequest<{ preferences: HyperSettingsPreferences }>('/api/settings/preferences')).preferences,

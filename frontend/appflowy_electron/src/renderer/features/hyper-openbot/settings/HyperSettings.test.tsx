@@ -38,3 +38,24 @@ describe('Hyper settings', () => {
     expect(html).toContain('Not set yet.'); expect(html).toContain('None yet.'); expect(html).toContain('Message list preview');
   });
 });
+
+describe('Hyper settings automation contracts', () => {
+  it('reads permissions and repository response fields', async () => {
+    request.mockResolvedValueOnce({ allowed: false }).mockResolvedValueOnce({ bindings: [{ id: 'r', repository: 'owner/repo' }] });
+    expect(await hyperSettingsApi.checkInsAllowed()).toBe(false);
+    expect(await hyperSettingsApi.repositories()).toEqual([{ id: 'r', repository: 'owner/repo' }]);
+  });
+  it('connects with the upstream payload and encodes disconnect identifiers', async () => {
+    request.mockResolvedValueOnce({ binding: { id: 'r', repository: 'owner/repo' } });
+    expect(await hyperSettingsApi.connectRepository('owner/repo', 'test-secret')).toEqual({ id: 'r', repository: 'owner/repo' });
+    expect(request).toHaveBeenLastCalledWith('/api/responsibilities/sources/github', 'POST', { repository: 'owner/repo', secret: 'test-secret' });
+    await hyperSettingsApi.disconnectRepository('a/b');
+    expect(request).toHaveBeenLastCalledWith('/api/responsibilities/sources/github/a%2Fb', 'DELETE');
+  });
+  it('validates empty input and never exposes a secret echoed in a refusal', async () => {
+    await expect(hyperSettingsApi.connectRepository(' ', 'secret')).rejects.toThrow('Supply');
+    expect(request).not.toHaveBeenCalled();
+    request.mockRejectedValueOnce(new Error('test-secret'));
+    await expect(hyperSettingsApi.connectRepository('owner/repo', 'test-secret')).rejects.toThrow('Could not connect GitHub events. Check the repository and secret, then try again.');
+  });
+});
