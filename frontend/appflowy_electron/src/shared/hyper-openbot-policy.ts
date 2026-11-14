@@ -8,7 +8,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: memory
   /* memory */
   // slot: bot-tabs
-  /* bot-tabs */
+  'team-bots',
   // slot: approvals-inbox
   /* approvals-inbox */
   // slot: vault

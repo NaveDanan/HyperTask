@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { hyperOpenBotRequest } from '../transport';
 import { HyperAgentPath, HyperLifecyclePath, HyperListBots, HyperSaveBot, type HyperBotProfile, type HyperBotInput } from './HyperBotsApi';
 
+import { HyperBotDetailTabs } from '../bot-tabs/HyperBotDetailTabs';
 import { HyperBotLifecycleStore } from './HyperBotLifecycle';
 
 const HyperEmptyInput: HyperBotInput = { name: '', title: '', roleDescription: '', visibility: 'private' };
@@ -93,6 +94,7 @@ function HyperBotEditor({ bot, onSaved, onRemoved, onClose }: { bot?: HyperBotPr
         {editable && <Button type="submit">{busy ? 'Saving…' : bot ? 'Save profile' : 'Create Bot'}</Button>}
       </fieldset>
     </form>
+    {bot && <HyperBotDetailTabs bot={bot} />}
     {bot && <fieldset disabled={busy || lifecyclePending} className="flex flex-col gap-3 border-t border-border pt-4"><legend className="text-sm font-medium">Your settings for this Bot</legend>
       {lifecycle ? <><p className="text-xs text-muted-foreground">Pause stops work done in your name. Other people's work continues.</p>
         <Button variant="outline" onClick={() => void lifecycleStore.change(bot.id, lifecycle.paused ? 'resume' : 'pause')}>{lifecycle.paused ? 'Resume' : 'Pause'} for me</Button>
