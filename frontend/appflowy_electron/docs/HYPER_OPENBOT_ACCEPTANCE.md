@@ -49,6 +49,8 @@ The secured before/after smoke on `7f18cccce7d526e585186087bffcae0c91d21b75` pas
 
 [Electron's pipe implementation](https://github.com/electron/electron/blob/main/shell/browser/electron_browser_main_parts.cc) quits the browser when its debugging pipe closes. The broker therefore retains only its inherited private pipe handles so the native app can stay open after testing. The filesystem endpoint and relay client are closed; no externally reachable debugger remains.
 
+The launcher also clears inherited `ELECTRON_RENDERER_URL` alongside `ELECTRON_RUN_AS_NODE` and `NODE_OPTIONS`. A deliberate harmless data-URL override was set for the native launch on `a2c7be163e4586fecfed88c42ca06f6c6a211b86`; the built renderer, same saved messages and visible model label restored successfully with no replacement prompt. Both launcher safeguard tests passed again.
+
 ## Repeating the smoke test
 
 Use an already provisioned, authenticated private backend and a disposable HyperTask profile owned by the same native identity. Do not use a real work profile. These commands intentionally create synthetic conversations and consume real provider access. They never accept agreements, obtain credentials, provision services, install dependencies or remove stores. A fresh native profile must first complete the normal native sign-in and trusted owner setup; do not reset or copy another profile's binding.

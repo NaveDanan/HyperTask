@@ -203,6 +203,14 @@
       "status": "no_tcp_listener_and_endpoint_removed",
       "startedAt": null,
       "finishedAt": null
+    },
+    {
+      "file": "HyperNativeSmokeInheritedUrl14.json",
+      "sha256": "8273975e44629cfefa71264b39491e8f3834431a5fd6cc6e3e2a114c329c62ac",
+      "capturedCommit": "a2c7be163e4586fecfed88c42ca06f6c6a211b86",
+      "startedAt": "2026-11-14T16:31:38.239Z",
+      "finishedAt": "2026-11-14T16:31:41.019Z",
+      "status": "passed"
     }
   ],
   "upstreamAndNotices": "HYPER_OPENBOT_AUDIT.md and ../src/renderer/features/hyper-openbot/REUSE.md, LICENSE and component mappings",
@@ -265,5 +273,14 @@
     "crossUidOsProcessProbe": "not executed; UID mismatch/mode policy tests and actual Unix socket lifecycle passed",
     "parentLogDescriptorClosed": true,
     "olderLoopbackDebuggerCaptures": "historical functional evidence only; do not reuse old TCP launch/driver scripts"
+  },
+  "inheritedRendererOverrideReview": {
+    "comment": 4574647389,
+    "capturedCommit": "a2c7be163e4586fecfed88c42ca06f6c6a211b86",
+    "inheritedValue": "deliberate harmless data URL",
+    "clearedBeforeBrokerAndElectronSpawn": true,
+    "builtRendererAndSavedConversationRestored": true,
+    "noReplacementPrompt": true,
+    "launcherSafeguardsRerun": 2
   }
 }
