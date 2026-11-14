@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-14T11:47:13.510181+00:00",
+  "recordedAt": "2026-11-14T11:55:58.094385+00:00",
   "issue": 5,
   "pullRequest": 11,
   "codeHeadObserved": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
@@ -85,7 +85,7 @@
     "typecheck": "pass",
     "frontendBuild": "pass",
     "fullVitest": {
-      "passed": 513,
+      "passed": 516,
       "skipped": 1,
       "skippedReason": "Opt-in simulated-IPC live backend test; actual native Electron live test ran separately."
     },
@@ -165,7 +165,9 @@
       "renderer file APIs could overwrite private owner binding",
       "stale list refresh could hide newly created conversation",
       "UI caller did not enable guarded durable read-back"
-    ]
+    ],
+    "imageAndToolCallReviewedHead": "096923edcb992bf938ef45899c870722c1d2a618",
+    "imageAndToolCallFix": "efd309f691a5628d876cfcfca7364e0bcaa35d51"
   },
   "privateFileGuard": {
     "observedAt": "2026-11-14T11:45:48.737Z",
@@ -208,5 +210,29 @@
     "productionCaller": "HyperChannelChat uses hyperRestoreStoredMessages",
     "guard": "Only idle agents merge with readBack enabled; active runs are unchanged",
     "regression": "Missing idle content restored; longer completed live text retained; active agent not written"
+  },
+  "codeHeadObservedScope": "Full plain-chat before/after pair; later targeted regressions retain their own code heads",
+  "latestReviewCodeHeadObserved": "efd309f691a5628d876cfcfca7364e0bcaa35d51",
+  "markdownImages": {
+    "observedAt": "2026-11-14T11:54:42.614Z",
+    "head": "efd309f691a5628d876cfcfca7364e0bcaa35d51",
+    "actualElectronWindow": true,
+    "realProviderProducedMarkdownImage": true,
+    "inertImagePlaceholderVisible": true,
+    "passiveMediaElements": 0,
+    "ownedLoopbackImageProbeRequests": 0,
+    "explicitCitationRetained": true,
+    "savedReplyExact": true,
+    "channelId": "channel_23957476-607a-44eb-837e-776335a2cdd5",
+    "threadId": "49c8cef5-0fb2-8f3f-b38f-d457d6fc3efe",
+    "assistantMessageId": "resp_067417a64a8a817e016af84bfed3a487d280172018a7c888ef",
+    "textDeliveries": 83,
+    "errors": [],
+    "captureSha256": "4a35979510a5061a9debfde87fda983d08cf59bcd3aee5c636c0bc4a46132a14",
+    "probeCleanup": "Owned loopback server closed after check"
+  },
+  "toolCallRecovery": {
+    "merge": "By tool-call ID, retaining independently longer arguments and both live-only/stored-only calls",
+    "regression": "Reproduced shortening a complete call when another call improved or was added; recovery entry point now preserves it"
   }
 }

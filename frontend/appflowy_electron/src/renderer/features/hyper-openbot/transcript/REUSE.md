@@ -24,11 +24,13 @@ Keep `busy` true for the running turn; supply `stopped` only with a real failure
 `onOpenLink` overrides anchor navigation for the desktop host. `renderTool` supplies API-backed
 approval or custom result cards. No networking or model execution happens in these components.
 
-The local Markdown renderer supports paragraphs, headings, emphasis, inline/fenced code,
-links, quotes, flat lists, task checkboxes and pipe tables. Raw HTML is escaped. It does not
-implement full CommonMark, reference links, nested list indentation, syntax highlighting or
-Streamdown plugins. Images remain literal Markdown to avoid fetching remote model-generated
-URLs. Tool arguments remain literal text, including incomplete streamed JSON.
+The Markdown renderer uses the pinned Streamdown runtime and code plugin for prose,
+tables, task lists and highlighted code. Image components render inert alt text; passive
+resource URL properties are stripped and HTML skipping is enabled. Assistant and tool-result
+images cannot initiate automatic requests. Citations retain explicit user navigation.
+Regressions exercise the real renderer, including image preload output, raw HTML and
+remote/loopback/relative/data image sources. Tool arguments remain literal text, including
+incomplete streamed JSON.
 
 UI uses existing Button/Skeleton primitives, Lucide icons and theme tokens. The local
 collapsible result panel follows the upstream tool-line behavior. No shell/theme changes.

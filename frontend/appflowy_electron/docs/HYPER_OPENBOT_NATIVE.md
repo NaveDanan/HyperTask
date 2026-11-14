@@ -30,7 +30,7 @@ The current transport is a Linux development configuration for `agent@100.104.17
 
 ## Actual native observations
 
-[HYPER_OPENBOT_NATIVE.runtime.json](HYPER_OPENBOT_NATIVE.runtime.json) records exact code/capture identities and hashes. The latest code observation was `5cae909b0778b91cbfd7cf92ec6b37f3981a699a`, including the review fixes and rebuilt core identity query.
+[HYPER_OPENBOT_NATIVE.runtime.json](HYPER_OPENBOT_NATIVE.runtime.json) records exact code/capture identities and hashes. The full plain-chat/restart observation was `5cae909b0778b91cbfd7cf92ec6b37f3981a699a`, including the rebuilt core identity query. The later image-policy check ran on `efd309f691a5628d876cfcfca7364e0bcaa35d51`; each regression records its own source commit.
 
 | Check | Observed result |
 | --- | --- |
@@ -44,13 +44,15 @@ The current transport is a Linux development configuration for `agent@100.104.17
 | Appearance | Actual light, dark and Lavender token/screenshot checks passed; default Auto scheme restored |
 | Navigation regression | Jira opened without credential changes; returning to Chat showed the same saved message |
 | Async selection | Actual pending model save locks both pickers, retains the draft and saves the requested model; a late channel creation preserves newer navigation and remembered selection |
-| Automated checks | Typecheck, production frontend build and 513 tests passed; one opt-in simulated-IPC live test skipped |
+| Automated checks | Typecheck, production frontend build and 516 tests passed; one opt-in simulated-IPC live test skipped |
 
 The optional bridge-only test uses a simulated Electron IPC host with the real backend. Its earlier pass is recorded separately and is not substituted for the native-window observations above. The full suite included real-core integration checks using the rebuilt identity-query binary. The concurrency checks paused and resumed only the scratch app's private SSH child; the reference and T3 forwards were untouched.
 
 Review follow-ups also cover history groups sharing one local anchor, read-back of an assistant with missing local content, drained null-body HTTP responses and valid UTF-8 socket close reasons. Native `OpenAnonUser` invalidates connections before dispatch. A cleanup error keeps OpenBot blocked while allowing native sign-out, account deletion or authentication to proceed. Related run/join code and tests were consolidated without dropping coverage.
 
 Further review reproduced a renderer write to the scratch owner file and a stale refresh dropping a newly created conversation. In the corrected real window, all 17 private-state operations were denied through direct, traversal and symlink paths, the owner file stayed unchanged and ordinary scratch file write/read passed. The delayed list response retained all 18 rows after creation instead of reverting to 17. Creation now invalidates older list requests and clears their loading state. The UI recovery entry point enables durable read-back only when the agent is idle; a functional regression covers missing content, longer completed text and active-run protection.
+
+Generated Markdown images now render inert alt text and cannot preload or fetch their sources, including in tool results. In the real Electron window, a model-generated image URL produced zero requests to an owned loopback probe, no passive media element and a visible placeholder; the explicit citation and exact saved reply were retained. The probe was closed afterward. Renderer regressions cover remote, loopback, relative and data URLs plus raw HTML. Tool-call recovery also merges by ID, preserving the longer arguments independently for every call and retaining stored-only and live-only calls.
 
 The pointer test initially found HyperTask's support bubble covering Send. Chat now reserves room above that control. Native testing also exposed the existing Windows-only device ID implementation returning an empty string on Linux, which prevented collaboration/folder restoration after restart. Linux now reads its stable OS machine ID from standard locations and reports a clear error if unavailable. Windows identity behavior and existing data paths are unchanged. Three regressions reproduced the old failure and pass with the correction; the actual native folder now reopens after restart.
 
