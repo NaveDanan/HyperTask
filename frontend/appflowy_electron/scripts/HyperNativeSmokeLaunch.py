@@ -120,6 +120,7 @@ def main():
     env = dict(os.environ)
     env.pop('ELECTRON_RUN_AS_NODE', None)
     env.pop('NODE_OPTIONS', None)
+    env.pop('ELECTRON_RENDERER_URL', None)
     env.update(APPFLOWY_CORE_BINARY=str(core), APPFLOWY_SUPPORT_DIR=str(profile / 'support'),
                XDG_CONFIG_HOME=str(profile / 'config'), XDG_CACHE_HOME=str(profile / 'cache'))
     observed = datetime.datetime.now(datetime.timezone.utc)
