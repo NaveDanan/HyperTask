@@ -58,7 +58,7 @@ function HyperChannelChat({ channel, serviceReady, registerReceiver }: { channel
   const [showComputer, setShowComputer] = useState(false);
   const stopped = useRef(false);
   const generation = useRef(0);
-  const { draft, getDraft, updateDraft, prepareSubmission } = useHyperConversationDraft(channel.id);
+  const { draft, getDraft, assertDraftCurrent, updateDraft, prepareSubmission } = useHyperConversationDraft(channel.id);
   const { uploadGroup, attachments } = draft;
   const setAttachments = (change: (current: readonly HyperDraftAttachment[]) => readonly HyperDraftAttachment[]) => updateDraft(current => ({ ...current, attachments: change(current.attachments) }));
   const [models, setModels] = useState<HyperModelOption[]>([]);
@@ -141,7 +141,7 @@ function HyperChannelChat({ channel, serviceReady, registerReceiver }: { channel
     registerReceiver(async (initial, signal) => {
       const abort = () => { stopped.current = true; void copilotkit.stopAgent({ agent }); };
       signal.addEventListener('abort', abort, { once: true });
-      try { await hyperReceiveInitialDraft(channel.id, initial, signal, { get: getDraft, update: updateDraft, uploaded: uploadedInitial.current, send: sendDraft }); }
+      try { await hyperReceiveInitialDraft(channel.id, initial, signal, { get: getDraft, assertCurrent: assertDraftCurrent, update: updateDraft, uploaded: uploadedInitial.current, send: sendDraft }); }
       finally { signal.removeEventListener('abort', abort); }
     });
     return () => registerReceiver(undefined);
@@ -166,7 +166,7 @@ function HyperChannelChat({ channel, serviceReady, registerReceiver }: { channel
       const saved = await response.json();
       if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error(saved.error ?? 'Attachment upload failed');
       return { id: saved.id, name: saved.name, mimeType: saved.mimeType, status: 'ready' };
-    }, setAttachments, id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); })} modelPicker={models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
+    }, setAttachments, id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }, assertDraftCurrent)} modelPicker={models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
       if (modelUpdating.current) return;
       modelUpdating.current = true; setModelPending(true);
       void request<HyperConversationModel>(`/api/channels/${channel.id}/model`, 'PUT', next).then(saved => setPick(hyperResolveModelPick(saved, defaultModel.current))).catch(error => setError(String(error))).finally(() => { modelUpdating.current = false; setModelPending(false); });

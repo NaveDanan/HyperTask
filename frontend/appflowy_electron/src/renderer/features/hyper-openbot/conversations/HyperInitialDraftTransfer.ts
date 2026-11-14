@@ -31,11 +31,13 @@ import { hyperOpenBotFetch, HYPER_OPENBOT_ORIGIN, hyperOpenBotRequest } from '..
 /** Consume a Home draft through the same placeholder and retry machinery as the visible composer. */
 export async function hyperReceiveInitialDraft(channelId: string, initial: HyperInitialDraft, signal: AbortSignal, deps: {
   get(): HyperConversationDraft;
+  assertCurrent(): void;
   update(change: (draft: HyperConversationDraft) => HyperConversationDraft): unknown;
   uploaded: Map<File, HyperDraftAttachment>;
   send(draft: HyperConversationDraft): Promise<void>;
 }) {
   signal.throwIfAborted();
+  deps.assertCurrent();
   deps.update(current => ({ ...current, text: initial.text, commandIds: [...initial.commandIds] }));
   await hyperUploadDraftFiles(initial.files.filter(file => !deps.uploaded.has(file)), async file => {
     signal.throwIfAborted();
@@ -44,8 +46,9 @@ export async function hyperReceiveInitialDraft(channelId: string, initial: Hyper
     const saved = await response.json();
     if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error('Attachment upload failed');
     const attachment: HyperDraftAttachment = { id: saved.id, name: saved.name, mimeType: saved.mimeType, status: 'ready' };
+    signal.throwIfAborted(); deps.assertCurrent();
     deps.uploaded.set(file, attachment); return attachment;
-  }, change => deps.update(current => ({ ...current, attachments: change(current.attachments) })), id => { void hyperOpenBotRequest(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); });
+  }, change => deps.update(current => ({ ...current, attachments: change(current.attachments) })), id => { void hyperOpenBotRequest(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }, () => { signal.throwIfAborted(); deps.assertCurrent(); });
   signal.throwIfAborted();
   if (initial.submit) {
     await deps.send(deps.get()); signal.throwIfAborted();

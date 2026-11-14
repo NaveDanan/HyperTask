@@ -45,7 +45,7 @@ it('counts channel upload placeholders once across renders and rapid picks, whil
   }));
   const onFiles = vi.fn((files: readonly File[]) => hyperUploadDraftFiles(files, upload, change => {
     lease.update(current => ({ ...current, attachments: change(current.attachments) }));
-  }, vi.fn()));
+  }, vi.fn(), lease.assertCurrent));
   const submit = vi.fn();
   const props = (): HyperComposerProps & { getAttachmentCount(): number } => ({
     onSubmit: submit, onFiles, value: 'Draft', attachments: lease.get().attachments,

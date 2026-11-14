@@ -5,10 +5,20 @@ import { HyperConversationDraftCache, hyperObserveDraftIdentity, hyperUploadDraf
 function leaseAttachments(lease: ReturnType<HyperConversationDraftCache['acquire']>) {
   return (change: (current: readonly HyperDraftAttachment[]) => readonly HyperDraftAttachment[]) => { lease.update(current => ({ ...current, attachments: change(current.attachments) })); };
 }
+it('stops an upload batch before sending another file after the draft identity changes', async () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one');
+  const upload = vi.fn(async (file: File) => ({ id: file.name, name: file.name, mimeType: 'text/plain', status: 'ready' as const }));
+  const discard = vi.fn();
+  lease.subscribe(() => { if (lease.get().attachments.some(file => file.id === 'first.txt')) cache.invalidate(); });
+  await expect(hyperUploadDraftFiles([new File(['a'], 'first.txt'), new File(['b'], 'second.txt')], upload, leaseAttachments(lease), discard, lease.assertCurrent)).rejects.toThrow('identity changed');
+  expect(upload).toHaveBeenCalledTimes(1);
+  expect(discard).not.toHaveBeenCalled();
+  expect(cache.acquire('replacement').get().attachments).toEqual([]);
+});
 it('reserves uploading placeholders in the channel draft so a reopened composer still blocks Send', async () => {
   const cache = new HyperConversationDraftCache(() => 'group'), original = cache.acquire('one');
   let finish!: (value: HyperDraftAttachment) => void;
-  const upload = hyperUploadDraftFiles([new File(['x'], 'notes.txt', { type: 'text/plain' })], () => new Promise(resolve => { finish = resolve; }), leaseAttachments(original), vi.fn());
+  const upload = hyperUploadDraftFiles([new File(['x'], 'notes.txt', { type: 'text/plain' })], () => new Promise(resolve => { finish = resolve; }), leaseAttachments(original), vi.fn(), original.assertCurrent);
   const reopened = cache.acquire('one');
   expect(reopened.get().attachments).toEqual([expect.objectContaining({ name: 'notes.txt', status: 'uploading' })]);
   finish({ id: 'server-id', name: 'notes.txt', mimeType: 'text/plain', status: 'ready' }); await upload;
@@ -17,7 +27,7 @@ it('reserves uploading placeholders in the channel draft so a reopened composer 
 it('discards an upload removed while pending and clears unsettled placeholders after a failure', async () => {
   const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one'), discard = vi.fn();
   let finish!: (value: HyperDraftAttachment) => void;
-  const upload = hyperUploadDraftFiles([new File(['a'], 'a.txt'), new File(['b'], 'b.txt')], file => file.name === 'a.txt' ? new Promise(resolve => { finish = resolve; }) : Promise.reject(new Error('Attachment upload failed')), leaseAttachments(lease), discard);
+  const upload = hyperUploadDraftFiles([new File(['a'], 'a.txt'), new File(['b'], 'b.txt')], file => file.name === 'a.txt' ? new Promise(resolve => { finish = resolve; }) : Promise.reject(new Error('Attachment upload failed')), leaseAttachments(lease), discard, lease.assertCurrent);
   lease.update(current => ({ ...current, attachments: current.attachments.filter(file => file.name !== 'a.txt') }));
   finish({ id: 'server-a', name: 'a.txt', mimeType: 'text/plain', status: 'ready' });
   await expect(upload).rejects.toThrow('Attachment upload failed');

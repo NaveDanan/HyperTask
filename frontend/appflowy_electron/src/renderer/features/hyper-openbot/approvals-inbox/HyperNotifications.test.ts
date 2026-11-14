@@ -52,4 +52,32 @@ describe('Hyper notification parity', () => {
     await vi.advanceTimersByTimeAsync(1500);
     expect(shown).toHaveLength(0);
   });
+  it('does not display an old reply when the session ends during its attention read', async () => {
+    let finish!: (value: []) => void;
+    const delayed = { ...reads, attention: vi.fn(() => new Promise<[]>(resolve => { finish = resolve; })) };
+    HyperNoticeChannelEvent(event, delayed, vi.fn());
+    await vi.advanceTimersByTimeAsync(HyperReplyTiming.settleMs);
+    expect(delayed.attention).toHaveBeenCalledOnce();
+    HyperForgetReplies(); finish([]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(shown).toHaveLength(0);
+  });
+  it('does not display a superseded reply when a new turn starts during its reads', async () => {
+    let finish!: (value: []) => void;
+    const delayed = { ...reads, attention: vi.fn(() => new Promise<[]>(resolve => { finish = resolve; })) };
+    HyperNoticeChannelEvent(event, delayed, vi.fn());
+    await vi.advanceTimersByTimeAsync(HyperReplyTiming.settleMs);
+    HyperNoticeChannelEvent({ ...event, busy: true }, reads, vi.fn());
+    finish([]); await vi.advanceTimersByTimeAsync(0);
+    expect(shown).toHaveLength(0);
+  });
+  it('keeps repeated replies within the original turn timeout plus settling', async () => {
+    HyperNoticeChannelEvent({ ...event, busy: true }, reads, vi.fn());
+    HyperNoticeChannelEvent(event, reads, vi.fn());
+    await vi.advanceTimersByTimeAsync(HyperReplyTiming.turnMs - 1000);
+    HyperNoticeChannelEvent({ ...event, firstLine: 'Newest reply' }, reads, vi.fn());
+    await vi.advanceTimersByTimeAsync(1000 + HyperReplyTiming.settleMs);
+    expect(shown).toHaveLength(1);
+    expect(shown[0].options.body).toBe('Newest reply');
+  });
 });

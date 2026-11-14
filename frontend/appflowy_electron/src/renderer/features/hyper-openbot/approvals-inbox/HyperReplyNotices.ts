@@ -99,6 +99,8 @@ type Pending = {
 const pending = new Map<string, Pending>();
 /** Conversations whose turn is under way, as the socket's busy signals say. */
 const busy = new Set<string>();
+let sessionGeneration = 0;
+const channelVersions = new Map<string, number>();
 /** Replies already announced, by conversation and words. */
 const announced = new Set<string>();
 const ANNOUNCED_KEPT = 200;
@@ -118,9 +120,11 @@ function remember(key: string) {
 
 /** For tests: forget every turn and reply, as a fresh page does. */
 export function HyperForgetReplies() {
+  sessionGeneration++;
   for (const each of pending.values()) if (each.timer) clearTimeout(each.timer);
   pending.clear();
   busy.clear();
+  channelVersions.clear();
   announced.clear();
 }
 
@@ -136,6 +140,7 @@ export function HyperNoticeChannelEvent(
 ): void {
   const { channelId } = activity;
   if (activity.busy !== undefined) {
+    if (activity.busy && !busy.has(channelId)) channelVersions.set(channelId, (channelVersions.get(channelId) ?? 0) + 1);
     if (activity.busy) busy.add(channelId);
     else busy.delete(channelId);
     const held = pending.get(channelId);
@@ -144,6 +149,7 @@ export function HyperNoticeChannelEvent(
   }
   if (!HyperIsBotReply(activity)) return;
   if (announced.has(wordsKey(activity))) return;
+  channelVersions.set(channelId, (channelVersions.get(channelId) ?? 0) + 1);
   const held = pending.get(channelId);
   if (held?.timer) clearTimeout(held.timer);
   const next: Pending = {
@@ -167,7 +173,7 @@ function arm(
   if (busy.has(channelId) && !overdue) {
     held.timer = setTimeout(
       () => arm(held, reads, open),
-      HyperReplyTiming.turnMs,
+      Math.max(0, HyperReplyTiming.turnMs - (Date.now() - held.since)),
     );
     return;
   }
@@ -187,22 +193,26 @@ async function announce(
   reads: HyperReplyNoticeReads,
   open: (channelId: string) => void,
 ): Promise<void> {
+  const generation = sessionGeneration;
+  const version = channelVersions.get(activity.channelId);
+  const current = () => generation === sessionGeneration && version === channelVersions.get(activity.channelId);
   const key = wordsKey(activity);
   if (announced.has(key) || HyperInSight()) return;
   // Waits for OpenBot Desktop's answer when it is still on its way; looked at again after.
   if (!(await HyperNotificationsAllowed())) return;
-  if (announced.has(key) || HyperInSight()) return;
-  remember(key);
+  if (!current() || announced.has(key) || HyperInSight()) return;
 
   // Read fresh: whether this conversation now waits on the person decides which notice it is.
   let bots: HyperNoticeBot[] | undefined;
   try { bots = await reads.attention(); } catch { return; }
+  if (!current()) return;
   if (bots?.some(bot => bot.waitingIn === activity.channelId)) return;
   let notify: HyperBotNotify | null = null;
   if (activity.lastMessageAgentId) {
     try { notify = await reads.notify(activity.lastMessageAgentId); } catch { return; }
   }
   const notice = HyperReplyNotice(activity, notify, bots, reads.agents());
-  if (!notice || HyperInSight()) return;
+  if (!current() || !notice || announced.has(key) || HyperInSight()) return;
+  remember(key);
   HyperShowNotice({ ...notice, onClick: () => open(activity.channelId) });
 }

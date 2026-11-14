@@ -26,6 +26,7 @@ export class HyperConversationDraftCache {
     const generation = this.generation;
     if (!this.entries.has(channelId)) this.entries.set(channelId, snapshot({ text: '', attachments: [], uploadGroup: this.groupId() }));
     const get = () => generation === this.generation ? this.entries.get(channelId) ?? EMPTY : EMPTY;
+    const assertCurrent = () => { if (generation !== this.generation) throw new Error('The conversation identity changed. Reopen Chat before sending.'); };
     const update = (change: (current: HyperConversationDraft) => HyperConversationDraft) => {
       if (generation !== this.generation) return false;
       this.entries.set(channelId, snapshot(change(get())));
@@ -34,10 +35,11 @@ export class HyperConversationDraftCache {
     };
     return {
       get,
+      assertCurrent,
       subscribe: (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; },
       update,
       prepareSubmission: (text: string, files: string) => {
-        if (generation !== this.generation) throw new Error('The conversation identity changed. Reopen Chat before sending.');
+        assertCurrent();
         // Another page may have completed and cleared this retry since this page mounted.
         const previous = get().retry;
         const sent = previous?.text === text && previous.files === files ? previous : { id: crypto.randomUUID(), text, files };
@@ -58,16 +60,19 @@ type DraftAttachments = (change: (current: readonly HyperDraftAttachment[]) => r
  * Reserve channel-scoped placeholders before uploading so a reopened composer still blocks Send.
  * A placeholder removed while its upload runs causes the uploaded server attachment to be discarded.
  */
-export async function hyperUploadDraftFiles(files: readonly File[], upload: (file: File) => Promise<HyperDraftAttachment>, update: DraftAttachments, discard: (id: string) => void) {
+export async function hyperUploadDraftFiles(files: readonly File[], upload: (file: File) => Promise<HyperDraftAttachment>, update: DraftAttachments, discard: (id: string) => void, assertCurrent: () => void) {
+  assertCurrent();
   const pending = files.map(file => ({ id: HYPER_PENDING_ATTACHMENT + crypto.randomUUID(), name: file.name, mimeType: file.type || 'application/octet-stream', status: 'uploading' as const }));
   update(current => [...current, ...pending]);
   let index = 0;
   try {
     for (; index < files.length; index++) {
+      assertCurrent();
       const ready = await upload(files[index]), placeholder = pending[index].id;
+      assertCurrent();
       let kept = false;
       update(current => { kept = current.some(file => file.id === placeholder); return kept ? current.map(file => file.id === placeholder ? ready : file) : current; });
-      if (!kept) discard(ready.id);
+      if (!kept) { assertCurrent(); discard(ready.id); }
     }
   } finally {
     const unsettled = new Set(pending.slice(index).map(file => file.id));
