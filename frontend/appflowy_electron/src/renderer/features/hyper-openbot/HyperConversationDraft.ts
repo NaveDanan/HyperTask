@@ -25,14 +25,23 @@ export class HyperConversationDraftCache {
     const generation = this.generation;
     if (!this.entries.has(channelId)) this.entries.set(channelId, snapshot({ text: '', attachments: [], uploadGroup: this.groupId() }));
     const get = () => generation === this.generation ? this.entries.get(channelId) ?? EMPTY : EMPTY;
+    const update = (change: (current: HyperConversationDraft) => HyperConversationDraft) => {
+      if (generation !== this.generation) return false;
+      this.entries.set(channelId, snapshot(change(get())));
+      for (const listener of this.listeners) listener();
+      return true;
+    };
     return {
       get,
       subscribe: (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; },
-      update: (change: (current: HyperConversationDraft) => HyperConversationDraft) => {
-        if (generation !== this.generation) return false;
-        this.entries.set(channelId, snapshot(change(get())));
-        for (const listener of this.listeners) listener();
-        return true;
+      update,
+      prepareSubmission: (text: string, files: string) => {
+        if (generation !== this.generation) throw new Error('The conversation identity changed. Reopen Chat before sending.');
+        // Another page may have completed and cleared this retry since this page mounted.
+        const previous = get().retry;
+        const sent = previous?.text === text && previous.files === files ? previous : { id: crypto.randomUUID(), text, files };
+        update(current => ({ ...current, retry: sent }));
+        return sent;
       },
     };
   }

@@ -13,5 +13,5 @@ export function useHyperConversationDraft(channelId: string) {
     }
     return cache.acquire(channelId);
   }, [channelId]);
-  return { draft: useSyncExternalStore(lease.subscribe, lease.get, lease.get), updateDraft: lease.update };
+  return { draft: useSyncExternalStore(lease.subscribe, lease.get, lease.get), updateDraft: lease.update, prepareSubmission: lease.prepareSubmission };
 }

@@ -28,6 +28,14 @@ it('retains failed-send identity on reopening and cannot clear a newer submissio
   original.update(current => current.retry?.id === sent.id ? { ...current, retry: undefined } : current);
   expect(reopened.get().retry?.id).toBe('new-user-id');
 });
+it('selects a fresh identity after an older page completes a reopened page pending send', () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), original = cache.acquire('one');
+  const pending = original.prepareSubmission('Same text', 'file-id');
+  const reopened = cache.acquire('one');
+  expect(reopened.prepareSubmission('Same text', 'file-id').id).toBe(pending.id);
+  original.update(current => current.retry?.id === pending.id ? { ...current, retry: undefined } : current);
+  expect(reopened.prepareSubmission('Same text', 'file-id').id).not.toBe(pending.id);
+});
 it.each(['signed_out', 'profile_required', 'unsupported'] as const)('native %s clears drafts and rejects late upload completions', problem => {
   const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one');
   let onState!: (state: HyperOpenBotServiceState) => void;
@@ -36,6 +44,7 @@ it.each(['signed_out', 'profile_required', 'unsupported'] as const)('native %s c
   lease.update(current => ({ ...current, text: 'Private unsent text' }));
   onState({ problem: 'ssh_unavailable' } as HyperOpenBotServiceState); expect(lease.get().text).toBe('Private unsent text');
   onState({ problem } as HyperOpenBotServiceState); expect(lease.get().text).toBe('');
+  expect(() => lease.prepareSubmission('Late send', '')).toThrow('identity changed');
   expect(lease.update(current => ({ ...current, text: 'Late response', attachments: [{ id: 'late', name: 'late.txt', mimeType: 'text/plain', status: 'ready' }] }))).toBe(false);
   expect(cache.acquire('one').get().attachments).toEqual([]); expect(cache.acquire('one').get().text).toBe(''); expect(listener).toHaveBeenCalled();
 });
