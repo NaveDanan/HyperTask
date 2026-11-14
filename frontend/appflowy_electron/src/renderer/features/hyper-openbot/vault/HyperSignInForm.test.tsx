@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { HyperKeyForm } from './HyperVaultSection';
 import { HyperSignInForm } from './HyperSignInForm';
 import type { SignInRequest } from './HyperVaultApi';
-const harness = vi.hoisted(() => ({ active: false, values: [] as unknown[], cursor: 0, answer: vi.fn(), createKey: vi.fn(), poll: {current: undefined as ReturnType<typeof setTimeout> | undefined} }));
+const harness = vi.hoisted(() => ({ active: false, values: [] as unknown[], cursor: 0, answer: vi.fn(), createKey: vi.fn(), poll: {current: undefined as ReturnType<typeof setTimeout> | number | undefined} }));
 vi.mock('./HyperVaultApi', () => ({hyperVaultApi: {answerSignIn: harness.answer, createKey: harness.createKey}}));
 vi.mock('react', async original => {
   const react = await original<typeof import('react')>();
