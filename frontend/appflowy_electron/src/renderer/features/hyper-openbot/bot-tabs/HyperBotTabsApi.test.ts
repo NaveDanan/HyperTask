@@ -32,3 +32,8 @@ it('bot-tabs assigns and removes group assignments with encoded names', async ()
   expect(hyperOpenBotRequest).toHaveBeenNthCalledWith(1, '/api/team-bots/desk/assignments', 'POST', { group: 'support team' });
   expect(hyperOpenBotRequest).toHaveBeenNthCalledWith(2, '/api/team-bots/desk/assignments/support%20team', 'DELETE', undefined);
 });
+it('bot-tabs share links use the server public origin rather than the native renderer or tunnel', async () => {
+  const { hyperTeamBotShareLink } = await import('./HyperBotTabsApi');
+  expect(hyperTeamBotShareLink('https://openbot.example.test/api/plugins/oauth/callback', 'a b')).toBe('https://openbot.example.test/channel/new?agent=a%20b');
+  for (const value of [null, '', 'file:///local', 'https://user:password@example.test', 'https://hyper-openbot.invalid/api/callback']) expect(hyperTeamBotShareLink(value, 'desk')).toBeNull();
+});

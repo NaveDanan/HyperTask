@@ -13,7 +13,7 @@ import { HyperReachability } from './HyperReachability';
 import { HyperBotApprovalsTab } from './HyperBotApprovalsTab';
 import { HyperBotSkillsTab } from './HyperBotSkillsTab';
 import { HYPER_BOT_EXTRA_TABS } from './HyperBotExtraTabs';
-import { HyperBotTabsApi as api, type HyperBotApp, type HyperTeamBots } from './HyperBotTabsApi';
+import { hyperTeamBotShareLink, HyperBotTabsApi as api, type HyperBotApp, type HyperTeamBots } from './HyperBotTabsApi';
 
 export function HyperBotDetailTabs({ bot, openConversation }: { bot: HyperBotProfile; openConversation?: (id: string) => void }) {
   const [tab, setTab] = useState('apps');
@@ -37,13 +37,15 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
   const [groups, setGroups] = useState('');
   const [assignment, setAssignment] = useState('');
   const [admin, setAdmin] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [personal, setPersonal] = useState(true);
   useEffect(() => {
     let live = true;
     setPending(true);
-    void (tab === 'apps' ? (async () => { const [rows, me, capabilities] = await Promise.all([api.apps(bot.id), hyperOpenBotRequest<{ user: { role: string } }>('/api/me'), hyperOpenBotRequest<{ edition: string }>('/api/capabilities')]); const personalEdition = capabilities.edition === 'personal'; const giveable = bot.mine && !personalEdition ? await hyperOpenBotRequest<{ apps: { key: string }[] }>('/api/plugins/giveable') : { apps: [] }; const extra = await Promise.all(giveable.apps.filter(app => !rows.some(row => row.key === app.key)).map(async app => (await hyperOpenBotRequest<{ app: HyperBotApp }>(`/api/plugins/for/${encodeURIComponent(bot.id)}/apps/${encodeURIComponent(app.key)}`)).app)); if (live) { setApps([...rows, ...extra]); setAdmin(me.user.role === 'admin'); setPersonal(personalEdition); } })() : Promise.all([api.team(), hyperOpenBotRequest<{ user: { role: string } }>('/api/me')]).then(([data, me]) => {
+    void (tab === 'apps' ? (async () => { const [rows, me, capabilities] = await Promise.all([api.apps(bot.id), hyperOpenBotRequest<{ user: { role: string } }>('/api/me'), hyperOpenBotRequest<{ edition: string }>('/api/capabilities')]); const personalEdition = capabilities.edition === 'personal'; const giveable = bot.mine && !personalEdition ? await hyperOpenBotRequest<{ apps: { key: string }[] }>('/api/plugins/giveable') : { apps: [] }; const extra = await Promise.all(giveable.apps.filter(app => !rows.some(row => row.key === app.key)).map(async app => (await hyperOpenBotRequest<{ app: HyperBotApp }>(`/api/plugins/for/${encodeURIComponent(bot.id)}/apps/${encodeURIComponent(app.key)}`)).app)); if (live) { setApps([...rows, ...extra]); setAdmin(me.user.role === 'admin'); setPersonal(personalEdition); } })() : Promise.all([api.team(), hyperOpenBotRequest<{ user: { role: string } }>('/api/me'), hyperOpenBotRequest<{ redirectUri: string | null }>('/api/plugins').catch(() => ({ redirectUri: null }))]).then(([data, me, plugins]) => {
       if (!live) return;
-      setTeam(data); setAdmin(me.user.role === 'admin');
+      setShareLink(hyperTeamBotShareLink(plugins.redirectUri, bot.id)); setCopied(false); setTeam(data); setAdmin(me.user.role === 'admin');
       const current = data.teamBots.find(row => row.id === bot.id);
       setAudience(current?.audience ?? 'team'); setEmails(current?.people?.join(', ') ?? ''); setGroups(current?.groups?.join(', ') ?? '');
     })).catch(() => { if (live) { setApps(undefined); setTeam(undefined); setAdmin(false); setError('Unable to load this Bot tab. Access may be refused.'); } }).finally(() => { if (live) setPending(false); });
@@ -69,7 +71,7 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
       {app.request ? <Button disabled={pending} variant="outline" onClick={() => void mutate(() => api.cancelRequest(app.request!.id))}>Withdraw request</Button> : app.requestKind && <Button disabled={pending} onClick={() => void mutate(() => api.request(bot.id, app.key))}>Request access</Button>}
     </article>)}</>}
     {tab === 'sharing' && team && <><p>{published ? published.audience === 'team' ? 'Published to the whole team.' : `Published to ${[...(published.people ?? []), ...(published.groups ?? [])].join(', ')}.` : 'Not published.'}</p>
-      <p className="text-sm text-muted-foreground">Each person's conversations remain private.</p>
+      <p className="text-sm text-muted-foreground">Each person's conversations remain private.</p>{published && (shareLink ? <Button variant="outline" onClick={() => { void navigator.clipboard.writeText(shareLink).then(() => setCopied(true)).catch(() => setError('The link could not be copied.')); }}>{copied ? 'Copied' : 'Copy link'}</Button> : <p>A share link needs a public server address.</p>)}
       {published && !published.visibleToTeam && <p>Set a real name and description before teammates can see this Bot.</p>}
       {admin && published && <section className="grid gap-2"><h4>Assign to groups</h4><p>Pins this Bot for every member. Use * for the whole team.</p>{published.assignments?.map(group => <div key={group}>{group}<Button variant="outline" disabled={pending} onClick={() => void mutate(() => api.assign(bot.id, group, true))}>Remove assignment</Button></div>)}<form className="flex gap-2" onSubmit={event => { event.preventDefault(); void mutate(() => api.assign(bot.id, assignment.trim())); }}><Input aria-label="Group assignment" required value={assignment} onChange={e => setAssignment(e.target.value)} /><Button disabled={pending || !assignment.trim()}>Assign</Button></form></section>}
       {bot.mine && (published || team.publishable.some(row => row.id === bot.id)) && <form className="grid gap-3" onSubmit={event => { event.preventDefault(); void mutate(() => api.publish(bot.id, audience, split(emails), split(groups))); }}>

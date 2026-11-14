@@ -18,3 +18,12 @@ export const HyperBotTabsApi = {
   assign: (id: string, group: string, remove = false) => request(`/api/team-bots/${segment(id)}/assignments${remove ? `/${segment(group)}` : ''}`, remove ? 'DELETE' : 'POST', remove ? undefined : { group }),
   unpublish: (id: string) => request(`/api/team-bots/${segment(id)}/publication`, 'DELETE'),
 };
+/** Native renderer has no web origin. The server's OAuth redirect is projected from publicUrl. */
+export function hyperTeamBotShareLink(redirectUri: string | null | undefined, agentId: string) {
+  if (!redirectUri) return null;
+  try {
+    const url = new URL(redirectUri);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.hostname.endsWith('.invalid')) return null;
+    return `${url.origin}/channel/new?agent=${encodeURIComponent(agentId)}`;
+  } catch { return null; }
+}
