@@ -1,7 +1,6 @@
 // Adapted from OpenBot lib/app-grants and components/manage/describe-grants.tsx. Copyright (c) 2026 CopilotKit. MIT.
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { hyperOpenBotRequest as request } from '../transport';
 import { useHyperBotResource } from './HyperBotResource';
