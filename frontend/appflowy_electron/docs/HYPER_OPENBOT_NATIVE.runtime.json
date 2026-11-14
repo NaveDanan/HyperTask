@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-14T10:57:53.429288+00:00",
+  "recordedAt": "2026-11-14T11:34:02.091092+00:00",
   "issue": 5,
   "pullRequest": 11,
-  "codeHeadObserved": "a23ee224051e81035bef0ad3f537ae1af6228794",
+  "codeHeadObserved": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
   "product": "HyperTask",
   "environment": "Real Electron 44.10.2 window on the local Linux PC, original OpenBot and Intelligence on the authorized VM",
   "scope": "Native chat send/stream/save/app-restart/reopen and appearance/navigation observations; further issue #6 tool/approval acceptance is separate.",
   "before": {
-    "startedAt": "2026-11-14T10:52:29.098Z",
-    "observedAt": "2026-11-14T10:52:40.135Z",
-    "head": "a23ee224051e81035bef0ad3f537ae1af6228794",
+    "startedAt": "2026-11-14T11:32:06.538Z",
+    "observedAt": "2026-11-14T11:32:16.578Z",
+    "head": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
     "actualElectronWindow": true,
     "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
-    "channelId": "channel_08d94449-e86c-4cc8-a1dd-5e9249e2cdd3",
-    "threadId": "49c8cef5-0fb2-84c9-aed8-be69acf0586d",
+    "channelId": "channel_a0386e96-0992-4c47-9145-494ffd45c416",
+    "threadId": "49c8cef5-0fb2-82c4-8f11-f17e86b7d644",
     "botId": "picked-harness",
-    "runId": "2a03b3a5-f9ec-4e0f-bff6-7d99470bfd43",
-    "userMessageId": "4468fdb0-b09c-4673-af6b-aca10ff07fd0",
-    "assistantMessageId": "resp_0edbbd4e419515c3016af83d7407c087d2a0d1d9aa39e5fe34",
-    "textDeliveries": 106,
+    "runId": "490fc8c9-fe55-4b1f-a0c4-6fa70981ac28",
+    "userMessageId": "567fa046-8e19-40d6-90a1-83712f7e1018",
+    "assistantMessageId": "resp_0ee162e202d62d87016af846bafc5887d28e64ff235ff0eedd",
+    "textDeliveries": 118,
     "statuses": {
       "channel": 200,
       "history": 200
@@ -28,32 +28,32 @@
     "errors": []
   },
   "beforeTextHashes": {
-    "promptSha256": "adc69b6a15b368614a76b9e4b4c57585cc180451fd982f48dfece6f96a6b74eb",
-    "answerSha256": "17c04a8590373761cd0c724cca6cb6f2ea0b516c61db0063cee15ed6bb200f13",
-    "answerCharacters": 509
+    "promptSha256": "fcf34b3b79f95ada85d5d41e49de0b6169bd34b9c4943c32f7309c6a3ca06772",
+    "answerSha256": "97568c75970f674c367b4d3b5c97b410585c480f110db9f5918abe8c42adba94",
+    "answerCharacters": 603
   },
   "beforeStream": {
-    "textDeliveries": 106,
-    "firstEventAt": "2026-11-14T10:52:36.136Z",
-    "lastEventAt": "2026-11-14T10:52:39.117Z",
-    "captureSha256": "df1f4a03b9733044ebfea663fc4d421caf2e5a65c8f56135b65fa1d0d612e7dc"
+    "textDeliveries": 118,
+    "firstEventAt": "2026-11-14T11:32:11.864Z",
+    "lastEventAt": "2026-11-14T11:32:14.010Z",
+    "captureSha256": "06328dc3faea3661662e5182c086853676dfbef709e1fd6f0f58a21b30469bbc"
   },
   "after": {
-    "observedAt": "2026-11-14T10:54:04.995Z",
-    "head": "a23ee224051e81035bef0ad3f537ae1af6228794",
+    "observedAt": "2026-11-14T11:33:02.912Z",
+    "head": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
     "actualElectronWindow": true,
     "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
-    "channelId": "channel_08d94449-e86c-4cc8-a1dd-5e9249e2cdd3",
-    "threadId": "49c8cef5-0fb2-84c9-aed8-be69acf0586d",
-    "userMessageId": "4468fdb0-b09c-4673-af6b-aca10ff07fd0",
-    "assistantMessageId": "resp_0edbbd4e419515c3016af83d7407c087d2a0d1d9aa39e5fe34",
+    "channelId": "channel_a0386e96-0992-4c47-9145-494ffd45c416",
+    "threadId": "49c8cef5-0fb2-82c4-8f11-f17e86b7d644",
+    "userMessageId": "567fa046-8e19-40d6-90a1-83712f7e1018",
+    "assistantMessageId": "resp_0ee162e202d62d87016af846bafc5887d28e64ff235ff0eedd",
     "sameNativeViewChannelThreadAndMessageIds": true,
     "exactSavedUiText": true,
     "noReplacementPromptSent": true,
     "historyStatus": 200,
     "errors": []
   },
-  "afterCaptureSha256": "d2ec8552a9d6315f25266f597a268689717e915a68bd956457dde0818a04e115",
+  "afterCaptureSha256": "2462cf878ebe6ed057d64b17ddbf5d2ab90472dc1c0dc2c45e28e12cbe17867f",
   "appearance": {
     "observedAt": "2026-11-14T10:47:59.570Z",
     "head": "0a347138a468d1c4f997126dd81bba5351578e92",
@@ -85,22 +85,25 @@
     "typecheck": "pass",
     "frontendBuild": "pass",
     "fullVitest": {
-      "passed": 498,
+      "passed": 511,
       "skipped": 1,
       "skippedReason": "Opt-in simulated-IPC live backend test; actual native Electron live test ran separately."
     },
-    "realRustCoreIntegration": "Included in full suite with existing core binary, no Rust rebuild",
+    "realRustCoreIntegration": "Pass: rebuilt core identity query plus existing date, folder and search checks",
     "nativeSendClick": "Normal pointer click; support bubble no longer intercepts",
     "internalSystemMessages": "Excluded from visible transcript while preserved in agent context",
     "originalUserData": "Unused; all app testing uses an isolated scratch profile"
   },
   "identity": {
-    "identitySource": "Main process directly decodes GetUserProfile from the native core",
+    "identitySource": "Main pairs direct native GetUserProfile with HyperGetNativeIdentity: core session UUID plus explicit local core domain",
     "persistentOwnerBinding": "0700 directory and 0600 owner.json, verified on the actual profile",
     "cookies": "Separate persistent Electron partition per identity",
     "signOut": "Synchronous lease invalidation, HTTP/WS/SSH cancellation, serialized cookie clearing before native auth transition returns",
     "differentIdentity": "Denied before backend connection; explicit reconnect configuration belongs to #7",
-    "coverage": "Session state, registered IPC, delayed cookie writes and identity transitions covered by focused tests within the full suite"
+    "coverage": "Session state, registered IPC, delayed cookie writes and identity transitions covered by focused tests within the full suite",
+    "ownerSchemaVersion": 2,
+    "remoteAccounts": "Denied until authenticated server provenance and trusted reconnect are implemented in #7",
+    "legacyBindings": "Version 1 numeric-ID bindings remain unchanged and are rejected; only disposable test binding was archived before the v2 positive check"
   },
   "reuse": "Source and per-component mappings under src/renderer/features/hyper-openbot/REUSE.md; original MIT license retained",
   "limits": [
@@ -108,6 +111,49 @@
     "Electron development launch used a process-only --no-sandbox flag because the npm helper lacks root ownership/mode; no source/system sandbox setting changed. Production packaging is not validated.",
     "Appearance tests ran on the earlier native UI code before the main-process identity fix; UI styling did not change afterward.",
     "Approved/denied tool actions, disconnect/cancel workflows and remaining phase-1 acceptance are not established by the plain-chat observations.",
-    "This is development acceptance, not a production release or complete Epic acceptance."
-  ]
+    "This is development acceptance, not a production release or complete Epic acceptance.",
+    "This personal development backend accepts local native identities only. Remote native accounts require authenticated server provenance in #7."
+  ],
+  "nativeCoreBuild": {
+    "observedAt": "2026-11-14T11:31:23.669122+00:00",
+    "exitCode": 0,
+    "sourceSha256": "1ab790229a2855a68f7ccef5630477fc049cc6153f4f5f4e4090e5ce89a8b75a",
+    "binarySha256": "a630e4600c7774c75e08b1d7c63768a147c68effe81c30071cf35bfa10aef064",
+    "toolchain": "1.85.0",
+    "jobs": 2,
+    "nativeStorageLibrary": "Existing matching-source RocksDB static archive reused; no storage implementation changed"
+  },
+  "concurrency": {
+    "observedAt": "2026-11-14T11:32:33.314Z",
+    "head": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
+    "actualElectronWindow": true,
+    "modelControlsLockedWhileSaving": true,
+    "requestedModelPersisted": true,
+    "draftRetained": true,
+    "priorModelRestored": true,
+    "selectedScreenPreserved": "Skills",
+    "rememberedChannelUnchanged": true,
+    "onlyOwnedPrivateSshPaused": true,
+    "errors": [],
+    "lateCreationResponseObserved": true,
+    "captureSha256": "ee9a71d1b4ea05dfc7f5ea5d5a58f99aab5e289e9950367153368a4fd12761eb"
+  },
+  "reviewFollowUp": {
+    "reviewedHead": "6b20a86bf1306208d4e0123ec741580f420be719",
+    "codeCommits": [
+      "fce01a0f4e5ca340f7fba29326d2da91b1ae3471",
+      "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05"
+    ],
+    "findings": [
+      "append colliding history anchor groups",
+      "recover missing local assistant content",
+      "consume empty HTTP responses",
+      "serialize model/effort updates",
+      "preserve newer selection after late channel creation",
+      "bound UTF-8 WebSocket close reason and catch errors",
+      "invalidate before OpenAnonUser",
+      "allow native auth after OpenBot cleanup failure while keeping bridge blocked",
+      "namespace owner by trusted local UUID; deny unsupported remote identities"
+    ]
+  }
 }

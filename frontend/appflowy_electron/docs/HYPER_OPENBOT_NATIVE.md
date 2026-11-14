@@ -18,7 +18,9 @@ The feature lives under `src/renderer/features/hyper-openbot`. Its [reuse map](.
 
 The main process owns an SSH connection to the authorized development VM, authenticated using the existing OS SSH key/known-host configuration. It creates a randomly named private `0700` directory and Unix socket. HTTP and Phoenix WebSocket traffic use that socket exclusively; the original public reference forward on port 3010 is untouched. Fixed routes, original Origin checks, request-size limits and finite deadlines apply. Binary bodies remain bytes across IPC.
 
-The trusted main process reads the current identity directly from the native core's `GetUserProfile` response. It binds this personal backend to its first native owner in a `0600` file under a `0700` directory. Cookies use a separate Electron partition for that identity. A different native identity is denied before backend access, including when the original personal backend requires no cookie.
+The trusted main process pairs `GetUserProfile` with the additive native-core `HyperGetNativeIdentity` query. This query returns the current session UUID and an explicit local domain only in local core mode. The personal development connection permits local profiles only: the current core does not persist the authenticated server's origin, so remote accounts fail closed until issue #7 adds trusted server provenance. Numeric IDs, renderer identity arguments and current environment URLs cannot establish ownership.
+
+The UUID and local namespace bind this personal backend to its first native owner in a `0600` file under a `0700` directory. Cookies use a separate Electron partition for that identity. Version 2 owner files reject the older numeric-ID binding without silently promoting or replacing it. A different native identity is denied before backend access, including when the original personal backend requires no cookie. Tests use a disposable scratch binding; no existing personal binding is reset automatically.
 
 Native sign-out and authentication transitions invalidate leases and cancel HTTP, WebSocket and SSH work. Queued cookie writes settle before credentials are cleared, so a late response cannot restore the previous session. The owner binding remains intact after sign-out. A trusted reconnect/configuration flow is deferred to issue #7; this build fails closed rather than silently sharing the backend.
 
@@ -26,28 +28,31 @@ The current transport is a Linux development configuration for `agent@100.104.17
 
 ## Actual native observations
 
-[HYPER_OPENBOT_NATIVE.runtime.json](HYPER_OPENBOT_NATIVE.runtime.json) records exact code/capture identities and hashes. The final code observation was `a23ee224051e81035bef0ad3f537ae1af6228794` after rebasing the UI commits onto the verified baseline merge.
+[HYPER_OPENBOT_NATIVE.runtime.json](HYPER_OPENBOT_NATIVE.runtime.json) records exact code/capture identities and hashes. The latest code observation was `7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05`, including the review fixes and rebuilt core identity query.
 
 | Check | Observed result |
 | --- | --- |
 | App | Actual Electron 44.10.2 process and native Rust core; isolated scratch profile |
 | Navigation | Visible Chat entry creates/reopens an existing native Chat view |
 | Sending | Normal Send pointer click through the native composer |
-| Streaming | 106 distinct live AG-UI text deliveries over the real private Phoenix connection |
-| Saved content | Exact 509-character answer and prompt match authoritative HTTP 200 history and native UI |
+| Streaming | 118 distinct live AG-UI text deliveries over the real private Phoenix connection |
+| Saved content | Exact 603-character answer and prompt match authoritative HTTP 200 history and native UI |
 | App restart | Same native view, channel, thread, Bot, user/assistant message IDs and text reopened without a replacement prompt |
 | Renderer | No page errors observed during send/reopen |
 | Appearance | Actual light, dark and Lavender token/screenshot checks passed; default Auto scheme restored |
 | Navigation regression | Jira opened without credential changes; returning to Chat showed the same saved message |
-| Automated checks | Typecheck, production frontend build and 498 tests passed; one opt-in simulated-IPC live test skipped |
+| Async selection | Actual pending model save locks both pickers, retains the draft and saves the requested model; a late channel creation preserves newer navigation and remembered selection |
+| Automated checks | Typecheck, production frontend build and 511 tests passed; one opt-in simulated-IPC live test skipped |
 
-The optional bridge-only test uses a simulated Electron IPC host with the real backend. Its earlier pass is recorded separately and is not substituted for the native-window observations above. The full suite included the existing real-core integration tests using the already-built binary.
+The optional bridge-only test uses a simulated Electron IPC host with the real backend. Its earlier pass is recorded separately and is not substituted for the native-window observations above. The full suite included real-core integration checks using the rebuilt identity-query binary. The concurrency checks paused and resumed only the scratch app's private SSH child; the reference and T3 forwards were untouched.
+
+Review follow-ups also cover history groups sharing one local anchor, read-back of an assistant with missing local content, drained null-body HTTP responses and valid UTF-8 socket close reasons. Native `OpenAnonUser` invalidates connections before dispatch. A cleanup error keeps OpenBot blocked while allowing native sign-out, account deletion or authentication to proceed. Related run/join code and tests were consolidated without dropping coverage.
 
 The pointer test initially found HyperTask's support bubble covering Send. Chat now reserves room above that control. Native testing also exposed the existing Windows-only device ID implementation returning an empty string on Linux, which prevented collaboration/folder restoration after restart. Linux now reads its stable OS machine ID from standard locations and reports a clear error if unavailable. Windows identity behavior and existing data paths are unchanged. Three regressions reproduced the old failure and pass with the correction; the actual native folder now reopens after restart.
 
 ## Repeating the check
 
-Use the [VM runbook](HYPER_OPENBOT_VM.md) for the original backend. Keep both original services and their stores intact. Run the normal Electron frontend build, selecting the existing native core through `APPFLOWY_CORE_BINARY` when the build resides in another worktree. Do not rebuild Rust or duplicate Electron downloads merely to change renderer code.
+Use the [VM runbook](HYPER_OPENBOT_VM.md) for the original backend. Keep both original services and their stores intact. This identity check requires a native core containing `HyperGetNativeIdentity`; older binaries fail closed. Run the normal Electron frontend build, selecting that core through `APPFLOWY_CORE_BINARY` when the build resides in another worktree. Reuse it for later renderer-only changes without duplicating Electron downloads.
 
 Launch a development window with `APPFLOWY_SUPPORT_DIR`, Electron user-data and XDG paths pointing to a scratch profile. Clear an inherited `ELECTRON_RUN_AS_NODE` in the child environment. The observed development launch required a process-only `--no-sandbox` flag because the npm Electron helper lacks its required root ownership/mode. No system or source sandbox setting was changed; this is not production packaging validation.
 
