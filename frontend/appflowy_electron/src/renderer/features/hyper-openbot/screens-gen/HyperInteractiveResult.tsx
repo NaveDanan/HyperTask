@@ -7,8 +7,9 @@ import type { PublishedSandboxed } from './HyperScreensTypes';
 /** Transcript seam: pass the calling Bot, complete tool arguments and a durable response callback.
  * Never infer the calling Bot from the currently selected conversation. Unknown/missing identity fails closed. */
 export function HyperInteractiveResult({name, agentId, args, complete = true, respond}: {name: string; agentId: string; args: Record<string, unknown>; complete?: boolean; respond?: (value: string) => void}) {
-  const [state, setState] = useState<{allowed: boolean; reason?: string; source?: PublishedSandboxed} | null>(null);
+  const [state, setState] = useState<{allowed: boolean; reason?: string; source?: PublishedSandboxed; key?: string} | null>(null);
   const spec = lookup(name);
+  const permissionKey = JSON.stringify([name, agentId, args, complete]);
   useEffect(() => {
     let live = true;
     setState(null);
@@ -18,16 +19,16 @@ export function HyperInteractiveResult({name, agentId, args, complete = true, re
       let source: PublishedSandboxed | undefined;
       if (decision.allowed && !spec) {
         try { source = (await hyperScreensApi.published()).find(item => item.name === name); }
-        catch { if (live) setState({allowed: false, reason: 'The published component could not be loaded.'}); return; }
+        catch { if (live) setState({key: permissionKey, allowed: false, reason: 'The published component could not be loaded.'}); return; }
       }
-      if (live) setState({...decision, source});
+      if (live) setState({...decision, source, key: permissionKey});
     };
     void check();
     const timer = setInterval(() => void check(), 5000);
     return () => {live = false; clearInterval(timer);};
-  }, [name, agentId, args, complete, spec]);
+  }, [name, agentId, permissionKey, complete, spec]);
   if (!agentId) return <p role="alert">The calling Bot is required to check component permission.</p>;
-  if (!complete || !state) return <p role="status">Drawing {name}…</p>;
+  if (!complete || !state || state.key !== permissionKey) return <p role="status">Drawing {name}…</p>;
   if (!state.allowed) return <p role="alert">{state.reason ?? 'This component is not available to this Bot.'}</p>;
   if (spec) return <spec.Component {...args} args={args} status="complete" respond={respond} />;
   if (!state.source) return <p role="alert">This build cannot draw {name}.</p>;
