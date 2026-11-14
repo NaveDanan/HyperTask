@@ -24,7 +24,8 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: conversations
   /* conversations */
   // slot: routines
-  /* routines */
+  { id: 'routines', label: 'Routines', group: 'work', render: hyperLazySection(() => import('./routines/HyperRoutinesSection')) },
+  { id: 'responsibilities', label: 'Responsibilities', group: 'work', render: hyperLazySection(() => import('./routines/HyperResponsibilitiesSection')) },
   // slot: memory
   /* memory */
   // slot: bot-tabs

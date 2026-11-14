@@ -22,7 +22,6 @@ function CaptionButton({ kind, label, onClick }: { kind: Caption; label: string;
       type="button"
       aria-label={label}
       title={label}
-      title={label}
       onClick={onClick}
       className={cn(
         'no-drag flex h-full w-11 items-center justify-center text-foreground/80 transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',

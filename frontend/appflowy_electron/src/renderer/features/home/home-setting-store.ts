@@ -81,7 +81,6 @@ export const homeSettingActions = {
 export const MINIMUM_SIDEBAR_WIDTH = 268;
 export const NOTIFICATION_PANEL_WIDTH = 380;
 export const SIDEBAR_RAIL_WIDTH = 56;
-export const SIDEBAR_RAIL_WIDTH = 56;
 
 /** HomeLayout (home/home_layout.dart). */
 export function useHomeLayout(windowWidth: number) {
@@ -93,7 +92,6 @@ export function useHomeLayout(windowWidth: number) {
     menuWidth,
     showMenu,
     menuIsDrawer,
-    railWidth: SIDEBAR_RAIL_WIDTH,
     railWidth: SIDEBAR_RAIL_WIDTH,
     homePageLOffset: showMenu && !menuIsDrawer ? menuWidth : SIDEBAR_RAIL_WIDTH,
     menuSpacing: !showMenu && navigator.userAgent.includes('Mac') ? 80 : 0,

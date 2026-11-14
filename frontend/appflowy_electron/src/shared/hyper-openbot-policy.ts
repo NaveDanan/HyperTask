@@ -4,7 +4,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: conversations
   /* conversations */
   // slot: routines
-  /* routines */
+  'routines', 'responsibilities', 'proactive/settings', 'proactive/suggestions', 'tasks',
   // slot: memory
   /* memory */
   // slot: bot-tabs
