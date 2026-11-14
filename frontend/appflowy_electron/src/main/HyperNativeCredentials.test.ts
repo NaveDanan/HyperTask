@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { beforeEach, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ handler: undefined as any, dialog: vi.fn(), fetch: vi.fn() }));
-vi.mock('electron', () => ({ ipcMain: { handle: (_: string, fn: any) => { mocks.handler = fn; } }, dialog: { showMessageBox: mocks.dialog } }));
+const mocks = vi.hoisted(() => ({ handler: undefined as any, dialog: vi.fn(), fetch: vi.fn(), copy: vi.fn() }));
+vi.mock('electron', () => ({ ipcMain: { handle: (_: string, fn: any) => { mocks.handler = fn; } }, dialog: { showMessageBox: mocks.dialog }, clipboard: { writeText: mocks.copy } }));
 vi.mock('./HyperOpenBotTunnel', () => ({ hyperTunnelFetch: mocks.fetch }));
 import { registerHyperNativeCredentials } from './HyperNativeCredentials';
 beforeEach(() => { vi.resetAllMocks(); });
@@ -63,4 +63,20 @@ it('revoke uses the protected native path', async () => {
   const h = setup(); mocks.dialog.mockResolvedValue({ response: 1 }); mocks.fetch.mockResolvedValue(new Response(null, { status: 204 }));
   expect(await mocks.handler(h.event, { ...input, action: 'revoke' })).toEqual({ status: 'revoked' });
   expect(mocks.fetch.mock.calls[0][1].method).toBe('DELETE');
+});
+it('copies a key only after an explicit native choice without returning it to renderer code', async () => {
+  const h = setup(), token = 'obot_agt_' + 'x'.repeat(43);
+  mocks.dialog.mockResolvedValueOnce({ response: 1 }).mockResolvedValueOnce({ response: 1 });
+  mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ token }), { status: 201 }));
+  expect(await mocks.handler(h.event, input)).toEqual({ status: 'issued' });
+  expect(mocks.copy).toHaveBeenCalledExactlyOnceWith(token);
+});
+it('does not copy after Done or after the owner changes during the key dialog', async () => {
+  const h = setup(), token = 'obot_agt_' + 'x'.repeat(43);
+  mocks.dialog.mockResolvedValueOnce({ response: 1 }).mockResolvedValueOnce({ response: 0 });
+  mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ token }), { status: 201 }));
+  expect(await mocks.handler(h.event, input)).toEqual({ status: 'issued' }); expect(mocks.copy).not.toHaveBeenCalled();
+  mocks.dialog.mockResolvedValueOnce({ response: 1 }).mockImplementationOnce(async () => { h.stop(); return { response: 1 }; });
+  mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ token }), { status: 201 }));
+  expect(await mocks.handler(h.event, input)).toEqual({ status: 'failed' }); expect(mocks.copy).not.toHaveBeenCalled();
 });

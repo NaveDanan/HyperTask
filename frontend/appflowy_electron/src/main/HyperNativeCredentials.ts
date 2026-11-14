@@ -1,4 +1,4 @@
-import { dialog, ipcMain, type BrowserWindow } from 'electron';
+import { clipboard, dialog, ipcMain, type BrowserWindow } from 'electron';
 import type { HyperOpenBotSession } from './HyperOpenBotSession';
 import { hyperTunnelFetch } from './HyperOpenBotTunnel';
 import type { HyperCallbackKeyResult } from '@shared/api';
@@ -38,12 +38,15 @@ export function registerHyperNativeCredentials(window: () => BrowserWindow | nul
       // Bound the one-time response before decoding it. No backend error text crosses IPC.
       const reader = response.body?.getReader();
       if (!reader) return { status: 'failed' };
-      let body = '';
-      try { for (;;) { const part = await reader.read(); if (part.done) break; if (body.length + part.value.length > 4096) throw new Error('Invalid key response'); body += Buffer.from(part.value).toString('utf8'); } } finally { await reader.cancel(); }
+      let body = '', bytes = 0;
+      const decoder = new TextDecoder();
+      try { for (;;) { const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength; if (bytes > 4096) throw new Error('Invalid key response'); body += decoder.decode(part.value, { stream: true }); } body += decoder.decode(); } finally { await reader.cancel(); }
       let value: unknown; try { value = JSON.parse(body); } finally { body = ''; }
       if (!value || typeof value !== 'object' || !('token' in value) || typeof value.token !== 'string' || !/^obot_agt_[A-Za-z0-9_-]{43}$/.test(value.token)) return { status: 'failed' };
       await check();
-      await dialog.showMessageBox(owner, { type: 'info', title: 'HyperTask one-time callback key', message: 'Record this key now. It cannot be shown again.', detail: value.token, buttons: ['Done'], signal: controller.signal });
+      const delivery = await dialog.showMessageBox(owner, { type: 'info', title: 'HyperTask one-time callback key', message: 'Record this key now. It cannot be shown again.', detail: value.token, buttons: ['Done', 'Copy key'], defaultId: 0, cancelId: 0, signal: controller.signal });
+      await check();
+      if (delivery.response === 1) clipboard.writeText(value.token);
       value = null;
       await check();
       return { status: 'issued' };
