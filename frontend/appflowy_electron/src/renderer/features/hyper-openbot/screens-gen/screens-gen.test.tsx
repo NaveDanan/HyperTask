@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-vi.mock('@copilotkit/react-core/v2', () => ({ useCopilotKit: vi.fn(), useFrontendTool: vi.fn(), OpenGenerativeUIActivityRenderer: () => null }));
+vi.mock('@copilotkit/react-core/v2', () => ({ useCopilotKit: vi.fn(), useFrontendTool: vi.fn(), OpenGenerativeUIActivityRenderer: vi.fn(() => null) }));
 vi.mock('../transport', () => ({ hyperOpenBotRequest: vi.fn() }));
 import { hyperOpenBotRequest } from '../transport';
 import { hyperScreensApi as api } from './HyperScreensApi';
@@ -115,5 +115,29 @@ describe('Hyper canonical screens destination', () => {
   it('keeps screen arguments and requires an explicit server-checked Bot', () => {
     expect(hyperParseScreenDestination('/s/custom_card?agentId=bot&args=%7B%22title%22%3A%22Hi%22%7D')).toEqual({kind: 'screen', name: 'custom_card', agentId: 'bot', args: {title: 'Hi'}});
     for (const path of ['//evil/path', 'https://evil/path', '/s/x?args=[]', '/s/%2fsecret', '/unknown']) expect(hyperParseScreenDestination(path)).toEqual({kind: 'missing'});
+  });
+});
+
+import { OpenGenerativeUIActivityRenderer } from '@copilotkit/react-core/v2';
+import { HyperSandboxPreview } from './HyperInteractiveResult';
+describe('Hyper authorized component rendering', () => {
+  it('renders recorded approval, choice and submitted form answers', () => {
+    const approval = GALLERY_COMPONENTS.find(spec => spec.name === 'askApproval')!;
+    const choice = GALLERY_COMPONENTS.find(spec => spec.name === 'askChoice')!;
+    const form = GALLERY_COMPONENTS.find(spec => spec.name === 'askForm')!;
+    expect(renderToStaticMarkup(createElement(approval.Component, {status: 'complete', args: {title: 'Refund', summary: 'Order'}, result: JSON.stringify({decision: 'approved'})}))).toContain('Approved');
+    expect(renderToStaticMarkup(createElement(choice.Component, {status: 'complete', args: {title: 'Where', options: [{id: 'staging', label: 'Staging'}]}, result: JSON.stringify({choice: 'staging'})}))).toContain('Staging');
+    const html = renderToStaticMarkup(createElement(form.Component, {status: 'complete', args: {title: 'Details', fields: [{id: 'team', label: 'Team', type: 'text'}]}, result: JSON.stringify({status: 'submitted', values: {team: 'HyperTask'}})}));
+    expect(html).toContain('HyperTask');
+    expect(html).not.toContain('type="submit"');
+  });
+  it('passes source and arguments only to the original SDK sandbox', () => {
+    const source = {name: 'custom_example', html: '<script>unsafe()</script>', css: 'body{}', jsFunctions: 'window.example = true;', argumentSchema: {}};
+    const html = renderToStaticMarkup(createElement(HyperSandboxPreview, {source, args: {title: '</script><script>unsafe()</script>'}}));
+    expect(html).not.toContain('<script>');
+    const props = vi.mocked(OpenGenerativeUIActivityRenderer).mock.calls.at(-1)?.[0];
+    expect(props?.activityType).toBe('open-generative-ui');
+    expect(props?.content).toMatchObject({html: [source.html], css: source.css, jsFunctionsComplete: true, generating: false});
+    expect((props?.content as {jsFunctions: string}).jsFunctions).toBe(`window.__args = ${JSON.stringify({title: '</script><script>unsafe()</script>'})};\n${source.jsFunctions}`);
   });
 });

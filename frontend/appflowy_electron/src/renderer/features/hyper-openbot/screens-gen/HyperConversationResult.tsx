@@ -18,7 +18,7 @@ export function HyperConversationResult({tool, callingBotId, ask}: {tool: HyperT
   let result = tool.result;
   try { const value: unknown = JSON.parse(result ?? ''); if (typeof value === 'string') result = value; } catch { /* Plain protocol sentence. */ }
   if (result?.startsWith('Not drawn:') || result?.startsWith('Not asked:')) return null;
-  if (result?.startsWith('Not shown:') || tool.status === 'refused' || tool.status === 'failed') return <HyperToolMessage {...tool} status={tool.status === 'failed' ? 'failed' : 'refused'} />;
+  if (result?.startsWith('Not shown:') || tool.status === 'refused' || (tool.status === 'failed' && hyperGalleryComponent(tool.label)?.kind !== 'decision')) return <HyperToolMessage {...tool} status={tool.status === 'failed' ? 'failed' : 'refused'} />;
   let args: Record<string, unknown>;
   try {
     const parsed: unknown = JSON.parse(tool.arguments ?? '{}');

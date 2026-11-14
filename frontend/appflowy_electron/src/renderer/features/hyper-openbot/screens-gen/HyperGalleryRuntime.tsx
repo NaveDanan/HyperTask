@@ -46,7 +46,7 @@ export async function hyperExecuteGalleryCall(spec: Pick<HyperGalleryComponent, 
   const id = context.toolCall?.id;
   if (!id) throw new Error('A decision needs a tool call identity.');
   return new Promise<unknown>((resolve, reject) => {
-    const abort = () => {waiting.delete(id); emit(); reject(new Error('Human-in-the-loop interaction aborted'));};
+    const abort = () => {if (waiting.get(id)?.resolve === resolve) {waiting.delete(id); emit();} reject(new Error('Human-in-the-loop interaction aborted'));};
     if (context.signal?.aborted) {abort(); return;}
     context.signal?.addEventListener('abort', abort, {once: true});
     waiting.set(id, {botId, resolve, reject, stop: () => context.signal?.removeEventListener('abort', abort)}); emit();

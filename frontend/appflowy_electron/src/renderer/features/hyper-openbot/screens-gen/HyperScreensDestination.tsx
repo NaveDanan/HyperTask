@@ -1,6 +1,7 @@
 // Adapted from OpenBot routes/_authed/_app/s/$screen.tsx and component gallery routes.
 // Copyright (c) 2026 CopilotKit. MIT license, see ../LICENSE.
-import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
+import { HYPER_OPENBOT_SECTIONS, type HyperOpenBotSectionContext } from '../HyperOpenBotSections';
+import { hyperGalleryComponent } from './HyperGalleryRegistry';
 import HyperGallerySection, { HyperAdminComponentsSection } from './HyperGallerySection';
 import HyperPlaygroundSection from './HyperPlaygroundSection';
 import { HyperGeneratedScreen } from './HyperGeneratedScreen';
@@ -34,6 +35,13 @@ export default function HyperScreensDestination({context, path}: HyperScreensDes
   if (destination.kind === 'admin') return <HyperAdminComponentsSection initialName={destination.name} />;
   if (destination.kind === 'gallery') return <HyperGallerySection initialName={destination.name} />;
   if (destination.kind === 'playground') return <HyperPlaygroundSection />;
-  if (destination.kind === 'screen') return <HyperGeneratedScreen name={destination.name} agentId={destination.agentId} args={destination.args} />;
+  if (destination.kind === 'screen') {
+    // Upstream skins resolve their own extra screens; native extensions resolve through the section registry.
+    const aliases: Record<string, string> = {memories: 'memory', goals: 'routines'};
+    const sectionId = Object.hasOwn(aliases, destination.name) ? aliases[destination.name] : destination.name;
+    const section = HYPER_OPENBOT_SECTIONS.find(item => item.id === sectionId && item.id !== 'screens');
+    if (section) return section.render({...context, navigationIntent: undefined});
+    if (hyperGalleryComponent(destination.name) || destination.name.startsWith('custom_')) return <HyperGeneratedScreen name={destination.name} agentId={destination.agentId} args={destination.args} />;
+  }
   return <HyperGallerySection />;
 }

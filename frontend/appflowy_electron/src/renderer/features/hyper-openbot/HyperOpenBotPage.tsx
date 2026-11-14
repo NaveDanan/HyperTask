@@ -1,6 +1,6 @@
 import { HyperGalleryTools, hyperPrepareGalleryAgent } from './screens-gen/HyperGalleryRuntime';
 import { hyperRuntimeBotOf } from './runtime';
-import { HyperConversationResult } from './screens-gen';
+import { HyperConversationResult } from './screens-gen/HyperConversationResult';
 import { HyperInitialDraftTransfer, hyperReceiveInitialDraft, type HyperInitialDraftReceiver } from './conversations/HyperInitialDraftTransfer';
 import type { HyperInitialDraft } from './onboarding/HyperHomeApi';
 import { HyperVoiceControls } from './conversations/HyperVoiceControls';
