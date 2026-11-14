@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { HyperBotProfile } from '../bots/HyperBotsApi';
-import { HyperConnectionsPanel } from '../connections';
+import { HyperAppAccessAction, HyperConnectionsPanel } from '../connections';
 import { HyperSharedAppNotice } from './HyperSharedAppNotice';
 import { HyperBotAppGrants } from './HyperBotAppGrants';
 import { HyperBotSetupTab } from './HyperBotSetupTab';
@@ -15,8 +15,8 @@ import { HyperBotSkillsTab } from './HyperBotSkillsTab';
 import { HYPER_BOT_EXTRA_TABS } from './HyperBotExtraTabs';
 import { hyperTeamBotShareLink, HyperBotTabsApi as api, type HyperBotApp, type HyperTeamBots } from './HyperBotTabsApi';
 
-export function HyperBotDetailTabs({ bot, openConversation }: { bot: HyperBotProfile; openConversation?: (id: string) => void }) {
-  const [tab, setTab] = useState('apps');
+export function HyperBotDetailTabs({ bot, openConversation, initialTab }: { initialTab?: string; bot: HyperBotProfile; openConversation?: (id: string) => void }) {
+  const [tab, setTab] = useState(initialTab ?? 'apps');
   const Extra = HYPER_BOT_EXTRA_TABS.find(item => item.id === tab)?.component;
   return <section className="grid gap-4 border-t border-border pt-4">
     <nav aria-label="Bot details" className="flex flex-wrap gap-2">{[{ id: 'setup', label: 'Setup' }, { id: 'apps', label: 'Apps' }, { id: 'sharing', label: 'Sharing' }, { id: 'approvals', label: 'Approvals' }, { id: 'skills', label: 'Skills' }, { id: 'reach', label: 'Reaching you' }, { id: 'activity', label: 'Activity' }, ...HYPER_BOT_EXTRA_TABS].map(item => <Button key={item.id} variant={tab === item.id ? 'secondary' : 'ghost'} aria-pressed={tab === item.id} onClick={() => setTab(item.id)}>{item.label}</Button>)}</nav>
@@ -64,7 +64,7 @@ function HyperBotRemoteTab({ bot, tab }: { bot: HyperBotProfile; tab: string }) 
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <Button variant="outline" disabled={pending} onClick={() => setRevision(v => v + 1)}>Refresh</Button>
     {tab === 'apps' && apps && <><Button variant="outline" onClick={() => setConnecting(!connecting)}>{connecting ? 'Close connections' : 'Connect accounts'}</Button>{connecting && <HyperConnectionsPanel />}{apps.length === 0 && <p>No apps on this Bot.</p>}{apps.map(app => <article key={app.key} className="grid gap-2 rounded-lg border border-border p-3">
-      <h3 className="font-medium">{app.displayName}</h3>{admin && <Button variant="outline" onClick={() => setEditingApp(editingApp === app.key ? undefined : app.key)}>Manage actions</Button>}{admin && app.requestKind && <Button disabled={pending} onClick={() => void mutate(() => hyperOpenBotRequest(`/api/plugins/for/${encodeURIComponent(bot.id)}/apps/${encodeURIComponent(app.key)}/approve`, 'POST'))}>Approve app access</Button>}{editingApp === app.key && <HyperBotAppGrants agentId={bot.id} app={app.key} shared={app.account === 'shared'} onSaved={() => setRevision(v => v + 1)} />}<p className="text-sm text-muted-foreground">{app.state.replaceAll('_', ' ')}{app.accountHolder === 'owner' ? ' · Uses the owner’s account' : ''}{app.asksFirst ? ' · Asks before first use' : ''}</p>
+      <h3 className="font-medium">{app.displayName}</h3><HyperAppAccessAction key={`${bot.id}:${app.key}`} agentId={bot.id} app={app.key} admin={admin} onOpenConnection={key => { setConnecting(true); setEditingApp(key); }} />{admin && <Button variant="outline" onClick={() => setEditingApp(editingApp === app.key ? undefined : app.key)}>Manage actions</Button>}{admin && app.requestKind && <Button disabled={pending} onClick={() => void mutate(() => hyperOpenBotRequest(`/api/plugins/for/${encodeURIComponent(bot.id)}/apps/${encodeURIComponent(app.key)}/approve`, 'POST'))}>Approve app access</Button>}{editingApp === app.key && <HyperBotAppGrants agentId={bot.id} app={app.key} shared={app.account === 'shared'} onSaved={() => setRevision(v => v + 1)} />}<p className="text-sm text-muted-foreground">{app.state.replaceAll('_', ' ')}{app.accountHolder === 'owner' ? ' · Uses the owner’s account' : ''}{app.asksFirst ? ' · Asks before first use' : ''}</p>
       {app.needsConnect && <p>Connect your account on Connections first.</p>}
       {!personal && app.state === 'owner_grantable' && !app.needsConnect && <Button disabled={pending} onClick={() => void mutate(() => api.give(bot.id, app.key))}>Give app</Button>}
       {!personal && app.givenByOwner && bot.mine && <Button disabled={pending} variant="outline" onClick={() => void mutate(() => api.give(bot.id, app.key, true))}>Take back app</Button>}

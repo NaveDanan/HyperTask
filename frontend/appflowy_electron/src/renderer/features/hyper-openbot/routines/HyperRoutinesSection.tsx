@@ -32,9 +32,11 @@ function HyperNewRoutine({agentId='',done}:{agentId?:string;done:()=>void}) {
 }
 export function HyperBotRoutinesTab({agentId,context}:{agentId:string;context?:HyperOpenBotSectionContext}) {return <HyperRoutinesSection agentId={agentId} context={context}/>;}
 export function HyperBotResponsibilitiesTab({agentId,context}:{agentId:string;context?:HyperOpenBotSectionContext}) {return <HyperRoutinesSection agentId={agentId} context={context}/>;}
-export default function HyperRoutinesSection({context:providedContext,agentId,initialTab='overview'}:{context?:HyperOpenBotSectionContext;agentId?:string;initialTab?:string}) {
+export default function HyperRoutinesSection({context:providedContext,agentId,initialTab='overview',path}:{path?:string;context?:HyperOpenBotSectionContext;agentId?:string;initialTab?:string}) {
  const context=useHyperRoutineNavigation(providedContext);const checkInsOff=useHyperCheckInsOff();
- const [tab,setTab]=useState(initialTab),[fresh,setFresh]=useState(0),[selected,setSelected]=useState<{family:string;id:string}|null>(null);const refresh=()=>setFresh(n=>n+1);
+ const match=path ? /^\/(routines|responsibilities)\/([^/?#]+)/.exec(path) : null;
+ const family=match?.[1]; let detailId:string|undefined;try{detailId=match?decodeURIComponent(match[2]):undefined;}catch{}
+ const [tab,setTab]=useState(detailId==='new'?'new':family==='responsibilities'?'goals':family==='routines'?'routines':initialTab),[fresh,setFresh]=useState(0),[selected,setSelected]=useState<{family:string;id:string}|null>(family&&detailId&&detailId!=='new'?{family,id:detailId}:null);const refresh=()=>setFresh(n=>n+1);
  const action=(family:string,id:string,label:string,suffix='',method='POST',body?:unknown,confirm?:string)=><HyperAction label={label} run={()=>HyperRoutineWrite(family,id,suffix,method,body)} done={refresh} confirm={confirm}/>;
  if(tab==='new')return <div className="p-6"><HyperNewRoutine agentId={agentId} done={()=>{setTab(initialTab);refresh();}}/></div>;
  return <section className="space-y-4 p-6"><header className="flex flex-wrap gap-2"><h1 className="mr-auto text-xl font-semibold">Routines</h1>{['overview','routines','goals','check-ins','tasks','suggestions'].map(t=><Button key={t} variant={tab===t?'default':'outline'} onClick={()=>{setTab(t);setSelected(null);}}>{t}</Button>)}<Button onClick={()=>{setSelected(null);setTab('new');}}>New routine</Button></header>

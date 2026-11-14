@@ -1,3 +1,4 @@
+import { hyperLearningSelectionFromPath } from './HyperLearningNavigation';
 // Adapted from OpenBot components/settings/{learning-sharing,learning-review}.tsx.
 // Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
 import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
@@ -11,15 +12,16 @@ import { HyperLearningDetail } from './HyperLearningDetail';
 import { HyperLearningProposals } from './HyperLearningSection';
 import { HyperMemoryStatus, useHyperMemoryData, useHyperMemoryAction } from './HyperMemorySection';
 import type { PersonalReview, PersonalLearningSharing } from './HyperLearningTypes';
-export function HyperPersonalLearningSection({onOpenRecordings:openRecordings}:{context?:HyperOpenBotSectionContext;onOpenRecordings?:()=>void}) {
- const [recordings,setRecordings]=useState(false);
+export function HyperPersonalLearningSection({onOpenRecordings:openRecordings,path}:{path?:string;context?:HyperOpenBotSectionContext;onOpenRecordings?:()=>void}) {
+ const selection=hyperLearningSelectionFromPath(path);
+ const [recordings,setRecordings]=useState(selection.tab==='recordings');
  const onOpenRecordings=openRecordings??(()=>setRecordings(true));
  const capabilities=useHyperMemoryData<{edition?:string}>('/api/capabilities');
  const personal=capabilities.data?.edition==='personal';
  const sharing=useHyperMemoryData<PersonalLearningSharing>('/api/settings/learning');
  const review=useHyperMemoryData<PersonalReview>('/api/settings/learning/review',undefined,10000);
  const action=useHyperMemoryAction(()=>{sharing.reload();review.reload();});
- const [detail,setDetail]=useState('');
+ const [detail,setDetail]=useState(selection.skill ? `/api/settings/learning/skills/${encodeURIComponent(selection.skill)}` : '');
  const previousWaiting=useRef<number | undefined>(undefined);
  const waiting=review.data?.sources.reduce((count,source)=>count+(source.proposals??[]).filter(item=>item.status==='pending_review').length,0);
  useEffect(()=>{if(waiting!==undefined){if((previousWaiting.current!==undefined&&waiting<previousWaiting.current)||(review.data?.approved??0)>0)sharing.reload();previousWaiting.current=waiting;}},[review.data]);
@@ -36,12 +38,12 @@ export function HyperPersonalLearningSection({onOpenRecordings:openRecordings}:{
  {groups.map(label=>{
  const sources=review.data!.sources.filter(source=>source.label===label);
  const running=sources.some(source=>source.latestRun&&!['succeeded','failed'].includes(source.latestRun.status));
- return <section className="grid gap-3" key={label}><h3>{label}</h3>{review.data?.canReview&&<Button disabled={action.busy||running||!!review.data.modelProblem||sources.every(source=>!!source.unavailable)} onClick={()=>void action.run(async()=>{try{for(const source of sources.filter(source=>!source.unavailable))await hyperOpenBotRequest(`/api/settings/learning/runs?container=${encodeURIComponent(source.containerId)}`,'POST',{});}finally{review.reload();}})}>{running?'Learning in progress…':'Learn now'}</Button>}{sources.map(source=><div key={source.containerId}>{review.data?.canReview&&<p>{source.latestRun?.status??'No run yet.'}{source.latestRun?.failure}</p>}{source.unavailable&&<p>Learning is switched off for this source.</p>}<HyperLearningProposals proposals={source.proposals?.filter(item=>item.status==='pending_review')??null} base="/api/settings/learning/proposals" query={`?container=${encodeURIComponent(source.containerId)}`} canReview={review.data?.canReview} reload={()=>{review.reload();sharing.reload();}}/></div>)}</section>;
+ return <section className="grid gap-3" key={label}><h3>{label}</h3>{review.data?.canReview&&<Button disabled={action.busy||running||!!review.data.modelProblem||sources.every(source=>!!source.unavailable)} onClick={()=>void action.run(async()=>{try{for(const source of sources.filter(source=>!source.unavailable))await hyperOpenBotRequest(`/api/settings/learning/runs?container=${encodeURIComponent(source.containerId)}`,'POST',{});}finally{review.reload();}})}>{running?'Learning in progress…':'Learn now'}</Button>}{sources.map(source=><div key={source.containerId}>{review.data?.canReview&&<p>{source.latestRun?.status??'No run yet.'}{source.latestRun?.failure}</p>}{source.unavailable&&<p>Learning is switched off for this source.</p>}<HyperLearningProposals initialProposalId={selection.container===source.containerId ? selection.proposalId : undefined} proposals={source.proposals?.filter(item=>item.status==='pending_review')??null} base="/api/settings/learning/proposals" query={`?container=${encodeURIComponent(source.containerId)}`} canReview={review.data?.canReview} reload={()=>{review.reload();sharing.reload();}}/></div>)}</section>;
  })}
  {review.data?.sources.length===0&&<p>No Learning sources yet. Teach a Bot with your recordings.</p>}{detail&&<HyperLearningDetail path={detail} kind="skill" onOpenRecordings={onOpenRecordings} onClose={()=>setDetail('')}/>}</section>;
 }
 /** Native destination for upstream Skills/Capabilities and Settings → Learning. */
-export default function HyperMemorySkillsSection({context}:{context:HyperOpenBotSectionContext}) {
+export default function HyperMemorySkillsSection({context,path}:{path?:string;context:HyperOpenBotSectionContext}) {
  const [tab,setTab]=useState('learned');
- return <section className="grid gap-4"><nav className="flex gap-2 p-6"><Button variant={tab==='learned'?'default':'outline'} onClick={()=>setTab('learned')}>Learned skills and review</Button><Button variant={tab==='written'?'default':'outline'} onClick={()=>setTab('written')}>Written skills</Button><Button variant="outline" onClick={()=>context.navigate?.('browser')}>Teach a Bot</Button></nav>{tab==='written'?<HyperSkillsPanel/>:<HyperPersonalLearningSection context={context}/>}</section>;
+ return <section className="grid gap-4"><nav className="flex gap-2 p-6"><Button variant={tab==='learned'?'default':'outline'} onClick={()=>setTab('learned')}>Learned skills and review</Button><Button variant={tab==='written'?'default':'outline'} onClick={()=>setTab('written')}>Written skills</Button><Button variant="outline" onClick={()=>context.navigate?.('browser')}>Teach a Bot</Button></nav>{tab==='written'?<HyperSkillsPanel/>:<HyperPersonalLearningSection path={path} context={context}/>}</section>;
 }
