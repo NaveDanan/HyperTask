@@ -1,3 +1,4 @@
+import { hyperComputerSocketPathAllowed } from './computer-browser/HyperComputerSocketPolicy';
 import { hyperRunConnectionLost } from './HyperRunConnection';
 import type { HyperOpenBotSocketEvent } from '@shared/api';
 /** Browser-compatible Phoenix transport with a fixed main-process gateway destination. */
@@ -55,6 +56,6 @@ export class HyperOpenBotSocket extends EventTarget {
 export function hyperSocketPath(url: string): string | undefined {
   // Phoenix resolves a path-only gateway against file:// as ws:///api/... .
   if (/^ws:\/\/\/api\/intelligence\/client\/websocket\?/.test(url)) return url.slice('ws://'.length);
-  try { const parsed = new URL(url); if (['ws:', 'wss:'].includes(parsed.protocol) && parsed.hostname === 'hyper-openbot.invalid' && parsed.pathname === '/api/intelligence/client/websocket') return parsed.pathname + parsed.search; } catch { /* Refused below. */ }
+  try { const parsed = new URL(url); if (['ws:', 'wss:'].includes(parsed.protocol) && parsed.hostname === 'hyper-openbot.invalid' && (parsed.pathname === '/api/intelligence/client/websocket' || (!parsed.search && hyperComputerSocketPathAllowed(parsed.pathname)))) return parsed.pathname + parsed.search; } catch { /* Refused below. */ }
   return undefined;
 }

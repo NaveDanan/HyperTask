@@ -56,7 +56,17 @@ it('approvals-inbox allows its contracts and refuses traversal and unrelated fam
   for (const path of ['/api/approvals', '/api/approvals/rules/one', '/api/bots/routing/decision', '/api/delivery', '/api/delivery/devices/one']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/delivery/../secrets', '/api/delivery/%2e%2e/secrets', '/api/unowned-inbox', '/api/delivery\\secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
-it('approvals-inbox restricts shared consent reset to its exact path', () => {
+it('approvals-inbox and conversation consent routes remain confined to the approved Team Bot family', () => {
   expect(hyperOpenBotPathAllowed('/api/team-bots/consents')).toBe(true);
-  for (const path of ['/api/team-bots', '/api/team-bots/other/consents', '/api/team-bots/consents/other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+  expect(hyperOpenBotPathAllowed('/api/team-bots/bot/consents')).toBe(true);
+  for (const path of ['/api/team-bots-other', '/api/team-bots/../secrets', '/api/team-bots/%2e%2e/secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
+it('computer-browser allows its verified families and refuses foreign and traversal routes', () => {
+  for (const path of ['/api/browser', '/api/browser/tabs', '/api/computers/bot/control/take', '/api/recorder/connections/id']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/browser/../private', '/api/computers/%2e%2e/private', '/api/recorder/%252e%252e/private', '/api/unknown-family']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+it('computer-browser folder access permits its API and rejects traversal and foreign protocols', () => {
+  for (const path of ['/api/host-access', '/api/host-access/grants', '/api/host-access/grants/folder-id', '/api/host-access/stop', '/api/computers/a/files/download?path=report.txt', '/api/browser/narration']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/host-access/%2fprivate', '/api/host-access/../private', 'file:///api/host-access', '/api/host-access\\private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });

@@ -14,7 +14,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: vault
   'passwords', 'sign-in-requests', 'admin/credentials',
   // slot: computer-browser
-  /* computer-browser */
+  'computers', 'browser', 'recorder', 'host-access',
   // slot: screens
   /* screens */
   // slot: settings
