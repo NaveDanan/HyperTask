@@ -19,35 +19,74 @@ No credentials, cookies, generated interfaces, external frames or upstream theme
 Native controls use existing Button/Input and token classes. Section exploration opens registered
 native sections in place; unavailable sections remain disabled until their owning area registers them.
 
-## Remaining parity and integration work
+## Home and navigation integration
 
-- Home initial message, attachments, routing refusal and pending-start restoration need a shared
-  composer handoff. Proposed lead-owned seam: `startConversation(agentIds: string[], initialDraft?:
-  { text: string; files?: File[] }): void | Promise<void>`. The receiving conversation must retain
-  the draft on routing/upload/send refusal, upload through the existing attachment transport,
-  and send only after explicit submission. Home currently offers Bot launch buttons only.
-- `HyperStarterTasks` is exported for the conversation composer owner to mount with `agentId`,
-  `channelId`, `disabled` and `onSelect(message)`. It is not mounted into shared conversation code
-  because this area owns only onboarding. Account tour claims remain server-owned on creation.
-- Home's working-now list, shared-Bot discovery/pagination and first-conversation greeting rule
-  are not ported. Current Home shows four roster entries and greets named users on every visit.
-- Onboarding uses native text instead of components/onboarding demo animations, organization-flow
-  illustrations and the onboarding-frame/wizard motion. No embedded booking calendar is loaded;
-  the business step links to the upstream business page in the system browser. This preserves
-  external booking access but does not detect booking completion.
-- `_authed/desktop-return.tsx` and components/desktop/desktop-return.tsx are the browser OAuth
-  return handoff using `openbot://open`. HyperTask main owns its protocol/identity lifecycle.
-  No second OpenBot protocol handler or browser return route is installed by this area.
-  Broker confirmation and connection focus refresh belong to the connections/lifecycle owners.
-- `app/src/routes/_authed/sign-in/$requestId.tsx` is a private Bot-browser credential form,
-  not identity sign-in. It delegates to components/passwords/sign-in-form.tsx. It remains unported
-  under this task's no-renderer-credentials restriction and needs a trusted main-owned secret-entry
-  design. It must not be replaced with account sign-in.
-- lib/auth/client.ts, resume.ts and sign-out-offered.ts manage upstream browser identity,
-  redirect/resume and sign-out prompting. Native identity/session/sign-out stay main-owned;
-  their browser redirect and credential machinery is not applicable to this native area.
-- Setup detail links open their native section but cannot select a nested settings tab until a
-  shared navigation seam exists. No arbitrary upstream URL is rendered as an internal route.
+| Native file | Exact upstream sources | Behavior |
+| --- | --- | --- |
+| HyperHomeApi.ts | app/src/lib/channels/route.ts; app/src/lib/channels/queries.ts; app/src/lib/auth/greeting.ts; app/src/lib/agents/default-agent.ts | Routing payload, explicit choice audit, skill routing, ambiguity refusal, bounded Unicode-safe routing text, fallback Bot, paged roster, first-conversation greeting |
+| HyperHomeComposer.tsx | app/src/routes/_authed/_app/index.tsx; app/src/lib/plugins/skill-commands.ts; app/src/lib/plugins/queries.ts | Text/files, Bot choice, granted skill selection, exact draft transfer, duplicate-submit lock, rejection recovery, per-user memory-only draft restoration |
+| HyperNativeTour.tsx | app/src/components/onboarding/demos/intro-reel.tsx; app/src/components/onboarding/demos/welcome-demo.tsx; app/src/components/onboarding/demos/team-demo.tsx; app/src/components/onboarding/demos/computer-demo.tsx; app/src/components/onboarding/onboarding-wizard.tsx | Native guided section exploration, Back/Next/Close and heading focus |
+| HyperDesktopReturnSection.tsx | app/src/routes/_authed/desktop-return.tsx; app/src/components/desktop/desktop-return.tsx; app/src/lib/plugins/mutations.ts | Encoded server connection confirmation, loading/error/retry, native Connections destination |
 
-Focused tests cover API payloads, read-back, refused writes, name validation, role gate,
-server tour eligibility, internal Bot IDs and allowlist acceptance/refusal.
+Home mounts starter tasks and the native tour, lists shared public Bots with four initially and
+All Bots expansion, follows working conversations, refreshes the server roster on focus/every
+15 seconds, and offers cursor pagination. Existing Bots/Skills/Connections panels are loaded
+locally when no section registry entry exists. Other specialists' sections use their registry entries.
+Upstream animations and illustration chrome are replaced with native explanatory text and controls.
+
+### Parent-owned contract
+
+Exported from HyperHomeApi.ts:
+
+```ts
+interface HyperInitialDraft {
+  text: string;
+  files: File[];
+  commandIds: string[];
+  submit: boolean;
+}
+interface HyperHomeContext {
+  initialDraftSupported?: boolean;
+  openConversation(channelId: string): void;
+  startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): void | Promise<void>;
+}
+```
+
+The parent must extend HyperOpenBotSectionContext with the optional draft and capability marker.
+Set `initialDraftSupported: true` only once the receiving conversation consumes the draft.
+The marker prevents the old one-argument implementation from silently discarding text/files.
+Creation, uploads and initial send must be awaited and reject on refusal/failure so Home retains
+its draft and File objects. `submit: true` means the person pressed Send or chose a starter task.
+`submit: false` means populate the receiving composer without sending. Preserve File identity
+and do not serialize file contents or unsent text into browser storage. Home already performs
+`POST /api/route`, including explicit-choice audit, so the parent must not route it a second time.
+The shared receiver owns pending conversation navigation, upload lifecycle and send restoration.
+Home optionally receives `initialText` for upstream `ask` prefilling, capped at 2000 characters.
+
+`HyperDesktopReturnSection` is exported with `{ context, app?: string }`. The parent-owned
+main callback must pass the app key after external OAuth return and open this native view.
+No `openbot://` handler or second identity flow is installed. Nested Setup/Connections destinations
+currently open their section; selecting their exact nested detail needs the parent's navigation seam.
+
+`HyperStarterTasks` is also exported for the conversation owner to mount with `agentId`,
+`channelId`, `disabled` and `onSelect(message)`. Home mounts it already. Account-level tour claims
+remain server-owned on channel creation; focus refresh observes claims in another window.
+
+## Booking and identity boundaries
+
+Booking uses `https://open.bot/business` in the browser. The upstream inline Calendly iframe
+and booking-event completion cannot run under the existing renderer `default-src 'self'` CSP.
+Per owner instruction, CSP stays unchanged and browser fallback is the intended native behavior.
+
+Private Bot sign-in at `app/src/routes/_authed/sign-in/$requestId.tsx` is implemented by Vault;
+this area does not duplicate it. Browser identity client/resume/sign-out flows from lib/auth
+remain main-owned. Only current-user/profile and the greeting logic are used in this renderer.
+
+## Validation
+
+The reproduced onboarding-refusal test now captures and checks the exact rejected Error identity
+and asserts no follow-up user read occurs after the refused write. Focused tests cover original
+routing request bodies, ambiguous routing refusal, skill failure refusal, fallback selection,
+File identity transfer, unsupported navigation refusal, Unicode routing bounds, greeting,
+pagination encoding, onboarding payloads/read-back, name validation, role checks, starter
+eligibility and route allowlist acceptance/refusal. No backend or Electron app is used.
