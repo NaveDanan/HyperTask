@@ -1,4 +1,5 @@
-import fs from 'node:fs/promises';
+import { createHyperOpenBotSession, hyperReadCoreIdentity, hyperNativeCoreRequest } from './HyperOpenBotSession';
+import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
 import os from 'node:os';
 import path from 'node:path';
 import { app, BrowserWindow, clipboard, dialog, ipcMain, net, session, shell } from 'electron';
@@ -118,14 +119,21 @@ function focusWindow() {
 }
 
 function registerIpc() {
+  const openBotSessions = createHyperOpenBotSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
+  registerHyperOpenBotIpc(() => mainWindow, openBotSessions);
+  core.on('exit', () => { void openBotSessions.beginNativeTransition().cleared.catch(() => {}); });
   ipcMain.handle(C.CoreInit, async (_, config: CoreInitConfig) => {
+    const transition = openBotSessions.beginNativeTransition(false);
     await startCore();
-    return core.init(config);
+    await transition.cleared;
+    const result = await core.init(config);
+    openBotSessions.completeNativeTransition(transition.version, result === 0);
+    return result;
   });
-  ipcMain.handle(C.CoreRequest, async (_, event: string, payload: Uint8Array) => {
+  ipcMain.handle(C.CoreRequest, (_, event: string, payload: Uint8Array) => hyperNativeCoreRequest(openBotSessions, event, async () => {
     await startCore();
     return core.request(event, payload);
-  });
+  }));
   ipcMain.on(C.CoreLog, (_, level: number, message: string) => core.log(level, message));
 
   ipcMain.handle(C.AppInfo, (): AppInfo => ({
@@ -187,30 +195,7 @@ function registerIpc() {
   ipcMain.handle(C.PrefsSetDouble, (_, key: string, value: number) => prefs.setDouble(key, value));
   ipcMain.handle(C.PrefsRemove, (_, key: string) => prefs.remove(key));
 
-  ipcMain.handle(C.FsExists, async (_, target: string) => {
-    try {
-      await fs.access(target);
-      return true;
-    } catch {
-      return false;
-    }
-  });
-  ipcMain.handle(C.FsEnsureDir, (_, target: string) => fs.mkdir(target, { recursive: true }).then(() => undefined));
-  ipcMain.handle(C.FsReadText, async (_, target: string) => {
-    try {
-      return await fs.readFile(target, 'utf8');
-    } catch {
-      return null;
-    }
-  });
-  ipcMain.handle(C.FsWriteBytes, async (_, target: string, data: Uint8Array) => {
-    await fs.mkdir(path.dirname(target), { recursive: true });
-    await fs.writeFile(target, data);
-  });
-  ipcMain.handle(C.FsWriteText, async (_, target: string, content: string) => {
-    await fs.mkdir(path.dirname(target), { recursive: true });
-    await fs.writeFile(target, content, 'utf8');
-  });
+  registerHyperOpenBotFileIpc(app.getPath('userData'));
 
   ipcMain.on(C.WindowMinimize, () => mainWindow?.minimize());
   ipcMain.on(C.WindowToggleMaximize, () => {

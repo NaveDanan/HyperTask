@@ -66,6 +66,7 @@ describeWithCore('core process (real binary)', () => {
     const profile = await core.request('GetUserProfile', new Uint8Array());
     expect(profile.status).toBe(Status.Err);
     expect(fromBinary(FlowyErrorSchema, profile.payload).code).not.toBe(0);
+    expect((await core.request('HyperGetNativeIdentity', new Uint8Array())).status).not.toBe(Status.Ok);
   });
 
   it('runs the local-mode startup sequence and streams folder notifications', async () => {
@@ -79,6 +80,15 @@ describeWithCore('core process (real binary)', () => {
 
     const again = await call('GetUserProfile', UserProfilePBSchema);
     expect(again.id).toBe(user.id);
+    const identity = await core.request('HyperGetNativeIdentity', new Uint8Array());
+    expect(identity.status).toBe(Status.Ok);
+    const nativeIdentity = JSON.parse(new TextDecoder().decode(identity.payload));
+    expect(nativeIdentity.version).toBe(1);
+    expect(nativeIdentity.domain).toBe('local');
+    expect(nativeIdentity.userId).toBe(user.id.toString());
+    expect(nativeIdentity.userUuid).toMatch(/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/);
+    expect(nativeIdentity.userUuid).not.toBe('00000000-0000-0000-0000-000000000000');
+    expect((await core.request('HyperGetNativeIdentity', new Uint8Array())).payload).toEqual(identity.payload);
 
     // DesktopHomeScreen: the workspace setting and its views.
     const setting = await call('GetCurrentWorkspaceSetting', WorkspaceLatestPBSchema);

@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-14T12:25:32.880643+00:00",
+  "issue": 5,
+  "pullRequest": 11,
+  "codeHeadObserved": "63054806317331f81582aff027585e08197a86a1",
+  "product": "HyperTask",
+  "environment": "Real Electron 44.10.2 window on the local Linux PC, original OpenBot and Intelligence on the authorized VM",
+  "scope": "Native chat send/stream/save/app-restart/reopen and appearance/navigation observations; further issue #6 tool/approval acceptance is separate.",
+  "before": {
+    "startedAt": "2026-11-14T12:13:46.835Z",
+    "observedAt": "2026-11-14T12:13:56.103Z",
+    "head": "63054806317331f81582aff027585e08197a86a1",
+    "actualElectronWindow": true,
+    "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
+    "channelId": "channel_22def8f2-c59e-4459-ac75-74724609b23a",
+    "threadId": "49c8cef5-0fb2-8050-ae61-037b3cdefad6",
+    "botId": "picked-harness",
+    "runId": "04771d83-77d9-48cb-bf1d-da36dca6df03",
+    "userMessageId": "d2652c81-8821-4a90-858e-e7fd68c08f91",
+    "assistantMessageId": "resp_054c0467c5a61788016af85080064487d29cdea872f7486d9b",
+    "textDeliveries": 95,
+    "statuses": {
+      "channel": 200,
+      "history": 200
+    },
+    "exactStreamSavedUi": true,
+    "errors": []
+  },
+  "beforeTextHashes": {
+    "promptSha256": "add63ce711aa519fc8d0b9f45289122451b0908b8be8dedaf644f9198eec8b4b",
+    "answerSha256": "3554ab3c82fc34755c7907200c495eb2cadce82b3325d5aebae1d072b6864f26",
+    "answerCharacters": 477
+  },
+  "beforeStream": {
+    "textDeliveries": 95,
+    "firstEventAt": "2026-11-14T12:13:52.970Z",
+    "lastEventAt": "2026-11-14T12:13:54.675Z",
+    "captureSha256": "37eba5d17253de512535b9dfef36a76a820f3aabf832564a5445ae8c11d79fc7"
+  },
+  "after": {
+    "observedAt": "2026-11-14T12:14:37.862Z",
+    "head": "63054806317331f81582aff027585e08197a86a1",
+    "actualElectronWindow": true,
+    "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
+    "channelId": "channel_22def8f2-c59e-4459-ac75-74724609b23a",
+    "threadId": "49c8cef5-0fb2-8050-ae61-037b3cdefad6",
+    "userMessageId": "d2652c81-8821-4a90-858e-e7fd68c08f91",
+    "assistantMessageId": "resp_054c0467c5a61788016af85080064487d29cdea872f7486d9b",
+    "sameNativeViewChannelThreadAndMessageIds": true,
+    "exactSavedUiText": true,
+    "noReplacementPromptSent": true,
+    "historyStatus": 200,
+    "errors": []
+  },
+  "afterCaptureSha256": "1bde3ad1da7b3430b15c947d11081efed14b04441891a4a8c0106d053d347e73",
+  "appearance": {
+    "observedAt": "2026-11-14T10:47:59.570Z",
+    "head": "0a347138a468d1c4f997126dd81bba5351578e92",
+    "results": {
+      "dark": {
+        "theme": "dark",
+        "background": "oklch(0.185 0.005 285.8)",
+        "foreground": "oklch(0.985 0 0)",
+        "primary": "oklch(92% .004 286.32)"
+      },
+      "light": {
+        "theme": "light",
+        "background": "oklch(1 0 0)",
+        "foreground": "oklch(0.141 0.005 285.823)",
+        "primary": "oklch(21% .006 285.885)"
+      },
+      "lavender": {
+        "theme": "light",
+        "background": "oklch(1 0 0)",
+        "foreground": "oklch(0.141 0.005 285.823)",
+        "primary": "#ABA9E7"
+      },
+      "jira": "native_navigation_visible_no_credentials_changed",
+      "chatReturnedToSameSavedMessage": true
+    },
+    "errors": []
+  },
+  "validation": {
+    "typecheck": "pass",
+    "frontendBuild": "pass",
+    "fullVitest": {
+      "passed": 526,
+      "skipped": 1,
+      "skippedReason": "Opt-in simulated-IPC live backend test; actual native Electron live test ran separately."
+    },
+    "realRustCoreIntegration": "Pass: rebuilt core identity query plus existing date, folder and search checks",
+    "nativeSendClick": "Normal pointer click; support bubble no longer intercepts",
+    "internalSystemMessages": "Excluded from visible transcript while preserved in agent context",
+    "originalUserData": "Unused; all app testing uses an isolated scratch profile"
+  },
+  "identity": {
+    "identitySource": "Main pairs direct native GetUserProfile with HyperGetNativeIdentity: core session UUID plus explicit local core domain",
+    "persistentOwnerBinding": "0700 directory and 0600 owner.json, verified on the actual profile",
+    "cookies": "Separate persistent Electron partition per identity",
+    "signOut": "Synchronous lease invalidation, HTTP/WS/SSH cancellation, serialized cookie clearing before native auth transition returns",
+    "differentIdentity": "Denied before backend connection; explicit reconnect configuration belongs to #7",
+    "coverage": "Session state, registered IPC, delayed cookie writes and identity transitions covered by focused tests within the full suite",
+    "ownerSchemaVersion": 2,
+    "remoteAccounts": "Denied until authenticated server provenance and trusted reconnect are implemented in #7",
+    "legacyBindings": "Version 1 numeric-ID bindings remain unchanged and are rejected; only disposable test binding was archived before the v2 positive check",
+    "rendererFileAccess": "Generic file IPC rejects all Electron user-data paths and canonical symlink aliases, protecting owner bindings and cookie partitions"
+  },
+  "reuse": "Source and per-component mappings under src/renderer/features/hyper-openbot/REUSE.md; original MIT license retained",
+  "limits": [
+    "Current private SSH connection targets the authorized development VM and requires Linux. Portable configuration/lifecycle remains #7.",
+    "Electron development launch used a process-only --no-sandbox flag because the npm helper lacks root ownership/mode; no source/system sandbox setting changed. Production packaging is not validated.",
+    "Appearance tests ran on the earlier native UI code before the main-process identity fix; UI styling did not change afterward.",
+    "Approved/denied tool actions, disconnect/cancel workflows and remaining phase-1 acceptance are not established by the plain-chat observations.",
+    "This is development acceptance, not a production release or complete Epic acceptance.",
+    "This personal development backend accepts local native identities only. Remote native accounts require authenticated server provenance in #7."
+  ],
+  "nativeCoreBuild": {
+    "observedAt": "2026-11-14T11:31:23.669122+00:00",
+    "exitCode": 0,
+    "sourceSha256": "1ab790229a2855a68f7ccef5630477fc049cc6153f4f5f4e4090e5ce89a8b75a",
+    "binarySha256": "a630e4600c7774c75e08b1d7c63768a147c68effe81c30071cf35bfa10aef064",
+    "toolchain": "1.85.0",
+    "jobs": 2,
+    "nativeStorageLibrary": "Existing matching-source RocksDB static archive reused; no storage implementation changed"
+  },
+  "concurrency": {
+    "observedAt": "2026-11-14T11:32:33.314Z",
+    "head": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
+    "actualElectronWindow": true,
+    "modelControlsLockedWhileSaving": true,
+    "requestedModelPersisted": true,
+    "draftRetained": true,
+    "priorModelRestored": true,
+    "selectedScreenPreserved": "Skills",
+    "rememberedChannelUnchanged": true,
+    "onlyOwnedPrivateSshPaused": true,
+    "errors": [],
+    "lateCreationResponseObserved": true,
+    "captureSha256": "ee9a71d1b4ea05dfc7f5ea5d5a58f99aab5e289e9950367153368a4fd12761eb"
+  },
+  "reviewFollowUp": {
+    "reviewedHead": "6b20a86bf1306208d4e0123ec741580f420be719",
+    "codeCommits": [
+      "fce01a0f4e5ca340f7fba29326d2da91b1ae3471",
+      "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05"
+    ],
+    "findings": [
+      "append colliding history anchor groups",
+      "recover missing local assistant content",
+      "consume empty HTTP responses",
+      "serialize model/effort updates",
+      "preserve newer selection after late channel creation",
+      "bound UTF-8 WebSocket close reason and catch errors",
+      "invalidate before OpenAnonUser",
+      "allow native auth after OpenBot cleanup failure while keeping bridge blocked",
+      "namespace owner by trusted local UUID; deny unsupported remote identities"
+    ],
+    "additionalReviewedHead": "45f7577970f5dc0afef4da85bd1478e9bcf94678",
+    "additionalCodeCommits": [
+      "ae8434bd8e7f2fa9c5ab90a0a437021b47b90fe8",
+      "5cae909b0778b91cbfd7cf92ec6b37f3981a699a"
+    ],
+    "additionalFindings": [
+      "renderer file APIs could overwrite private owner binding",
+      "stale list refresh could hide newly created conversation",
+      "UI caller did not enable guarded durable read-back"
+    ],
+    "imageAndToolCallReviewedHead": "096923edcb992bf938ef45899c870722c1d2a618",
+    "imageAndToolCallFix": "efd309f691a5628d876cfcfca7364e0bcaa35d51"
+  },
+  "privateFileGuard": {
+    "observedAt": "2026-11-14T11:45:48.737Z",
+    "head": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
+    "actualElectronWindow": true,
+    "rendererPrivateStateOperationsDenied": 17,
+    "allPrivateOperationsDenied": true,
+    "directoryAndFileSymlinkAliasesChecked": true,
+    "ordinaryScratchFileWriteReadPassed": true,
+    "bindingUnchanged": true,
+    "errors": [],
+    "captureSha256": "7d75d40542e82407df5febf7eebbb18f4cc062559006e2ea1ee61e2e5a476484"
+  },
+  "refreshCreationRace": {
+    "beforeFix": {
+      "observedAt": "2026-11-14T11:41:49.616Z",
+      "head": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
+      "actualElectronWindow": true,
+      "realChannelListDelayedWithoutChangingContent": true,
+      "initialRows": 16,
+      "rowsAfterCreation": 17,
+      "rowsAfterStaleRefresh": 16,
+      "newChannelRetained": false,
+      "errors": []
+    },
+    "afterFix": {
+      "observedAt": "2026-11-14T11:43:07.496Z",
+      "head": "ae8434bd8e7f2fa9c5ab90a0a437021b47b90fe8",
+      "actualElectronWindow": true,
+      "realChannelListDelayedWithoutChangingContent": true,
+      "initialRows": 17,
+      "rowsAfterCreation": 18,
+      "rowsAfterStaleRefresh": 18,
+      "newChannelRetained": true,
+      "errors": []
+    },
+    "captureSha256": "aaaee38e084aa074f34a28bff845bcfecead781b2b12e60de8afcb6295e0c1ba"
+  },
+  "idleReadBack": {
+    "productionCaller": "HyperChannelChat uses hyperRestoreStoredMessages",
+    "guard": "Only idle agents merge with readBack enabled; active runs are unchanged",
+    "regression": "Missing idle content restored; longer completed live text retained; active agent not written"
+  },
+  "codeHeadObservedScope": "Full plain-chat before/after pair; later targeted regressions retain their own code heads",
+  "latestReviewCodeHeadObserved": "63054806317331f81582aff027585e08197a86a1",
+  "markdownImages": {
+    "observedAt": "2026-11-14T11:54:42.614Z",
+    "head": "efd309f691a5628d876cfcfca7364e0bcaa35d51",
+    "actualElectronWindow": true,
+    "realProviderProducedMarkdownImage": true,
+    "inertImagePlaceholderVisible": true,
+    "passiveMediaElements": 0,
+    "ownedLoopbackImageProbeRequests": 0,
+    "explicitCitationRetained": true,
+    "savedReplyExact": true,
+    "channelId": "channel_23957476-607a-44eb-837e-776335a2cdd5",
+    "threadId": "49c8cef5-0fb2-8f3f-b38f-d457d6fc3efe",
+    "assistantMessageId": "resp_067417a64a8a817e016af84bfed3a487d280172018a7c888ef",
+    "textDeliveries": 83,
+    "errors": [],
+    "captureSha256": "4a35979510a5061a9debfde87fda983d08cf59bcd3aee5c636c0bc4a46132a14",
+    "probeCleanup": "Owned loopback server closed after check"
+  },
+  "toolCallRecovery": {
+    "merge": "By tool-call ID, retaining independently longer arguments and both live-only/stored-only calls",
+    "regression": "Reproduced shortening a complete call when another call improved or was added; recovery entry point now preserves it"
+  },
+  "componentStateRegressions": {
+    "observedAt": "2026-11-14T12:11:48.841Z",
+    "head": "63054806317331f81582aff027585e08197a86a1",
+    "scope": "Compiled production React components in isolated Chromium with mocked backend; not native/live tool acceptance",
+    "cases": [
+      "question_literal_sentinel_and_free_text",
+      "bot_draft_survives_pending_successful_failed_refresh",
+      "bot_stale_save_and_pin_keep_new_selection_draft",
+      "disconnect_confirmation_never_transfers_to_added_server",
+      "approval_rows_remain_independently_locked_and_stale_poll_ignored",
+      "transcript_noop_wheel_still_follows_and_selection_blocks_follow",
+      "chat_discovery_and_creation_ignore_workspace_switches"
+    ],
+    "errors": [],
+    "captureSha256": "a3a44c16fa3d6691bb8ab6977a5489ed75d816377956bfee3c1dad8835b5c0f4",
+    "fixtureBundleSha256": "941298c5eb67c559694c6b0f87e63aa448737f560ea7a29961832162f1f4282a",
+    "fixtureDriverSha256": "1dc8a877b33412f923e76771b0181b5a2479bfdff18f579245c40ccaec57fb87"
+  },
+  "codeRabbitFollowUp": {
+    "reviewSummaryHead": "45f7577970f5dc0afef4da85bd1478e9bcf94678",
+    "findings": 16,
+    "codeFixesHead": "63054806317331f81582aff027585e08197a86a1",
+    "documentationAlreadyFixedIn": "1edb31d2a0c5241db6566f075a7dc09a30707baa",
+    "reportedPreMergeChecksPassed": 4,
+    "reportedReviewCoverage": "Incomplete: eight files could not be fully reviewed",
+    "changes": [
+      "POSIX-only permission assertions and explicit Linux tunnel mocks",
+      "literal question options separated from free-text sentinel",
+      "Bot editor survives refresh and rejects old editor selection callbacks",
+      "disconnect confirmation tied to server key",
+      "approval response generations and per-row pending locks",
+      "null tool outcome validation and structured skipped actions",
+      "snapshot required for referenced key presses",
+      "selection-aware scroll follow and no-op gesture handling",
+      "defensive HTTP error parsing",
+      "Chat completion guards across workspace changes"
+    ]
+  },
+  "questionSubmissionRegression": {
+    "path": "src/renderer/features/hyper-openbot/activity/activity.test.tsx",
+    "scope": "Committed unit interaction through the real HyperDecisionCard form handler and HyperQuestion callbacks",
+    "assertion": "onAnswer receives literal __other__ unchanged exactly once",
+    "redCapability": "Fails against original 1edb31d question implementation; receives empty answer",
+    "sourceSha256": "a9be501477346eaabbeceef20ccd80047c4f8c0419e627efb31ac0fc7f3719f8",
+    "runtimeChanged": false
+  }
+}

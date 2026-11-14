@@ -19,6 +19,7 @@ import { listenView } from '../view-header/view-listener';
 import { BlankPage, HyperLayoutIcon, LocalToolPlaceholder, PlaceholderMessage, ViewPlaceholderPage } from './PlaceholderPage';
 import { TrashPage } from './trash/TrashPage';
 import { TemplateStorePage } from '../templates/TemplateStorePage';
+import { HyperOpenBotPage } from '../hyper-openbot/HyperOpenBotPage';
 import { JiraDashboardPage } from '../jira/ui/JiraDashboardPage';
 
 /** PluginContext: onDeleted(view, index) and the user (null in the secondary view). */
@@ -193,7 +194,7 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
           ),
         // Document and chat use EdgeInsets.zero; databases EdgeInsets.only(top: 28).
         contentPadding: isDatabase ? '28px 0 0 0' : 0,
-        buildWidget: (context) => <ViewPlaceholderPage view={view} context={context} />,
+        buildWidget: (context) => type === PluginType.chat ? <HyperOpenBotPage viewId={view.id} /> : <ViewPlaceholderPage view={view} context={context} />,
       };
     }
   }
