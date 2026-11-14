@@ -2,6 +2,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { HyperConversationDraftCache, hyperObserveDraftIdentity } from './HyperConversationDraft';
 
 const cache = new HyperConversationDraftCache();
+export const hyperAcquireConversationDraft = (channelId: string) => cache.acquire(channelId);
 let observing = false;
 export function useHyperConversationDraft(channelId: string) {
   const lease = useMemo(() => {

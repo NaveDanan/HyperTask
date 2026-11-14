@@ -1,14 +1,16 @@
+import { HyperInitialDraftTransfer, hyperReceiveInitialDraft, type HyperInitialDraftReceiver } from './conversations/HyperInitialDraftTransfer';
+import type { HyperInitialDraft } from './onboarding/HyperHomeApi';
 import { HyperVoiceControls } from './conversations/HyperVoiceControls';
 import { voiceContext, askChannelAgent } from './conversations/HyperVoiceAgentBridge';
 import { HyperDeliveryControls } from './conversations/HyperDeliveryControls';
-import { HyperGroupChat, hyperStartGroup } from './conversations';
+import { HyperGroupChat, hyperStartGroup, hyperSendGroup } from './conversations';
 import { HyperServiceStatus, useHyperOpenBotService } from './HyperServiceStatus';
 // OpenBot channel/provider integration adapted from pinned f8af37a. Copyright (c) 2026 CopilotKit, MIT.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
 import { hyperResolveModelPick, type HyperConversationModel } from './HyperModelSelection';
-import { useHyperConversationDraft } from './useHyperConversationDraft';
+import { hyperAcquireConversationDraft, useHyperConversationDraft } from './useHyperConversationDraft';
 import type { HyperDraftAttachment } from './HyperConversationDraft';
 import { HYPER_PENDING_ATTACHMENT, hyperUploadDraftFiles } from './HyperConversationDraft';
 import { HyperRunConnectionError } from './HyperRunConnection';
@@ -24,7 +26,7 @@ import { HyperConversationActions } from './HyperConversationActions';
 import { Button } from '@/components/ui/button';
 import { HyperOpenBotProvider } from './provider';
 import { hyperOpenBotFetch, HYPER_OPENBOT_ORIGIN, hyperOpenBotRequest as request } from './transport';
-import { HyperComposer, type HyperModelOption, type HyperModelPick } from './composer';
+import { HyperComposer, HyperScreenPickedFiles, type HyperModelOption, type HyperModelPick } from './composer';
 import { HyperTranscript, type HyperTranscriptMessage } from './transcript';
 import { HyperConversationsScreen, type HyperConversation } from './screens';
 import { HyperBotsPanel } from './bots';
@@ -34,7 +36,7 @@ import { hyperPrepareRuntimeAgent, hyperResolveRuntimeFacts } from './HyperRunti
 import { HYPER_OPENBOT_SECTIONS, type HyperOpenBotSectionContext } from './HyperOpenBotSections';
 
 type HyperChannel = HyperConversation & { threadId: string; agentIds: string[]; active: boolean };
-function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; serviceReady: boolean }) {
+function HyperChannelChat({ channel, serviceReady, registerReceiver }: { channel: HyperChannel; serviceReady: boolean; registerReceiver?: (receiver: HyperInitialDraftReceiver | undefined) => void }) {
   const { copilotkit } = useCopilotKit();
   const { agent, isReady } = useAgent({ agentId: `channel:${channel.id}`, runtimeAgentId: channel.agentIds[0], threadId: channel.threadId });
   const [error, setError] = useState<string>();
@@ -123,6 +125,26 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     }) : undefined;
     return [{ id: message.id, role: message.role, content: hyperMessageContent(message.content).text, attachments: hyperMessageContent(message.content).attachments, tools, live: sending, streaming: sending && agent.isRunning }];
   });
+  async function sendDraft(draft: { text: string; attachments: readonly import('./composer').HyperComposerAttachment[] }) {
+      const sent = prepareSubmission(draft.text, draft.attachments.map(file => file.id).join(','));
+      setError(undefined); setSending(true); stopped.current = false;
+      agent.pendingInterrupts = agent.pendingInterrupts.filter(interrupt => !interrupt.metadata?.openbotWaiting);
+      if (!agent.messages.some(message => message.id === sent.id)) agent.addMessage({ id: sent.id, role: 'user', content: draft.attachments.length ? [{ type: 'text' as const, text: draft.text.trim() }, ...draft.attachments.map(file => ({ type: (file as HyperDraftAttachment).mimeType.startsWith('image/') ? 'image' as const : 'document' as const, source: { type: 'url' as const, value: `/api/attachments/${file.id}`, mimeType: (file as HyperDraftAttachment).mimeType }, metadata: { attachmentId: file.id, filename: file.name } }))] : draft.text.trim() });
+      try { await hyperRunWithRecovery(agent, () => hyperWhileObserved(agent, () => copilotkit.runAgent({ agent })), () => stopped.current); updateDraft(current => current.retry?.id === sent.id ? { ...current, retry: undefined } : current); }
+      catch (error) { if (error instanceof HyperRunConnectionError) setReconnectRequired(true); setError(String(error)); throw error; }
+      finally { setSending(false); }
+  }
+  const uploadedInitial = useRef(new Map<File, HyperDraftAttachment>());
+  useEffect(() => {
+    if (!registerReceiver || !isReady || !serviceReady || restoring || reconnectRequired || !channel.active) return;
+    registerReceiver(async (initial, signal) => {
+      const abort = () => { stopped.current = true; void copilotkit.stopAgent({ agent }); };
+      signal.addEventListener('abort', abort, { once: true });
+      try { await hyperReceiveInitialDraft(channel.id, initial, signal, { get: getDraft, update: updateDraft, uploaded: uploadedInitial.current, send: sendDraft }); }
+      finally { signal.removeEventListener('abort', abort); }
+    });
+    return () => registerReceiver(undefined);
+  }, [registerReceiver, isReady, serviceReady, restoring, reconnectRequired, channel.active]);
   // The existing workspace support bubble occupies the bottom-right corner.
   // Keep the composer controls above it, including in the minimum-size window.
   return <div className="flex h-full min-h-0 flex-col pb-12">
@@ -147,15 +169,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
       if (modelUpdating.current) return;
       modelUpdating.current = true; setModelPending(true);
       void request<HyperConversationModel>(`/api/channels/${channel.id}/model`, 'PUT', next).then(saved => setPick(hyperResolveModelPick(saved, defaultModel.current))).catch(error => setError(String(error))).finally(() => { modelUpdating.current = false; setModelPending(false); });
-    } } : undefined} onStop={() => { stopped.current = true; return copilotkit.stopAgent({ agent }); }} onSubmit={async draft => {
-      const sent = prepareSubmission(draft.text, draft.attachments.map(file => file.id).join(','));
-      setError(undefined); setSending(true); stopped.current = false;
-      agent.pendingInterrupts = agent.pendingInterrupts.filter(interrupt => !interrupt.metadata?.openbotWaiting);
-      if (!agent.messages.some(message => message.id === sent.id)) agent.addMessage({ id: sent.id, role: 'user', content: attachments.length ? [{ type: 'text' as const, text: draft.text.trim() }, ...attachments.map(file => ({ type: file.mimeType.startsWith('image/') ? 'image' as const : 'document' as const, source: { type: 'url' as const, value: `/api/attachments/${file.id}`, mimeType: file.mimeType }, metadata: { attachmentId: file.id, filename: file.name } }))] : draft.text.trim() });
-      try { await hyperRunWithRecovery(agent, () => hyperWhileObserved(agent, () => copilotkit.runAgent({ agent })), () => stopped.current); updateDraft(current => current.retry?.id === sent.id ? { ...current, retry: undefined } : current); }
-      catch (error) { if (error instanceof HyperRunConnectionError) setReconnectRequired(true); setError(String(error)); throw error; }
-      finally { setSending(false); }
-    }} />
+    } } : undefined} onStop={() => { stopped.current = true; return copilotkit.stopAgent({ agent }); }} onSubmit={sendDraft} />
   </div>;
 }
 function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; serviceReady: boolean }) {
@@ -166,6 +180,15 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
   const [loading, setLoading] = useState(false);
   const version = useRef(0);
   const selectionVersion = useRef(0);
+  const [transfer] = useState(() => new HyperInitialDraftTransfer<HyperChannel>());
+  const [receiving, setReceiving] = useState<HyperChannel>();
+  const receiverWait = useRef<{ resolve: (receiver: HyperInitialDraftReceiver) => void } | undefined>(undefined);
+  const receiver = useRef<HyperInitialDraftReceiver | undefined>(undefined);
+  const serviceRef = useRef(serviceReady); serviceRef.current = serviceReady;
+  const registerReceiver = useRef((next: HyperInitialDraftReceiver | undefined) => { receiver.current = next; if (next) receiverWait.current?.resolve(next); }).current;
+  useEffect(() => { if (!serviceReady) transfer.cancel(); return () => transfer.cancel(); }, [serviceReady, transfer]);
+  function cancelStart() { transfer.cancel(); setReceiving(undefined); }
+
   async function refresh(restoreInitial = false) {
     const current = ++version.current, selection = selectionVersion.current; setLoading(true); setError(undefined);
     try {
@@ -184,29 +207,59 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
     finally { if (current === version.current) setLoading(false); }
   }
   useEffect(() => { void refresh(true); return () => { version.current++; }; }, [viewId]);
-  function open(id: string) { selectionVersion.current++; const found = channels.find(each => each.id === id); if (found) { setChannel(found); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
+  function open(id: string) { cancelStart(); selectionVersion.current++; const found = channels.find(each => each.id === id); if (found) { setChannel(found); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
   async function openAny(id: string) {
+    cancelStart();
     if (channels.some(each => each.id === id)) return open(id);
     const selection = ++selectionVersion.current;
     try { const saved = await request<{ channel: HyperChannel }>(`/api/channels/${encodeURIComponent(id)}`); if (selection === selectionVersion.current) { setChannel(saved.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
     catch (error) { if (selection === selectionVersion.current) setError(String(error)); }
   }
-  async function start(agentIds: string[]) {
-    const selection = ++selectionVersion.current;
-    try { const value = agentIds.length > 1 ? { channel: await hyperStartGroup<HyperChannel>(agentIds) } : await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds }); version.current++; setLoading(false); setChannels(previous => [value.channel, ...previous]); if (selection === selectionVersion.current) { setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); } }
-    catch (error) { if (selection === selectionVersion.current) setError(String(error)); }
+  async function start(agentIds: string[], initialDraft?: HyperInitialDraft) {
+    if (!serviceRef.current) throw new Error('AI services are not ready.');
+    if (!agentIds.length) throw new Error('Choose a Bot.');
+    if (initialDraft && HyperScreenPickedFiles(initialDraft.files, { alreadyStaged: 0 }).rejected.length) throw new Error('Some files cannot be attached. Check file types, sizes, and the eight-file limit.');
+    if (agentIds.length > 1 && initialDraft && (initialDraft.files.length || initialDraft.commandIds.length)) throw new Error('Files and skills require a conversation with one Bot.');
+    selectionVersion.current++;
+    try {
+      await transfer.start(agentIds, initialDraft, {
+        create: async ids => {
+          const created = ids.length > 1 ? await hyperStartGroup<HyperChannel>(ids) : (await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds: ids })).channel;
+          version.current++; setLoading(false); setChannels(previous => [created, ...previous]); return created;
+        },
+        receive: async (created, initial, signal) => {
+          if (created.agentIds.length > 1) {
+            const lease = hyperAcquireConversationDraft(created.id);
+            lease.update(current => ({ ...current, text: initial.text, commandIds: initial.commandIds }));
+            if (initial.submit) { const sent = lease.prepareSubmission(initial.text, ''); await hyperSendGroup(created.id, { id: sent.id, text: initial.text, agentId: null }); lease.update(current => ({ ...current, text: '', commandIds: [], retry: undefined })); } return;
+          }
+          if (receiving?.id !== created.id) { receiver.current = undefined; setReceiving(created); }
+          const receive = await new Promise<HyperInitialDraftReceiver>((resolve, reject) => {
+            const cleanup = () => { clearTimeout(timer); signal.removeEventListener('abort', abort); receiverWait.current = undefined; };
+            const abort = () => { cleanup(); reject(new DOMException('Conversation start cancelled', 'AbortError')); };
+            const timer = setTimeout(() => { cleanup(); reject(new Error('Conversation was not ready. Try again.')); }, 20_000);
+            signal.addEventListener('abort', abort, { once: true });
+            receiverWait.current = { resolve: next => { cleanup(); resolve(next); } };
+            if (receiver.current) receiverWait.current.resolve(receiver.current);
+          });
+          signal.throwIfAborted(); await receive(initial, signal);
+        },
+        navigate: created => { selectionVersion.current++; setChannel(created); setReceiving(undefined); localStorage.setItem(`hyper-openbot.channel.${viewId}`, created.id); },
+      });
+    } catch (error) { if (serviceRef.current) setError('Conversation could not be started. Your Home draft is kept.'); throw error; }
   }
   const tabs: readonly { id: string; label: string }[] = [{ id: 'conversations', label: 'Conversations' }, { id: 'bots', label: 'Bots' }, { id: 'skills', label: 'Skills' }, { id: 'connections', label: 'Connections' }, ...HYPER_OPENBOT_SECTIONS];
   const section = HYPER_OPENBOT_SECTIONS.find(each => each.id === screen);
-  const context: HyperOpenBotSectionContext = { openConversation: id => void openAny(id), startConversation: ids => void start(ids) };
+  const context: HyperOpenBotSectionContext = { openConversation: id => void openAny(id), initialDraftSupported: true, startConversation: start, navigate: id => { if (!serviceRef.current) return; const destination = id.split(/[/?]/)[0]; if (tabs.some(tab => tab.id === destination)) { cancelStart(); selectionVersion.current++; setScreen(destination); setChannel(undefined); } } };
   return <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />
     <nav aria-label="OpenBot" className="flex shrink-0 flex-wrap gap-1 border-b border-border p-2">
-      {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { selectionVersion.current++; setScreen(tab.id); setChannel(undefined); }}>{tab.label}</Button>)}
+      {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { cancelStart(); selectionVersion.current++; setScreen(tab.id); setChannel(undefined); }}>{tab.label}</Button>)}
       {screen === 'conversations' && <Button variant="ghost" onClick={() => void refresh()}>Refresh</Button>}
     </nav>
     {error && <p role="alert" className="p-2 text-sm text-destructive">{error}</p>}
-    {channel ? channel.agentIds.length > 1 ? <HyperGroupChat key={channel.id} channelId={channel.id} serviceReady={serviceReady} /> : <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} /> : section ? section.render(context) : screen === 'bots' ? <HyperBotsPanel onChat={id => void start([id])} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen loading={loading} conversations={channels} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('new-conversation')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
+    {receiving && <div hidden><HyperChannelChat key={receiving.id} channel={receiving} serviceReady={serviceReady} registerReceiver={registerReceiver} /></div>}
+    {channel ? channel.agentIds.length > 1 ? <HyperGroupChat key={channel.id} channelId={channel.id} serviceReady={serviceReady} /> : <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} /> : section ? section.render(context) : screen === 'bots' ? <HyperBotsPanel onChat={id => { void start([id]).catch(() => {}); }} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen loading={loading} conversations={channels} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('new-conversation')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
   </div>;
 }
 export function HyperOpenBotPage({ viewId }: { viewId: string }) {
