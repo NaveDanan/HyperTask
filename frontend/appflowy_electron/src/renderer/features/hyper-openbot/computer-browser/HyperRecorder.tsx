@@ -20,7 +20,7 @@ export function HyperRecorder() {
   useEffect(() => { let live = true; let timer: ReturnType<typeof setTimeout>;
     async function poll() { try {
       const data = await hyperOpenBotRequest<{ extensionIds: string[] }>('/api/recorder/connections'); const next = await findRecorderHere(data.extensionIds); if (!live) return; setHere(next);
-      if (waiting.current) { const pending = waiting.current; const status = await askConnectWait(pending.id, pending.since); if (!live) return; if (next.kind === 'connected') { waiting.current = null; setNotice('Browser connected.'); } else if (['cancelled', 'closed', 'none'].includes(status) || Date.now() - pending.since >= CONFIRM_WINDOW_MS) { waiting.current = null; setNotice('Connection was cancelled, closed or expired. Try connecting again.'); } }
+      if (waiting.current) { const pending = waiting.current; const status = await askConnectWait(pending.id); if (!live) return; if (next.kind === 'connected') { waiting.current = null; setNotice('Browser connected.'); } else if (['cancelled', 'closed', 'none'].includes(status) || Date.now() - pending.since >= CONFIRM_WINDOW_MS) { waiting.current = null; setNotice('Connection was cancelled, closed or expired. Try connecting again.'); } }
     } catch { if (live) setError('Recorder status could not be loaded.'); } finally { if (live) timer = setTimeout(() => void poll(), 2000); } }
     void poll(); return () => { live = false; clearTimeout(timer); };
   }, []);
