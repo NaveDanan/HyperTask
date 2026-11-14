@@ -58,3 +58,7 @@ Native in-section navigation replaces upstream URLs, dialogs become in-section c
 GitHub source-binding management lives in upstream `components/settings/github-sources.tsx`; the merged parent already owns it in `settings/HyperSettingsAutomation.tsx`. It is not duplicated here. The Bot/Connections owners must mount the exported components in their respective screens; their shared files are outside this area's ownership.
 
 Validation uses Node 24.18.1 and the existing dependency symlink. No package installation, live backend, Electron launch, secret capture or deployment is performed. Imported parent commits include other owners' documentation; this area does not edit acceptance/progress documents.
+
+## Final local verification
+
+Node 24.18.1: typecheck passed; focused routines and policy tests passed, 43 tests across three files; full suite passed, 829 tests with five skipped across 110 passing and two skipped files; production build passed. Existing Vite configuration and ineffective dynamic import warnings remain. Self-review checked upstream payloads, lifecycle guards, secret handling, rollback paths and folder ownership. No live service or Electron verification was attempted under this task's constraints.
