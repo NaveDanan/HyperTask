@@ -144,7 +144,7 @@ function HyperOpenBotWorkspace({ viewId }: { viewId: string }) {
   function open(id: string) { selectionVersion.current++; const found = channels.find(each => each.id === id); if (found) { setChannel(found); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
   async function start(botId: string) {
     const selection = ++selectionVersion.current;
-    try { const value = await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds: [botId] }); setChannels(previous => [value.channel, ...previous]); if (selection === selectionVersion.current) { setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); } }
+    try { const value = await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds: [botId] }); version.current++; setLoading(false); setChannels(previous => [value.channel, ...previous]); if (selection === selectionVersion.current) { setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); } }
     catch (error) { if (selection === selectionVersion.current) setError(String(error)); }
   }
   return <div className="flex h-full min-h-0 flex-col bg-background text-foreground">

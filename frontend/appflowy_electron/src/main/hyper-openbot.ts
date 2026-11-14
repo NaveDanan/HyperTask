@@ -3,11 +3,55 @@ import type { HyperOpenBotSession } from './HyperOpenBotSession';
 import { hyperOpenBotPathAllowed } from '@shared/hyper-openbot-policy';
 import { ipcMain, type BrowserWindow, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron';
 import WebSocket from 'ws';
-import type { HyperOpenBotRequest, HyperOpenBotSocketEvent } from '@shared/api';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { IpcChannel as C, type HyperOpenBotRequest, type HyperOpenBotSocketEvent } from '@shared/api';
 const ORIGIN = 'http://127.0.0.1:3010';
 const MAX_BYTES = 24 * 1024 * 1024;
 const DEADLINE_MS = 10 * 60 * 1000;
 const safeId = (id: unknown): id is string => typeof id === 'string' && /^[\w-]{1,100}$/.test(id);
+
+/** Generic renderer file access must not read or replace main-owned identity/cookie state. */
+export function registerHyperOpenBotFileIpc(userData: string) {
+  const root = path.resolve(userData);
+  const contains = (parent: string, target: string) => {
+    const relative = path.relative(parent, target);
+    return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
+  };
+  async function canonical(target: string): Promise<string> {
+    try { return await fs.realpath(target); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      const parent = path.dirname(target);
+      if (parent === target) throw error;
+      return path.join(await canonical(parent), path.basename(target));
+    }
+  }
+  async function permitted(target: string) {
+    if (typeof target !== 'string' || target.includes('\0')) throw new Error('Invalid renderer file path');
+    const absolute = path.resolve(target);
+    if (contains(root, absolute) || contains(await canonical(root), await canonical(absolute))) throw new Error('Main-owned application state is protected');
+    return absolute;
+  }
+  ipcMain.handle(C.FsExists, async (_, target: string) => {
+    const file = await permitted(target);
+    try { await fs.access(file); return true; } catch { return false; }
+  });
+  ipcMain.handle(C.FsEnsureDir, async (_, target: string) => { await fs.mkdir(await permitted(target), { recursive: true }); });
+  ipcMain.handle(C.FsReadText, async (_, target: string) => {
+    const file = await permitted(target);
+    try { return await fs.readFile(file, 'utf8'); } catch { return null; }
+  });
+  const write = async (target: string, content: string | Uint8Array) => {
+    const file = await permitted(target);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await permitted(file);
+    await fs.writeFile(file, content);
+  };
+  ipcMain.handle(C.FsWriteText, (_, target: string, content: string) => write(target, content));
+  ipcMain.handle(C.FsWriteBytes, (_, target: string, data: Uint8Array) => write(target, data));
+}
+
 export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sessions: HyperOpenBotSession) {
   const running = new Map<string, AbortController>();
   const sockets = new Map<string, WebSocket>();

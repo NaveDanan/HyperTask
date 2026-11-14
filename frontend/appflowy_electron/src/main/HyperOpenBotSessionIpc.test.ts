@@ -1,11 +1,15 @@
 import { EventEmitter } from 'node:events';
 import { beforeEach, expect, it, vi } from 'vitest';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { IpcChannel as C } from '@shared/api';
 const ipc = vi.hoisted(() => ({ handlers: new Map<string, (...args: any[]) => any>(), events: new Map<string, (...args: any[]) => any>(), fetch: vi.fn(), path: vi.fn(async () => '/private/gateway.sock'), close: vi.fn(), sockets: [] as any[] }));
 vi.mock('electron', () => ({ ipcMain: { handle: (name: string, fn: (...args: any[]) => any) => ipc.handlers.set(name, fn), on: (name: string, fn: (...args: any[]) => any) => ipc.events.set(name, fn) } }));
 vi.mock('./HyperOpenBotTunnel', () => ({ hyperTunnelFetch: ipc.fetch, hyperOpenBotSocketPath: ipc.path, closeHyperOpenBotTunnel: ipc.close, hyperOpenBotCookieHeader: async (lease: { assertCurrent(): void }) => { lease.assertCurrent(); return ''; } }));
 vi.mock('ws', async () => { const { EventEmitter } = await import('node:events'); return { default: class extends EventEmitter { static OPEN = 1; readyState = 1; terminate = vi.fn(() => { this.readyState = 3; this.emit('close', 1006, Buffer.from('')); }); close = this.terminate; constructor() { super(); ipc.sockets.push(this); } } }; });
 import { HyperOpenBotSession, hyperNativeCoreRequest, type HyperOpenBotSessionDependencies } from './HyperOpenBotSession';
-import { registerHyperOpenBotIpc } from './hyper-openbot';
+import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
 beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.path.mockResolvedValue('/private/gateway.sock'); });
 function setup(identity: string | null = 'a') {
   let owner: string | null = null;
@@ -75,4 +79,35 @@ it('closes a socket with a UTF-8 reason that fits its byte limit and contains no
   socket.close.mockImplementationOnce(() => { throw new Error('Close failed'); });
   expect(() => ipc.events.get('hyper-openbot:socket-close')!(h.event, 'socket-one', 1000, 'safe')).not.toThrow();
   expect(socket.terminate).toHaveBeenCalledOnce();
+});
+it('blocks all generic renderer file handlers from main-owned state, including traversal and symlink aliases', async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'hyper-file-ipc-'));
+  try {
+    const userData = path.join(directory, 'app');
+    const binding = path.join(userData, 'hyper-openbot-session', 'owner.json');
+    await fs.mkdir(path.dirname(binding), { recursive: true }); await fs.writeFile(binding, 'original-owner');
+    const alias = path.join(directory, 'alias'); await fs.symlink(userData, alias, 'junction');
+    const aliases = [path.join(alias, 'hyper-openbot-session', 'owner.json')];
+    if (process.platform !== 'win32') {
+      const fileAlias = path.join(directory, 'owner-alias'); await fs.symlink(binding, fileAlias); aliases.push(fileAlias);
+    }
+    registerHyperOpenBotFileIpc(userData);
+    for (const target of [binding, path.join(userData, 'hyper-openbot-session', '..', 'hyper-openbot-session', 'owner.json'), ...aliases]) {
+      await expect(ipc.handlers.get(C.FsWriteText)!({}, target, 'forged-owner')).rejects.toThrow('protected');
+      await expect(ipc.handlers.get(C.FsWriteBytes)!({}, target, new Uint8Array([1, 2]))).rejects.toThrow('protected');
+      await expect(ipc.handlers.get(C.FsReadText)!({}, target)).rejects.toThrow('protected');
+      await expect(ipc.handlers.get(C.FsExists)!({}, target)).rejects.toThrow('protected');
+    }
+    await expect(ipc.handlers.get(C.FsEnsureDir)!({}, path.join(alias, 'Partitions', 'forged'))).rejects.toThrow('protected');
+    await expect(ipc.handlers.get(C.FsWriteText)!({}, path.join(alias, 'new', 'owner.json'), 'forged')).rejects.toThrow('protected');
+    expect(await fs.readFile(binding, 'utf8')).toBe('original-owner');
+    // A prefix neighbour is an ordinary user file, not part of Electron's private state.
+    const ordinary = path.join(directory, 'app-exports', 'saved.txt');
+    await ipc.handlers.get(C.FsWriteText)!({}, ordinary, 'export');
+    expect(await ipc.handlers.get(C.FsReadText)!({}, ordinary)).toBe('export');
+    await ipc.handlers.get(C.FsWriteBytes)!({}, ordinary, new Uint8Array([65, 66]));
+    expect(await ipc.handlers.get(C.FsReadText)!({}, ordinary)).toBe('AB');
+    expect(await ipc.handlers.get(C.FsExists)!({}, ordinary)).toBe(true);
+    await ipc.handlers.get(C.FsEnsureDir)!({}, path.join(directory, 'ordinary-directory'));
+  } finally { await fs.rm(directory, { recursive: true, force: true }); }
 });
