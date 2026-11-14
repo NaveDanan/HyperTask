@@ -90,3 +90,8 @@ routing request bodies, ambiguous routing refusal, skill failure refusal, fallba
 File identity transfer, unsupported navigation refusal, Unicode routing bounds, greeting,
 pagination encoding, onboarding payloads/read-back, name validation, role checks, starter
 eligibility and route allowlist acceptance/refusal. No backend or Electron app is used.
+
+Validation on 2026-11-15: `npm run typecheck` passed; focused Vitest run passed
+17 tests across four files; full `npm test` passed 581 tests with five skipped
+across 79 files; `npm run build` passed. Build reports the existing ineffective
+dynamic-import warning for startup/launcher.ts. `git diff --check` passed.
