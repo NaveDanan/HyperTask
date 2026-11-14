@@ -130,9 +130,11 @@ def main():
     with config_path.open('x') as config_file:
         config_path.chmod(0o600)
         json.dump(config, config_file)
-    process = subprocess.Popen([node, str(app / 'scripts/HyperNativeSmokeBroker.mjs'), str(config_path)],
-                               cwd=app, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                               stderr=subprocess.DEVNULL, start_new_session=True)
+    with log_path.with_suffix('.broker.log').open('xb') as broker_log:
+        os.chmod(broker_log.name, 0o600)
+        process = subprocess.Popen([node, str(app / 'scripts/HyperNativeSmokeBroker.mjs'), str(config_path)],
+                                   cwd=app, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                   stderr=broker_log, start_new_session=True)
     try:
         with selectors.DefaultSelector() as selector:
             selector.register(process.stdout, selectors.EVENT_READ)
