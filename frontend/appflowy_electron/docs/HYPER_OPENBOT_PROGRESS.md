@@ -96,9 +96,18 @@ PR #11 contains the native feature assembled by four initial and four follow-up 
 - CodeRabbit follow-up requested the literal-option callback check in the committed suite. The real card form handler now has a repository regression asserting the exact `onAnswer` value; it fails on the old implementation and passes with the fix. This follow-up changes tests/evidence only.
 - PR #11 completed its final review and merge gate. Native action/recovery acceptance continues in #6; #7/#8 remain open.
 
-## Current step: issue #6
+## Completed: issue #6
 
-[PR #12](https://github.com/NaveDanan/HyperTask/pull/12) contains the issue #6 follow-up on `hyper/openbot-actions`. Native approved/denied actions, Stop/continue, restart restoration, a real runtime error/retry and private-tunnel failure/reconnect passed. Typecheck/build and all 540 tests pass; one opt-in simulated-IPC live test is skipped. Three CodeRabbit follow-ups now preserve the barrier on swallowed connect failures and unconfirmed deadlines, and retain already-waiting status. Five page-state fixtures and a repeated actual native disconnect/reconnect check pass; the updated PR head needs fresh review. See [the action acceptance record](HYPER_OPENBOT_ACTIONS.md). Issue #6 stays open until its PR clears review and merges; #7/#8 follow in order.
+[PR #12](https://github.com/NaveDanan/HyperTask/pull/12) squash merged as `bb158354c712dd6401072bbe8dfd63db74e604fd`. Issue #6 is closed/completed and checked in epic #2. Final head `ff4edcd55fb6c9887cb06de0814b256a99899d5c` cleared Codex code/security review with receipts `6878031829` / `6878066624`, no unresolved threads, Macroscope SUCCESS and CodeRabbit NEUTRAL. All three CodeRabbit corrections were acknowledged and resolved. The completed PR watch is stopped.
+
+Native approved/denied actions, Stop/continue, restart restoration, real runtime error/retry and private-tunnel failure/reconnect passed. The full suite passed 540 tests with one opt-in simulated-IPC live skip. [The action record](HYPER_OPENBOT_ACTIONS.md) separates real native observations from mocked component-state checks.
+
+## Current step: issue #7
+
+The `hyper/openbot-lifecycle` branch starts from the #12 squash merge. A main-owned controller, fixed scoped VM helper and native readiness/lifecycle panel are implemented for the existing personal deployment. The renderer receives a closed action set and sanitized readiness only. The read-only VM probe passed all ten checks; no lifecycle operation has run through the new controller yet.
+
+Initial controller/transport/IPC policy checks and typecheck pass. Native start/stop/restart, idempotence, retained conversations/drafts and store preservation still need live acceptance before filing the issue #7 PR. This remains a provisioned Linux development connection to the authorized VM, with original Intelligence, human-owned agreement/model sign-in and the existing local native owner boundary. No shared K3s, AppFlowy service or source/runtime replacement is authorized by this work.
+
 
 ## Queue
 
@@ -107,8 +116,8 @@ PR #11 contains the native feature assembled by four initial and four follow-up 
 | [#3](https://github.com/NaveDanan/HyperTask/issues/3) | Baseline audit and reuse decision | Merged in PR #9 |
 | [#4](https://github.com/NaveDanan/HyperTask/issues/4) | Original OpenBot + Intelligence local baseline | Merged in PR #10 |
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11 merged as d026839; issue closed |
-| [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12; native acceptance passed, review/merge pending |
-| [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Waiting for #6 |
+| [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12 merged as bb158354; issue closed |
+| [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | Main-owned controller implemented; native lifecycle acceptance pending |
 | [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Waiting for #7 |
 
 ## Working-copy note

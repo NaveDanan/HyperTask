@@ -52,16 +52,18 @@ export function registerHyperOpenBotFileIpc(userData: string) {
   ipcMain.handle(C.FsWriteBytes, (_, target: string, data: Uint8Array) => write(target, data));
 }
 
-export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sessions: HyperOpenBotSession) {
+export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sessions: HyperOpenBotSession, ready: () => boolean = () => true) {
   const running = new Map<string, AbortController>();
   const sockets = new Map<string, WebSocket>();
   const openingSockets = new Map<string, { cancelled: boolean }>();
   const owners = new WeakSet<object>();
-  const own = (event: IpcMainEvent | IpcMainInvokeEvent) => { if (!owners.has(event.sender)) { owners.add(event.sender); event.sender.once('destroyed', () => { for (const controller of running.values()) controller.abort(); for (const socket of sockets.values()) socket.terminate(); for (const opening of openingSockets.values()) opening.cancelled = true; closeHyperOpenBotTunnel(); }); } };
-  sessions.onInvalidate(() => { for (const controller of running.values()) controller.abort(); for (const socket of sockets.values()) socket.terminate(); for (const opening of openingSockets.values()) opening.cancelled = true; closeHyperOpenBotTunnel(); });
+  const disconnect = () => { for (const controller of running.values()) controller.abort(); for (const socket of sockets.values()) socket.terminate(); for (const opening of openingSockets.values()) opening.cancelled = true; closeHyperOpenBotTunnel(); };
+  const own = (event: IpcMainEvent | IpcMainInvokeEvent) => { if (!owners.has(event.sender)) { owners.add(event.sender); event.sender.once('destroyed', disconnect); } };
+  sessions.onInvalidate(disconnect);
   const trusted = (event: IpcMainEvent | IpcMainInvokeEvent) => event.sender === window()?.webContents && event.senderFrame === event.sender.mainFrame;
   ipcMain.handle('hyper-openbot:start', async (event, request: HyperOpenBotRequest) => {
     if (!trusted(event)) throw new Error('Untrusted OpenBot caller');
+    if (!ready()) throw new Error('AI services are not ready. Check AI service status.');
     own(event);
     if (!request || !safeId(request.id) || running.has(request.id)) throw new Error('Invalid request id');
     if (!hyperOpenBotPathAllowed(request.path)) throw new Error('OpenBot route refused');
@@ -97,6 +99,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
   ipcMain.on('hyper-openbot:cancel', (event, id: unknown) => { if (trusted(event) && safeId(id)) running.get(id)?.abort(); });
   ipcMain.handle('hyper-openbot:socket-open', async (event, id: unknown, path: unknown, protocols: unknown) => {
     if (!trusted(event) || !safeId(id) || sockets.has(id) || openingSockets.has(id) || sockets.size + openingSockets.size >= 16) throw new Error('Socket caller refused');
+    if (!ready()) throw new Error('AI services are not ready. Check AI service status.');
     if (typeof path !== 'string' || path.length > 16384 || !/^\/api\/intelligence\/client\/websocket\?[^#\\]*$/.test(path)) throw new Error('Socket route refused');
     if (!Array.isArray(protocols) || protocols.length > 8 || protocols.some(value => typeof value !== 'string' || value.length > 200)) throw new Error('Socket protocols refused');
     own(event);
@@ -134,4 +137,5 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     const socket = sockets.get(id);
     try { socket?.close(validCode, text); } catch { socket?.terminate(); }
   });
+  return { disconnect };
 }

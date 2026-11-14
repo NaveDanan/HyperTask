@@ -9,6 +9,12 @@ function on<T>(channel: string, listener: (value: T) => void): () => void {
 
 const api: AppFlowyApi = {
   hyperOpenBot: {
+    service: {
+      state: () => ipcRenderer.invoke('hyper-openbot:service-state'),
+      run: action => ipcRenderer.invoke('hyper-openbot:service-action', action),
+      configure: autoStart => ipcRenderer.invoke('hyper-openbot:service-configure', autoStart),
+      onState: listener => on('hyper-openbot:service-changed', listener),
+    },
     start: (request) => ipcRenderer.invoke('hyper-openbot:start', request),
     cancel: (id) => ipcRenderer.send('hyper-openbot:cancel', id),
     onChunk: (listener) => on('hyper-openbot:chunk', listener),

@@ -1,3 +1,4 @@
+import type { HyperOpenBotServiceAction, HyperOpenBotServiceState } from './HyperOpenBotService';
 // The API the preload script exposes to the renderer as `window.appflowy`.
 
 export interface CoreReply {
@@ -100,6 +101,12 @@ export interface HyperOpenBotChunk { id: string; chunk?: Uint8Array; done?: bool
 export interface HyperOpenBotSocketEvent { id: string; type: 'open' | 'message' | 'error' | 'close'; data?: string | Uint8Array; code?: number; reason?: string }
 export interface AppFlowyApi {
   hyperOpenBot: {
+    service: {
+      state(): Promise<HyperOpenBotServiceState>;
+      run(action: HyperOpenBotServiceAction): Promise<HyperOpenBotServiceState>;
+      configure(autoStart: boolean): Promise<HyperOpenBotServiceState>;
+      onState(listener: (state: HyperOpenBotServiceState) => void): () => void;
+    };
     start(request: HyperOpenBotRequest): Promise<{ status: number; headers: Record<string, string> }>;
     cancel(id: string): void;
     socketOpen(id: string, path: string, protocols: string[]): Promise<void>;
