@@ -24,7 +24,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: admin-platform
   /* admin-platform */
   // slot: onboarding
-  'me', 'setup',
+  'me', 'setup', 'settings/preferences',
 ];
 /** Exact paths outside the families above. */
 const HYPER_OPENBOT_EXACT_ROUTES: readonly RegExp[] = [

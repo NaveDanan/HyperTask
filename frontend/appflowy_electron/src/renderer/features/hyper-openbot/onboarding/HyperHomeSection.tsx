@@ -12,6 +12,7 @@ export default function HyperHomeSection({ context }: { context: HyperOpenBotSec
   const [caps, setCaps] = useState<Awaited<ReturnType<typeof HyperReadCapabilities>>>();
   const [bots, setBots] = useState<HyperBotProfile[]>([]);
   const [step, setStep] = useState(1);
+  const [nameNeeded, setNameNeeded] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -19,12 +20,12 @@ export default function HyperHomeSection({ context }: { context: HyperOpenBotSec
   const [enabled, setEnabled] = useState<boolean>();
   const load = async () => {
     setError('');
-    try { const [me, capabilities, agents] = await Promise.all([HyperReadUser(), HyperReadCapabilities(), HyperListBots(false)]); setUser(me); setName(me?.needsName ? '' : me?.name ?? ''); setStep(me?.onboarding?.step || 1); setCaps(capabilities); setBots(agents); } catch { setError("Couldn't load your setup. Try again to continue."); }
+    try { const [me, capabilities, agents] = await Promise.all([HyperReadUser(), HyperReadCapabilities(), HyperListBots(false)]); setUser(me); setNameNeeded(Boolean(me?.needsName || !me?.name || me.name === me.email)); setName(me?.needsName ? '' : me?.name ?? ''); setStep(me?.onboarding?.step || 1); setCaps(capabilities); setBots(agents); } catch { setError("Couldn't load your setup. Try again to continue."); }
   };
   useEffect(() => { void load(); void hyperOpenBotRequest<{ enabled: boolean }>('/api/approvals').then(value => setEnabled(value.enabled)).catch(() => {}); }, []);
   const action = async (run: () => Promise<void>) => { if (lock.current) return; lock.current = true; setBusy(true); setError(''); try { await run(); } catch { setError("Couldn't save your changes. Try again."); } finally { lock.current = false; setBusy(false); } };
   const onboarding = user?.onboarding && !user.onboarding.completedAt;
-  const needsName = user?.needsName || !user?.name || user.name === user.email;
+  const needsName = nameNeeded;
   const steps = [1, ...(caps?.localEvaluation ? [2] : []), ...(needsName ? [3] : [])];
   const current = steps.includes(step) ? step : steps[steps.length - 1];
   const move = async (next: number) => { const me = await HyperSaveOnboarding({ step: next }); setUser(me); setStep(next); };
