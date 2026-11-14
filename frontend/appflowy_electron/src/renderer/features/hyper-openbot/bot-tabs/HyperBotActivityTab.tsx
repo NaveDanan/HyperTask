@@ -1,0 +1,13 @@
+// Adapted from OpenBot. Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
+import { Button } from '@/components/ui/button';
+import { hyperOpenBotRequest as request } from '../transport';
+import { useHyperBotResource } from './HyperBotResource';
+interface HyperActivityItem { id: string; kind: string; title: string; detail: string | null; status: string; at: string; channelId: string | null; needsYou: boolean; stoppable: boolean; cancellable: boolean }
+interface HyperActivity { inProgress: HyperActivityItem[]; scheduled: HyperActivityItem[]; onDemand?: HyperActivityItem[]; completed: HyperActivityItem[] }
+export function HyperBotActivityTab({ agentId, openConversation }: { agentId: string; openConversation?: (id: string) => void }) {
+  const path = `/api/bots/${encodeURIComponent(agentId)}`;
+  const state = useHyperBotResource(async () => (await request<{ activity: HyperActivity }>(`${path}/activity`)).activity, agentId, 10000);
+  return <section className="grid gap-3"><h3>Activity</h3>{state.pending && <p role="status">Loading…</p>}{state.error && <p role="alert" className="text-destructive">{state.error}</p>}<Button disabled={state.pending} variant="outline" onClick={state.refresh}>Refresh</Button>
+    {state.data && (['inProgress', 'scheduled', 'onDemand', 'completed'] as const).map(key => <section key={key} className="grid gap-2"><h4 className="font-medium">{{ inProgress: 'In progress', scheduled: 'Scheduled', onDemand: 'On demand', completed: 'Completed' }[key]}</h4>{!(state.data![key]?.length) && <p className="text-sm text-muted-foreground">Nothing here.</p>}{state.data![key]?.map(item => <article key={`${item.kind}:${item.id}`} className="grid gap-2 rounded-lg border border-border p-3"><h5>{item.title}</h5><p className="text-sm text-muted-foreground">{item.kind} · {item.needsYou ? 'Needs you' : item.status} · {new Date(item.at).toLocaleString()}</p>{item.detail && <p>{item.detail}</p>}{item.channelId && openConversation && <Button variant="link" onClick={() => openConversation(item.channelId!)}>Open conversation</Button>}{item.stoppable && <Button disabled={state.pending} variant="outline" onClick={() => void state.run(() => request(`${path}/activity/handoffs/stop`, 'POST', { id: item.id }))}>Stop</Button>}{!item.stoppable && item.cancellable && <Button disabled={state.pending} variant="outline" onClick={() => void state.run(() => request(`${path}/follow-ups/cancel`, 'POST', { id: item.id }))}>Cancel follow-up</Button>}</article>)}</section>)}
+  </section>;
+}

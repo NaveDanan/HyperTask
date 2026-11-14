@@ -44,11 +44,11 @@ export function HyperBotsPanel({ onChat }: { onChat: (botId: string) => void }) 
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {loading && <p role="status" className="text-sm text-muted-foreground">Loading Bots…</p>}
     <div className="grid gap-5 lg:grid-cols-2">
-      <div className="flex flex-col gap-2">{!loading && !error && bots.filter(bot => `${bot.name} ${bot.title}`.toLowerCase().includes(search.toLowerCase())).map(bot => <article key={bot.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
+      <div className="flex flex-col gap-2">{!loading && !error && bots.filter(bot => `${bot.name} ${bot.title}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => Number(b.pinned || b.assignedToMe) - Number(a.pinned || a.assignedToMe) || Number(b.mine) - Number(a.mine) || a.name.localeCompare(b.name)).map(bot => <article key={bot.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
         <div className="min-w-0 flex-1"><Button variant="link" className="max-w-full truncate px-0" onClick={() => select(bot)}>{bot.name}</Button><p className="text-xs text-muted-foreground">{bot.title || bot.roleDescription}</p>
           <p className="mt-1 text-xs text-muted-foreground">{bot.mine ? 'Yours' : 'Shared'} · {bot.visibility}{bot.pinned ? ' · Pinned' : ''}{bot.assignedToMe ? ' · Assigned' : ''}</p></div>
         <Button variant="outline" onClick={() => onChat(bot.id)}>Chat</Button></article>)}
-        {!loading && !error && bots.length === 0 && <p className="text-sm text-muted-foreground">{hidden ? 'No hidden Bots.' : 'No Bots yet. Create a Bot to get started.'}</p>}</div>
+        {!loading && !error && bots.filter(bot => `${bot.name} ${bot.title}`.toLowerCase().includes(search.toLowerCase())).length === 0 && <p className="text-sm text-muted-foreground">{search ? 'No Bots match your search.' : hidden ? 'No hidden Bots.' : 'No Bots yet. Create a Bot to get started.'}</p>}</div>
       {selected && <HyperBotEditor key={selected === 'new' ? 'new' : selected.id} bot={selected === 'new' ? undefined : selected} onClose={() => select(null)} onSaved={bot => { if (selection === selectionVersion.current) setSelected(bot); refresh(); }} onRemoved={() => { if (selection === selectionVersion.current) select(null); refresh(); }} />}
     </div>
   </section>;
