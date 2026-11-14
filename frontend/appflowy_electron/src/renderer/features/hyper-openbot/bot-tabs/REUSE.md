@@ -15,7 +15,7 @@ Read-only source `/home/naved/HyperTask-OpenBot-baseline`, pinned at
 | HyperExternalAgents.tsx | app/src/components/agents/new-bot-sheet.tsx; app/src/lib/agents/{form,queries,mutations,legacy-routes}.ts; app/src/routes/_authed/_app/agents/index.tsx |
 | HyperBotActivityTab.tsx | app/src/components/bot-profile/activity.tsx; app/src/lib/bot-lifecycle/{queries,mutations}.ts; app/src/routes/_authed/_app/bots.$agentId.activity.tsx |
 | HyperBotSetupTab.tsx | app/src/components/bot-profile/setup.tsx; app/src/components/agents/callback-token-panel.tsx; app/src/lib/agents/form.ts; app/src/lib/enterprise/queries.ts; app/src/routes/_authed/_app/bots.$agentId.setup.tsx |
-| HyperBotAppGrants.tsx | app/src/components/manage/describe-grants.tsx; app/src/components/plugins/grant-list.tsx; app/src/lib/app-grants/{queries,mutations,translate}.ts |
+| HyperBotAppGrants.tsx | app/src/components/manage/describe-grants.tsx; app/src/components/plugins/grant-list.tsx; app/src/lib/app-grants/{queries,mutations,translate}.ts; app/src/components/plugins/shared-approval-fields.tsx |
 | HyperSharedAppNotice.tsx | app/src/components/plugins/shared-app-notice.tsx; app/src/lib/plugins/shared-use.ts |
 | HyperBotAttentionBoard.tsx | app/src/components/needs-you/{board,needs-you}.tsx; app/src/components/approvals/waiting.tsx; app/src/components/bot-profile/attention.tsx; app/src/lib/{approvals,proactive}.ts; app/src/lib/tasks/{queries,mutations}.ts |
 | HyperBotSection.tsx | app/src/routes/_authed/_app/{bot,bots.$agentId.index}.tsx; app/src/lib/agents/default-agent.ts |
@@ -47,7 +47,10 @@ stale reads cannot overwrite a mutation refresh, and refused reads discard old p
   Personal editions omit per-Bot owner switches. Account connection uses the existing native
   Connections panel. Administrator action editing supports manual selection, English translation,
   independent explanation, other-app notices, replay/check/warnings, explicit add/remove,
-  authoring and shared audience approval. No write occurs at translate/replay time.
+  authoring and shared audience approval. Shared audiences use the server-proposed existing
+  members and can be narrowed, as upstream; arbitrary new members cannot be entered. Manual
+  switches write immediately through plugin grants; the Routines app stays always on. No write
+  occurs at translate/replay time.
 - Skills filters editable own skills using `/api/me`; held skills remain visible on shared Bots.
 - Sharing publishes team or people/groups audiences, updates/unpublishes, assigns/unassigns groups
   for admins, and shows shared-account exposure/refusal/request states before publishing and on
@@ -64,8 +67,8 @@ stale reads cannot overwrite a mutation refresh, and refused reads discard old p
   Stop/Cancel, conversation links, the Bot's action trail through the existing native Activity
   component, and routine counts without double-counting goal starts. On-demand goals belong to
   Routines. Routines/detail links select the owner-supplied tab.
-- Reachability supports paged conversation selection, deployment availability, Slack/Teams link
-  commands and expiry, SMS start/confirm, STOP status and disconnect. Personal reachability also
+- Reachability supports paged active-conversation selection, explicit Bot selection, deployment availability, Slack/Teams link
+  commands retained per platform, copy and expiry, SMS start/confirm, STOP status and disconnect. Personal reachability also
   removes push devices and shows delivery states. Link/challenge values stay in component memory
   instead of upstream sessionStorage to satisfy the renderer credential constraints.
 

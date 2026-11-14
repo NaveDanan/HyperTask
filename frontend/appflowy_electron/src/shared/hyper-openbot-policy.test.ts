@@ -111,3 +111,7 @@ it('memory slot permits learning permission and recording subflows without adjac
  for (const path of ['/api/admin/enterprise', '/api/admin/enterprise/capabilities/translate', '/api/admin/enterprise/capabilities/preview', '/api/admin/enterprise/capabilities/batch', '/api/admin/enterprise/settings/skillSharing', '/api/recorder/recordings?cursor=next', '/api/admin/learning/status/bot', '/api/admin/learning/container', '/api/settings/learning/auto-approve']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
  for (const path of ['/api/settings/learning-other', '/api/admin/learning-other', '/api/recorder-other', '/api/admin/enterprise-other', '/api/admin/enterprise/capabilities/%2e%2e/secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+it('bot-tabs permits routine counts without adjacent route families or escaped paths', () => {
+  expect(hyperOpenBotPathAllowed('/api/routines')).toBe(true);
+  for (const path of ['/api/routines-other', '/api/tasks-other', '/api/proactive/suggestions-other', '/api/routines/%2e%2e/private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
