@@ -12,3 +12,7 @@ it('bot-tabs permits team publication and rejects unrelated and traversal paths'
   expect(hyperOpenBotPathAllowed('/api/team-bots/%2e%2e/secrets')).toBe(false);
   expect(hyperOpenBotPathAllowed('/api/unrelated-family')).toBe(false);
 });
+it('bot-tabs permits delivery and current-user reads without permitting auth or traversal', () => {
+  for (const path of ['/api/me', '/api/delivery', '/api/delivery/opentag/start', '/api/delivery/sms/confirm', '/api/delivery/bindings/id']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/auth/me', '/api/delivery/../private', '/api/me/%2e%2e/private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
