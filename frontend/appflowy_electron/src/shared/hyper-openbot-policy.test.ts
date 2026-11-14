@@ -16,3 +16,7 @@ it('bot-tabs permits delivery and current-user reads without permitting auth or 
   for (const path of ['/api/me', '/api/delivery', '/api/delivery/opentag/start', '/api/delivery/sms/confirm', '/api/delivery/bindings/id']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/auth/me', '/api/delivery/../private', '/api/me/%2e%2e/private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+it('bot-tabs allows attention tasks and findings and refuses traversal and unrelated admin routes', () => {
+  for (const path of ['/api/bots/attention', '/api/tasks', '/api/tasks/task/again', '/api/proactive/suggestions', '/api/proactive/suggestions/item/start']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/tasks/../secrets', '/api/proactive/%2e%2e/secrets', '/api/admin/arbitrary']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
