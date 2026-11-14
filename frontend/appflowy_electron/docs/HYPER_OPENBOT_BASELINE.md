@@ -151,7 +151,7 @@ Use `PLAYWRIGHT_BROWSERS_PATH` for a private browser cache, or `HYPER_OPENBOT_TE
 
 ## Acceptance evidence
 
-The reference-client and both-service restart checks passed on the VM. Review and merge of the resulting evidence remain required.
+The reference-client and both-service restart checks passed on the VM. The evidence merged in PR #10 after final code/security review and resolved findings.
 
 | Requirement | Evidence needed | State |
 | --- | --- | --- |

@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-14T10:57:53.429288+00:00",
+  "issue": 5,
+  "pullRequest": 11,
+  "codeHeadObserved": "a23ee224051e81035bef0ad3f537ae1af6228794",
+  "product": "HyperTask",
+  "environment": "Real Electron 44.10.2 window on the local Linux PC, original OpenBot and Intelligence on the authorized VM",
+  "scope": "Native chat send/stream/save/app-restart/reopen and appearance/navigation observations; further issue #6 tool/approval acceptance is separate.",
+  "before": {
+    "startedAt": "2026-11-14T10:52:29.098Z",
+    "observedAt": "2026-11-14T10:52:40.135Z",
+    "head": "a23ee224051e81035bef0ad3f537ae1af6228794",
+    "actualElectronWindow": true,
+    "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
+    "channelId": "channel_08d94449-e86c-4cc8-a1dd-5e9249e2cdd3",
+    "threadId": "49c8cef5-0fb2-84c9-aed8-be69acf0586d",
+    "botId": "picked-harness",
+    "runId": "2a03b3a5-f9ec-4e0f-bff6-7d99470bfd43",
+    "userMessageId": "4468fdb0-b09c-4673-af6b-aca10ff07fd0",
+    "assistantMessageId": "resp_0edbbd4e419515c3016af83d7407c087d2a0d1d9aa39e5fe34",
+    "textDeliveries": 106,
+    "statuses": {
+      "channel": 200,
+      "history": 200
+    },
+    "exactStreamSavedUi": true,
+    "errors": []
+  },
+  "beforeTextHashes": {
+    "promptSha256": "adc69b6a15b368614a76b9e4b4c57585cc180451fd982f48dfece6f96a6b74eb",
+    "answerSha256": "17c04a8590373761cd0c724cca6cb6f2ea0b516c61db0063cee15ed6bb200f13",
+    "answerCharacters": 509
+  },
+  "beforeStream": {
+    "textDeliveries": 106,
+    "firstEventAt": "2026-11-14T10:52:36.136Z",
+    "lastEventAt": "2026-11-14T10:52:39.117Z",
+    "captureSha256": "df1f4a03b9733044ebfea663fc4d421caf2e5a65c8f56135b65fa1d0d612e7dc"
+  },
+  "after": {
+    "observedAt": "2026-11-14T10:54:04.995Z",
+    "head": "a23ee224051e81035bef0ad3f537ae1af6228794",
+    "actualElectronWindow": true,
+    "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
+    "channelId": "channel_08d94449-e86c-4cc8-a1dd-5e9249e2cdd3",
+    "threadId": "49c8cef5-0fb2-84c9-aed8-be69acf0586d",
+    "userMessageId": "4468fdb0-b09c-4673-af6b-aca10ff07fd0",
+    "assistantMessageId": "resp_0edbbd4e419515c3016af83d7407c087d2a0d1d9aa39e5fe34",
+    "sameNativeViewChannelThreadAndMessageIds": true,
+    "exactSavedUiText": true,
+    "noReplacementPromptSent": true,
+    "historyStatus": 200,
+    "errors": []
+  },
+  "afterCaptureSha256": "d2ec8552a9d6315f25266f597a268689717e915a68bd956457dde0818a04e115",
+  "appearance": {
+    "observedAt": "2026-11-14T10:47:59.570Z",
+    "head": "0a347138a468d1c4f997126dd81bba5351578e92",
+    "results": {
+      "dark": {
+        "theme": "dark",
+        "background": "oklch(0.185 0.005 285.8)",
+        "foreground": "oklch(0.985 0 0)",
+        "primary": "oklch(92% .004 286.32)"
+      },
+      "light": {
+        "theme": "light",
+        "background": "oklch(1 0 0)",
+        "foreground": "oklch(0.141 0.005 285.823)",
+        "primary": "oklch(21% .006 285.885)"
+      },
+      "lavender": {
+        "theme": "light",
+        "background": "oklch(1 0 0)",
+        "foreground": "oklch(0.141 0.005 285.823)",
+        "primary": "#ABA9E7"
+      },
+      "jira": "native_navigation_visible_no_credentials_changed",
+      "chatReturnedToSameSavedMessage": true
+    },
+    "errors": []
+  },
+  "validation": {
+    "typecheck": "pass",
+    "frontendBuild": "pass",
+    "fullVitest": {
+      "passed": 498,
+      "skipped": 1,
+      "skippedReason": "Opt-in simulated-IPC live backend test; actual native Electron live test ran separately."
+    },
+    "realRustCoreIntegration": "Included in full suite with existing core binary, no Rust rebuild",
+    "nativeSendClick": "Normal pointer click; support bubble no longer intercepts",
+    "internalSystemMessages": "Excluded from visible transcript while preserved in agent context",
+    "originalUserData": "Unused; all app testing uses an isolated scratch profile"
+  },
+  "identity": {
+    "identitySource": "Main process directly decodes GetUserProfile from the native core",
+    "persistentOwnerBinding": "0700 directory and 0600 owner.json, verified on the actual profile",
+    "cookies": "Separate persistent Electron partition per identity",
+    "signOut": "Synchronous lease invalidation, HTTP/WS/SSH cancellation, serialized cookie clearing before native auth transition returns",
+    "differentIdentity": "Denied before backend connection; explicit reconnect configuration belongs to #7",
+    "coverage": "Session state, registered IPC, delayed cookie writes and identity transitions covered by focused tests within the full suite"
+  },
+  "reuse": "Source and per-component mappings under src/renderer/features/hyper-openbot/REUSE.md; original MIT license retained",
+  "limits": [
+    "Current private SSH connection targets the authorized development VM and requires Linux. Portable configuration/lifecycle remains #7.",
+    "Electron development launch used a process-only --no-sandbox flag because the npm helper lacks root ownership/mode; no source/system sandbox setting changed. Production packaging is not validated.",
+    "Appearance tests ran on the earlier native UI code before the main-process identity fix; UI styling did not change afterward.",
+    "Approved/denied tool actions, disconnect/cancel workflows and remaining phase-1 acceptance are not established by the plain-chat observations.",
+    "This is development acceptance, not a production release or complete Epic acceptance."
+  ]
+}

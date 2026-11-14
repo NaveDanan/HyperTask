@@ -16,9 +16,9 @@ Exact direct dependencies: @copilotkit/react-core 1.85.0 matches original runtim
 
 ## Acceptance boundaries
 
-This branch is draft UI integration. Backend deployment and Electron live acceptance belong to parent. No live model tests ran during the authorized VM restart. Immediate post-run persistence reads never overwrite live text.
+This branch is draft UI integration. Backend deployment and Electron live acceptance belong to parent. The initial assembly ran no live model tests during the authorized VM restart. Immediate post-run persistence reads never overwrite live text.
 
-The enhancement section below supersedes the initial assembly limitations. Existing Extra vigilant server policy is unchanged. Native Electron acceptance is still pending.
+The enhancement section below supersedes the initial assembly limitations. Existing Extra vigilant server policy is unchanged. Native plain-chat acceptance now passes as recorded in docs/HYPER_OPENBOT_NATIVE.runtime.json. Tool/approval acceptance remains separate.
 
 HyperConversationActions.tsx adapts app/src/lib/approvals.ts and app/src/components/approvals/question-notice.tsx for thread-scoped durable approval/question reads and responses. shared/hyper-openbot-policy.ts is new restricted transport validation, including encoded traversal refusal.
 
@@ -35,4 +35,14 @@ HyperConversationActions.tsx adapts app/src/lib/approvals.ts and app/src/compone
 
 Additional exact dependencies required by these actual imports: `ws` 8.23.0 for main-process WebSockets over the private Unix tunnel with cookie/Origin headers; `@types/ws` 8.18.1 for compilation; `zod` 4.6.7 for the original computer tool schemas; `rxjs` 7.8.1 for original per-agent run middleware. Existing dependency versions were preserved. Npm changed dev flags where dependencies became reachable from production and restored existing platform libc metadata; the large initial addition is the original SDK dependency graph, not upgrades to existing packages.
 
-Validation now includes 56 focused tests plus an opt-in live bridge test. The live test opened a real Phoenix socket, received seven text events, and verified exact saved reply ID/text after bounded persistence settling. It uses a simulated IPC host with the real secure SSH/HTTP/WebSocket transport and real backend. Native Electron send/stream/reopen acceptance remains parent-owned and is not claimed by that test.
+Validation now includes 56 focused tests plus an opt-in live bridge test. The live test opened a real Phoenix socket, received seven text events, and verified exact saved reply ID/text after bounded persistence settling. It uses a simulated IPC host with the real secure SSH/HTTP/WebSocket transport and real backend. The separate actual Electron test subsequently passed with 106 live text deliveries and exact saved/UI text; reopening the same native view/channel/thread/message IDs after app restart also passed. The bridge-only test does not establish that result by itself.
+
+## Native acceptance and review corrections
+
+The actual Electron pointer test exposed the existing support bubble covering Send. The Chat view now reserves footer space without moving the global support control. System instruction messages remain in agent context and are excluded from the visible transcript. Active agent runs drive Stop/busy state on reconnect; durable waiting tool placeholders merge into their saved outcomes; obsolete gateway-join deadlines are cancelled on view release.
+
+Linux startup previously supplied an empty device ID, causing native collaboration/folder initialization to panic after restart. Linux now reads its existing machine ID from the standard OS locations and fails clearly if unavailable; Windows identity behavior and data paths are unchanged. Three focused regressions reproduced the old empty-ID behavior and pass with the fix.
+
+The trusted main process now binds this personal backend to the native identity read directly from the core. Cookie partitions are per identity, authentication changes invalidate leases and cancel traffic, and sign-out waits for queued cookie writes before clearing them. The owner binding survives logout, including for a cookie-free personal backend. Another identity cannot silently inherit it. A trusted reconnect/settings flow is deferred to #7.
+
+Final validation before the evidence commit: typecheck, production frontend build and 498 tests passed. One opt-in simulated-IPC live test was skipped in that suite; the separate actual Electron client exercised the real backend. See [native acceptance](../../../../docs/HYPER_OPENBOT_NATIVE.md).
