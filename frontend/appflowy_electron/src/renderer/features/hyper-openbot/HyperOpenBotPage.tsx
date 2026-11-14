@@ -54,8 +54,11 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
   const [modelPending, setModelPending] = useState(false);
   const modelUpdating = useRef(false);
   useEffect(() => {
-    void Promise.all([request<{ models: HyperModelOption[]; default: string }>('/api/models'), request<HyperModelPick>(`/api/channels/${channel.id}/model`)]).then(([catalogue, saved]) => { setModels(catalogue.models); setPick({ model: saved.model || catalogue.default, effort: saved.effort }); }).catch(error => setError(String(error)));
-  }, [channel.id]);
+    if (!serviceReady) return;
+    let current = true;
+    void Promise.all([request<{ models: HyperModelOption[]; default: string }>('/api/models'), request<HyperModelPick>(`/api/channels/${channel.id}/model`)]).then(([catalogue, saved]) => { if (current) { setModels(catalogue.models); setPick({ model: saved.model || catalogue.default, effort: saved.effort }); } }).catch(error => { if (current) setError(String(error)); });
+    return () => { current = false; };
+  }, [channel.id, serviceReady]);
   useEffect(() => {
     if (!isReady || !serviceReady) return;
     let current = true;

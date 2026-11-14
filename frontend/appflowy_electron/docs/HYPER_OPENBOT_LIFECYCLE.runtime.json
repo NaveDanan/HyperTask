@@ -21,7 +21,7 @@
     "modelAuthentication": "ChatGPT OAuth; no API key"
   },
   "repositoryValidation": {
-    "passedTests": 558,
+    "passedTests": 559,
     "skippedTests": 1,
     "skipReason": "opt-in simulated-IPC live test",
     "typecheck": "passed",
@@ -121,5 +121,26 @@
     "Linux rootful Docker remains outside documented macOS preview",
     "Process-only development --no-sandbox launch; no production packaging claim",
     "No permanent offline support or Intelligence replacement"
-  ]
+  ],
+  "reviewFollowUp": {
+    "findings": [
+      4573968017,
+      4573968018,
+      4573979892
+    ],
+    "modelRecovery": {
+      "observedAt": "2026-11-14T14:35:50.890Z",
+      "scope": "Production HyperOpenBotPage in Chromium with mocked service/SDK/backend; not live native acceptance",
+      "cases": [
+        "stopped_saved_chat_defers_model_reads",
+        "readiness_recovery_restores_saved_model_picker",
+        "obsolete_model_load_cannot_overwrite_new_recovery"
+      ],
+      "errors": []
+    },
+    "remainingIntelligenceAndUnhealthyServiceStop": "rendered control regression fails on old gate and passes on fixed gate",
+    "fixtureSha256": "4b56f214d4670b84ebf8ecb6c6a65c13c2b8678340f7bd0096e40f3ce2c16634",
+    "fixtureDriverSha256": "8c3a8d59e2107b3eae7fcf4626c6e92d3d1c7eba55f0e6870552a507dc1a6da0",
+    "nativeLifecycleNotRepeatedForTheseUiOnlyFixes": true
+  }
 }

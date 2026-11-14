@@ -45,7 +45,7 @@ export function HyperServiceStatus({ state, error }: { state: HyperOpenBotServic
       <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={busy} onClick={() => void run('check')}>Check AI readiness</Button>
         {!state.ready && <Button size="sm" disabled={busy || ['unsupported', 'signed_out', 'profile_required'].includes(state.problem)} onClick={() => void run('start')}>Start AI services</Button>}
         <Button variant="outline" size="sm" disabled={busy || !state.checks.some(check => check.id === 'deployment' && check.state !== 'missing' && check.state !== 'unknown')} onClick={() => setConfirm('restart')}>Restart AI services</Button>
-        <Button variant="outline" size="sm" disabled={busy || !state.checks.some(check => ['server', 'worker', 'computer', 'harness', 'postgres'].includes(check.id) && check.state === 'ready')} onClick={() => setConfirm('stop')}>Stop AI services</Button></div>
+        <Button variant="outline" size="sm" disabled={busy || !state.checks.some(check => (check.id === 'deployment' && check.state === 'ready') || (['server', 'worker', 'computer', 'harness', 'postgres'].includes(check.id) && ['ready', 'unhealthy'].includes(check.state)))} onClick={() => setConfirm('stop')}>Stop AI services</Button></div>
       <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={preference ?? state.autoStart} disabled={busy} onChange={event => {
         const next = event.target.checked; setPreference(next); setPending(true); setFailure(undefined);
         void window.appflowy.hyperOpenBot.service.configure(next).catch(() => { setPreference(undefined); setFailure('The AI startup preference could not be saved.'); }).finally(() => setPending(false));
