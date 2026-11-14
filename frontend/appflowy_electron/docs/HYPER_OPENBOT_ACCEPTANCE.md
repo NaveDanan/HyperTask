@@ -1,6 +1,6 @@
 # Native OpenBot acceptance
 
-[Issue #8](https://github.com/NaveDanan/HyperTask/issues/8) validates the original OpenBot and CopilotKit Intelligence inside HyperTask. The automated/native checks below passed. Owner acceptance and the final PR review are pending. This report does not declare phase 1 complete.
+[Issue #8](https://github.com/NaveDanan/HyperTask/issues/8) validates the original OpenBot and CopilotKit Intelligence inside HyperTask. The automated/native checks below passed. On 2026-11-14 the owner reviewed the running native demo, its known limits and the upstream differences below, and requested native parity with the upstream OpenBot app before acceptance. Parity work is in progress on this branch; this report does not declare phase 1 complete.
 
 HyperTask is the only application UI used in these checks. Electron and the existing Rust core run on the desktop; the existing authorized personal MMEMS VM runs OpenBot, the model agent, computer, PostgreSQL and original Intelligence. There is no iframe or separate OpenBot shell. ChatGPT OAuth supplies model access; no API key was added. The account holder personally completed the required agreement.
 
@@ -113,7 +113,37 @@ For action and fault reproduction, follow [the action procedure](HYPER_OPENBOT_A
 - Readiness detects a missing provider store, not whether an existing OAuth token will remain valid. Live turns prove provider access at capture time. Real license/credential corruption was not performed; the missing-prerequisite cases are simulated tests.
 - No real Jira mutation or external connection authorization is claimed. No model received unrestricted local Rust-core or Jira access.
 
-[Issue #8](https://github.com/NaveDanan/HyperTask/issues/8) requires: "Owner review confirms whether the stable integration baseline is ready for subsequent HyperTask-specific features and, later, Intelligence replacement." The owner must decide whether this demonstrated baseline and its recorded limits are acceptable. Until that decision and exact-head PR reviews pass, issue #8 and the epic remain open.
+[Issue #8](https://github.com/NaveDanan/HyperTask/issues/8) requires: "Owner review confirms whether the stable integration baseline is ready for subsequent HyperTask-specific features and, later, Intelligence replacement." The owner inspected the running native demo, these limits and the upstream differences below on 2026-11-14 and requested native parity for the unavailable features before acceptance. Issue #8 and the epic remain open until parity is delivered, the owner accepts it and the exact final head passes review.
+
+## Differences from upstream OpenBot
+
+The complete original OpenBot backend and Intelligence run on the VM. HyperTask exposes a selected part of the original app's roughly ninety routes at the pinned source. The main-process route allowlist in [hyper-openbot-policy.ts](../src/shared/hyper-openbot-policy.ts) admits only the API families those native screens use, so unlisted features are unreachable from HyperTask even though the backend provides them. Phase 1 scoped chat, agents, tools, approvals, streaming and service lifecycle; the epic directs later work toward HyperTask components rather than duplicate OpenBot screens.
+
+| Upstream feature | HyperTask native support |
+| --- | --- |
+| Single-Bot conversations: create, reopen, pin, delete | Available |
+| Composer: model, effort, attachments, Send, Stop | Available |
+| Streaming transcript and authoritative saved history | Available |
+| In-conversation approvals: Allow once, Allow for this conversation, Always allow here, Deny, I did it myself | Available |
+| Bot questions | Available |
+| Bots: roster, create, profile editing, Pause/Resume, notifications, hidden Bots | Available |
+| Skills: create, edit, delete, grant to Bots | Available |
+| Connections: directory, Add app, MCP server by URL, start external sign-in | Basic directory and sign-in initiation |
+| Bot computer | Read-only status and screenshots. No remote input, terminal or take-over |
+| Original computer tools (navigate, read, snapshot, type, click, key, list/read/write files, run command, scroll) | Available through the original approval gate |
+| Group conversations with several Bots | Not available |
+| Routines: schedules, goals, check-ins | Not available |
+| Memory and Automatic Learning | Not available |
+| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Not available |
+| Cross-conversation approvals inbox | Not available |
+| Vault and passwords | Not available |
+| Bot browser page | Not available |
+| Generated interactive screens opened as pages | Not available |
+| Personal settings: notifications, learning, browsers, this computer, connected accounts | Not available |
+| Administration: people, permissions, boundaries, audit, providers, credentials, plugins (Arcade/Composio), computers, playground, what-if | Not available |
+| Onboarding wizard and starter tour | Not available |
+
+This table records the state at the owner's review. Each parity addition extends the route allowlist with explicit tests, adapts the screen to HyperTask's design system and updates its row.
 
 ## Offline boundary, dependencies and notices
 

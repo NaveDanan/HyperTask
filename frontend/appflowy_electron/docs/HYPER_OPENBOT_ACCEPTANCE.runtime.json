@@ -215,7 +215,9 @@
   ],
   "upstreamAndNotices": "HYPER_OPENBOT_AUDIT.md and ../src/renderer/features/hyper-openbot/REUSE.md, LICENSE and component mappings",
   "ownerCheckpoint": {
-    "state": "pending",
+    "state": "parity_requested",
+    "reviewedAt": "2026-11-14",
+    "decision": "Owner reviewed the native demo and upstream differences, then requested native parity with the upstream OpenBot app before acceptance.",
     "requirement": "Issue #8 requires owner review of readiness for subsequent HyperTask features and later Intelligence replacement."
   },
   "prReview": {

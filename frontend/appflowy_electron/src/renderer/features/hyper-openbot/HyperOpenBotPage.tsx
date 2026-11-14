@@ -26,6 +26,7 @@ import { HyperBotsPanel } from './bots';
 import { HyperConnectionsPanel } from './connections';
 import { HyperRuntimeTools, hyperObserveApprovalAgent, hyperWhileObserved } from './runtime';
 import { hyperPrepareRuntimeAgent, hyperResolveRuntimeFacts } from './HyperRuntimeIntegration';
+import { HYPER_OPENBOT_SECTIONS, type HyperOpenBotSectionContext } from './HyperOpenBotSections';
 
 type HyperChannel = HyperConversation & { threadId: string; agentIds: string[]; active: boolean };
 function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; serviceReady: boolean }) {
@@ -150,7 +151,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
   </div>;
 }
 function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; serviceReady: boolean }) {
-  const [screen, setScreen] = useState<'conversations' | 'bots' | 'skills' | 'connections'>('conversations');
+  const [screen, setScreen] = useState<string>('conversations');
   const [channels, setChannels] = useState<HyperChannel[]>([]);
   const [channel, setChannel] = useState<HyperChannel>();
   const [error, setError] = useState<string>();
@@ -176,19 +177,28 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
   }
   useEffect(() => { void refresh(true); return () => { version.current++; }; }, [viewId]);
   function open(id: string) { selectionVersion.current++; const found = channels.find(each => each.id === id); if (found) { setChannel(found); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
-  async function start(botId: string) {
+  async function openAny(id: string) {
+    if (channels.some(each => each.id === id)) return open(id);
     const selection = ++selectionVersion.current;
-    try { const value = await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds: [botId] }); version.current++; setLoading(false); setChannels(previous => [value.channel, ...previous]); if (selection === selectionVersion.current) { setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); } }
+    try { const saved = await request<{ channel: HyperChannel }>(`/api/channels/${encodeURIComponent(id)}`); if (selection === selectionVersion.current) { setChannel(saved.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
     catch (error) { if (selection === selectionVersion.current) setError(String(error)); }
   }
+  async function start(agentIds: string[]) {
+    const selection = ++selectionVersion.current;
+    try { const value = await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds }); version.current++; setLoading(false); setChannels(previous => [value.channel, ...previous]); if (selection === selectionVersion.current) { setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); } }
+    catch (error) { if (selection === selectionVersion.current) setError(String(error)); }
+  }
+  const tabs: readonly { id: string; label: string }[] = [{ id: 'conversations', label: 'Conversations' }, { id: 'bots', label: 'Bots' }, { id: 'skills', label: 'Skills' }, { id: 'connections', label: 'Connections' }, ...HYPER_OPENBOT_SECTIONS];
+  const section = HYPER_OPENBOT_SECTIONS.find(each => each.id === screen);
+  const context: HyperOpenBotSectionContext = { openConversation: id => void openAny(id), startConversation: ids => void start(ids) };
   return <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />
-    <nav aria-label="OpenBot" className="flex shrink-0 gap-1 border-b border-border p-2">
-      {(['conversations', 'bots', 'skills', 'connections'] as const).map(tab => <Button key={tab} variant={screen === tab && !channel ? 'secondary' : 'ghost'} onClick={() => { selectionVersion.current++; setScreen(tab); setChannel(undefined); }}>{tab === 'conversations' ? 'Conversations' : tab === 'bots' ? 'Bots' : tab === 'skills' ? 'Skills' : 'Connections'}</Button>)}
+    <nav aria-label="OpenBot" className="flex shrink-0 flex-wrap gap-1 border-b border-border p-2">
+      {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { selectionVersion.current++; setScreen(tab.id); setChannel(undefined); }}>{tab.label}</Button>)}
       {screen === 'conversations' && <Button variant="ghost" onClick={() => void refresh()}>Refresh</Button>}
     </nav>
     {error && <p role="alert" className="p-2 text-sm text-destructive">{error}</p>}
-    {channel ? <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} /> : screen === 'bots' ? <HyperBotsPanel onChat={id => void start(id)} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen loading={loading} conversations={channels} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('bots')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
+    {channel ? <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} /> : section ? section.render(context) : screen === 'bots' ? <HyperBotsPanel onChat={id => void start([id])} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen loading={loading} conversations={channels} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('bots')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
   </div>;
 }
 export function HyperOpenBotPage({ viewId }: { viewId: string }) {
