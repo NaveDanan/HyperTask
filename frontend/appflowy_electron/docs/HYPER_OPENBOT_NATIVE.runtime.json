@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-14T11:34:02.091092+00:00",
+  "recordedAt": "2026-11-14T11:47:13.510181+00:00",
   "issue": 5,
   "pullRequest": 11,
-  "codeHeadObserved": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
+  "codeHeadObserved": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
   "product": "HyperTask",
   "environment": "Real Electron 44.10.2 window on the local Linux PC, original OpenBot and Intelligence on the authorized VM",
   "scope": "Native chat send/stream/save/app-restart/reopen and appearance/navigation observations; further issue #6 tool/approval acceptance is separate.",
   "before": {
-    "startedAt": "2026-11-14T11:32:06.538Z",
-    "observedAt": "2026-11-14T11:32:16.578Z",
-    "head": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
+    "startedAt": "2026-11-14T11:45:49.208Z",
+    "observedAt": "2026-11-14T11:45:56.732Z",
+    "head": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
     "actualElectronWindow": true,
     "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
-    "channelId": "channel_a0386e96-0992-4c47-9145-494ffd45c416",
-    "threadId": "49c8cef5-0fb2-82c4-8f11-f17e86b7d644",
+    "channelId": "channel_e27a11c7-3770-451c-95d5-251da6b048f8",
+    "threadId": "49c8cef5-0fb2-8149-af78-08ec3c5d53c5",
     "botId": "picked-harness",
-    "runId": "490fc8c9-fe55-4b1f-a0c4-6fa70981ac28",
-    "userMessageId": "567fa046-8e19-40d6-90a1-83712f7e1018",
-    "assistantMessageId": "resp_0ee162e202d62d87016af846bafc5887d28e64ff235ff0eedd",
-    "textDeliveries": 118,
+    "runId": "9d05ba3a-019f-4fb4-88e9-c9181183e6da",
+    "userMessageId": "198e5830-86b0-46d8-8cb4-92bd7b9f7026",
+    "assistantMessageId": "resp_0ce0b6b74a3de6fc016af849f0d55c87d2be68d4d9941e6a5b",
+    "textDeliveries": 102,
     "statuses": {
       "channel": 200,
       "history": 200
@@ -28,32 +28,32 @@
     "errors": []
   },
   "beforeTextHashes": {
-    "promptSha256": "fcf34b3b79f95ada85d5d41e49de0b6169bd34b9c4943c32f7309c6a3ca06772",
-    "answerSha256": "97568c75970f674c367b4d3b5c97b410585c480f110db9f5918abe8c42adba94",
-    "answerCharacters": 603
+    "promptSha256": "72f74f3e1c23bd7f0ef99efd914811a92fab0e111bca3f25049b4ba5cf67fe3c",
+    "answerSha256": "fa69055dd726610404dfe53ad1cae957087901e244c43586b3849d9bc86a7a69",
+    "answerCharacters": 497
   },
   "beforeStream": {
-    "textDeliveries": 118,
-    "firstEventAt": "2026-11-14T11:32:11.864Z",
-    "lastEventAt": "2026-11-14T11:32:14.010Z",
-    "captureSha256": "06328dc3faea3661662e5182c086853676dfbef709e1fd6f0f58a21b30469bbc"
+    "textDeliveries": 102,
+    "firstEventAt": "2026-11-14T11:45:53.629Z",
+    "lastEventAt": "2026-11-14T11:45:55.471Z",
+    "captureSha256": "3e572c0889b24e2e6f4949257db4a50a9765435f0c5d4c7f560683020c0a0f2f"
   },
   "after": {
-    "observedAt": "2026-11-14T11:33:02.912Z",
-    "head": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
+    "observedAt": "2026-11-14T11:46:36.790Z",
+    "head": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
     "actualElectronWindow": true,
     "nativeViewId": "d349e3e7-980e-432c-af6c-1ea9652954f7",
-    "channelId": "channel_a0386e96-0992-4c47-9145-494ffd45c416",
-    "threadId": "49c8cef5-0fb2-82c4-8f11-f17e86b7d644",
-    "userMessageId": "567fa046-8e19-40d6-90a1-83712f7e1018",
-    "assistantMessageId": "resp_0ee162e202d62d87016af846bafc5887d28e64ff235ff0eedd",
+    "channelId": "channel_e27a11c7-3770-451c-95d5-251da6b048f8",
+    "threadId": "49c8cef5-0fb2-8149-af78-08ec3c5d53c5",
+    "userMessageId": "198e5830-86b0-46d8-8cb4-92bd7b9f7026",
+    "assistantMessageId": "resp_0ce0b6b74a3de6fc016af849f0d55c87d2be68d4d9941e6a5b",
     "sameNativeViewChannelThreadAndMessageIds": true,
     "exactSavedUiText": true,
     "noReplacementPromptSent": true,
     "historyStatus": 200,
     "errors": []
   },
-  "afterCaptureSha256": "2462cf878ebe6ed057d64b17ddbf5d2ab90472dc1c0dc2c45e28e12cbe17867f",
+  "afterCaptureSha256": "3ce00a3fbdf574e573a8e7e1e7af4786524da8fb0a92ec4edc62b1baa85b1b60",
   "appearance": {
     "observedAt": "2026-11-14T10:47:59.570Z",
     "head": "0a347138a468d1c4f997126dd81bba5351578e92",
@@ -85,7 +85,7 @@
     "typecheck": "pass",
     "frontendBuild": "pass",
     "fullVitest": {
-      "passed": 511,
+      "passed": 513,
       "skipped": 1,
       "skippedReason": "Opt-in simulated-IPC live backend test; actual native Electron live test ran separately."
     },
@@ -103,7 +103,8 @@
     "coverage": "Session state, registered IPC, delayed cookie writes and identity transitions covered by focused tests within the full suite",
     "ownerSchemaVersion": 2,
     "remoteAccounts": "Denied until authenticated server provenance and trusted reconnect are implemented in #7",
-    "legacyBindings": "Version 1 numeric-ID bindings remain unchanged and are rejected; only disposable test binding was archived before the v2 positive check"
+    "legacyBindings": "Version 1 numeric-ID bindings remain unchanged and are rejected; only disposable test binding was archived before the v2 positive check",
+    "rendererFileAccess": "Generic file IPC rejects all Electron user-data paths and canonical symlink aliases, protecting owner bindings and cookie partitions"
   },
   "reuse": "Source and per-component mappings under src/renderer/features/hyper-openbot/REUSE.md; original MIT license retained",
   "limits": [
@@ -154,6 +155,58 @@
       "invalidate before OpenAnonUser",
       "allow native auth after OpenBot cleanup failure while keeping bridge blocked",
       "namespace owner by trusted local UUID; deny unsupported remote identities"
+    ],
+    "additionalReviewedHead": "45f7577970f5dc0afef4da85bd1478e9bcf94678",
+    "additionalCodeCommits": [
+      "ae8434bd8e7f2fa9c5ab90a0a437021b47b90fe8",
+      "5cae909b0778b91cbfd7cf92ec6b37f3981a699a"
+    ],
+    "additionalFindings": [
+      "renderer file APIs could overwrite private owner binding",
+      "stale list refresh could hide newly created conversation",
+      "UI caller did not enable guarded durable read-back"
     ]
+  },
+  "privateFileGuard": {
+    "observedAt": "2026-11-14T11:45:48.737Z",
+    "head": "5cae909b0778b91cbfd7cf92ec6b37f3981a699a",
+    "actualElectronWindow": true,
+    "rendererPrivateStateOperationsDenied": 17,
+    "allPrivateOperationsDenied": true,
+    "directoryAndFileSymlinkAliasesChecked": true,
+    "ordinaryScratchFileWriteReadPassed": true,
+    "bindingUnchanged": true,
+    "errors": [],
+    "captureSha256": "7d75d40542e82407df5febf7eebbb18f4cc062559006e2ea1ee61e2e5a476484"
+  },
+  "refreshCreationRace": {
+    "beforeFix": {
+      "observedAt": "2026-11-14T11:41:49.616Z",
+      "head": "7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05",
+      "actualElectronWindow": true,
+      "realChannelListDelayedWithoutChangingContent": true,
+      "initialRows": 16,
+      "rowsAfterCreation": 17,
+      "rowsAfterStaleRefresh": 16,
+      "newChannelRetained": false,
+      "errors": []
+    },
+    "afterFix": {
+      "observedAt": "2026-11-14T11:43:07.496Z",
+      "head": "ae8434bd8e7f2fa9c5ab90a0a437021b47b90fe8",
+      "actualElectronWindow": true,
+      "realChannelListDelayedWithoutChangingContent": true,
+      "initialRows": 17,
+      "rowsAfterCreation": 18,
+      "rowsAfterStaleRefresh": 18,
+      "newChannelRetained": true,
+      "errors": []
+    },
+    "captureSha256": "aaaee38e084aa074f34a28bff845bcfecead781b2b12e60de8afcb6295e0c1ba"
+  },
+  "idleReadBack": {
+    "productionCaller": "HyperChannelChat uses hyperRestoreStoredMessages",
+    "guard": "Only idle agents merge with readBack enabled; active runs are unchanged",
+    "regression": "Missing idle content restored; longer completed live text retained; active agent not written"
   }
 }

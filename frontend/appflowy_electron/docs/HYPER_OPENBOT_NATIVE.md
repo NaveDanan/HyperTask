@@ -24,29 +24,33 @@ The UUID and local namespace bind this personal backend to its first native owne
 
 Native sign-out and authentication transitions invalidate leases and cancel HTTP, WebSocket and SSH work. Queued cookie writes settle before credentials are cleared, so a late response cannot restore the previous session. The owner binding remains intact after sign-out. A trusted reconnect/configuration flow is deferred to issue #7; this build fails closed rather than silently sharing the backend.
 
+Generic renderer filesystem IPC cannot read, write, inspect or create directories under Electron's private user-data directory. The guard checks normalized paths and canonical existing ancestors to reject directory and file symlink aliases, including targets not yet created. This protects owner files and cookie partitions from renderer file operations. Ordinary imports, media and exports outside that private directory keep their existing API.
+
 The current transport is a Linux development configuration for `agent@100.104.170.51`. It is not a portable production connection manager. Original OpenBot, Intelligence and model credentials stay on the VM. No API key or Intelligence credential is placed in the renderer.
 
 ## Actual native observations
 
-[HYPER_OPENBOT_NATIVE.runtime.json](HYPER_OPENBOT_NATIVE.runtime.json) records exact code/capture identities and hashes. The latest code observation was `7541f59d52caaaf2bb70ed6ed7f5a95d9dbb1c05`, including the review fixes and rebuilt core identity query.
+[HYPER_OPENBOT_NATIVE.runtime.json](HYPER_OPENBOT_NATIVE.runtime.json) records exact code/capture identities and hashes. The latest code observation was `5cae909b0778b91cbfd7cf92ec6b37f3981a699a`, including the review fixes and rebuilt core identity query.
 
 | Check | Observed result |
 | --- | --- |
 | App | Actual Electron 44.10.2 process and native Rust core; isolated scratch profile |
 | Navigation | Visible Chat entry creates/reopens an existing native Chat view |
 | Sending | Normal Send pointer click through the native composer |
-| Streaming | 118 distinct live AG-UI text deliveries over the real private Phoenix connection |
-| Saved content | Exact 603-character answer and prompt match authoritative HTTP 200 history and native UI |
+| Streaming | 102 distinct live AG-UI text deliveries over the real private Phoenix connection |
+| Saved content | Exact 497-character answer and prompt match authoritative HTTP 200 history and native UI |
 | App restart | Same native view, channel, thread, Bot, user/assistant message IDs and text reopened without a replacement prompt |
 | Renderer | No page errors observed during send/reopen |
 | Appearance | Actual light, dark and Lavender token/screenshot checks passed; default Auto scheme restored |
 | Navigation regression | Jira opened without credential changes; returning to Chat showed the same saved message |
 | Async selection | Actual pending model save locks both pickers, retains the draft and saves the requested model; a late channel creation preserves newer navigation and remembered selection |
-| Automated checks | Typecheck, production frontend build and 511 tests passed; one opt-in simulated-IPC live test skipped |
+| Automated checks | Typecheck, production frontend build and 513 tests passed; one opt-in simulated-IPC live test skipped |
 
 The optional bridge-only test uses a simulated Electron IPC host with the real backend. Its earlier pass is recorded separately and is not substituted for the native-window observations above. The full suite included real-core integration checks using the rebuilt identity-query binary. The concurrency checks paused and resumed only the scratch app's private SSH child; the reference and T3 forwards were untouched.
 
 Review follow-ups also cover history groups sharing one local anchor, read-back of an assistant with missing local content, drained null-body HTTP responses and valid UTF-8 socket close reasons. Native `OpenAnonUser` invalidates connections before dispatch. A cleanup error keeps OpenBot blocked while allowing native sign-out, account deletion or authentication to proceed. Related run/join code and tests were consolidated without dropping coverage.
+
+Further review reproduced a renderer write to the scratch owner file and a stale refresh dropping a newly created conversation. In the corrected real window, all 17 private-state operations were denied through direct, traversal and symlink paths, the owner file stayed unchanged and ordinary scratch file write/read passed. The delayed list response retained all 18 rows after creation instead of reverting to 17. Creation now invalidates older list requests and clears their loading state. The UI recovery entry point enables durable read-back only when the agent is idle; a functional regression covers missing content, longer completed text and active-run protection.
 
 The pointer test initially found HyperTask's support bubble covering Send. Chat now reserves room above that control. Native testing also exposed the existing Windows-only device ID implementation returning an empty string on Linux, which prevented collaboration/folder restoration after restart. Linux now reads its stable OS machine ID from standard locations and reports a clear error if unavailable. Windows identity behavior and existing data paths are unchanged. Three regressions reproduced the old failure and pass with the correction; the actual native folder now reopens after restart.
 
