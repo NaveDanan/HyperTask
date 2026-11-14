@@ -1,5 +1,11 @@
 // Copyright (c) 2026 CopilotKit. MIT. Ported from pinned f8af37a channel-chat.tsx.
 import type { Message } from "@ag-ui/core";
+/** One production recovery entry point; active runs retain their streamed state. */
+export function hyperRestoreStoredMessages(agent: { isRunning: boolean; messages: Message[]; setMessages(messages: Message[]): void }, stored: Message[]) {
+  if (agent.isRunning) return;
+  agent.setMessages(mergeStoredMessages(agent.messages, stored, { readBack: true }));
+}
+
 export function mergeStoredMessages(
   local: Message[],
   stored: Message[],

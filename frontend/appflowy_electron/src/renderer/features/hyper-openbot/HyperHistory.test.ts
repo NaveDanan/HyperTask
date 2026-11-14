@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { readableTurns } from './HyperThreadMessages';
-import { mergeStoredMessages } from './HyperHistoryMerge';
+import { hyperRestoreStoredMessages, mergeStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
 import { hyperGatewayJoin, hyperRunWithRecovery } from './HyperRun';
@@ -51,6 +51,19 @@ it('restores read-back text when the local assistant has no content', () => {
   const stored = [{ id: 'a', role: 'assistant' as const, content: 'Recovered answer' }];
   expect(mergeStoredMessages(local, stored, { readBack: true })[0].content).toBe('Recovered answer');
   expect(mergeStoredMessages(local, stored)).toBe(local);
+});
+it('the UI recovery entry point restores a contentless idle assistant while preserving longer live text and active runs', () => {
+  const saved = [{ id: 'a', role: 'assistant' as const, content: 'Authoritative saved answer' }];
+  const agent = { isRunning: false, messages: [{ id: 'a', role: 'assistant' as const }], setMessages: vi.fn() };
+  hyperRestoreStoredMessages(agent, saved);
+  expect(agent.setMessages.mock.calls[0][0][0].content).toBe('Authoritative saved answer');
+  const streamed = [{ id: 'a', role: 'assistant' as const, content: 'Longer completed live response retained' }];
+  const idle = { isRunning: false, messages: streamed, setMessages: vi.fn() };
+  hyperRestoreStoredMessages(idle, saved);
+  expect(idle.setMessages).toHaveBeenCalledWith(streamed);
+  agent.setMessages.mockClear(); agent.isRunning = true;
+  hyperRestoreStoredMessages(agent, saved);
+  expect(agent.setMessages).not.toHaveBeenCalled();
 });
 it('rejects a resolved SDK call when a run failure event was emitted', async () => {
   let events: any; const unsubscribe = vi.fn();

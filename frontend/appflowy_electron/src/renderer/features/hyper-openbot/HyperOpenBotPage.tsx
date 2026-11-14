@@ -6,7 +6,7 @@ import { hyperRunWithRecovery } from './HyperRun';
 import { HyperComputerPanel } from './HyperComputerPanel';
 import { HyperSkillsPanel } from './skills';
 import { readThreadMessages } from './HyperThreadMessages';
-import { mergeStoredMessages } from './HyperHistoryMerge';
+import { hyperRestoreStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
 import { hyperToolOutcome } from './HyperToolOutcome';
 import { hyperGatewayJoin } from './HyperRun';
@@ -63,7 +63,7 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
         const stored = await readThreadMessages(channel.threadId, channel.agentIds[0]);
         if (!current || version !== generation.current) return;
         if (stored.availability === 'unavailable') setError('Conversation history could not be loaded. Retry by reopening the conversation.');
-        else { if (!answering) agent.setMessages(mergeStoredMessages(agent.messages, stored.messages)); if (stored.unreadable) setError(`${stored.unreadable} stored messages could not be read.`); }
+        else { if (!answering) hyperRestoreStoredMessages(agent, stored.messages); if (stored.unreadable) setError(`${stored.unreadable} stored messages could not be read.`); }
       } catch (error) { if (current) setError(String(error)); }
       finally { if (current) setRestoring(false); }
     })();
