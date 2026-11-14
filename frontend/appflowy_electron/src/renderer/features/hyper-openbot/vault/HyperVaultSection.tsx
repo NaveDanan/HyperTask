@@ -46,6 +46,10 @@ export function HyperKeyForm({ keys, onSaved, onCancel }: { keys?: HyperKeys; on
     event.preventDefault(); if (busy) return;
     const form = event.currentTarget; const secret = form.elements.namedItem('plaintext') as HTMLInputElement;
     const plaintext = secret.value; secret.value = '';
+    if (!provider.trim() || (kind === 'connector' && !keyId.trim()) || !plaintext) {
+      setError('Provider, connector key ID and secret are required.');
+      return;
+    }
     setBusy(true); setError('');
     try { await hyperVaultApi.createKey({kind, provider: provider.trim(), ...(kind === 'connector' ? {keyId: keyId.trim()} : {}), plaintext, metadata: {}}); onSaved(); }
     catch { setError('Could not save the key. Retype the secret and try again.'); } finally { setBusy(false); }

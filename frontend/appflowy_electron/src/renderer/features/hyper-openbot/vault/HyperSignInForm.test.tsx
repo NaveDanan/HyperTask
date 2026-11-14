@@ -1,15 +1,16 @@
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 import type { ReactElement, FormEvent } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { HyperKeyForm } from './HyperVaultSection';
 import { HyperSignInForm } from './HyperSignInForm';
 import type { SignInRequest } from './HyperVaultApi';
-const harness = vi.hoisted(() => ({ active: false, values: [] as unknown[], cursor: 0, answer: vi.fn(), createKey: vi.fn() }));
+const harness = vi.hoisted(() => ({ active: false, values: [] as unknown[], cursor: 0, answer: vi.fn(), createKey: vi.fn(), poll: {current: undefined as ReturnType<typeof setTimeout> | undefined} }));
 vi.mock('./HyperVaultApi', () => ({hyperVaultApi: {answerSignIn: harness.answer, createKey: harness.createKey}}));
 vi.mock('react', async original => {
   const react = await original<typeof import('react')>();
-  return {...react, useState: (value: unknown) => harness.active ? [harness.values[harness.cursor++] ?? value, vi.fn()] : react.useState(value), useEffect: (...args: Parameters<typeof react.useEffect>) => { if (!harness.active) react.useEffect(...args); }};
+  return {...react, useRef: (value: unknown) => harness.active ? harness.poll : react.useRef(value), useState: (value: unknown) => harness.active ? [harness.values[harness.cursor++] ?? value, vi.fn()] : react.useState(value), useEffect: (...args: Parameters<typeof react.useEffect>) => { if (!harness.active) react.useEffect(...args); }};
 });
+beforeEach(() => { harness.answer.mockReset(); harness.createKey.mockReset(); });
 const base = {id:'request',botId:'bot',origin:'https://example.test',reason:null,status:'pending',outcome:null,passwordManager:true,savedLogins:[{id:'saved',username:'person'}]} as SignInRequest;
 function tree(data: SignInRequest, error = '') {
   harness.active = true; harness.cursor = 0; harness.values = [data,error,false];
@@ -71,4 +72,64 @@ it('clears key inputs before a failed write without storage writes or echoed err
     expect(harness.createKey).toHaveBeenCalledWith({kind:'connector',provider:'github',keyId:'production',plaintext:'synthetic-key',metadata:{}});
     expect(saved).not.toHaveBeenCalled(); expect(write).not.toHaveBeenCalled(); expect(secret.value).toBe('');
   } finally { vi.unstubAllGlobals(); }
+});
+
+it('refuses empty login and whitespace-only verification submissions', () => {
+  for (const status of ['pending', 'code_required'] as const) {
+    vi.stubGlobal('FormData', class { get() { return status === 'pending' ? '' : '   '; } });
+    try {
+      findForm(tree({...base,status}))!.props.onSubmit({preventDefault:vi.fn(),currentTarget:{reset:vi.fn()}} as unknown as FormEvent<HTMLFormElement>);
+      expect(harness.answer).not.toHaveBeenCalled();
+    } finally { vi.unstubAllGlobals(); }
+  }
+});
+it('clears a rejected login submission without writing browser storage', async () => {
+  const reset = vi.fn(); const write = vi.fn();
+  vi.stubGlobal('localStorage',{setItem:write}); vi.stubGlobal('sessionStorage',{setItem:write}); vi.stubGlobal('indexedDB',{open:write});
+  vi.stubGlobal('FormData', class { get(key: string) { return key === 'password' ? 'synthetic-password' : null; } });
+  harness.answer.mockRejectedValue(new Error('synthetic-password'));
+  try {
+    findForm(tree(base))!.props.onSubmit({preventDefault:vi.fn(),currentTarget:{reset}} as unknown as FormEvent<HTMLFormElement>);
+    await Promise.resolve();
+    expect(reset).toHaveBeenCalledOnce();
+    expect(harness.answer).toHaveBeenCalledWith('request','submit',{password:'synthetic-password',save:false});
+    expect(write).not.toHaveBeenCalled();
+  } finally { vi.unstubAllGlobals(); }
+});
+
+function buttons(node: unknown): ReactElement<{children?: unknown; onClick?: () => void}>[] {
+  if (!node || typeof node !== 'object') return [];
+  const element = node as ReactElement<{children?: unknown; onClick?: () => void}>;
+  return [...(element.props?.onClick ? [element] : []), ...[element.props?.children].flat(Infinity).flatMap(buttons)];
+}
+it('sends saved-login, takeover, finish and decline actions and opens the typed browser callback', async () => {
+  harness.answer.mockResolvedValue(base);
+  for (const [status,label,action,body] of [
+    ['pending','Confirm and sign in','use-saved',{loginId:'saved'}],
+    ['pending','Take over to sign in','take-over',undefined],
+    ['taken_over',"I've signed in",'finish',undefined],
+    ['pending','Decline','cancel',undefined],
+  ] as const) {
+    buttons(tree({...base,status})).find(button => button.props.children === label)!.props.onClick!();
+    await Promise.resolve();
+    expect(harness.answer).toHaveBeenLastCalledWith('request',action,body);
+  }
+  const open = vi.fn();
+  harness.active = true; harness.cursor = 0; harness.values = [{...base,status:'taken_over'},'',false];
+  let form;
+  try { form = HyperSignInForm({requestId:'request',onOpenBrowser:open}); } finally { harness.active = false; }
+  buttons(form).find(button => button.props.children === "Open the Bot's browser")!.props.onClick!();
+  expect(open).toHaveBeenCalledWith('bot');
+});
+it('cancels the scheduled poll after a server terminal answer', async () => {
+  vi.useFakeTimers();
+  const read = vi.fn();
+  harness.poll.current = setTimeout(read, 3000);
+  harness.answer.mockResolvedValue({...base,status:'cancelled'});
+  try {
+    buttons(tree(base)).find(button => button.props.children === 'Decline')!.props.onClick!();
+    await Promise.resolve();
+    vi.advanceTimersByTime(3000);
+    expect(read).not.toHaveBeenCalled();
+  } finally { vi.useRealTimers(); harness.poll.current = undefined; }
 });
