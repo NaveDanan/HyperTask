@@ -16,6 +16,7 @@ export class HyperOpenBotService {
   private operation?: { action: string; controller: AbortController; promise: Promise<HyperOpenBotServiceState> };
   private state: HyperOpenBotServiceState;
   private configuration: Promise<unknown> = Promise.resolve();
+  private manualStop = false;
   constructor(private readonly dependencies: HyperOpenBotServiceDependencies, autoStart: boolean) {
     this.state = { backend: 'mmems-personal', phase: 'idle', ready: false, problem: dependencies.supported ? 'services_stopped' : 'unsupported', checks: [], autoStart, checkedAt: null };
   }
@@ -47,7 +48,7 @@ export class HyperOpenBotService {
   async run(action: HyperOpenBotServiceAction): Promise<HyperOpenBotServiceState> {
     if (action === 'ensure') {
       const status = await this.run('check');
-      return status.autoStart && status.problem === 'services_stopped' ? this.run('start') : status;
+      return status.autoStart && !this.manualStop && status.problem === 'services_stopped' ? this.run('start') : status;
     }
     if (!this.dependencies.supported) return this.snapshot();
     if (this.operation) {
@@ -62,6 +63,10 @@ export class HyperOpenBotService {
         const lease = await this.dependencies.authorize(); lease.assertCurrent();
         controller.signal.throwIfAborted();
         if (version !== this.version) return this.snapshot();
+        // A new view can request ensure while Stop is pending. Respect the explicit choice
+        // for this app session; only an authorized Start/Restart releases it.
+        if (action === 'stop') this.manualStop = true;
+        else if (action === 'start' || action === 'restart') this.manualStop = false;
         this.update({ phase: action === 'check' ? 'checking' : action === 'start' ? 'starting' : action === 'stop' ? 'stopping' : 'restarting', ...(action === 'check' ? {} : { ready: false }) });
         const result = await this.dependencies.execute(action, AbortSignal.any([controller.signal, lease.signal]));
         lease.assertCurrent(); controller.signal.throwIfAborted();

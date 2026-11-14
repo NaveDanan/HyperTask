@@ -20,6 +20,23 @@ it('starts only an existing stopped deployment when configured, not missing prer
   await service.configure(false); dependencies.execute.mockResolvedValueOnce(report(false));
   await service.run('ensure'); expect(dependencies.execute.mock.calls.at(-1)?.[0]).toBe('check');
 });
+it('keeps an explicit Stop until Start or Restart even when another view requests startup', async () => {
+  const { service, dependencies } = setup();
+  dependencies.execute.mockImplementation(async action => report(action === 'start' || action === 'restart'));
+  await service.run('stop'); await service.run('ensure');
+  expect(service.snapshot()).toMatchObject({ autoStart: true, ready: false });
+  expect(dependencies.execute.mock.calls.map(call => call[0])).toEqual(['stop', 'check']);
+  await service.run('start'); await service.run('ensure');
+  expect(dependencies.execute.mock.calls.map(call => call[0])).toEqual(['stop', 'check', 'start', 'check', 'start']);
+});
+it('an ensure waiting for Stop cannot restart the stopped backend', async () => {
+  const { service, dependencies } = setup(); let finish!: (value: HyperOpenBotBackendReport) => void;
+  dependencies.execute.mockImplementationOnce(async () => new Promise(resolve => { finish = resolve; }));
+  const stop = service.run('stop'), ensure = service.run('ensure');
+  await vi.waitFor(() => expect(finish).toBeTypeOf('function')); finish(report(false));
+  await Promise.all([stop, ensure]);
+  expect(dependencies.execute.mock.calls.map(call => call[0])).toEqual(['stop']);
+});
 it('authentication invalidation aborts execution and suppresses late readiness', async () => {
   const { service, dependencies } = setup(); let finish!: (value: HyperOpenBotBackendReport) => void; let signal!: AbortSignal;
   dependencies.execute.mockImplementationOnce(async (_action, input) => { signal = input; return new Promise(resolve => { finish = resolve; }); });
