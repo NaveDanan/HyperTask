@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Bot, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { hyperOpenBotRequest } from '../transport';
 import { HyperAgentPath, HyperLifecyclePath, HyperListBots, HyperSaveBot, type HyperBotProfile, type HyperBotInput } from './HyperBotsApi';
@@ -84,14 +85,14 @@ function HyperBotEditor({ bot, onSaved, onRemoved, onClose }: { bot?: HyperBotPr
         <label className="grid gap-2 text-sm">Title<Input maxLength={120} value={draft.title} onChange={e => change('title', e.target.value)} /></label>
         <label className="grid gap-2 text-sm">Role description<Textarea required maxLength={1000} rows={5} value={draft.roleDescription} onChange={e => change('roleDescription', e.target.value)} /></label>
         {draft.instructions !== undefined && <label className="grid gap-2 text-sm">Instructions<Textarea required maxLength={1000} rows={5} value={draft.instructions} onChange={e => change('instructions', e.target.value)} /></label>}
-        {!bot?.systemOwned && <label className="grid gap-2 text-sm">Visibility<select className="h-9 rounded-lg border border-border bg-background px-3" value={draft.visibility} onChange={e => change('visibility', e.target.value)}><option value="private">Private</option><option value="public">Public · shared with the organization</option></select></label>}
+        {!bot?.systemOwned && <label className="grid gap-2 text-sm">Visibility<Select value={draft.visibility} disabled={busy || !editable} onValueChange={value => { if (value) change('visibility', value); }}><SelectTrigger aria-label="Visibility"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="private">Private</SelectItem><SelectItem value="public">Public · shared with the organization</SelectItem></SelectContent></Select></label>}
         {editable && <Button type="submit">{busy ? 'Saving…' : bot ? 'Save profile' : 'Create Bot'}</Button>}
       </fieldset>
     </form>
     {bot && <fieldset disabled={busy || lifecyclePending} className="flex flex-col gap-3 border-t border-border pt-4"><legend className="text-sm font-medium">Your settings for this Bot</legend>
       {lifecycle ? <><p className="text-xs text-muted-foreground">Pause stops work done in your name. Other people's work continues.</p>
         <Button variant="outline" onClick={() => void lifecycleStore.change(bot.id, lifecycle.paused ? 'resume' : 'pause')}>{lifecycle.paused ? 'Resume' : 'Pause'} for me</Button>
-        <label className="grid gap-2 text-sm">Notifications<select className="h-9 rounded-lg border border-border bg-background px-3" value={lifecycle.notify} onChange={e => { const notify = e.target.value; void lifecycleStore.change(bot.id, 'notifications', { notify }); }}><option value="all">Everything</option><option value="needs_input">Only when it needs me</option><option value="none">Nothing, badges only</option></select></label></> : lifecyclePending ? <p role="status" className="text-sm text-muted-foreground">Loading lifecycle settings…</p> : <div className="grid gap-2">
+        <label className="grid gap-2 text-sm">Notifications<Select value={lifecycle.notify} disabled={busy || lifecyclePending} onValueChange={notify => { if (notify) void lifecycleStore.change(bot.id, 'notifications', { notify }); }}><SelectTrigger aria-label="Notifications"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Everything</SelectItem><SelectItem value="needs_input">Only when it needs me</SelectItem><SelectItem value="none">Nothing, badges only</SelectItem></SelectContent></Select></label></> : lifecyclePending ? <p role="status" className="text-sm text-muted-foreground">Loading lifecycle settings…</p> : <div className="grid gap-2">
         {lifecycleMatches && lifecycleState.error && <p role="alert" className="text-sm text-destructive">{lifecycleState.error}</p>}
         <Button variant="outline" onClick={() => void lifecycleStore.load(bot.id)}>Retry lifecycle settings</Button>
       </div>}

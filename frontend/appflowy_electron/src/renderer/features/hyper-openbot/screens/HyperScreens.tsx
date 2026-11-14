@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HyperConversationTitle, HyperGrantSummary, HyperGroupRoster, HyperSortConnections } from './HyperScreenModels';
@@ -107,7 +108,7 @@ export interface HyperBotProfileScreenProps extends HyperScreenState {
 export function HyperBotProfileScreen(props: HyperBotProfileScreenProps) {
   return <HyperPage title={props.bot.name} action={<Button onClick={props.onChat}>Start conversation</Button>}><p className="text-sm text-muted-foreground">{props.bot.title}</p><p className="text-sm">{props.bot.roleDescription}</p><HyperStatus {...props} />{props.needsYou}
     <section className="grid gap-4" aria-label="For you"><h2 className="text-sm font-medium">For you</h2><div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium">Active</p><p className="text-sm text-muted-foreground">{props.paused ? 'Paused. Nothing runs for you until you turn it back on.' : 'Works on its goals, routines, hand-offs and follow-ups for you.'}</p></div><Switch aria-label="Active" checked={!props.paused} disabled={props.pending || props.loading} onCheckedChange={active => props.onSetPaused(!active)} /></div>
-    <label className="grid gap-2 text-sm">Notifications<select className="rounded-lg border border-border bg-background p-2" value={props.notify} disabled={props.pending || props.loading} onChange={event => props.onSetNotify(event.target.value as HyperBotNotify)}><option value="all">Everything</option><option value="needs_input">Only when it needs me</option><option value="none">Nothing (badges only)</option></select></label></section>{props.activity}{props.settings}{props.manage}
+    <label className="grid gap-2 text-sm">Notifications<Select value={props.notify} disabled={props.pending || props.loading} onValueChange={value => { if (value) props.onSetNotify(value as HyperBotNotify); }}><SelectTrigger aria-label="Notifications"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Everything</SelectItem><SelectItem value="needs_input">Only when it needs me</SelectItem><SelectItem value="none">Nothing (badges only)</SelectItem></SelectContent></Select></label></section>{props.activity}{props.settings}{props.manage}
   </HyperPage>;
 }
 

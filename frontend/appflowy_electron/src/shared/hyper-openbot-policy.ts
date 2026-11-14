@@ -2,5 +2,7 @@
 export function hyperOpenBotPathAllowed(path: string): boolean {
   if (typeof path !== 'string' || !path.startsWith('/api/') || /[\\#]|%25|%2f|%5c|%2e|\.\./i.test(path)) return false;
   const url = new URL(path, 'http://127.0.0.1:3010');
+  if (url.pathname === '/api/admin/enterprise/me') return true;
+  if (/^\/api\/computers\/[^/]+\/(status|screenshot)$/.test(url.pathname)) return true;
   return url.origin === 'http://127.0.0.1:3010' && /^\/api\/(channels|agents|bots|plugins|models|attachments|threads|copilotkit|skills|connections|approvals|decisions|capabilities)(?:[/?]|$)/.test(url.pathname);
 }

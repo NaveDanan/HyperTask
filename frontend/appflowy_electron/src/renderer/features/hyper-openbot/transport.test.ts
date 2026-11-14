@@ -6,9 +6,9 @@ it('delivers split Unicode JSON and stream events without exposing credentials',
   let listener: (event: HyperOpenBotChunk) => void = () => {};
   const dispose = vi.fn();
   const start = vi.fn(async (request: HyperOpenBotRequest) => {
-    listener({ id: 'another-request', chunk: 'ignored' });
-    listener({ id: request.id, chunk: 'data: שלום\n' });
-    listener({ id: request.id, chunk: '\n', done: true });
+    listener({ id: 'another-request', chunk: new TextEncoder().encode('ignored') });
+    listener({ id: request.id, chunk: new TextEncoder().encode('data: שלום\n') });
+    listener({ id: request.id, chunk: new TextEncoder().encode('\n'), done: true });
     return { status: 200, headers: { 'content-type': 'text/event-stream' } };
   });
   vi.stubGlobal('window', { appflowy: { hyperOpenBot: { start, onChunk: (fn: typeof listener) => { listener = fn; return dispose; }, cancel: vi.fn() } } });
@@ -22,4 +22,21 @@ it('delivers split Unicode JSON and stream events without exposing credentials',
 });
 it('refuses arbitrary renderer hosts before invoking the bridge', async () => {
   await expect(hyperOpenBotFetch('https://example.org/api/channels')).rejects.toThrow('origin refused');
+});
+it('preserves arbitrary attachment bytes across IPC', async () => {
+  let listener: (event: HyperOpenBotChunk) => void = () => {};
+  const bytes = new Uint8Array([0, 255, 128, 195, 40]);
+  vi.stubGlobal('window', { appflowy: { hyperOpenBot: { start: async ({ id }: HyperOpenBotRequest) => { listener({ id, chunk: bytes, done: true }); return { status: 200, headers: {} }; }, onChunk: (fn: typeof listener) => { listener = fn; return () => {}; }, cancel: vi.fn() } } });
+  const response = await hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + '/api/attachments/id');
+  expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
+});
+it('does not start a POST aborted during body serialization', async () => {
+  const controller = new AbortController();
+  const start = vi.fn();
+  vi.stubGlobal('window', { appflowy: { hyperOpenBot: { start, onChunk: () => () => {}, cancel: vi.fn() } } });
+  const original = Request.prototype.arrayBuffer;
+  vi.spyOn(Request.prototype, 'arrayBuffer').mockImplementation(async function(this: Request) { controller.abort(); return original.call(this); });
+  await expect(hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + '/api/channels', { method: 'POST', body: '{}', signal: controller.signal })).rejects.toThrow();
+  expect(start).not.toHaveBeenCalled();
+  vi.restoreAllMocks();
 });

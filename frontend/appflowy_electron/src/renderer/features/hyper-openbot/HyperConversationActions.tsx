@@ -1,17 +1,19 @@
 // Adapted from OpenBot lib/approvals.ts and components/approvals. Copyright (c) 2026 CopilotKit. MIT.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { HyperApproval, HyperQuestion, type HyperQuestionPart } from './activity';
 import { hyperOpenBotRequest as request } from './transport';
 type HyperInbox = {
   requests: { id: string; status: string; action: { threadId: string; toolRef: string; effect: string; scope: string; policy?: { behaviour: string; reason: string; closed?: boolean } } }[];
   questions: { id: string; threadId: string; channelId?: string; question: string; parts?: HyperQuestionPart[] }[];
 };
-export function HyperConversationActions({ threadId }: { threadId: string }) {
+export function HyperConversationActions({ threadId, onResolved }: { threadId: string; onResolved?: () => void }) {
+  const hadWaiting = useRef(false);
+  const resolved = useRef(onResolved); resolved.current = onResolved;
   const [inbox, setInbox] = useState<HyperInbox>();
   const [pending, setPending] = useState<string>();
   const [error, setError] = useState<string>();
-  async function refresh() { try { setInbox(await request<HyperInbox>('/api/approvals')); } catch (error) { setError(String(error)); } }
-  useEffect(() => { void refresh(); const timer = setInterval(() => void refresh(), 4000); return () => clearInterval(timer); }, [threadId]);
+  async function refresh() { try { const next = await request<HyperInbox>('/api/approvals'); const waiting = next.requests.some(row => row.action.threadId === threadId && ['pending', 'approved', 'denied', 'consumed'].includes(row.status)) || next.questions.some(row => row.threadId === threadId); if (hadWaiting.current && !waiting) resolved.current?.(); hadWaiting.current = waiting; setInbox(next); } catch (error) { setError(String(error)); } }
+  useEffect(() => { let current = true; let timer: ReturnType<typeof setTimeout>; const poll = async () => { await refresh(); if (current) timer = setTimeout(() => void poll(), 4000); }; void poll(); return () => { current = false; clearTimeout(timer); }; }, [threadId]);
   async function save(id: string, path: string, body?: unknown) {
     setPending(id); setError(undefined);
     try { await request(path, 'POST', body); await refresh(); }

@@ -4,6 +4,8 @@ import { ArrowDown, LoaderCircle, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { HyperMessageAttachments } from '../HyperMessageAttachments';
+import type { HyperMessageAttachment } from '../HyperMessageContent';
 import { HyperMarkdown } from './HyperMarkdown';
 import { useHyperPacedReveal } from './paced-reveal';
 
@@ -38,6 +40,7 @@ export interface HyperTranscriptMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  attachments?: readonly HyperMessageAttachment[];
   live?: boolean;
   streaming?: boolean;
   author?: string;
@@ -59,6 +62,7 @@ function HyperTranscriptRow({ message, onOpenLink, renderTool }: { message: Hype
   return <article data-message-id={message.id} aria-label={message.author ?? (message.role === 'user' ? 'You' : message.role === 'assistant' ? 'Assistant' : 'System')} className={cn('min-w-0 space-y-2', message.role === 'user' && 'ml-auto max-w-[85%] rounded-xl bg-muted px-4 py-3')}>
     {message.author && <p className="text-xs font-medium text-muted-foreground">{message.author}</p>}
     {message.role === 'user' ? <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p> : <HyperMarkdown content={content} preserveLineBreaks onOpenLink={onOpenLink} />}
+    {!!message.attachments?.length && <HyperMessageAttachments attachments={message.attachments} />}
     {message.tools?.map(tool => <div key={tool.id}>{renderTool ? renderTool(tool) : <HyperToolMessage {...tool} onOpenLink={tool.onOpenLink ?? onOpenLink} />}</div>)}
   </article>;
 }

@@ -1,6 +1,6 @@
 // Sidebar entries: search, new page, Jira, Templates and Trash.
-import { useEffect, type ReactNode } from 'react';
-import { LayoutTemplate, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
 import { ViewLayoutPB, ViewSectionPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { NavItem } from '@/components/app/nav';
 import { ShortcutKeys } from '@/components/app/shortcut';
@@ -10,7 +10,9 @@ import { createNewPage, toggleCommandPalette } from '@/features/home/notifiers';
 import { localToolPlugin, trashPlugin } from '@/features/tabs/plugin';
 import { tabsActions, useTabsStore } from '@/features/tabs/tabs-store';
 import { hintTooltip, isMac } from './components';
-import { sectionsActions } from './stores/sections-store';
+import { FolderEventCreateView } from '@/backend/events';
+import { sectionsActions, useSectionsStore } from './stores/sections-store';
+
 import { sidebarSpace } from './stores/space-store';
 import { useWorkspaceStore } from './stores/workspace-store';
 
@@ -68,4 +70,30 @@ export function SidebarFooter(): ReactNode {
       }} />
     </div>
   );
+}
+
+/** Discoverable entry using the existing native Chat view/plugin. */
+export function HyperChatButton() {
+  const active = useTabsStore(state => state.tabs[state.currentIndex]?.plugin.type === 'chat');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
+  async function open() {
+    const existing = useTabsStore.getState().tabs.find(tab => tab.plugin.type === 'chat');
+    if (existing) { tabsActions.openPlugin(existing.plugin); return; }
+    const findChat = (views: import('@shared/protobuf/flowy-folder/view_pb').ViewPB[]): import('@shared/protobuf/flowy-folder/view_pb').ViewPB | undefined => { for (const view of views) { if (view.layout === ViewLayoutPB.Chat) return view; const nested = findChat(view.childViews); if (nested) return nested; } };
+    const section = useSectionsStore.getState().section;
+    const saved = findChat([...section.publicViews, ...section.privateViews]);
+    if (saved) { tabsActions.openView(saved); return; }
+    setPending(true); setError(undefined);
+    try {
+      const workspace = useWorkspaceStore.getState();
+      const parentViewId = sidebarSpace.store.getState().currentSpace?.id ?? workspace.currentWorkspace?.workspaceId;
+      if (!parentViewId) throw new Error('Choose a workspace to open Chat.');
+      const result = await FolderEventCreateView({ parentViewId, name: 'Chat', layout: ViewLayoutPB.Chat, oneOfSection: { case: 'section', value: workspace.isCollabWorkspaceOn ? ViewSectionPB.Private : ViewSectionPB.Public } });
+      if (!result.ok) throw new Error('Chat could not be created. Try again.');
+      tabsActions.openView(result.value);
+    } catch (error) { setError(error instanceof Error ? error.message : 'Chat could not be opened.'); }
+    finally { setPending(false); }
+  }
+  return <><NavItem icon={<MessageSquareText />} label={pending ? 'Opening Chat…' : 'Chat'} active={active} onClick={() => { if (!pending) void open(); }} />{error && <p role="alert" className="px-3 text-xs text-destructive">{error}</p>}</>;
 }

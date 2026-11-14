@@ -12,6 +12,10 @@ const api: AppFlowyApi = {
     start: (request) => ipcRenderer.invoke('hyper-openbot:start', request),
     cancel: (id) => ipcRenderer.send('hyper-openbot:cancel', id),
     onChunk: (listener) => on('hyper-openbot:chunk', listener),
+    socketOpen: (id, path, protocols) => ipcRenderer.invoke('hyper-openbot:socket-open', id, path, protocols),
+    socketSend: (id, data) => ipcRenderer.send('hyper-openbot:socket-send', id, data),
+    socketClose: (id, code, reason) => ipcRenderer.send('hyper-openbot:socket-close', id, code, reason),
+    onSocket: (listener) => on('hyper-openbot:socket', listener),
   },
   core: {
     init: (config) => ipcRenderer.invoke(C.CoreInit, config),

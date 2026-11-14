@@ -96,11 +96,16 @@ export interface GoogleFontFace {
 }
 
 export interface HyperOpenBotRequest { id: string; path: string; method: string; body?: string | Uint8Array; contentType?: string }
-export interface HyperOpenBotChunk { id: string; chunk?: string; done?: boolean; error?: string }
+export interface HyperOpenBotChunk { id: string; chunk?: Uint8Array; done?: boolean; error?: string }
+export interface HyperOpenBotSocketEvent { id: string; type: 'open' | 'message' | 'error' | 'close'; data?: string | Uint8Array; code?: number; reason?: string }
 export interface AppFlowyApi {
   hyperOpenBot: {
     start(request: HyperOpenBotRequest): Promise<{ status: number; headers: Record<string, string> }>;
     cancel(id: string): void;
+    socketOpen(id: string, path: string, protocols: string[]): Promise<void>;
+    socketSend(id: string, data: string | Uint8Array): void;
+    socketClose(id: string, code?: number, reason?: string): void;
+    onSocket(listener: (event: HyperOpenBotSocketEvent) => void): () => void;
     onChunk(listener: (event: HyperOpenBotChunk) => void): () => void;
   };
   core: {
