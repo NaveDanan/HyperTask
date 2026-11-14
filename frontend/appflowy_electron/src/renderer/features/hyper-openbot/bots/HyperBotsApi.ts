@@ -27,7 +27,7 @@ export function HyperBotValues(input: HyperBotInput): HyperBotInput {
 }
 export async function HyperSaveBot(input: HyperBotInput, bot?: HyperBotProfile) {
   if (bot && !bot.canManage) throw new Error('You cannot edit this Bot.');
-  return (await hyperOpenBotRequest<{ agent: HyperBotProfile }>(bot ? HyperAgentPath(bot.id) : '/api/agents', bot ? 'PATCH' : 'POST', HyperBotValues(input))).agent;
+  return (await hyperOpenBotRequest<{ agent: HyperBotProfile }>(bot ? HyperAgentPath(bot.id) : '/api/agents', bot ? 'PATCH' : 'POST', { ...HyperBotValues(input), endpoint: bot && !bot.builtIn ? bot.endpoint ?? '' : '' })).agent;
 }
 export async function HyperListBots(hidden: boolean) {
   return (await hyperOpenBotRequest<{ agents: HyperBotProfile[] }>(`/api/agents${hidden ? '?hidden=true' : ''}`)).agents;

@@ -1,10 +1,11 @@
 // Adapted from OpenBot. Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
+import { hyperSaveExternalAgent, hyperTestExternalAgent } from './HyperBotWorkflowApi';
 import { HYPER_EXTERNAL_HARNESSES } from './HyperHarnesses';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { HyperListBots, HyperBotValues, HyperAgentPath, type HyperBotProfile } from '../bots/HyperBotsApi';
+import { HyperListBots, HyperAgentPath, type HyperBotProfile } from '../bots/HyperBotsApi';
 import { hyperOpenBotRequest as request } from '../transport';
 import { useHyperBotResource } from './HyperBotResource';
 import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
@@ -28,11 +29,11 @@ function HyperExternalAgentForm({ bot, onSaved, onClose }: { bot?: HyperBotProfi
     if (locked.current) return; locked.current = true; setBusy(true); setError('');
     try {
       if (!/^https?:\/\/\S+$/.test(endpoint.trim())) throw new Error();
-      const result = await request<{ ok: boolean }>('/api/agents/test-connection', 'POST', { endpoint: endpoint.trim(), ...(key.trim() ? { headers: { Authorization: key.trim() } } : {}) });
+      const result = await hyperTestExternalAgent(endpoint, key);
       setTested(result.ok); if (!result.ok) setError('The endpoint could not be reached.');
     } catch { setTested(false); setError('The endpoint could not be reached. Check its address and credentials.'); } finally { locked.current = false; setBusy(false); }
   }
-  return <form className="grid gap-3 rounded-lg border border-border p-4" onSubmit={async event => { event.preventDefault(); if (!tested || locked.current || (bot && !bot.canManage)) return; locked.current = true; setBusy(true); setError(''); try { const values = HyperBotValues({ name, title, roleDescription, visibility }); await request(bot ? HyperAgentPath(bot.id) : '/api/agents', bot ? 'PATCH' : 'POST', { ...values, ...(!bot && harness !== 'byo-url' ? { harness } : {}), endpoint: endpoint.trim(), ...(key.trim() ? { auth: { header: 'Authorization', value: key.trim() } } : {}) }); setKey(''); onSaved(); } catch { setError('The agent could not be saved. Check the fields and your permissions.'); } finally { locked.current = false; setBusy(false); } }}>
+  return <form className="grid gap-3 rounded-lg border border-border p-4" onSubmit={async event => { event.preventDefault(); if (!tested || locked.current || (bot && !bot.canManage)) return; locked.current = true; setBusy(true); setError(''); try { await hyperSaveExternalAgent({ name, title, roleDescription, visibility, endpoint, key, harness }, bot); setKey(''); onSaved(); } catch { setError('The agent could not be saved. Check the fields and your permissions.'); } finally { locked.current = false; setBusy(false); } }}>
     <h3>{bot ? 'Edit agent' : 'Connect agent'}</h3>{error && <p role="alert" className="text-destructive">{error}</p>}
     <label>Name<Input required maxLength={80} value={name} onChange={e => setName(e.target.value)} /></label><label>Title<Input maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label><label>Role description<Textarea required maxLength={1000} value={roleDescription} onChange={e => setRole(e.target.value)} /></label>
     {!bot && <label>Framework<select value={harness} onChange={event => setHarness(event.target.value)}>{HYPER_EXTERNAL_HARNESSES.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>}
