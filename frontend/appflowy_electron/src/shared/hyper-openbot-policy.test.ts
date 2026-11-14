@@ -39,3 +39,12 @@ it('settings activity allows its audit and bot-list families and refuses other a
   for (const path of ['/api/admin/audit-events?format=csv', '/api/v2/organizations/default/bots?hidden=true&limit=100']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/admin/audit-secrets', '/api/admin/people', '/api/v2/organizations/other/bots', '/api/v2/organizations/default/secrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+
+it('approvals-inbox allows its contracts and refuses traversal and unrelated families', () => {
+  for (const path of ['/api/approvals', '/api/approvals/rules/one', '/api/bots/routing/decision', '/api/delivery', '/api/delivery/devices/one']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/delivery/../secrets', '/api/delivery/%2e%2e/secrets', '/api/unowned-inbox', '/api/delivery\\secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+it('approvals-inbox restricts shared consent reset to its exact path', () => {
+  expect(hyperOpenBotPathAllowed('/api/team-bots/consents')).toBe(true);
+  for (const path of ['/api/team-bots', '/api/team-bots/other/consents', '/api/team-bots/consents/other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});

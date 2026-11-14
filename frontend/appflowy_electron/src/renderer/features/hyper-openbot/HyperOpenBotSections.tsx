@@ -30,7 +30,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: bot-tabs
   /* bot-tabs */
   // slot: approvals-inbox
-  /* approvals-inbox */
+  { id: 'approvals', label: 'Approvals', group: 'personal', render: hyperLazySection(() => import('./approvals-inbox/HyperApprovalsSection')) },
   // slot: vault
   { id: 'vault', label: 'Vault', group: 'personal', render: hyperLazySection(() => import('./vault/HyperVaultSection')) },
   // slot: computer-browser
