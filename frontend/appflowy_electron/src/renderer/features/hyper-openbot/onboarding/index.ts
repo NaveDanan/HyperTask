@@ -3,3 +3,5 @@ export { default as HyperSetupSection, HyperNativeDestination } from './HyperSet
 export * from './HyperOnboardingApi';
 export * from './HyperStarterTasks';
 export * from './HyperStarterSuggestions';
+export * from './HyperHomeApi';
+export * from './HyperHomeComposer';
