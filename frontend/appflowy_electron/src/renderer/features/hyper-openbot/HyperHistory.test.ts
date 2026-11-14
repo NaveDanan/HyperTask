@@ -1,8 +1,10 @@
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { readableTurns } from './HyperThreadMessages';
 import { mergeStoredMessages } from './HyperHistoryMerge';
 import { hyperMessageContent } from './HyperMessageContent';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
+import { hyperGatewayJoin } from './HyperGatewayJoin';
+afterEach(() => vi.useRealTimers());
 it('normalizes actual persisted tool dialect and counts corrupt history', () => {
   const result = readableTurns([{ id: 'call', role: 'assistant', content: null, toolCalls: [{ id: 'c1', name: 'lookup', args: { q: 'test' } }] }, { id: 'bad', role: 'user', content: null }]);
   expect(result.unreadable).toBe(1);
@@ -32,4 +34,43 @@ it('loads pages after the first fifty and deduplicates channel IDs', async () =>
   const result = await hyperLoadAllChannels(read);
   expect(result.channels.map(channel => channel.id)).toEqual(['one', 'two']);
   expect(read).toHaveBeenLastCalledWith('/api/channels?cursor=next%20value');
+});
+it('retains every pending history group when multiple stored tool-call turns share a local anchor', () => {
+  const call = (id: string) => ({ id, type: 'function' as const, function: { name: 'lookup', arguments: '{}' } });
+  const local = { id: 'combined', role: 'assistant' as const, toolCalls: [call('c1'), call('c2')] };
+  const result = mergeStoredMessages([local], [
+    { id: 'u', role: 'user', content: 'question' },
+    { id: 'a', role: 'assistant', toolCalls: [call('c1')] },
+    { id: 't1', role: 'tool', toolCallId: 'c1', content: 'result' },
+    { id: 'b', role: 'assistant', toolCalls: [call('c2')] },
+  ]);
+  expect(result.map(message => message.id)).toEqual(['u', 't1', 'combined']);
+});
+it('restores read-back text when the local assistant has no content', () => {
+  const local = [{ id: 'a', role: 'assistant' as const }];
+  const stored = [{ id: 'a', role: 'assistant' as const, content: 'Recovered answer' }];
+  expect(mergeStoredMessages(local, stored, { readBack: true })[0].content).toBe('Recovered answer');
+  expect(mergeStoredMessages(local, stored)).toBe(local);
+});
+
+it('releasing a pending join prevents its stale deadline from detaching a later run', async () => {
+  vi.useFakeTimers();
+  const detach = vi.fn();
+  const join = hyperGatewayJoin(() => new Promise(() => {}), detach);
+  await Promise.resolve();
+  join.cancel();
+  await join.promise;
+  await vi.advanceTimersByTimeAsync(6000);
+  expect(detach).not.toHaveBeenCalled();
+});
+it('successful joins clear their deadline and an overdue active join invokes it once', async () => {
+  vi.useFakeTimers();
+  const detach = vi.fn();
+  await hyperGatewayJoin(async () => {}, detach).promise;
+  await vi.advanceTimersByTimeAsync(6000);
+  expect(detach).not.toHaveBeenCalled();
+  const overdue = hyperGatewayJoin(() => new Promise(() => {}), detach);
+  await vi.advanceTimersByTimeAsync(5000);
+  await overdue.promise;
+  expect(detach).toHaveBeenCalledTimes(1);
 });

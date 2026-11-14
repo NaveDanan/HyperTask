@@ -108,6 +108,19 @@ export class HyperOpenBotSession {
   }
 }
 
+/** Native account operations must proceed even when OpenBot cleanup fails. */
+export async function hyperNativeCoreRequest<T extends { status: number }>(sessions: HyperOpenBotSession, event: string, request: () => Promise<T>): Promise<T> {
+  const authentication = ['SignOut', 'DeleteAccount', 'SignUp', 'OauthSignIn', 'SignInWithEmailPassword', 'PasscodeSignIn', 'MagicLinkSignIn', 'InitUser', 'OpenAnonUser'].includes(event);
+  if (!authentication) return request();
+  const transition = sessions.beginNativeTransition(event !== 'InitUser');
+  let cleared = false;
+  try { await transition.cleared; cleared = true; }
+  catch { /* The native operation proceeds; failed cleanup keeps OpenBot blocked. */ }
+  const reply = await request();
+  if (cleared && !['SignOut', 'DeleteAccount'].includes(event)) sessions.completeNativeTransition(transition.version, reply.status === 0);
+  return reply;
+}
+
 export function createHyperOpenBotSession(storageRoot: string, readIdentity: HyperOpenBotIdentityReader) {
   const directory = path.join(storageRoot, 'hyper-openbot-session');
   const file = path.join(directory, 'owner.json');

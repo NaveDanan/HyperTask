@@ -1,4 +1,4 @@
-import { createHyperOpenBotSession, hyperReadCoreIdentity } from './HyperOpenBotSession';
+import { createHyperOpenBotSession, hyperReadCoreIdentity, hyperNativeCoreRequest } from './HyperOpenBotSession';
 import { registerHyperOpenBotIpc } from './hyper-openbot';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -131,14 +131,10 @@ function registerIpc() {
     openBotSessions.completeNativeTransition(transition.version, result === 0);
     return result;
   });
-  ipcMain.handle(C.CoreRequest, async (_, event: string, payload: Uint8Array) => {
-    const authTransition = ['SignOut', 'DeleteAccount', 'SignUp', 'OauthSignIn', 'SignInWithEmailPassword', 'PasscodeSignIn', 'MagicLinkSignIn', 'InitUser'].includes(event) ? openBotSessions.beginNativeTransition(event !== 'InitUser') : undefined;
+  ipcMain.handle(C.CoreRequest, (_, event: string, payload: Uint8Array) => hyperNativeCoreRequest(openBotSessions, event, async () => {
     await startCore();
-    if (authTransition) await authTransition.cleared;
-    const reply = await core.request(event, payload);
-    if (authTransition && !['SignOut', 'DeleteAccount'].includes(event)) openBotSessions.completeNativeTransition(authTransition.version, reply.status === 0);
-    return reply;
-  });
+    return core.request(event, payload);
+  }));
   ipcMain.on(C.CoreLog, (_, level: number, message: string) => core.log(level, message));
 
   ipcMain.handle(C.AppInfo, (): AppInfo => ({

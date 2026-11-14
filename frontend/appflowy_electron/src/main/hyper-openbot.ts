@@ -84,7 +84,10 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
   ipcMain.on('hyper-openbot:socket-close', (event, id: unknown, code: unknown, reason: unknown) => {
     if (!trusted(event) || !safeId(id)) return;
     const opening = openingSockets.get(id); if (opening) opening.cancelled = true;
-    const validCode = typeof code === 'number' && (code === 1000 || (code >= 3000 && code <= 4999)) ? code : 1000;
-    sockets.get(id)?.close(validCode, typeof reason === 'string' ? Buffer.from(reason).subarray(0, 123).toString() : '');
+    const validCode = typeof code === 'number' && Number.isInteger(code) && (code === 1000 || (code >= 3000 && code <= 4999)) ? code : 1000;
+    // Streaming decode omits an incomplete trailing code point instead of expanding it to U+FFFD.
+    const text = typeof reason === 'string' ? new TextDecoder().decode(Buffer.from(reason).subarray(0, 123), { stream: true }) : '';
+    const socket = sockets.get(id);
+    try { socket?.close(validCode, text); } catch { socket?.terminate(); }
   });
 }

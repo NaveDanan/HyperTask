@@ -49,7 +49,7 @@ export function mergeStoredMessages(
     seenStored.add(message.id);
     const held = heldAs(message);
     if (held !== undefined) {
-      if (pending.length > 0) before.set(held, pending);
+      if (pending.length > 0) before.set(held, [...(before.get(held) ?? []), ...pending]);
       pending = [];
       if ((readBack || held === message.id) && !storedFor.has(held))
         storedFor.set(held, message);
@@ -68,11 +68,12 @@ export function mergeStoredMessages(
     }
     if (message.role !== "assistant" || later?.role !== "assistant")
       return message;
+    const localContent = typeof message.content === "string" ? message.content : readBack ? "" : undefined;
     const content =
-      typeof message.content === "string" &&
+      localContent !== undefined &&
       typeof later.content === "string" &&
-      later.content.length > message.content.length &&
-      (readBack || later.content.startsWith(message.content))
+      later.content.length > localContent.length &&
+      (readBack || later.content.startsWith(localContent))
         ? later.content
         : undefined;
     const toolCalls = readBack

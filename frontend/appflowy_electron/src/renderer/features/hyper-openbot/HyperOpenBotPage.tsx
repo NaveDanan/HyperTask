@@ -38,6 +38,8 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
   const [attachments, setAttachments] = useState<(HyperComposerAttachment & { mimeType: string })[]>([]);
   const [models, setModels] = useState<HyperModelOption[]>([]);
   const [pick, setPick] = useState<HyperModelPick>({ model: '', effort: null });
+  const [modelPending, setModelPending] = useState(false);
+  const modelUpdating = useRef(false);
   useEffect(() => {
     void Promise.all([request<{ models: HyperModelOption[]; default: string }>('/api/models'), request<HyperModelPick>(`/api/channels/${channel.id}/model`)]).then(([catalogue, saved]) => { setModels(catalogue.models); setPick({ model: saved.model || catalogue.default, effort: saved.effort }); }).catch(error => setError(String(error)));
   }, [channel.id]);
@@ -86,7 +88,7 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
     <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     <HyperConversationActions threadId={channel.threadId} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
-    <HyperComposer className="m-4" autoFocus disabled={!isReady || restoring || !channel.active} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => setAttachments(previous => previous.filter(file => !ids.includes(file.id)))} onFiles={async files => {
+    <HyperComposer className="m-4" autoFocus disabled={!isReady || restoring || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => setAttachments(previous => previous.filter(file => !ids.includes(file.id)))} onFiles={async files => {
       const staged: (HyperComposerAttachment & { mimeType: string })[] = [];
       try { for (const file of files) {
         const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
@@ -95,7 +97,11 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
         if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error(saved.error ?? 'Attachment upload failed');
         staged.push({ id: saved.id, name: saved.name, mimeType: saved.mimeType, status: 'ready' });
       } } finally { setAttachments(previous => [...previous, ...staged]); }
-    }} modelPicker={models.length ? { models, value: pick, disabled: sending, onChange: next => { void request<HyperModelPick>(`/api/channels/${channel.id}/model`, 'PUT', next).then(setPick).catch(error => setError(String(error))); } } : undefined} onStop={() => { stopped.current = true; return copilotkit.stopAgent({ agent }); }} onSubmit={async draft => {
+    }} modelPicker={models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
+      if (modelUpdating.current) return;
+      modelUpdating.current = true; setModelPending(true);
+      void request<HyperModelPick>(`/api/channels/${channel.id}/model`, 'PUT', next).then(setPick).catch(error => setError(String(error))).finally(() => { modelUpdating.current = false; setModelPending(false); });
+    } } : undefined} onStop={() => { stopped.current = true; return copilotkit.stopAgent({ agent }); }} onSubmit={async draft => {
       setError(undefined); setSending(true); stopped.current = false;
       agent.pendingInterrupts = agent.pendingInterrupts.filter(interrupt => !interrupt.metadata?.openbotWaiting);
       const files = draft.attachments.map(file => file.id).join(',');
@@ -137,9 +143,9 @@ function HyperOpenBotWorkspace({ viewId }: { viewId: string }) {
   useEffect(() => { void refresh(true); return () => { version.current++; }; }, [viewId]);
   function open(id: string) { selectionVersion.current++; const found = channels.find(each => each.id === id); if (found) { setChannel(found); localStorage.setItem(`hyper-openbot.channel.${viewId}`, id); } }
   async function start(botId: string) {
-    selectionVersion.current++;
-    try { const value = await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds: [botId] }); setChannels(previous => [value.channel, ...previous]); setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); }
-    catch (error) { setError(String(error)); }
+    const selection = ++selectionVersion.current;
+    try { const value = await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds: [botId] }); setChannels(previous => [value.channel, ...previous]); if (selection === selectionVersion.current) { setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); } }
+    catch (error) { if (selection === selectionVersion.current) setError(String(error)); }
   }
   return <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />

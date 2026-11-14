@@ -83,8 +83,10 @@ export async function hyperTunnelFetch(route: string, options: { method: string;
           options.lease.assertCurrent();
           const headers = new Headers(); for (const [name, value] of Object.entries(response.headers)) if (value && name !== 'set-cookie') headers.set(name, Array.isArray(value) ? value.join(', ') : value);
           const status = response.statusCode ?? 502;
-          if (status >= 300 && status < 400) { response.destroy(); throw new Error('OpenBot redirects are refused'); }
-          resolve(new Response([204, 205, 304].includes(status) ? null : Readable.toWeb(response) as ReadableStream<Uint8Array>, { status, headers }));
+          if (status >= 300 && status < 400 && status !== 304) { response.destroy(); throw new Error('OpenBot redirects are refused'); }
+          const noBody = [204, 205, 304].includes(status);
+          if (noBody) response.resume();
+          resolve(new Response(noBody ? null : Readable.toWeb(response) as ReadableStream<Uint8Array>, { status, headers }));
         } catch (error) { response.destroy(); reject(error); }
       })();
     });
