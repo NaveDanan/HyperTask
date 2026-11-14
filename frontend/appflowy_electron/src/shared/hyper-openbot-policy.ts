@@ -20,7 +20,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: settings
   /* settings */
   // slot: admin-governance
-  'admin/people', 'admin/enterprise', 'admin/identity-providers', 'admin/audit-events', 'admin/what-if', 'auth/sso/register', 'computers/policy',
+  'admin/people', 'admin/enterprise', 'admin/identity-providers', 'admin/audit-events', 'admin/what-if', 'auth/sso/register', 'computers/policy', 'computers/policy-dry-run', 'computers/policy-translate',
   // slot: admin-platform
   /* admin-platform */
   // slot: onboarding

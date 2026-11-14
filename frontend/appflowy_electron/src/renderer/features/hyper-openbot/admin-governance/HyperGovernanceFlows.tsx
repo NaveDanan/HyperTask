@@ -45,3 +45,29 @@ export function HyperTeamApprovals() {
     {!r.data?.teamRules.length && <p>No team rules.</p>}{r.data?.teamRules.map(row => <article className="rounded border p-3" key={row.id}><HyperResult value={row} /><select aria-label="Rule behavior" disabled={a.busy} value={row.behaviour} onChange={e => void a.run(() => request(`/api/approvals/team/rules/${encodeURIComponent(row.id)}`, 'PATCH', { behaviour: e.target.value }))}>{['allow', 'pre_approved', 'ask', 'hand_off'].map(v => <option key={v}>{v}</option>)}</select><Button variant="destructive" disabled={a.busy} onClick={() => { if (window.confirm('Remove this team rule?')) void a.run(() => request(`/api/approvals/team/rules/${encodeURIComponent(row.id)}`, 'DELETE')); }}>Remove</Button></article>)}
     <form className="grid gap-2" onSubmit={e => { e.preventDefault(); void a.run(() => request('/api/approvals/team/rules', 'POST', rule)); }}><h3>Add team rule</h3>{(['botId', 'toolRef', 'effect', 'scope'] as const).map(key => <label key={key}>{key}<input className="rounded border bg-background p-2" required value={rule[key]} onChange={e => setRule({ ...rule, [key]: e.target.value })} /></label>)}<select aria-label="New rule behavior" value={rule.behaviour} onChange={e => setRule({ ...rule, behaviour: e.target.value })}>{['allow', 'pre_approved', 'ask', 'hand_off'].map(v => <option key={v}>{v}</option>)}</select><Button disabled={a.busy || !r.data?.team} type="submit">Add rule</Button></form><HyperError message={a.error} /></div></HyperStatus>;
 }
+
+// Adapted from boundaries_.new, boundaries_.$index and lib/computers/policy-translate.
+export function HyperBoundaryEditor({ policy, original, reload }: { policy: import('./HyperGovernanceApi').HyperPolicy; original?: string; reload(): void }) {
+  const [text, setText] = useState('');
+  const [expression, setExpression] = useState(original || '');
+  const [reading, setReading] = useState<unknown>();
+  const [report, setReport] = useState<unknown>();
+  const [validated, setValidated] = useState(false);
+  const a = useHyperAction(reload);
+  const candidate = () => {
+    const labels = { ...policy.labels };
+    const label = original ? labels[original] : { name: text.trim() || 'Custom rule', description: '' };
+    if (original) delete labels[original];
+    if (label) labels[expression] = label;
+    return { ...policy, deny: original ? policy.deny.map(rule => rule === original ? expression : rule) : [...policy.deny, expression], labels };
+  };
+  return <details className="rounded border p-3"><summary>{original ? 'Edit and test rule' : 'Describe a boundary'}</summary><div className="grid gap-3 pt-3">
+    <label>Describe what to stop<textarea disabled={a.busy} className="w-full rounded border bg-background p-2" value={text} onChange={e => { setText(e.target.value); setValidated(false); }} /></label>
+    <Button disabled={a.busy || !text.trim()} onClick={() => void a.run(async () => { setValidated(false); setReport(undefined); const result = await request<{ rule: string; effect: string }>('/api/computers/policy-translate', 'POST', { text }); setReading(result); if (result.effect === 'deny') setExpression(result.rule); })}>Write boundary</Button>
+    {reading !== undefined && <HyperResult value={reading} />}
+    <label>Rule expression<textarea disabled={a.busy} className="w-full rounded border bg-background p-2" value={expression} onChange={e => { setExpression(e.target.value); setValidated(false); setReport(undefined); }} /></label>
+    <Button disabled={a.busy || !expression.trim() || (!original && policy.deny.includes(expression))} onClick={() => void a.run(async () => { setValidated(false); const result = await request('/api/computers/policy-dry-run', 'POST', { policy: candidate() }); setReport(result); setValidated(true); })}>Test against recent actions</Button>
+    {report !== undefined && <HyperResult value={report} />}
+    <Button disabled={a.busy || !validated} onClick={() => void a.run(async () => { await request('/api/computers/policy', 'PUT', candidate()); setValidated(false); })}>Save boundary</Button><HyperError message={a.error} />
+  </div></details>;
+}
