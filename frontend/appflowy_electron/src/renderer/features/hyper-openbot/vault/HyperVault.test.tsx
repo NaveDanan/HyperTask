@@ -5,7 +5,7 @@ import HyperVaultSection, { HyperKeyForm } from './HyperVaultSection';
 import { HyperSignInForm } from './HyperSignInForm';
 const request = vi.hoisted(() => vi.fn());
 vi.mock('../transport', () => ({ hyperOpenBotRequest: request }));
-beforeEach(() => request.mockReset());
+beforeEach(() => { request.mockReset(); });
 it('uses exact credential contracts without a model key ID', async () => {
   request.mockResolvedValue({});
   await hyperVaultApi.createKey({kind:'model', provider:'openai', plaintext:'synthetic-test-value', metadata:{}});
@@ -22,9 +22,11 @@ it('sends sign-in secrets only in bodies and never writes browser storage', asyn
   } finally { vi.unstubAllGlobals(); }
 });
 it('redacts secret-bearing server errors', async () => {
-  request.mockRejectedValue(new Error('echoed synthetic secret'));
+  request.mockImplementation(() => { throw new Error('echoed synthetic secret'); });
   await expect(hyperVaultApi.answerSignIn('id','submit',{password:'synthetic secret'})).rejects.toThrow('Vault request failed.');
-  await expect(hyperVaultApi.keys()).rejects.not.toThrow('echoed');
+  const failure = await hyperVaultApi.keys().catch(error => error as Error);
+  expect(failure).toBeInstanceOf(Error);
+  expect((failure as Error).message).not.toContain('echoed');
 });
 it('renders loading and guarded team state without a secret field', () => {
   const html = renderToStaticMarkup(<HyperVaultSection />);
