@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto';
 /** One-use provider capabilities. Secrets never cross IPC or reach the renderer. */
 export class HyperVoiceBroker {
   private pending = new Map<string, { secret: string; expires: number; owner: number }>();
-  sanitize(value: Record<string, unknown>, owner: number) {
+  sanitize(input: unknown, owner: number) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid voice configuration');
+    const value = input as Record<string, unknown>;
     if (value.transport !== 'websocket') return value;
     if (value.url !== 'wss://api.x.ai/v1/realtime' || typeof value.clientSecret !== 'string' || !value.session || typeof value.session !== 'object') throw new Error('Invalid voice configuration');
     for (const [key, item] of this.pending) if (item.expires < Date.now()) this.pending.delete(key);

@@ -32,7 +32,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: approvals-inbox
   /* approvals-inbox */
   // slot: vault
-  /* vault */
+  { id: 'vault', label: 'Vault', group: 'personal', render: hyperLazySection(() => import('./vault/HyperVaultSection')) },
   // slot: computer-browser
   /* computer-browser */
   // slot: screens
@@ -44,5 +44,6 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: admin-platform
   /* admin-platform */
   // slot: onboarding
-  /* onboarding */
+  { id: 'home', label: 'Home', group: 'work', render: hyperLazySection(() => import('./onboarding/HyperHomeSection')) },
+  { id: 'setup', label: 'Setup', group: 'personal', render: hyperLazySection(() => import('./onboarding/HyperSetupSection')) },
 ];

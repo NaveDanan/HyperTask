@@ -1,5 +1,5 @@
 import { hyperRunConnectionLost } from '../HyperRunConnection';
-import type { HyperVoiceSocketEvent } from '@shared/api';
+import type { HyperOpenBotSocketEvent } from '@shared/api';
 /** Browser-compatible Phoenix transport with a fixed main-process gateway destination. */
 export class HyperVoiceSocket extends EventTarget {
   static readonly CONNECTING = 0; static readonly OPEN = 1; static readonly CLOSING = 2; static readonly CLOSED = 3;
@@ -19,7 +19,7 @@ export class HyperVoiceSocket extends EventTarget {
     this.dispose = window.appflowy.hyperOpenBot.onSocket(event => { if (event.id === this.id) this.receive(event); });
     void window.appflowy.hyperOpenBot.socketOpen(this.id, path, typeof protocols === 'string' ? [protocols] : protocols).catch(() => { this.receive({ id: this.id, type: 'error' }); this.receive({ id: this.id, type: 'close', code: 1006, reason: 'OpenBot socket could not open' }); });
   }
-  private receive(value: HyperVoiceSocketEvent) {
+  private receive(value: HyperOpenBotSocketEvent) {
     if (this.readyState === 3) return;
     if (value.type === 'open') {
       if (this.readyState === 2) { window.appflowy.hyperOpenBot.socketClose(this.id, 1000); return; }

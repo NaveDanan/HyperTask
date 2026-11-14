@@ -12,7 +12,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: approvals-inbox
   /* approvals-inbox */
   // slot: vault
-  /* vault */
+  'passwords', 'sign-in-requests', 'admin/credentials',
   // slot: computer-browser
   /* computer-browser */
   // slot: screens
@@ -24,7 +24,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: admin-platform
   /* admin-platform */
   // slot: onboarding
-  /* onboarding */
+  'me', 'setup', 'settings/preferences', 'route',
 ];
 /** Exact paths outside the families above. */
 const HYPER_OPENBOT_EXACT_ROUTES: readonly RegExp[] = [
