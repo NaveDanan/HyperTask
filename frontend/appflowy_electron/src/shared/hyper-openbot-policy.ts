@@ -1,8 +1,8 @@
 /** OpenBot API route families reachable through the main-owned tunnel. Each parity area owns its slot. */
 const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   'channels', 'agents', 'bots', 'plugins', 'models', 'attachments', 'threads', 'copilotkit', 'skills', 'connections', 'approvals', 'decisions', 'capabilities',
-  // slot: groups
-  /* groups */
+  // slot: conversations
+  /* conversations */
   // slot: routines
   /* routines */
   // slot: memory

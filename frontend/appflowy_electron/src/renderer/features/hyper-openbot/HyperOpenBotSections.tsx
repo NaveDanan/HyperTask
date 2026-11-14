@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 
 export interface HyperOpenBotSectionContext {
   /** Open an existing conversation by channel ID. */
@@ -13,10 +13,16 @@ export interface HyperOpenBotSection {
   render(context: HyperOpenBotSectionContext): ReactNode;
 }
 
+/** Lazily load an area module whose default export renders the section. Call once per slot entry. */
+export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext }> }>) {
+  const Section = lazy(load);
+  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section context={context} /></Suspense>;
+}
+
 /** Parity sections added beside Conversations, Bots, Skills and Connections. Each area owns its slot. */
 export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
-  // slot: groups
-  /* groups */
+  // slot: conversations
+  /* conversations */
   // slot: routines
   /* routines */
   // slot: memory
