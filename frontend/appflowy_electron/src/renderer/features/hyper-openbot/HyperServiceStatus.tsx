@@ -43,7 +43,7 @@ export function HyperServiceStatus({ state, error }: { state: HyperOpenBotServic
       <p className="text-xs text-muted-foreground">OpenBot, Intelligence and model access run on the configured VM. Dependencies, account sign-in and licensing are required. Closing HyperTask leaves this backend running.</p>
       {state.checks.length > 0 && <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">{state.checks.map(check => <div key={check.id} className="flex gap-1"><dt className="capitalize">{check.id}</dt><dd>{check.state}</dd></div>)}</dl>}
       <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={busy} onClick={() => void run('check')}>Check AI readiness</Button>
-        {!state.ready && <Button size="sm" disabled={busy || state.problem === 'unsupported' || state.problem === 'signed_out'} onClick={() => void run('start')}>Start AI services</Button>}
+        {!state.ready && <Button size="sm" disabled={busy || ['unsupported', 'signed_out', 'profile_required'].includes(state.problem)} onClick={() => void run('start')}>Start AI services</Button>}
         <Button variant="outline" size="sm" disabled={busy || !state.checks.some(check => check.id === 'deployment' && check.state !== 'missing' && check.state !== 'unknown')} onClick={() => setConfirm('restart')}>Restart AI services</Button>
         <Button variant="outline" size="sm" disabled={busy || !state.checks.some(check => ['server', 'worker', 'computer', 'harness', 'postgres'].includes(check.id) && check.state === 'ready')} onClick={() => setConfirm('stop')}>Stop AI services</Button></div>
       <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={preference ?? state.autoStart} disabled={busy} onChange={event => {

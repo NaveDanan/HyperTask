@@ -61,6 +61,12 @@ it('reports unsupported platforms without executing or authorizing a backend com
   const service = new HyperOpenBotService(dependencies, true); await service.run('ensure');
   expect(service.snapshot().problem).toBe('unsupported'); expect(dependencies.execute).not.toHaveBeenCalled(); expect(dependencies.authorize).not.toHaveBeenCalled();
 });
+it('refuses lifecycle commands when the native backend owner cannot be verified', async () => {
+  const { service, dependencies } = setup();
+  dependencies.authorize.mockRejectedValue(new Error('Untrusted or unsupported native owner'));
+  await expect(service.run('start')).resolves.toMatchObject({ ready: false, problem: 'profile_required' });
+  expect(dependencies.execute).not.toHaveBeenCalled();
+});
 
 it('serializes startup preference writes so the final user choice wins', async () => {
   const { service, dependencies } = setup(); let finish!: () => void;

@@ -59,8 +59,10 @@ export class HyperOpenBotService {
     const controller = new AbortController();
     // Defer so the operation record exists before authorization or remote execution can settle.
     const promise = Promise.resolve().then(async () => {
+      let authorized = false;
       try {
         const lease = await this.dependencies.authorize(); lease.assertCurrent();
+        authorized = true;
         controller.signal.throwIfAborted();
         if (version !== this.version) return this.snapshot();
         // A new view can request ensure while Stop is pending. Respect the explicit choice
@@ -72,7 +74,7 @@ export class HyperOpenBotService {
         lease.assertCurrent(); controller.signal.throwIfAborted();
         if (version === this.version) this.update({ ready: result.ready, problem: result.problem, checks: result.checks, phase: 'idle', checkedAt: new Date().toISOString() });
       } catch (error) {
-        if (version === this.version && !controller.signal.aborted) this.update({ ready: false, phase: 'idle', problem: error instanceof HyperOpenBotServiceError ? error.problem : 'signed_out', checkedAt: new Date().toISOString() });
+        if (version === this.version && !controller.signal.aborted) this.update({ ready: false, phase: 'idle', problem: error instanceof HyperOpenBotServiceError ? error.problem : authorized ? 'signed_out' : 'profile_required', checkedAt: new Date().toISOString() });
       } finally { if (this.operation?.controller === controller) this.operation = undefined; }
       return this.snapshot();
     });

@@ -190,7 +190,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
 export function HyperOpenBotPage({ viewId }: { viewId: string }) {
   const service = useHyperOpenBotService(true);
   const [opened, setOpened] = useState(false);
-  useEffect(() => { if (service.state.ready) setOpened(true); else if (['signed_out', 'unsupported'].includes(service.state.problem)) setOpened(false); }, [service.state.ready, service.state.problem]);
+  useEffect(() => { if (service.state.ready) setOpened(true); else if (['signed_out', 'profile_required', 'unsupported'].includes(service.state.problem)) setOpened(false); }, [service.state.ready, service.state.problem]);
   return <div className="flex h-full min-h-0 flex-col"><HyperServiceStatus {...service} />
     <div className="min-h-0 flex-1">{opened ? <HyperOpenBotProvider><HyperOpenBotWorkspace viewId={viewId} serviceReady={service.state.ready} /></HyperOpenBotProvider> : <p className="p-6 text-sm text-muted-foreground">Chat will connect when the AI services are ready. Your other HyperTask pages remain available.</p>}</div>
   </div>;
