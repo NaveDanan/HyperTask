@@ -1,6 +1,4 @@
 import { HyperVoiceBroker } from './HyperVoiceBroker';
-// Exact computer socket paths. Aligned with the renderer policy, without importing renderer code.
-const hyperComputerSocketPathAllowed = (path: string) => /^\/api\/computers\/[A-Za-z0-9_-]{1,200}\/(stream|terminal)$/.test(path);
 import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath, hyperOpenBotCookieHeader, hyperTunnelFetch } from './HyperOpenBotTunnel';
 import type { HyperOpenBotSession } from './HyperOpenBotSession';
 import { hyperOpenBotPathAllowed } from '@shared/hyper-openbot-policy';
@@ -13,6 +11,8 @@ const ORIGIN = 'http://127.0.0.1:3010';
 const MAX_BYTES = 24 * 1024 * 1024;
 const DEADLINE_MS = 10 * 60 * 1000;
 const safeId = (id: unknown): id is string => typeof id === 'string' && /^[\w-]{1,100}$/.test(id);
+// Exact computer socket paths. Aligned with the renderer policy, without importing renderer code.
+const hyperComputerSocketPathAllowed = (path: string) => /^\/api\/computers\/[A-Za-z0-9_-]{1,200}\/(stream|terminal)$/.test(path);
 
 /** Generic renderer file access must not read or replace main-owned identity/cookie state. */
 export function registerHyperOpenBotFileIpc(userData: string) {
@@ -71,6 +71,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     own(event);
     if (!request || !safeId(request.id) || running.has(request.id)) throw new Error('Invalid request id');
     if (!hyperOpenBotPathAllowed(request.path)) throw new Error('OpenBot route refused');
+    const requestPathname = new URL(request.path, ORIGIN).pathname;
     if (typeof request.method !== 'string' || !['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) throw new Error('OpenBot method refused');
     if (request.body !== undefined && typeof request.body !== 'string' && !(request.body instanceof Uint8Array)) throw new Error('Invalid OpenBot body');
     if (request.body && (typeof request.body === 'string' ? Buffer.byteLength(request.body) : request.body.byteLength) > MAX_BYTES) throw new Error('OpenBot request too large');
@@ -86,9 +87,9 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
       let response = await hyperTunnelFetch(request.path, {
         method: request.method, body: typeof request.body === 'string' ? request.body : request.body ? Buffer.from(request.body) : undefined,
         signal: controller.signal, lease,
-        headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN, ...(request.path === '/api/audio/transcriptions' ? { 'x-openbot-dictation': '1' } : {}), ...(request.path === '/api/voice/calls' ? { 'x-openbot-voice': '1' } : {}) },
+        headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN, ...(requestPathname === '/api/audio/transcriptions' ? { 'x-openbot-dictation': '1' } : {}), ...(requestPathname === '/api/voice/calls' ? { 'x-openbot-voice': '1' } : {}) },
       });
-      if (request.path === '/api/voice/calls' && response.ok) {
+      if (requestPathname === '/api/voice/calls' && response.ok) {
         const value = await response.json();
         response = new Response(JSON.stringify(voiceBroker.sanitize(value, event.sender.id, lease.signal)), { status: response.status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
       }

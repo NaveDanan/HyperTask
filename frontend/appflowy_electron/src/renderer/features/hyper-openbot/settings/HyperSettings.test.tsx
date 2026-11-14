@@ -32,7 +32,7 @@ describe('Hyper settings', () => {
   it('fails closed on edition and renders loading and empty settings', async () => {
     request.mockRejectedValueOnce(new Error('Unavailable'));
     expect(await hyperSettingsApi.edition()).toBe('team');
-    const context = { openConversation() {}, startConversation() {} };
+    const context = { openConversation() {}, async startConversation() {} };
     expect(renderToStaticMarkup(<HyperSettingsSection context={context} />)).toContain('Loading settings');
     const html = renderToStaticMarkup(<HyperSettingsGeneral user={{ id: 'u', role: 'user', needsName: true }} instructions="" preferences={{ messageListEmphasis: 'thread', skin: 'openbot', proactive: 'on' }} onUser={() => {}} onInstructions={() => {}} onPreferences={() => {}} />);
     expect(html).toContain('Not set yet.'); expect(html).toContain('None yet.'); expect(html).toContain('Message list preview');
