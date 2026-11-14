@@ -98,7 +98,7 @@ PR #11 contains the native feature assembled by four initial and four follow-up 
 
 ## Current step: issue #6
 
-[PR #12](https://github.com/NaveDanan/HyperTask/pull/12) contains the issue #6 follow-up on `hyper/openbot-actions`. Native approved/denied actions, Stop/continue, restart restoration, a real runtime error/retry and private-tunnel failure/reconnect passed. Typecheck/build and all 536 tests pass; one opt-in simulated-IPC live test is skipped. See [the action acceptance record](HYPER_OPENBOT_ACTIONS.md). Issue #6 stays open until its PR clears review and merges; #7/#8 follow in order.
+[PR #12](https://github.com/NaveDanan/HyperTask/pull/12) contains the issue #6 follow-up on `hyper/openbot-actions`. Native approved/denied actions, Stop/continue, restart restoration, a real runtime error/retry and private-tunnel failure/reconnect passed. Typecheck/build and all 540 tests pass; one opt-in simulated-IPC live test is skipped. Three CodeRabbit follow-ups now preserve the barrier on swallowed connect failures and unconfirmed deadlines, and retain already-waiting status. Five page-state fixtures and a repeated actual native disconnect/reconnect check pass; the updated PR head needs fresh review. See [the action acceptance record](HYPER_OPENBOT_ACTIONS.md). Issue #6 stays open until its PR clears review and merges; #7/#8 follow in order.
 
 ## Queue
 

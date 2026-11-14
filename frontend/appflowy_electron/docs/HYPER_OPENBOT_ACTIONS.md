@@ -4,7 +4,7 @@ Tracking [issue #6](https://github.com/NaveDanan/HyperTask/issues/6), [PR #12](h
 
 The actual HyperTask Electron window exercised approved and denied actions, Stop/continue, restored action history, connection loss and runtime failure against the existing original OpenBot/CopilotKit Intelligence stack. The backend stayed on the authorized VM. These observations use the native composer, transcript and approval cards, rather than mocked component fixtures or a separate OpenBot shell.
 
-[The sanitized runtime record](HYPER_OPENBOT_ACTIONS.runtime.json) contains source identities, request/tool IDs, audit row IDs and private capture/driver hashes. Raw browser captures, logs, account state and screenshots remain private. The original backend source remains pinned to `f8af37ab73e96784f174a11104505a965e722cab`. The final native runtime check used `38ef1498aaebda42b1cc076424d93ed9f76ac5b7`; approval decisions first ran on the merged base and their durable presentation was checked again on that final runtime.
+[The sanitized runtime record](HYPER_OPENBOT_ACTIONS.runtime.json) contains source identities, request/tool IDs, audit row IDs and private capture/driver hashes. Raw browser captures, logs, account state and screenshots remain private. The original backend source remains pinned to `f8af37ab73e96784f174a11104505a965e722cab`. The initial native runtime check used `38ef1498aaebda42b1cc076424d93ed9f76ac5b7`; approval decisions first ran on the merged base and their durable presentation was checked again on that final runtime.
 
 ## Observed results
 
@@ -50,3 +50,11 @@ The desktop reuses the matching installed dependency graph, Electron 44.10.2 and
 7. Wait for both approval requests to finish and revoke only the temporary rule. Confirm preferences and owned services are restored. Keep raw evidence private; commit sanitized identities and hashes.
 
 Service lifecycle/configuration, trusted reconnect and authenticated remote-account provenance remain issue #7. Broader phase-1 acceptance remains issue #8. Neither Knowledge Graph work nor an Intelligence replacement is included.
+
+## Review follow-up
+
+CodeRabbit identified three further gaps. Persistent core error observation now surfaces `agent_connect_failed` for only the current agent/thread, including failures reported after the initial connect promise settles. The real SDK regression confirms that `connectAgent` resolves an empty result while emitting that error; the observer is released with the view effect.
+
+Gateway joins now distinguish confirmed, deadline and cancelled outcomes. Original AG-UI progress confirms an active cursor-based connection. During a reconnect, a deadline with readable history keeps Send blocked and restores the visible Reconnect control. A late promise settlement cannot clear that barrier; an explicit successful retry can. Slow first opens retain their prior history/composer behavior. `ALREADY_WAITING`, both plain and JSON-string encoded, is classified as not-yet.
+
+Five compiled production-page Chromium scenarios passed with a mocked SDK/backend and an accelerated deadline: resolved connect failure, persistent agent-scoped observation, deadline/late completion, successful retry preserving the draft without resending, and slow first open. These are component-state checks, not live gateway proof. Separately, the actual native window on `9632dcd17636cddf467cc52e3177f7be7e16796c` repeated private SSH interruption and confirmed reconnect: error within 104 ms, retained draft, blocked resend, one saved user turn, exact final saved/UI response and no renderer errors. The full suite now has 540 passing tests and one opt-in skip; typecheck/build pass. Capture identities and hashes are in the runtime record's `reviewFollowUp` section. The updated PR head requires fresh Codex code/security review before merge.
