@@ -14,6 +14,8 @@ Read-only source `/home/naved/HyperTask-OpenBot-baseline`, pinned at
 | HyperReachability.tsx | app/src/components/delivery/reaching-you.tsx; app/src/lib/delivery.ts; app/src/routes/_authed/_app/{reachability,bots.$agentId.reach}.tsx |
 | HyperExternalAgents.tsx | app/src/components/agents/new-bot-sheet.tsx; app/src/lib/agents/{form,queries,mutations}.ts; app/src/routes/_authed/_app/agents/index.tsx |
 | HyperBotActivityTab.tsx | app/src/components/bot-profile/activity.tsx; app/src/lib/bot-lifecycle/{queries,mutations}.ts; app/src/routes/_authed/_app/bots.$agentId.activity.tsx |
+| HyperBotSetupTab.tsx | app/src/components/bot-profile/setup.tsx; app/src/lib/agents/form.ts; app/src/lib/enterprise/queries.ts |
+| HyperHarnesses.ts | shared/harnesses.json, webCreate entries only |
 | HyperBotExtraTabs.ts | Native typed extension registry for four separately owned tabs |
 | HyperBotResource.ts | Native load/mutation lifecycle helper replacing upstream query invalidation |
 | index.ts | Native exports |
@@ -33,12 +35,15 @@ assigned/pinned Bots first then own/shared Bots and reports search misses. Exist
 remain above the detail tabs. No dependencies added. The node_modules symlink is local tooling only.
 
 Remaining parity gaps: upstream attention board and proactive activity summaries; activity links
-without a conversation and channel opening from the existing Bots host; group assignment management,
-shared-app exposure notices and share-link copy; administrator app grant authoring/replay and app
-connection initiation; external framework selection; advanced isolation setup and Bot duplication.
+without a conversation and channel opening from the existing Bots host; shared-app exposure notices and share-link copy; administrator app grant authoring/replay and app
+connection initiation; advanced managed runtime installation.
 Callback token issue/display is excluded because the task forbids provider tokens in the renderer.
 Standalone bot deep links and route history are replaced by selection within the native Bots view.
 These gaps are explicit and must not be reported as full feature parity.
+
+Group assignments use administrator status from `/api/me`. Setup reads current profile, deployment
+and member capabilities before offering isolation, including the upstream always-allowed turn-off
+case. Duplication reloads the server result. Framework options retain upstream IDs and labels.
 
 Exports: HyperBotDetailTabs, HYPER_BOT_EXTRA_TABS / HyperBotExtraTab, HyperBotTabsApi.
 The four extra-tab slots accept a component receiving `{ agentId: string }`.
