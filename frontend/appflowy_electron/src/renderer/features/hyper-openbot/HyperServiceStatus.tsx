@@ -24,6 +24,8 @@ export function HyperServiceStatus({ state, error }: { state: HyperOpenBotServic
   const [confirm, setConfirm] = useState<'stop' | 'restart'>();
   const [failure, setFailure] = useState<string>();
   const [pending, setPending] = useState(false);
+  const [preference, setPreference] = useState<boolean>();
+  useEffect(() => { if (preference === state.autoStart) setPreference(undefined); }, [preference, state.autoStart]);
   const busy = pending || state.phase !== 'idle';
   async function run(action: HyperOpenBotServiceAction) {
     if (busy) return;
@@ -43,9 +45,9 @@ export function HyperServiceStatus({ state, error }: { state: HyperOpenBotServic
         {!state.ready && <Button size="sm" disabled={busy || state.problem === 'unsupported' || state.problem === 'signed_out'} onClick={() => void run('start')}>Start AI services</Button>}
         <Button variant="outline" size="sm" disabled={busy || !state.checks.some(check => check.id === 'deployment' && check.state !== 'missing' && check.state !== 'unknown')} onClick={() => setConfirm('restart')}>Restart AI services</Button>
         <Button variant="outline" size="sm" disabled={busy || !state.checks.some(check => ['server', 'worker', 'computer', 'harness', 'postgres'].includes(check.id) && check.state === 'ready')} onClick={() => setConfirm('stop')}>Stop AI services</Button></div>
-      <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={state.autoStart} disabled={busy} onChange={event => {
-        setPending(true); setFailure(undefined);
-        void window.appflowy.hyperOpenBot.service.configure(event.target.checked).catch(() => setFailure('The AI startup preference could not be saved.')).finally(() => setPending(false));
+      <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={preference ?? state.autoStart} disabled={busy} onChange={event => {
+        const next = event.target.checked; setPreference(next); setPending(true); setFailure(undefined);
+        void window.appflowy.hyperOpenBot.service.configure(next).catch(() => { setPreference(undefined); setFailure('The AI startup preference could not be saved.'); }).finally(() => setPending(false));
       }} />Start the provisioned AI services automatically when opening HyperTask.</label>
       {confirm && <div role="alertdialog" aria-label={confirm === 'stop' ? 'Stop managed AI services' : 'Restart managed AI services'} className="space-y-2 rounded-md border border-border p-3">
         <p>{confirm === 'stop' ? 'Stop' : 'Restart'} only the managed AI services on the configured VM? Active AI work may be interrupted. Saved chats and workspace stores are preserved.</p>
