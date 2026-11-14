@@ -26,6 +26,23 @@ describe('Hyper transcript', () => {
     expect(html).toContain('const x = 1;');
     expect(html).toContain('<pre');
   });
+  it('renders Markdown images inert, including remote, loopback, relative and data sources', () => {
+    for (const source of ['https://tracker.example/pixel?private=context', 'http://127.0.0.1:3010/private', '//tracker.example/pixel', '/private-image', 'data:image/png;base64,aGVsbG8=']) {
+      const html = renderToStaticMarkup(createElement(HyperMarkdown, { content: `![Untrusted image](${source})` }));
+      expect(html).not.toMatch(/<(?:img|source|video|iframe)\b/i);
+      expect(html).not.toContain('as="image"');
+      expect(html).not.toContain(source);
+      expect(html).toContain('Untrusted image');
+    }
+  });
+  it('blocks passive raw HTML and images inside tool results while keeping explicit citations', () => {
+    const content = '<img src="https://tracker.example/html" srcset="https://tracker.example/set 1x">\n\n<video poster="http://127.0.0.1/private"></video>\n\n![Tool image](https://tracker.example/tool)\n\n[Read source](https://example.com/source)';
+    const html = renderToStaticMarkup(createElement(HyperToolMessage, { id: 't', label: 'Result', status: 'complete', result: content }));
+    expect(html).not.toMatch(/<(?:img|source|video|iframe)\b/i);
+    expect(html).not.toContain('tracker.example');
+    expect(html).toContain('href="https://example.com/source"');
+    expect(html).toContain('Tool image');
+  });
   it('keeps refused attempts distinct from completed actions and exposes tool details', () => {
     const html = renderToStaticMarkup(createElement(HyperToolMessage, { id: 'tool-1', label: 'Saved file', attempted: 'Save file', status: 'refused', arguments: '{"path":"a"}', result: 'Access denied' }));
     expect(html).toContain('Blocked: Save file');

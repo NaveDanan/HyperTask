@@ -65,6 +65,22 @@ it('the UI recovery entry point restores a contentless idle assistant while pres
   hyperRestoreStoredMessages(agent, saved);
   expect(agent.setMessages).not.toHaveBeenCalled();
 });
+it('recovers each tool call independently without shortening another call when the store adds or improves a call', () => {
+  const call = (id: string, args: string) => ({ id, type: 'function' as const, function: { name: 'lookup', arguments: args } });
+  const complete = call('c1', '{"path":"complete-live-arguments"}');
+  const partial = call('c2', '{"q":');
+  const improved = call('c2', '{"q":"saved arguments"}');
+  const extra = call('c3', '{"added":true}');
+  const local = [{ id: 'a', role: 'assistant' as const, toolCalls: [complete, partial] }];
+  for (const toolCalls of [[call('c1', '{"path":'), improved], [call('c1', '{"path":'), partial, extra], [improved, extra]]) {
+    const agent = { isRunning: false, messages: local, setMessages: vi.fn() };
+    hyperRestoreStoredMessages(agent, [{ id: 'a', role: 'assistant', toolCalls }]);
+    const result = agent.setMessages.mock.calls[0][0][0].toolCalls;
+    expect(result.find((each: any) => each.id === 'c1')).toEqual(complete);
+    expect(result.find((each: any) => each.id === 'c2')).toEqual(toolCalls.includes(improved) ? improved : partial);
+    if (toolCalls.includes(extra)) expect(result.map((each: any) => each.id)).toEqual(['c1', 'c2', 'c3']);
+  }
+});
 it('rejects a resolved SDK call when a run failure event was emitted', async () => {
   let events: any; const unsubscribe = vi.fn();
   const agent = { subscribe: (value: unknown) => { events = value; return { unsubscribe }; } };

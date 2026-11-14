@@ -112,19 +112,25 @@ function waitingTool(message: Message): boolean {
 type ToolCalls = Extract<Message, { role: "assistant" }>["toolCalls"];
 
 /**
- * The stored calls, when they are more of the live ones: every live call is among them, and the
- * store has another, or more of one's arguments. Otherwise nothing, and the live calls stand.
+ * Recover calls by ID. One improved or extra stored call must not shorten another live call,
+ * and a lagging store must not remove a live call it has not recorded yet.
  */
 function moreCalls(live: ToolCalls, stored: ToolCalls): ToolCalls {
   if (!stored?.length) return undefined;
   const storedById = new Map(stored.map((call) => [call.id, call]));
   const calls = live ?? [];
-  if (!calls.every((call) => storedById.has(call.id))) return undefined;
-  const longer = calls.some(
-    (call) =>
-      (storedById.get(call.id)?.function.arguments.length ?? 0) >
-      call.function.arguments.length,
-  );
-  return stored.length > calls.length || longer ? stored : undefined;
+  let changed = false;
+  const recovered = calls.map(call => {
+    const saved = storedById.get(call.id);
+    if (!saved || saved.function.arguments.length <= call.function.arguments.length) return call;
+    changed = true;
+    return { ...call, function: { ...call.function, arguments: saved.function.arguments } };
+  });
+  const held = new Set(calls.map(call => call.id));
+  for (const call of stored) {
+    if (held.has(call.id)) continue;
+    held.add(call.id); recovered.push(call); changed = true;
+  }
+  return changed ? recovered : undefined;
 }
 
