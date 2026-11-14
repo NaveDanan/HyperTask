@@ -1,4 +1,5 @@
-import { hyperComputerSocketPathAllowed } from '../renderer/features/hyper-openbot/computer-browser/HyperComputerSocketPolicy';
+// Exact computer socket paths. Aligned with the renderer policy, without importing renderer code.
+const hyperComputerSocketPathAllowed = (path: string) => /^\/api\/computers\/[A-Za-z0-9_-]{1,200}\/(stream|terminal)$/.test(path);
 import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath, hyperOpenBotCookieHeader, hyperTunnelFetch } from './HyperOpenBotTunnel';
 import type { HyperOpenBotSession } from './HyperOpenBotSession';
 import { hyperOpenBotPathAllowed } from '@shared/hyper-openbot-policy';
