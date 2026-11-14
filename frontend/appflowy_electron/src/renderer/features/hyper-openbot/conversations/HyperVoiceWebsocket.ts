@@ -109,7 +109,7 @@ export const connectWebSocket: ConnectVoice = async ({
       );
     }
     await context.audioWorklet.addModule(
-      new URL("./HyperVoicePcmWorklet.js", import.meta.url),
+      new URL("./HyperVoicePcmWorklet.js?no-inline", import.meta.url),
     );
     signal.throwIfAborted();
     source = context.createMediaStreamSource(stream);

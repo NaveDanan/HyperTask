@@ -88,7 +88,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
       });
       if (request.path === '/api/voice/calls' && response.ok) {
         const value = await response.json();
-        response = new Response(JSON.stringify(voiceBroker.sanitize(value, event.sender.id)), { status: response.status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+        response = new Response(JSON.stringify(voiceBroker.sanitize(value, event.sender.id, lease.signal)), { status: response.status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
       }
       setTimeout(() => void (async () => {
         try {

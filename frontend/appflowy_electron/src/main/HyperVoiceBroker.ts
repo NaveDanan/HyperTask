@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto';
 /** One-use provider capabilities. Secrets never cross IPC or reach the renderer. */
 export class HyperVoiceBroker {
   private pending = new Map<string, { secret: string; expires: number; owner: number }>();
-  sanitize(input: unknown, owner: number) {
+  sanitize(input: unknown, owner: number, signal?: AbortSignal) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid voice configuration');
+    signal?.throwIfAborted();
     const value = input as Record<string, unknown>;
     if (value.transport !== 'websocket') return value;
     if (value.url !== 'wss://api.x.ai/v1/realtime' || typeof value.clientSecret !== 'string' || !value.session || typeof value.session !== 'object') throw new Error('Invalid voice configuration');
@@ -11,6 +12,9 @@ export class HyperVoiceBroker {
     if (this.pending.size >= 16) throw new Error('Too many pending voice calls');
     const id = randomUUID();
     this.pending.set(id, { secret: value.clientSecret, owner, expires: Date.now() + 60_000 });
+    const revoke = () => { this.pending.delete(id); clearTimeout(timer); signal?.removeEventListener('abort', revoke); };
+    const timer = setTimeout(revoke, 60_000); timer.unref();
+    signal?.addEventListener('abort', revoke, { once: true });
     return { transport: 'websocket', url: `wss://hyper-openbot.invalid/api/voice/socket/${id}`, session: value.session };
   }
   take(path: string, owner: number) {
