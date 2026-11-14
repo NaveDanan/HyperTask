@@ -1,11 +1,13 @@
 // Adapted from OpenBot. Copyright (c) 2026 CopilotKit. MIT; see REUSE.md.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Bot, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { hyperOpenBotRequest } from '../transport';
-import { HyperAgentPath, HyperLifecyclePath, HyperListBots, HyperSaveBot, type HyperBotProfile, type HyperBotInput, type HyperBotLifecycle } from './HyperBotsApi';
+import { HyperAgentPath, HyperLifecyclePath, HyperListBots, HyperSaveBot, type HyperBotProfile, type HyperBotInput } from './HyperBotsApi';
+
+import { HyperBotLifecycleStore } from './HyperBotLifecycle';
 
 const HyperEmptyInput: HyperBotInput = { name: '', title: '', roleDescription: '', visibility: 'private' };
 export function HyperBotsPanel({ onChat }: { onChat: (botId: string) => void }) {
@@ -48,7 +50,11 @@ export function HyperBotsPanel({ onChat }: { onChat: (botId: string) => void }) 
 
 function HyperBotEditor({ bot, onSaved, onRemoved, onClose }: { bot?: HyperBotProfile; onSaved: (bot: HyperBotProfile) => void; onRemoved: () => void; onClose: () => void }) {
   const [draft, setDraft] = useState<HyperBotInput>(bot ? { name: bot.name, title: bot.title, roleDescription: bot.roleDescription, visibility: bot.visibility, ...(bot.instructions === undefined ? {} : { instructions: bot.instructions }) } : HyperEmptyInput);
-  const [lifecycle, setLifecycle] = useState<HyperBotLifecycle>();
+  const [lifecycleStore] = useState(() => new HyperBotLifecycleStore());
+  const lifecycleState = useSyncExternalStore(lifecycleStore.subscribe, lifecycleStore.getSnapshot);
+  const lifecycleMatches = lifecycleState.botId === bot?.id;
+  const lifecyclePending = Boolean(bot) && (!lifecycleMatches || lifecycleState.pending);
+  const lifecycle = lifecycleMatches ? lifecycleState.data : undefined;
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const [error, setError] = useState('');
@@ -58,11 +64,9 @@ function HyperBotEditor({ bot, onSaved, onRemoved, onClose }: { bot?: HyperBotPr
   const editable = !bot || bot.canManage;
   useEffect(() => {
     if (!bot) return;
-    let live = true;
-    void hyperOpenBotRequest<{ lifecycle: HyperBotLifecycle }>(`${HyperLifecyclePath(bot.id)}/lifecycle`)
-      .then(result => { if (live) setLifecycle(result.lifecycle); }).catch(e => { if (live) setError(e.message); });
-    return () => { live = false; };
-  }, [bot?.id]);
+    void lifecycleStore.load(bot.id);
+    return lifecycleStore.cancel;
+  }, [bot?.id, lifecycleStore]);
   async function run(action: () => Promise<void>) {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(''); setNotice('');
@@ -70,11 +74,6 @@ function HyperBotEditor({ bot, onSaved, onRemoved, onClose }: { bot?: HyperBotPr
     finally { lock.current = false; setBusy(false); }
   }
   const change = (field: keyof HyperBotInput, value: string) => setDraft(old => ({ ...old, [field]: value }));
-  async function lifecycleAction(action: string, body?: unknown, method = 'POST') {
-    if (!bot) return;
-    const result = await hyperOpenBotRequest<{ lifecycle: HyperBotLifecycle }>(`${HyperLifecyclePath(bot.id)}/${action}`, method, body);
-    setLifecycle(result.lifecycle); setNotice('Settings saved.');
-  }
   return <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4" aria-label={bot ? `${bot.name} profile` : 'Create Bot'}>
     <div className="flex items-center justify-between gap-3"><h2 className="text-base font-semibold">{bot ? 'Bot profile' : 'Create Bot'}</h2><Button variant="ghost" disabled={busy} onClick={onClose}>Close</Button></div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
@@ -89,10 +88,13 @@ function HyperBotEditor({ bot, onSaved, onRemoved, onClose }: { bot?: HyperBotPr
         {editable && <Button type="submit">{busy ? 'Saving…' : bot ? 'Save profile' : 'Create Bot'}</Button>}
       </fieldset>
     </form>
-    {bot && <fieldset disabled={busy} className="flex flex-col gap-3 border-t border-border pt-4"><legend className="text-sm font-medium">Your settings for this Bot</legend>
+    {bot && <fieldset disabled={busy || lifecyclePending} className="flex flex-col gap-3 border-t border-border pt-4"><legend className="text-sm font-medium">Your settings for this Bot</legend>
       {lifecycle ? <><p className="text-xs text-muted-foreground">Pause stops work done in your name. Other people's work continues.</p>
-        <Button variant="outline" onClick={() => void run(() => lifecycleAction(lifecycle.paused ? 'resume' : 'pause'))}>{lifecycle.paused ? 'Resume' : 'Pause'} for me</Button>
-        <label className="grid gap-2 text-sm">Notifications<select className="h-9 rounded-lg border border-border bg-background px-3" value={lifecycle.notify} onChange={e => { const notify = e.target.value; void run(() => lifecycleAction('notifications', { notify }, 'PUT')); }}><option value="all">Everything</option><option value="needs_input">Only when it needs me</option><option value="none">Nothing, badges only</option></select></label></> : <Button variant="outline" onClick={() => void run(async () => { setLifecycle((await hyperOpenBotRequest<{ lifecycle: HyperBotLifecycle }>(`${HyperLifecyclePath(bot.id)}/lifecycle`)).lifecycle); })}>Load lifecycle settings</Button>}
+        <Button variant="outline" onClick={() => void lifecycleStore.change(bot.id, lifecycle.paused ? 'resume' : 'pause')}>{lifecycle.paused ? 'Resume' : 'Pause'} for me</Button>
+        <label className="grid gap-2 text-sm">Notifications<select className="h-9 rounded-lg border border-border bg-background px-3" value={lifecycle.notify} onChange={e => { const notify = e.target.value; void lifecycleStore.change(bot.id, 'notifications', { notify }); }}><option value="all">Everything</option><option value="needs_input">Only when it needs me</option><option value="none">Nothing, badges only</option></select></label></> : lifecyclePending ? <p role="status" className="text-sm text-muted-foreground">Loading lifecycle settings…</p> : <div className="grid gap-2">
+        {lifecycleMatches && lifecycleState.error && <p role="alert" className="text-sm text-destructive">{lifecycleState.error}</p>}
+        <Button variant="outline" onClick={() => void lifecycleStore.load(bot.id)}>Retry lifecycle settings</Button>
+      </div>}
       {!bot.assignedToMe && <div className="flex flex-wrap gap-2">{[bot.pinned ? 'unpin' : 'pin', bot.hidden ? 'unhide' : 'hide'].map(action => <Button key={action} variant="outline" onClick={() => void run(async () => { await hyperOpenBotRequest(`${HyperAgentPath(bot.id)}/${action}`, 'POST'); onRemoved(); })}>{action === 'unpin' ? 'Unpin' : action === 'pin' ? 'Pin' : action === 'hide' ? 'Hide from my list' : 'Restore to my list'}</Button>)}</div>}
       <Button variant="outline" onClick={() => void run(async () => {
         const result = await hyperOpenBotRequest<{ plan: Record<string, number> }>(`${HyperLifecyclePath(bot.id)}/reset`);
