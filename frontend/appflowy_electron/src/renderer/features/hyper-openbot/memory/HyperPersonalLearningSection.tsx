@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { hyperOpenBotRequest } from '../transport';
+import { HyperSkillsPanel } from '../skills';
 import { HyperLearningRecordings } from './HyperLearningRecordings';
 import { HyperLearningDetail } from './HyperLearningDetail';
 import { HyperLearningProposals } from './HyperLearningSection';
@@ -39,4 +40,8 @@ export function HyperPersonalLearningSection({onOpenRecordings:openRecordings}:{
  })}
  {review.data?.sources.length===0&&<p>No Learning sources yet. Teach a Bot with your recordings.</p>}{detail&&<HyperLearningDetail path={detail} kind="skill" onOpenRecordings={onOpenRecordings} onClose={()=>setDetail('')}/>}</section>;
 }
-export default HyperPersonalLearningSection;
+/** Native destination for upstream Skills/Capabilities and Settings → Learning. */
+export default function HyperMemorySkillsSection({context}:{context:HyperOpenBotSectionContext}) {
+ const [tab,setTab]=useState('learned');
+ return <section className="grid gap-4"><nav className="flex gap-2 p-6"><Button variant={tab==='learned'?'default':'outline'} onClick={()=>setTab('learned')}>Learned skills and review</Button><Button variant={tab==='written'?'default':'outline'} onClick={()=>setTab('written')}>Written skills</Button><Button variant="outline" onClick={()=>context.navigate?.('browser')}>Teach a Bot</Button></nav>{tab==='written'?<HyperSkillsPanel/>:<HyperPersonalLearningSection context={context}/>}</section>;
+}

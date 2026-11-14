@@ -3,3 +3,7 @@ export { default as HyperLearningSection, HyperPersonalLearningSection, HyperLea
 export * from './HyperMemoryApi';
 export * from './HyperLearningQueries';
 export * from './HyperLearningMutations';
+export { default as HyperMemorySkillsSection } from './HyperPersonalLearningSection';
+export { HyperLearningPermissions } from './HyperLearningPermissions';
+export { HyperLearningHealth } from './HyperLearningConfiguration';
+export { HyperLearningRecordings } from './HyperLearningRecordings';

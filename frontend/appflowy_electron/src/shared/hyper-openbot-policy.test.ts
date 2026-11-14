@@ -86,3 +86,8 @@ it('admin-governance permits identity and approval subflows without adjacent aut
   for (const path of ['/api/me', '/api/capabilities', '/api/approvals/team', '/api/approvals/team/rules/batch', '/api/approvals/team/rules/backtest', '/api/approvals/shared-use/request/approve', '/api/approvals/team/guidance/check', '/api/admin/enterprise/settings/ssoRequired', '/api/admin/enterprise/people/id/terminate-computers']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/auth/sso/providers', '/api/admin/identity', '/api/admin/what-if-other', '/api/admin/enterprise-other', '/api/me-other']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
+
+it('memory slot permits learning permission and recording subflows without adjacent families', () => {
+ for (const path of ['/api/admin/enterprise', '/api/admin/enterprise/capabilities/translate', '/api/admin/enterprise/capabilities/preview', '/api/admin/enterprise/capabilities/batch', '/api/admin/enterprise/settings/skillSharing', '/api/recorder/recordings?cursor=next', '/api/admin/learning/status/bot', '/api/admin/learning/container', '/api/settings/learning/auto-approve']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+ for (const path of ['/api/settings/learning-other', '/api/admin/learning-other', '/api/recorder-other', '/api/admin/enterprise-other', '/api/admin/enterprise/capabilities/%2e%2e/secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
