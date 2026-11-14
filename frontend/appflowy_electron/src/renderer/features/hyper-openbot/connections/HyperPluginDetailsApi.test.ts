@@ -35,3 +35,13 @@ it('maps nested destinations without retaining provider callback query data', ()
   expect(hyperConnectionSelectionFromPath('/connections/browse/arcade')).toEqual({ page: 'browse', provider: 'arcade' });
   expect(hyperConnectionSelectionFromPath('/connections/%invalid')).toBeUndefined();
 });
+
+import { hyperRequestAppAccess, hyperGiveApp, hyperDecideAppRequest } from './HyperAppAccessApi';
+it('preserves app access request, owner grant and selected approval contracts', async () => {
+  await hyperRequestAppAccess('bot', 'app');
+  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/plugins/access-requests', 'POST', { agentId: 'bot', app: 'app' });
+  await hyperGiveApp('bot?x', 'app', false);
+  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/plugins/for/bot%3Fx/apps/app/give', 'DELETE');
+  await hyperDecideAppRequest('request?x', 'approve', ['app/read']);
+  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/plugins/access-requests/request%3Fx/approve', 'POST', { refs: ['app/read'] });
+});

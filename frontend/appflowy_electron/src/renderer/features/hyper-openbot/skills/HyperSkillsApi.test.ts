@@ -39,3 +39,9 @@ describe('Hyper skill persistence', () => {
     expect(result.message).toBe('Forbidden');
   });
 });
+it('enforces server title and summary bounds and preserves explicit global admin writes', async () => {
+  expect(hyperValidateSkill({ ...draft, title: 'x'.repeat(121) })).toBeTruthy();
+  expect(hyperValidateSkill({ ...draft, summary: 'x'.repeat(201) })).toBeTruthy();
+  await hyperSaveSkill({ ...draft, global: true });
+  expect(request).toHaveBeenCalledWith('/api/plugins/skills', 'POST', expect.objectContaining({ global: true }));
+});

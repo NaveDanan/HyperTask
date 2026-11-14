@@ -24,7 +24,7 @@ export interface HyperConnectionDirectory {
 }
 export interface HyperConnectionRow {
   key: string; title: string; summary: string; server?: HyperConnectionServer;
-  app?: HyperConnectionApp; connections: HyperConnection[]; state: string;
+  app?: HyperConnectionApp; callbackAllowed?: boolean; connections: HyperConnection[]; state: string;
 }
 export function hyperConnectionRows(directory: HyperConnectionDirectory, connections: HyperConnection[]): HyperConnectionRow[] {
   const keys = new Set([...directory.servers.map(s => s.id), ...directory.catalogue.map(a => a.key), ...connections.map(c => c.serverId)]);
@@ -38,7 +38,7 @@ export function hyperConnectionRows(directory: HyperConnectionDirectory, connect
       : server.accountMode === 'shared' ? (server.sharedVendorConnected || shared.some(c => c.connected) ? 'Team account connected' : 'Team account not connected')
       : own.some(c => !c.revoked) ? (own.some(c => !c.revoked && c.verified === false) ? 'Connection needs checking' : 'Connected')
       : own.length ? 'Reconnect required' : noAccount ? 'On' : 'Not connected';
-    return { key, title: server?.title ?? app?.title ?? key, summary: server?.summary ?? app?.summary ?? '', server, app, connections: [...own, ...shared], state };
+    return { key, title: server?.title ?? app?.title ?? key, summary: server?.summary ?? app?.summary ?? '', server, app, callbackAllowed: directory.botsMayCallBack === true, connections: [...own, ...shared], state };
   }).sort((a, b) => a.title.localeCompare(b.title));
 }
 export async function hyperLoadConnections() {

@@ -12,7 +12,7 @@ export default function HyperProvidersSection() {
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  async function load() { setError(''); try { const next = await hyperLoadProvider(); setData(next); if (next.exposure === 'allowed') setControls(await hyperLoadProviderControls()); setUsage(await hyperLoadModelUsage()); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load provider'); } }
+  async function load() { setError(''); try { const next = await hyperLoadProvider(); setData(next); const results = await Promise.allSettled([next.exposure === 'allowed' ? hyperLoadProviderControls().then(setControls) : Promise.resolve(), hyperLoadModelUsage().then(setUsage)]); if (results.some(result => result.status === 'rejected')) setError('Some provider settings or usage could not be read. Refresh to retry.'); } catch (e) { setError(e instanceof Error ? e.message : 'Could not load provider'); } }
   useEffect(() => { void load(); }, []);
   async function save(value: HyperProviderControls['settings']['modelAllowlist']) {
     setBusy(true); setError('');

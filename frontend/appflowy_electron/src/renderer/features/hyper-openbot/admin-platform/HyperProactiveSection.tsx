@@ -22,8 +22,8 @@ export default function HyperProactiveSection({ context }: { context?: HyperOpen
     try {
       const edition = await hyperLoadEdition().catch(() => ({ edition: 'team' }));
       const isPersonal = edition.edition === 'personal';
-      const [next, controls] = await Promise.all([hyperLoadCheckInMetrics(days), isPersonal ? Promise.resolve(undefined) : hyperLoadCheckInOverview()]);
-      if (request === sequence.current) { setPersonal(isPersonal); setMetrics(next); setOverview(controls); }
+      const results = await Promise.allSettled([hyperLoadCheckInMetrics(days).then(next => { if (request === sequence.current) setMetrics(next); }), isPersonal ? Promise.resolve() : hyperLoadCheckInOverview().then(controls => { if (request === sequence.current) setOverview(controls); })]);
+      if (request === sequence.current) { setPersonal(isPersonal); if (isPersonal) setOverview(undefined); if (results.some(result => result.status === 'rejected')) setError('Some check-in details could not be loaded. Check your permissions and retry.'); }
     } catch { if (request === sequence.current) setError('Could not load check-ins. Check your permissions and retry.'); }
     finally { if (request === sequence.current) setLoading(false); }
   }

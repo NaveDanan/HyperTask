@@ -1,0 +1,25 @@
+// Adapted from OpenBot components/plugins/app-access-action.tsx, MIT Copyright (c) 2026 CopilotKit.
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import * as api from './HyperAppAccessApi';
+export interface HyperAppAccessActionProps { agentId: string; app: string; admin?: boolean; onOpenConnection?(key: string): void }
+export function HyperAppAccessAction({ agentId, app, admin = false, onOpenConnection }: HyperAppAccessActionProps) {
+  const [access, setAccess] = useState<api.HyperAppAccess>();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  async function load() { try { setAccess((await api.hyperLoadAppAccess(agentId, app)).app); } catch { setError('Could not load this app’s access state.'); } }
+  useEffect(() => { setAccess(undefined); void load(); }, [agentId, app]);
+  async function run(action: () => Promise<unknown>) { setBusy(true); setError(''); try { await action(); } catch { setError('Access could not be changed. Check the refreshed state and retry.'); } finally { await load(); setBusy(false); } }
+  const sentences = access ? { ready: access.accountHolder === 'owner' ? 'Ready using the Bot owner’s account.' : access.asksFirst ? 'Ready using your account. You will be asked before first use.' : 'Ready to use.', not_connected: 'Connect your own account.', reconnect: access.accountHolder === 'owner' ? 'The Bot owner must reconnect their account.' : 'Your account needs reconnecting.', shared_not_connected: 'An admin must connect the team account.', shared_not_approved: 'An admin must approve this Bot’s audience for the team account.', disabled: access.unavailable === 'absent' ? 'This app has not been enabled.' : 'This app needs setup before it can be used.', not_granted: 'An admin must give this app to the Bot.', owner_grantable: access.needsConnect ? 'Connect your own account before giving it to your Bot.' : 'Let your Bot use this app?' } : undefined;
+  return <div className="space-y-2 rounded-lg border border-border p-3">{error && <p role="alert" className="text-destructive">{error}</p>}{!access ? <p role="status">Loading app access…</p> : <><p>{access.displayName} · {sentences?.[access.state]}</p>{access.request ? <><p>Requested</p><Button disabled={busy} variant="outline" onClick={() => void run(() => api.hyperCancelAppAccess(access.request!.id))}>Withdraw request</Button></> : access.requestKind && !admin ? <Button disabled={busy} onClick={() => void run(() => api.hyperRequestAppAccess(agentId, app))}>Request access</Button> : null}
+    {access.state === 'owner_grantable' && !access.needsConnect && <Button disabled={busy} onClick={() => void run(() => api.hyperGiveApp(agentId, app))}>Let it use your app</Button>}{access.givenByOwner && <Button disabled={busy} variant="outline" onClick={() => void run(() => api.hyperGiveApp(agentId, app, false))}>Take back what you gave</Button>}
+    {admin && ['disabled', 'not_granted'].includes(access.state) && <Button disabled={busy} onClick={() => void run(() => api.hyperApproveBotApp(agentId, app))}>Enable and grant read-only access</Button>}{onOpenConnection && access.state !== 'ready' && access.accountHolder !== 'owner' && <Button variant="outline" disabled={busy} onClick={() => onOpenConnection(access.key)}>Open app setup and connection</Button>}<Button variant="ghost" disabled={busy} onClick={() => void load()}>Refresh access</Button></>}
+  </div>;
+}
+export function HyperAppAccessRequests({ app, busy, run }: { app: string; busy: boolean; run(action: () => Promise<void>): Promise<void> }) {
+  const [data, setData] = useState<api.HyperAppAccessInbox>();
+  const [error, setError] = useState('');
+  async function load() { try { setData(await api.hyperLoadAppRequests(app)); } catch { setError('Could not load app access requests.'); } }
+  useEffect(() => { void load(); const timer = setInterval(() => void load(), 10000); return () => clearInterval(timer); }, [app]);
+  return <div className="space-y-3"><h2>App access requests</h2>{error && <p role="alert">{error}</p>}{data?.requests.length === 0 && <p>No app access requests.</p>}{data?.requests.map(request => <div key={request.id} className="space-y-2 rounded-lg border border-border p-3"><p>{request.requesterName ?? request.requesterEmail ?? 'Person'} · {request.botName ?? 'Bot'} · {request.kind}</p><p>Approval enables the app and grants read-only actions. Setup requirements can refuse the request after a partial change.</p>{(['approve', 'dismiss'] as const).map(decision => <Button key={decision} disabled={busy} variant={decision === 'approve' ? 'default' : 'outline'} onClick={() => void run(async () => { try { await api.hyperDecideAppRequest(request.id, decision); } finally { await load(); } })}>{decision === 'approve' ? 'Approve read-only access' : 'Dismiss request'}</Button>)}</div>)}</div>;
+}

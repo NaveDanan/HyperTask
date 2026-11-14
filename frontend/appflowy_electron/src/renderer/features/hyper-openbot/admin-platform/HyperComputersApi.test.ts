@@ -25,3 +25,10 @@ it('refuses duplicate new check-ins and preserves run and resolve responses', as
   await hyperResolveSuggestion('item?test', 'start');
   expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/proactive/suggestions/item%3Ftest/start', 'POST');
 });
+
+import { hyperValidateCheckIn } from './HyperCheckInsApi';
+it('matches server check-in interval, focus and link validation', () => {
+  for (const intervalMinutes of [1, 59, 1441, 60.5]) expect(() => hyperValidateCheckIn({ intervalMinutes })).toThrow();
+  expect(() => hyperValidateCheckIn({ intervalMinutes: 60, sourceLink: 'https://example.test' })).not.toThrow();
+  expect(() => hyperValidateCheckIn({ sourceLink: 'javascript:alert(1)' })).toThrow();
+});

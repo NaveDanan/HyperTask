@@ -5,7 +5,7 @@ export interface HyperHostAccess { connected: boolean; desktop?: boolean; grants
 export interface HyperNetworkRule { type: 'domain' | 'cidr'; value: string; ports?: string }
 export interface HyperNetworkPolicy { scopeKind: 'organization' | 'group'; scopeId: string; mode: 'allow_all' | 'defaults_plus_allowlist' | 'allowlist_only'; rules: HyperNetworkRule[]; locked: boolean }
 export interface HyperComputerControls { settings: { inactiveComputerDays: number }; groups: string[]; network: HyperNetworkPolicy[]; defaultDestinations: string[] }
-export interface HyperNetworkTranslation { mode: HyperNetworkPolicy['mode']; rules: HyperNetworkRule[]; check: { ok: boolean; errors?: unknown[] }; explanation?: string | null; warning?: string | null; summary?: string | null }
+export interface HyperNetworkTranslation { mode: HyperNetworkPolicy['mode']; rules: HyperNetworkRule[]; check: { ok: boolean; error?: string; problems?: string[] }; reachable?: string[]; explanation?: string | null; warning?: string | null; summary?: string | null }
 export const hyperLoadFleet = () => hyperOpenBotRequest<{ computers: HyperComputer[]; isolation?: 'shared' | 'per-person' }>('/api/computers/fleet');
 export const hyperLoadHostAccess = () => hyperOpenBotRequest<HyperHostAccess>('/api/host-access');
 export const hyperLoadComputerControls = () => hyperOpenBotRequest<HyperComputerControls>('/api/admin/enterprise');
