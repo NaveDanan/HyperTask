@@ -1,3 +1,4 @@
+import { HyperBotComputerTab } from '../computer-browser/HyperBotComputerTab';
 import type { ComponentType } from 'react';
 export interface HyperBotExtraTab {
   id: 'memory' | 'routines' | 'responsibilities' | 'computer';
@@ -13,5 +14,5 @@ export const HYPER_BOT_EXTRA_TABS: readonly HyperBotExtraTab[] = [
   // slot: responsibilities
   /* responsibilities */
   // slot: computer
-  /* computer */
+  { id: 'computer', label: 'Computer', component: HyperBotComputerTab },
 ];
