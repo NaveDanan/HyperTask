@@ -39,7 +39,7 @@ export async function hyperRegisterOAuth(id: string, clientId: string, clientSec
 /** Recognizes upstream native destinations without retaining query credentials or callback data. */
 export function hyperConnectionSelectionFromPath(path: string): HyperConnectionSelection | undefined {
   const pathname = path.split(/[?#]/)[0] ?? '';
-  const match = /^\/(?:admin\/plugins|connections)(?:\/(.*))?$/.exec(pathname);
+  const match = /^\/(?:admin\/plugins|settings\/plugins|connections)(?:\/(.*))?$/.exec(pathname);
   if (!match) return undefined;
   const tail = match[1] ?? '';
   if (!tail) return { page: 'list' };

@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { HyperBotProfile } from '../bots/HyperBotsApi';
 import { hyperOpenBotRequest } from '../transport';
-import { HyperDefaultHomeBot, HyperStartHomeDraft, type HyperHomeContext, type HyperInitialDraft } from './HyperHomeApi';
+import { HyperDefaultHomeBot, HyperStartHomeDraft, type HyperHomeContext } from './HyperHomeApi';
 import { HyperStarterTasks } from './HyperStarterTasks';
 // Memory only. Files and unsent text never enter browser storage or logs.
-let hyperHeldDraft: (HyperInitialDraft & { userId: string }) | undefined;
+import { hyperHomeDraftStore } from './HyperHomeDraft';
 export function HyperHomeComposer({ context, bots, userId, initialText = '' }: { context: HyperHomeContext; bots: HyperBotProfile[]; userId: string; initialText?: string }) {
-  if (hyperHeldDraft && hyperHeldDraft.userId !== userId) hyperHeldDraft = undefined;
+  const hyperHeldDraft = hyperHomeDraftStore.read(userId);
+  const lease = useRef(0);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [text, setText] = useState(() => hyperHeldDraft?.text ?? initialText.slice(0, 2000));
   const [files, setFiles] = useState<File[]>(() => hyperHeldDraft?.files ?? []);
   const [commands, setCommands] = useState<string[]>(() => hyperHeldDraft?.commandIds ?? []);
@@ -19,7 +22,7 @@ export function HyperHomeComposer({ context, bots, userId, initialText = '' }: {
   const [error, setError] = useState('');
   const lock = useRef(false);
   const fallback = HyperDefaultHomeBot(bots);
-  useEffect(() => { hyperHeldDraft = { text, files, commandIds: commands, submit: true, userId }; }, [text, files, commands, userId]);
+  useEffect(() => { lease.current = hyperHomeDraftStore.write(userId, { text, files, commandIds: commands, submit: true }); }, [text, files, commands, userId]);
   useEffect(() => {
     let active = true;
     void Promise.all(bots.map(bot => hyperOpenBotRequest<{ skills: { slug: string; title: string }[] }>(`/api/plugins/for/${encodeURIComponent(bot.id)}`).catch(() => ({ skills: [] })))).then(results => {
@@ -31,10 +34,10 @@ export function HyperHomeComposer({ context, bots, userId, initialText = '' }: {
     if (lock.current || !fallback || (!message.trim() && (!consumeDraft || !files.length))) return;
     lock.current = true; setBusy(true); setError('');
     const draft = { text: [...(consumeDraft ? commands.map(slug => `/${slug}`) : []), message].join(' '), files: consumeDraft ? [...files] : [], commandIds: consumeDraft ? [...commands] : [], submit: true };
+    const submittedLease = lease.current;
     try {
       await HyperStartHomeDraft(context, bots, draft, bot || undefined);
-      if (consumeDraft) {
-        if (hyperHeldDraft?.userId === userId && hyperHeldDraft.text === text) hyperHeldDraft = undefined;
+      if (consumeDraft && hyperHomeDraftStore.consume(userId, submittedLease) && mounted.current) {
         setText(current => current === message ? '' : current);
         setFiles(current => current.filter(file => !draft.files.includes(file)));
         setCommands(current => current.length === draft.commandIds.length && current.every((command, index) => command === draft.commandIds[index]) ? [] : current);

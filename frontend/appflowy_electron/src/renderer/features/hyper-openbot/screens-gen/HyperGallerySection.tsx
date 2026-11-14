@@ -1,4 +1,5 @@
 // Copyright (c) 2026 CopilotKit. MIT license, see ../LICENSE.
+import { hyperParseScreenDestination } from './HyperScreensDestination';
 import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,8 +8,8 @@ import { hyperOpenBotRequest } from '../transport';
 import { hyperScreensApi as api } from './HyperScreensApi';
 import { hyperGalleryComponent } from './HyperGalleryRegistry';
 import type { ComponentRecord, DataFunctionSummary } from './HyperScreensTypes';
-export default function HyperGallerySection({initialName}: {initialName?: string; context?: HyperOpenBotSectionContext; path?: string}) { return <HyperGallery initialName={initialName} />; }
-export function HyperAdminComponentsSection({initialName}: {initialName?: string; context?: HyperOpenBotSectionContext; path?: string}) { return <HyperGallery admin initialName={initialName} />; }
+export default function HyperGallerySection({initialName, path}: {initialName?: string; context?: HyperOpenBotSectionContext; path?: string}) { const destination = hyperParseScreenDestination(path); return <HyperGallery initialName={initialName ?? (destination.kind === 'gallery' ? destination.name : undefined)} />; }
+export function HyperAdminComponentsSection({initialName, path}: {initialName?: string; context?: HyperOpenBotSectionContext; path?: string}) { const destination = hyperParseScreenDestination(path); return <HyperGallery admin initialName={initialName ?? (destination.kind === 'admin' ? destination.name : undefined)} />; }
 function HyperGallery({admin = false, initialName}: {admin?: boolean; initialName?: string}) {
   const [rows, setRows] = useState<ComponentRecord[]>();
   const [selected, setSelected] = useState<string | undefined>(initialName);

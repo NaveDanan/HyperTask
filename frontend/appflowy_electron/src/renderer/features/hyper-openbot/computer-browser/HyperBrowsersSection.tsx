@@ -5,7 +5,10 @@ import { HyperRecorder } from './HyperRecorder';
 import { Button } from '@/components/ui/button';
 import { hyperOpenBotRequest } from '../transport';
 interface HyperConnection { id: string; label: string; recording: boolean; lastUsedAt: string | null }
-export default function HyperBrowsersSection() {
+export default function HyperBrowsersSection({path}: {path?:string}) {
+  const match=path ? /^\/settings\/browsers\/([^/?#]+)/.exec(path) : null;
+  const [selected,setSelected]=useState<string|undefined>(()=>{try{return match?decodeURIComponent(match[1]):undefined;}catch{return undefined;}});
+
   const [rows, setRows] = useState<HyperConnection[]>(); const [error, setError] = useState('');
   const [target, setTarget] = useState<HyperConnection>(); const [busy, setBusy] = useState(false);
   async function read() { const value = await hyperOpenBotRequest<{ connections: HyperConnection[] }>('/api/recorder/connections'); setRows(value.connections); }
@@ -17,8 +20,8 @@ export default function HyperBrowsersSection() {
   return <section className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-6"><h2 className="text-lg font-semibold">Connected browsers</h2>
     {error && <p role="alert" className="text-destructive">{error}</p>}{!rows && !error && <p role="status">Loading browsers…</p>}
     {rows?.length === 0 && <p>No browsers connected.</p>}
-    {rows?.map(row => <div key={row.id} className="flex items-center gap-3 rounded-lg border p-4"><span className="flex-1">{row.label || 'Browser'}<span className="block text-xs text-muted-foreground">{row.recording ? 'Recording now' : row.lastUsedAt ? `Last used ${new Date(row.lastUsedAt).toLocaleString()}` : 'Not used yet'}</span></span><Button variant="outline" onClick={() => setTarget(row)}>Disconnect…</Button></div>)}
-    <HyperRecorder />
+    {rows?.filter(row=>!selected||row.id===selected).map(row => <div key={row.id} className="flex items-center gap-3 rounded-lg border p-4"><span className="flex-1">{row.label || 'Browser'}<span className="block text-xs text-muted-foreground">{row.recording ? 'Recording now' : row.lastUsedAt ? `Last used ${new Date(row.lastUsedAt).toLocaleString()}` : 'Not used yet'}</span></span><Button variant="outline" onClick={() => setTarget(row)}>Disconnect…</Button></div>)}
+    {selected && <><Button variant="outline" onClick={()=>setSelected(undefined)}>Back to browsers</Button>{rows&&!rows.some(row=>row.id===selected)&&<p>This browser is no longer connected.</p>}</>}<HyperRecorder />
     {target && <div role="alertdialog" aria-label="Disconnect browser" className="rounded-lg border p-4"><p>Disconnect {target.label || 'this browser'}? Its Recorder will stop sending to OpenBot.</p><Button variant="outline" disabled={busy} onClick={() => setTarget(undefined)}>Cancel</Button><Button disabled={busy} onClick={() => void revoke()}>Disconnect</Button></div>}
   </section>;
 }
