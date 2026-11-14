@@ -1,10 +1,13 @@
+import type { HyperInitialDraft } from './onboarding/HyperHomeApi';
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 
 export interface HyperOpenBotSectionContext {
   /** Open an existing conversation by channel ID. */
   openConversation(channelId: string): void;
   /** Start a new conversation with one or more Bots. */
-  startConversation(agentIds: string[]): void;
+  initialDraftSupported?: boolean;
+  startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): Promise<void>;
+  navigate?(destinationId: string): void;
 }
 export interface HyperOpenBotSection {
   readonly id: string;
@@ -22,25 +25,30 @@ export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ 
 /** Parity sections added beside Conversations, Bots, Skills and Connections. Each area owns its slot. */
 export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: conversations
-  /* conversations */
+  { id: 'new-conversation', label: 'New conversation', group: 'work', render: hyperLazySection(() => import('./conversations/HyperNewConversationSection')) },
   // slot: routines
   /* routines */
   // slot: memory
-  /* memory */
+  { id: 'memory', label: 'Memory', group: 'personal', render: hyperLazySection(() => import('./memory/HyperMemorySection')) },
+  { id: 'personal-learning', label: 'Your learned skills', group: 'personal', render: hyperLazySection(() => import('./memory/HyperPersonalLearningSection')) },
+  { id: 'learning', label: 'Learning', group: 'admin', render: hyperLazySection(() => import('./memory/HyperLearningSection')) },
   // slot: bot-tabs
   /* bot-tabs */
   // slot: approvals-inbox
-  /* approvals-inbox */
+  { id: 'approvals', label: 'Approvals', group: 'personal', render: hyperLazySection(() => import('./approvals-inbox/HyperApprovalsSection')) },
   // slot: vault
-  /* vault */
+  { id: 'vault', label: 'Vault', group: 'personal', render: hyperLazySection(() => import('./vault/HyperVaultSection')) },
   // slot: computer-browser
-  /* computer-browser */
+  { id: 'browser', label: 'Browser', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperBrowserSection')) },
+  { id: 'connected-browsers', label: 'Connected browsers', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperBrowsersSection')) },
+  { id: 'computer', label: 'Computer', group: 'personal', render: hyperLazySection(() => import('./computer-browser/HyperComputerSettings')) },
+  { id: 'bot-computer', label: 'Bot computer', group: 'bots', render: hyperLazySection(() => import('./computer-browser/HyperComputerDestination')) },
   // slot: screens
   /* screens */
   // slot: settings
-  /* settings */
+  { id: 'settings', label: 'Settings', group: 'personal', render: hyperLazySection(() => import('./settings/HyperSettingsSection')) },
   // slot: admin-governance
-  /* admin-governance */
+  { id: 'admin-governance', label: 'Admin', group: 'admin', render: hyperLazySection(() => import('./admin-governance/HyperGovernanceSection')) },
   // slot: admin-platform
   { id: 'admin-providers', label: 'Providers', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperProvidersSection')) },
   { id: 'admin-credentials', label: 'Credentials', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperCredentialsSection')) },
@@ -49,5 +57,6 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   { id: 'admin-proactive', label: 'Routines', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperProactiveSection')) },
   { id: 'admin-playground', label: 'Playground', group: 'admin', render: hyperLazySection(() => import('./admin-platform/HyperPlaygroundSection')) },
   // slot: onboarding
-  /* onboarding */
+  { id: 'home', label: 'Home', group: 'work', render: hyperLazySection(() => import('./onboarding/HyperHomeSection')) },
+  { id: 'setup', label: 'Setup', group: 'personal', render: hyperLazySection(() => import('./onboarding/HyperSetupSection')) },
 ];

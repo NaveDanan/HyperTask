@@ -24,6 +24,19 @@ it('denies unauthenticated HTTP before touching SSH or the backend', async () =>
   await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'one', path: '/api/channels', method: 'GET' })).rejects.toThrow('identity is unavailable');
   expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.path).not.toHaveBeenCalled();
 });
+it('applies voice CSRF headers and removes provider secrets even when the route has a query string', async () => {
+  const h = setup();
+  const secret = 'synthetic-voice-secret';
+  ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ transport: 'websocket', url: 'wss://api.x.ai/v1/realtime', clientSecret: secret, session: { id: 'session' } })));
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'voice-query', path: '/api/voice/calls?nonce=test', method: 'POST', body: '{}' });
+  expect(ipc.fetch.mock.calls[0][1].headers['x-openbot-voice']).toBe('1');
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'voice-query', done: true })));
+  const chunks = h.sender.send.mock.calls.filter(([, value]) => value.id === 'voice-query' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString());
+  const payload = chunks.join('');
+  expect(payload).not.toContain(secret);
+  expect(JSON.parse(payload).url).toMatch(/^wss:\/\/hyper-openbot\.invalid\/api\/voice\/socket\/[a-f0-9-]{36}$/);
+  await h.manager.beginNativeTransition().cleared;
+});
 it('terminates a real registered socket on native signout and blocks new opens', async () => {
   const h = setup();
   await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'socket-one', '/api/intelligence/client/websocket?vsn=2.0.0', []);

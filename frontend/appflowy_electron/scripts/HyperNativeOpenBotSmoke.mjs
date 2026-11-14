@@ -186,7 +186,7 @@ export function hyperNativeRenderedMessage({ id, text, rendered }) {
   if (fold(rendered.text) === fold(text)) return true;
   // Markdown list markers are CSS markers, absent from innerText. Require the
   // original numbering, actual list structure and every item, not stripped text alone.
-  const parts = text.trim().split(/\n\s*\n/).map(block => /^(\d+)[.)]\s+([\s\S]+)$/.exec(block));
+  const parts = text.trim().split(/\n\s*(?=\d+[.)]\s)/).map(block => /^(\d+)[.)]\s+([\s\S]+)$/.exec(block.trim()));
   if (parts.some((part, index) => !part || Number(part[1]) !== index + 1) || rendered.lists.length !== 1) return false;
   const list = rendered.lists[0];
   return list.start === 1 && list.items.length === parts.length && list.items.every((item, index) => fold(item) === fold(parts[index][2])) && fold(rendered.text) === fold(parts.map(part => part[2]).join(' '));
