@@ -13,10 +13,10 @@ export function HyperLearningBotPicker({value,onChange,extra=[]}:{value:string;o
  const roster=[...(visible.data??[]),...(hidden.data??[])];
  return <label>Bot<HyperMemoryStatus {...visible}/><HyperMemoryStatus {...hidden}/><select value={value} onChange={event=>onChange(event.target.value)}><option value="">Deployment default</option>{[...new Set([...roster.map(bot=>bot.id),...extra])].map(id=><option key={id} value={id}>{roster.find(bot=>bot.id===id)?.name??id}</option>)}</select></label>;
 }
-export function HyperLearningConfiguration({value,onChange}:{value:LearningSettings;onChange(value:LearningSettings):void}) {
+export function HyperLearningConfiguration({value,onChange,onRefresh}:{value:LearningSettings;onChange(value:LearningSettings):void;onRefresh():void}) {
  const [bot,setBot]=useState('');
  const automatic=useHyperMemoryData<LearningAutoAssignState>('/api/admin/learning/settings','automatic');
- const action=useHyperMemoryAction(automatic.reload);
+ const action=useHyperMemoryAction(()=>{automatic.reload();onRefresh();});
  const override=value.agents[bot]; const mode=override===undefined?'inherit':override===null?'exclude':'container';
  const state=automatic.data;
  return <fieldset className="grid gap-3 rounded-lg border p-4"><legend>Bot participation</legend>

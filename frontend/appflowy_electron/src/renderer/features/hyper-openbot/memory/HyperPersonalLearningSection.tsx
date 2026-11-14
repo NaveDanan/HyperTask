@@ -5,12 +5,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { hyperOpenBotRequest } from '../transport';
+import { HyperLearningRecordings } from './HyperLearningRecordings';
 import { HyperLearningDetail } from './HyperLearningDetail';
 import { HyperLearningProposals } from './HyperLearningSection';
 import { HyperMemoryStatus, useHyperMemoryData, useHyperMemoryAction } from './HyperMemorySection';
 import type { PersonalReview, PersonalLearningSharing } from './HyperLearningTypes';
-export function HyperPersonalLearningSection({context,onOpenRecordings:openRecordings}:{context?:HyperOpenBotSectionContext;onOpenRecordings?:()=>void}) {
- const onOpenRecordings=openRecordings??(context?.navigate?()=>context.navigate?.('browser?recordings=1'):undefined);
+export function HyperPersonalLearningSection({onOpenRecordings:openRecordings}:{context?:HyperOpenBotSectionContext;onOpenRecordings?:()=>void}) {
+ const [recordings,setRecordings]=useState(false);
+ const onOpenRecordings=openRecordings??(()=>setRecordings(true));
  const capabilities=useHyperMemoryData<{edition?:string}>('/api/capabilities');
  const personal=capabilities.data?.edition==='personal';
  const sharing=useHyperMemoryData<PersonalLearningSharing>('/api/settings/learning');
@@ -21,6 +23,7 @@ export function HyperPersonalLearningSection({context,onOpenRecordings:openRecor
  const waiting=review.data?.sources.reduce((count,source)=>count+(source.proposals??[]).filter(item=>item.status==='pending_review').length,0);
  useEffect(()=>{if(waiting!==undefined){if((previousWaiting.current!==undefined&&waiting<previousWaiting.current)||(review.data?.approved??0)>0)sharing.reload();previousWaiting.current=waiting;}},[review.data]);
  const groups=[...new Set(review.data?.sources.map(source=>source.label)??[])];
+ if(recordings)return <HyperLearningRecordings onClose={()=>setRecordings(false)}/>;
  return <section className="mx-auto grid max-w-4xl gap-4 p-6"><h2 className="text-lg font-semibold">Your learned skills</h2><HyperMemoryStatus {...capabilities}/><HyperMemoryStatus {...sharing}/><HyperMemoryStatus {...review}/>{action.error&&<p role="alert">{action.error}</p>}<Button variant="outline" onClick={()=>{sharing.reload();review.reload();}}>Refresh skills</Button>
  {sharing.data&&<>{!personal&&!capabilities.loading&&<><label>Who can use your skills<select disabled={action.busy} value={sharing.data.mode} onChange={event=>void action.run(()=>hyperOpenBotRequest('/api/settings/learning/mode','PUT',{mode:event.target.value}))}><option value="closed">Only your Bots</option><option disabled={!sharing.data.sharingAllowed} value="open">Every Bot</option><option disabled={!sharing.data.sharingAllowed} value="choose">Choose skills</option></select></label>{!sharing.data.sharingAllowed&&<p>An administrator has disabled skill sharing. Only your Bots use these skills.</p>}</>}
  {sharing.data.skills===null?<p>Skills unavailable: {sharing.data.unavailable}</p>:sharing.data.skills.length===0?<p>No learned skills yet.</p>:sharing.data.skills.map(skill=>{
