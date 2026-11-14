@@ -1,6 +1,6 @@
 // Adapted from OpenBot (MIT), Copyright (c) 2026 CopilotKit.
 // routes/_authed/settings/_personal/activity.tsx; components/manage/audit-page.tsx; components/audit/audit-table.tsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hyperActivityApi, hyperActivitySearch, HYPER_ACTIVITY_VIEWS } from './HyperActivityApi';
@@ -8,6 +8,7 @@ import { type AuditEvent, HyperWhenCell, HyperWhatCell, HyperWhoCell, HyperDecis
 import { oneRowPerAction, outcomeOf } from './HyperActivityOutcome';
 
 export function HyperPersonalActivity({ bot: initialBot }: { bot?: string }) {
+  const generation = useRef(0);
   const [bot, setBot] = useState(initialBot);
   const [view, setView] = useState(''); const [query, setQuery] = useState('');
   const [events, setEvents] = useState<AuditEvent[]>([]); const [cursor, setCursor] = useState<string>();
@@ -18,10 +19,10 @@ export function HyperPersonalActivity({ bot: initialBot }: { bot?: string }) {
   const search = useMemo(() => hyperActivitySearch(view, bot), [view, bot]);
   useEffect(() => { setBot(initialBot); }, [initialBot]);
   useEffect(() => {
-    let active = true; setBusy(true); setLoaded(false); setError('');
+    let active = true; generation.current += 1; setBusy(true); setLoaded(false); setError('');
     void hyperActivityApi.events(search).then(page => { if (active) { setEvents(page.events); setCursor(page.nextCursor); setLoaded(true); } }).catch(() => { if (active) setError('Could not load these events. Try again.'); }).finally(() => { if (active) setBusy(false); });
     void hyperActivityApi.names().then(value => { if (active) setNames(value); }).catch(() => { /* Stored IDs remain readable when names cannot be loaded. */ });
-    return () => { active = false; };
+    return () => { active = false; generation.current += 1; };
   }, [search, attempt]);
   const nameFor = (id: string) => names.bots[id] || 'A Bot no longer here';
   const rows = oneRowPerAction(events).map(event => event.targetType === 'skill' && event.targetId && names.skills[event.targetId] ? { ...event, subjectTitle: names.skills[event.targetId] } : event);
@@ -42,7 +43,7 @@ export function HyperPersonalActivity({ bot: initialBot }: { bot?: string }) {
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{busy && <p role="status">Loading events…</p>}
     {loaded && <><div className="overflow-auto rounded-lg border"><table className="w-full text-left text-sm"><thead><tr><th className="p-3">Outcome</th><th><button onClick={() => setAscending(value => !value)}>When, {ascending ? 'oldest first' : 'newest first'}</button></th><th>What</th><th>Bot</th><th>Decision</th></tr></thead><tbody>{shown.map(event => <tr key={event.id} data-outcome={outcomeOf(event)} className="border-t"><td className="p-3">{facet(event, 'Outcome')}</td><td className="p-3 text-xs"><HyperWhenCell event={event} /></td><td className="p-3"><HyperWhatCell event={event} storedName={false} /></td><td className="p-3"><HyperWhoCell event={event} nameFor={nameFor} deployment="OpenBot" /></td><td className="p-3"><HyperDecisionCell event={event} storedNames={false} /></td></tr>)}</tbody></table></div>{shown.length === 0 && <p className="text-sm text-muted-foreground">No matches. No events match this search and these filters.</p>}</>}
     {loaded && cursor && <Button disabled={busy} variant="outline" onClick={async () => {
-      setBusy(true); setError(''); try { const page = await hyperActivityApi.events(search, cursor); setEvents(current => [...current, ...page.events]); setCursor(page.nextCursor); } catch { setError('Could not load older events. Try again.'); } finally { setBusy(false); }
+      const currentGeneration = generation.current; setBusy(true); setError(''); try { const page = await hyperActivityApi.events(search, cursor); if (generation.current === currentGeneration) { setEvents(current => [...current, ...page.events]); setCursor(page.nextCursor); } } catch { if (generation.current === currentGeneration) setError('Could not load older events. Try again.'); } finally { if (generation.current === currentGeneration) setBusy(false); }
     }}>{busy ? 'Loading…' : 'Show older events'}</Button>}
   </div>;
 }

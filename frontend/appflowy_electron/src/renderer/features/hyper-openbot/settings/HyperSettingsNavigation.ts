@@ -12,6 +12,7 @@ export type HyperSettingsContext = HyperOpenBotSectionContext & {
 /** Preserve new/slug/tool intent for the parent section router. Never use these as external URLs. */
 export function hyperSettingsDestination(path: string, edition: 'personal' | 'team') {
   const url = new URL(path, 'https://settings.invalid');
+  if (url.origin !== 'https://settings.invalid' || !/^\/settings(?:\/|$)/.test(url.pathname)) return { sectionId: 'settings', path: '/settings' };
   const rest = url.pathname.replace(/^\/settings\/?/, '');
   if (rest === 'skills') return { sectionId: 'skills', path: '/skills' };
   if (rest.startsWith('skills/')) return edition === 'personal' ? { sectionId: 'skills', path: `/${rest}` } : { sectionId: 'settings', path: '/settings' };

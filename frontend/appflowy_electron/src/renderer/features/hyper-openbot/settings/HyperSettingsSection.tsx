@@ -2,6 +2,7 @@
 // app/src/routes/_authed/settings/index.tsx and components/settings/{profile,standing-instructions,message-list-preference,settings-sidebar}.tsx
 import { HyperSettingsAppearance } from './HyperSettingsAppearance';
 import { HyperPersonalActivity } from './HyperPersonalActivity';
+import { hyperSettingsDestination } from './HyperSettingsNavigation';
 import type { HyperSettingsContext } from './HyperSettingsNavigation';
 import { HyperSettingsEdition } from './HyperSettingsEdition';
 import { useEffect, useState } from 'react';
@@ -62,16 +63,22 @@ export function HyperSettingsGeneral({ user, instructions, preferences, onUser, 
     </DialogContent></Dialog>
   </div>;
 }
-export default function HyperSettingsSection({ context }: { context: HyperSettingsContext }) {
+export default function HyperSettingsSection({ context, path = '/settings' }: { context: HyperSettingsContext; path?: string }) {
   const [page, setPage] = useState<'general' | 'activity'>('general');
   const [data, setData] = useState<{ user: HyperSettingsUser; instructions: string; preferences: HyperSettingsPreferences; edition: 'personal' | 'team' }>();
+  useEffect(() => {
+    if (!data) return;
+    const destination = hyperSettingsDestination(path, data.edition);
+    if (destination.sectionId !== 'settings') context.navigate?.(destination.sectionId, { path: destination.path });
+    else setPage(destination.path.startsWith('/settings/activity') ? 'activity' : 'general');
+  }, [path, data?.edition, context.navigate]);
   const [error, setError] = useState(''); const [attempt, setAttempt] = useState(0);
   useEffect(() => { let active = true; setError(''); setData(undefined);
     void Promise.all([hyperSettingsApi.user(), hyperSettingsApi.instructions(), hyperSettingsApi.preferences(), hyperSettingsApi.edition()]).then(([user, instructions, preferences, edition]) => { if (active) setData({ user, instructions, preferences, edition }); }).catch(problem => { if (active) setError(problem instanceof Error ? problem.message : 'Could not load settings.'); });
     return () => { active = false; };
   }, [attempt]);
   return <section className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 overflow-y-auto px-8 py-6"><h1 className="text-lg font-semibold tracking-tight">Settings</h1><nav className="flex gap-2" aria-label="Settings"><Button variant={page === 'general' ? 'default' : 'outline'} onClick={() => setPage('general')}>General</Button>{data?.edition === 'personal' && <Button variant={page === 'activity' ? 'default' : 'outline'} onClick={() => setPage('activity')}>Activity</Button>}</nav>
-    {error ? <div><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : !data ? <p role="status">Loading settings…</p> : page === 'activity' && data.edition === 'personal' ? <HyperPersonalActivity /> : <><HyperSettingsGeneral {...data} onUser={user => setData({ ...data, user })} onInstructions={instructions => setData({ ...data, instructions })} onPreferences={preferences => setData({ ...data, preferences })} /><HyperSettingsAutomation preferences={data.preferences} onPreferences={preferences => setData(current => current && ({ ...current, preferences }))} /></>}
+    {error ? <div><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : !data ? <p role="status">Loading settings…</p> : page === 'activity' && data.edition === 'personal' ? <HyperPersonalActivity bot={path.startsWith('/settings/activity') ? new URL(path, 'https://settings.invalid').searchParams.get('bot') ?? undefined : undefined} /> : <><HyperSettingsGeneral {...data} onUser={user => setData({ ...data, user })} onInstructions={instructions => setData({ ...data, instructions })} onPreferences={preferences => setData({ ...data, preferences })} /><HyperSettingsAutomation preferences={data.preferences} onPreferences={preferences => setData(current => current && ({ ...current, preferences }))} /></>}
     <HyperSettingsEdition edition={data?.edition} /><h2 className="text-sm font-medium">More settings</h2><p className="text-sm text-muted-foreground">Settings for every Bot and your account.</p><ul className="grid grid-cols-2 gap-2 text-sm">{HYPER_SETTINGS_DESTINATIONS.map(([label, id]) => <li key={label} data-section-id={id}><Button variant="outline" disabled={!context.navigate} onClick={() => context.navigate?.(id)}>{label}</Button></li>)}</ul>
   </section>;
 }
