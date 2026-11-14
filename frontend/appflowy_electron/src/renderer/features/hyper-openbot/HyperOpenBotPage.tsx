@@ -83,7 +83,7 @@ function HyperChannelChat({ channel }: { channel: HyperChannel }) {
   // The existing workspace support bubble occupies the bottom-right corner.
   // Keep the composer controls above it, including in the minimum-size window.
   return <div className="flex h-full min-h-0 flex-col pb-12">
-    {error && <p role="alert" className="p-3 text-sm text-destructive">{error}</p>}
+    {error && <div className="flex items-center gap-3 p-3"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" disabled={running || restoring} onClick={() => { setError(undefined); setHistoryRevision(value => value + 1); }}>Reconnect</Button></div>}
     <div className="flex justify-end border-b border-border px-4 py-1"><Button variant="ghost" aria-expanded={showComputer} onClick={() => setShowComputer(value => !value)}>Computer</Button></div>
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
     <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />

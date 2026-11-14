@@ -1,6 +1,7 @@
 // Adapted from OpenBot lib/copilot/bot-offer.ts. Copyright (c) 2026 CopilotKit. MIT.
 import type { AbstractAgent } from '@copilotkit/react-core/v2';
 import { defer, mergeMap } from 'rxjs';
+import { hyperWithRunConnection } from './HyperRunConnection';
 import { hyperOpenBotRequest } from './transport';
 import { hyperFilterRuntimeTools, hyperRuntimeBotOf, type HyperRuntimeFacts } from './runtime';
 export async function hyperResolveRuntimeFacts(botId: string): Promise<HyperRuntimeFacts> {
@@ -19,5 +20,5 @@ export function hyperPrepareRuntimeAgent(agent: AbstractAgent) {
     let facts: HyperRuntimeFacts = {};
     if (botId) { try { facts = await hyperResolveRuntimeFacts(botId); } catch { /* Unknown identity denies computer offers. */ } }
     return { ...input, tools: hyperFilterRuntimeTools(input.tools, facts) };
-  }).pipe(mergeMap(input => next.run(input))));
+  }).pipe(mergeMap(input => hyperWithRunConnection(input, next.run(input)))));
 }
