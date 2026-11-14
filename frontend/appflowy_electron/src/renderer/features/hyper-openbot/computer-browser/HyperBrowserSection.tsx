@@ -1,6 +1,6 @@
 // Adapted from OpenBot components/browser/browser-page and computer/bot-browser.
 // Copyright (c) 2026 CopilotKit. MIT.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { HyperNarrationControl } from './HyperNarrationControl';
@@ -8,6 +8,7 @@ import { hyperAddressFrom } from './HyperBrowserAddress';
 import { HyperLiveScreen } from './HyperLiveScreen';
 import { hyperBrowserAction, hyperReadBrowser, type HyperBrowserState } from './HyperComputerApi';
 export function HyperBrowserView({ agentId }: { agentId?: string }) {
+  const stopNarration = useRef<(() => Promise<void>) | null>(null);
   const [state, setState] = useState<HyperBrowserState>();
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   const [address, setAddress] = useState(''); const [title, setTitle] = useState('');
@@ -20,7 +21,7 @@ export function HyperBrowserView({ agentId }: { agentId?: string }) {
     setState(undefined); void poll(); return () => { active = false; clearTimeout(timer); };
   }, [agentId]);
   async function act(action: Parameters<typeof hyperBrowserAction>[1], body?: unknown) {
-    setBusy(true); setError(''); try { await hyperBrowserAction(agentId, action, body); } catch { setError('The browser could not complete that action. Refresh and try again.'); } finally { try { await refresh(); setFresh(true); } catch { setFresh(false); } setBusy(false); }
+    setBusy(true); setError(''); try { if (action === 'recording' && (body as { action?: string })?.action === 'stop') await stopNarration.current?.(); await hyperBrowserAction(agentId, action, body); } catch { setError('The browser could not complete that action. Refresh and try again.'); } finally { try { await refresh(); setFresh(true); } catch { setFresh(false); } setBusy(false); }
   }
   if (!state) return <p role="status">{error || 'Loading browser…'}</p>;
   if (state.available === false) return <p>{state.note || 'The browser is unavailable on this deployment.'}</p>;
@@ -36,8 +37,8 @@ export function HyperBrowserView({ agentId }: { agentId?: string }) {
       {(['back', 'forward', 'reload'] as const).map(action => <Button key={action} type="button" variant="outline" disabled={busy || !permitted} onClick={() => void act('navigate', { action })}>{action}</Button>)}
       <Input aria-label="Browser address" placeholder={state.tabs.find(t => t.active)?.url || 'Address'} value={address} onChange={e => setAddress(e.target.value)} maxLength={2000} disabled={!permitted}/><Button disabled={busy || !permitted || !address.trim()}>Go</Button></form>
       {(agentId || state.computerId) && <HyperLiveScreen computerId={agentId || state.computerId!} driving={permitted} onProblem={screenProblem} />}
-      <form className="flex gap-2" onSubmit={e => { e.preventDefault(); void act('recording', recording ? { action: 'stop' } : { action: 'start', title: title.trim(), ...(!agentId ? { narrate: false } : {}) }); }}><Input aria-label="Recording title" placeholder="What are you teaching?" value={title} onChange={e => setTitle(e.target.value)} maxLength={200} disabled={recording}/><Button disabled={busy || !permitted || (!recording && !!state.recordRefused) || (recording ? !!agentId && !state.recordingIsMine : !title.trim())}>{recording ? 'Stop recording' : 'Record'}</Button></form>
-      <HyperNarrationControl agentId={agentId} recording={recording} enabled={permitted && (!agentId || !!state.recordingIsMine)} />
+      <form className="flex gap-2" onSubmit={e => { e.preventDefault(); void act('recording', recording ? { action: 'stop' } : { action: 'start', title: title.trim(), ...(!agentId ? { narrate: false } : {}) }); }}><Input aria-label="Recording title" placeholder="What are you teaching?" value={title} onChange={e => setTitle(e.target.value)} maxLength={200} disabled={recording}/><Button disabled={busy || state.recorder?.phase === 'starting' || state.recorder?.phase === 'stopping' || !permitted || (!recording && !!state.recordRefused) || (recording ? !!agentId && !state.recordingIsMine : !title.trim())}>{recording ? 'Stop recording' : 'Record'}</Button></form>
+      <HyperNarrationControl stopRef={stopNarration} agentId={agentId} recording={recording} enabled={permitted && (!agentId || !!state.recordingIsMine)} />
       {state.recordRefused && <p>{state.recordRefused}</p>}{state.recorder && <p className="text-xs text-muted-foreground">{state.recorder.phase} · {state.recorder.actions} actions</p>}
       {stopped && <p role="status">{stopped.discarded ? 'Recording discarded.' : stopped.kept ? 'Recording kept in the browser. It has not been saved yet.' : stopped.retrying || (stopped.sending ? 'Recording is still sending.' : stopped.actions + stopped.phrases === 0 ? 'Nothing was recorded.' : 'Recording sent to your Learning space.')}</p>}
       <div className="flex gap-2"><Button variant="outline" disabled={busy || !permitted} onClick={() => setConfirm(true)}>Clear browser data…</Button>{!agentId && <Button variant="outline" disabled={busy} onClick={() => void act('close')}>Close browser</Button>}</div>

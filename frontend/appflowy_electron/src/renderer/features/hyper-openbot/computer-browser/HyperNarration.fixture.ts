@@ -475,7 +475,7 @@ export const isResult = (
 export function installChrome(
   onDevice: OnDeviceModel | null = everyLanguage(),
 ) {
-  const recognitions: ChromeRecognition[] = [];
+  const recognitions: (Recognition & { started: boolean; heard: boolean; processLocally?: boolean })[] = [];
   const stopAt =
     STOPPED_MID_PHRASE.find((event) => event.type === "stop")?.at ?? 0;
   const before = STOPPED_MID_PHRASE.filter(isResult).filter(
