@@ -2,7 +2,7 @@
 // app/src/routes/_authed/settings/index.tsx and components/settings/{profile,standing-instructions,message-list-preference,settings-sidebar}.tsx
 import { HyperSettingsAppearance } from './HyperSettingsAppearance';
 import { HyperPersonalActivity } from './HyperPersonalActivity';
-import { hyperSettingsDestination } from './HyperSettingsNavigation';
+import { hyperSettingsDestination, HYPER_SETTINGS_DESTINATION_IDS as destinations } from './HyperSettingsNavigation';
 import type { HyperSettingsContext } from './HyperSettingsNavigation';
 import { HyperSettingsEdition } from './HyperSettingsEdition';
 import { useEffect, useState } from 'react';
@@ -13,9 +13,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { HYPER_INSTRUCTIONS_LIMIT, hyperSettingsApi, type HyperSettingsUser, type HyperSettingsPreferences } from './HyperSettingsApi';
 export const HYPER_SETTINGS_DESTINATIONS = [
-  ['Notifications', 'approvals-inbox'], ['Vault and passwords', 'vault'], ['Connected accounts', 'vault'],
-  ['Computer and browsers', 'computer-browser'], ['Approvals', 'approvals-inbox'], ['Memory and learning', 'memory'],
-  ['Skills', 'skills'], ['Apps', 'connections'], ['Setup', 'onboarding'], ['Components gallery', 'screens'],
+  ['Notifications', destinations.notifications], ['Vault and passwords', destinations.vault], ['Connected accounts', destinations.accounts],
+  ['Computer and browsers', destinations.computer], ['Approvals', destinations.approvals], ['Memory and learning', destinations.memory],
+  ['Skills', destinations.skills], ['Apps', destinations.apps], ['Setup', destinations.setup], ['Components gallery', destinations.gallery],
 ] as const;
 export function HyperSettingsGeneral({ user, instructions, preferences, onUser, onInstructions, onPreferences }: {
   user: HyperSettingsUser; instructions: string; preferences: HyperSettingsPreferences;
