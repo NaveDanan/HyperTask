@@ -3,6 +3,7 @@ import { HyperServiceStatus, useHyperOpenBotService } from './HyperServiceStatus
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
+import { hyperResolveModelPick, type HyperConversationModel } from './HyperModelSelection';
 import { HyperRunConnectionError } from './HyperRunConnection';
 import { hyperRunWithRecovery, hyperWatchGatewayActivity, hyperWatchGatewayErrors } from './HyperRun';
 import { HyperComputerPanel } from './HyperComputerPanel';
@@ -53,10 +54,11 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
   const [pick, setPick] = useState<HyperModelPick>({ model: '', effort: null });
   const [modelPending, setModelPending] = useState(false);
   const modelUpdating = useRef(false);
+  const defaultModel = useRef('');
   useEffect(() => {
     if (!serviceReady) return;
     let current = true;
-    void Promise.all([request<{ models: HyperModelOption[]; default: string }>('/api/models'), request<HyperModelPick>(`/api/channels/${channel.id}/model`)]).then(([catalogue, saved]) => { if (current) { setModels(catalogue.models); setPick({ model: saved.model || catalogue.default, effort: saved.effort }); } }).catch(error => { if (current) setError(String(error)); });
+    void Promise.all([request<{ models: HyperModelOption[]; default: string }>('/api/models'), request<HyperConversationModel>(`/api/channels/${channel.id}/model`)]).then(([catalogue, saved]) => { if (current) { defaultModel.current = catalogue.default; setModels(catalogue.models); setPick(hyperResolveModelPick(saved, catalogue.default)); } }).catch(error => { if (current) setError(String(error)); });
     return () => { current = false; };
   }, [channel.id, serviceReady]);
   useEffect(() => {
@@ -133,7 +135,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     }} modelPicker={models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
       if (modelUpdating.current) return;
       modelUpdating.current = true; setModelPending(true);
-      void request<HyperModelPick>(`/api/channels/${channel.id}/model`, 'PUT', next).then(setPick).catch(error => setError(String(error))).finally(() => { modelUpdating.current = false; setModelPending(false); });
+      void request<HyperConversationModel>(`/api/channels/${channel.id}/model`, 'PUT', next).then(saved => setPick(hyperResolveModelPick(saved, defaultModel.current))).catch(error => setError(String(error))).finally(() => { modelUpdating.current = false; setModelPending(false); });
     } } : undefined} onStop={() => { stopped.current = true; return copilotkit.stopAgent({ agent }); }} onSubmit={async draft => {
       setError(undefined); setSending(true); stopped.current = false;
       agent.pendingInterrupts = agent.pendingInterrupts.filter(interrupt => !interrupt.metadata?.openbotWaiting);

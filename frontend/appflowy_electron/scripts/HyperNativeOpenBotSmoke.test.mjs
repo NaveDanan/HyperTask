@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hyperNativeCdpUrl, hyperNativeStream, hyperValidateNativeBefore, hyperOwnsNativeCommand } from './HyperNativeOpenBotSmoke.mjs';
+import { hyperNativeCdpUrl, hyperNativeStream, hyperValidateNativeBefore, hyperOwnsNativeCommand, hyperNativeModelId } from './HyperNativeOpenBotSmoke.mjs';
 
 const at = '2026-11-14T00:00:00Z';
 function events(runId = 'run-1', messageId = 'message-1') {
@@ -14,6 +14,12 @@ function events(runId = 'run-1', messageId = 'message-1') {
   ].map((event, i) => ({ ...event, delivery: i + 1, at }));
 }
 const records = (items = events(), socketId = 'socket-1') => items.map(event => ({ socketId, delivery: event.delivery, at, frame: JSON.stringify([null, null, 'private-routing-topic', 'ag_ui_event', event]) }));
+
+test('wire null means the current default, while missing fields cannot prove a model selection', () => {
+  assert.equal(hyperNativeModelId({ model: null }, 'default-model'), 'default-model');
+  assert.equal(hyperNativeModelId({ model: 'another-model' }, 'default-model'), 'another-model');
+  assert.throws(() => hyperNativeModelId({}, 'default-model'));
+});
 
 test('both argv and rewritten Electron titles require the exact owned app, profile and port', () => {
   const args = ['electron', '/checkout/app', '--user-data-dir=/private/smoke/electron', '--remote-debugging-port=9222'];

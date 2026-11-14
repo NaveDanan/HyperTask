@@ -26,6 +26,11 @@ export function hyperOwnsNativeCommand(arguments_, app, profile, port) {
   return arguments_.length === 1 && expected.every(value => new RegExp(`(?:^|\\s)${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\s|$)`).test(arguments_[0]));
 }
 
+export function hyperNativeModelId(saved, defaultModel) {
+  if (!saved || !(saved.model === null || typeof saved.model === 'string') || typeof defaultModel !== 'string' || !defaultModel) fail('Invalid original model-choice response');
+  return saved.model ?? defaultModel;
+}
+
 /** A live run belongs to one IPC socket. Join replies and buffered histories prove nothing. */
 export function hyperNativeStream(records, threadId, previousRunIds = []) {
   const decoded = records.map(record => ({ socketId: record.socketId, event: eventFromFrame(record.frame, record.delivery, record.at) }));
@@ -161,11 +166,11 @@ async function renderedTurn(page, messages) {
   }
 }
 
-async function waitModel(page, channelId, wanted) {
+async function waitModel(page, channelId, wanted, defaultModel) {
   const deadline = Date.now() + 30000;
   do {
     const saved = await jsonFromNative(page, `/api/channels/${encodeURIComponent(channelId)}/model`);
-    if (saved.status === 200 && saved.value.model === wanted.model && saved.value.effort === wanted.effort) return saved.value;
+    if (saved.status === 200 && hyperNativeModelId(saved.value, defaultModel) === wanted.model && saved.value.effort === wanted.effort) return { model: wanted.model, effort: saved.value.effort };
     await page.waitForTimeout(100);
   } while (Date.now() < deadline);
   fail('Native model selection was not persisted');
@@ -257,9 +262,9 @@ async function run(args) {
         await modelControl.click(); await page.getByRole('option', { name: choice.label, exact: true }).click();
         const deadline = Date.now() + 30000;
         let persisted = false;
-        while (Date.now() < deadline) { const saved = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}/model`); if (saved.status === 200 && saved.value.model === choice.id) { persisted = true; break; } await page.waitForTimeout(100); }
+        while (Date.now() < deadline) { const saved = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}/model`); if (saved.status === 200 && hyperNativeModelId(saved.value, catalogue.value.default) === choice.id) { persisted = true; break; } await page.waitForTimeout(100); }
         if (!persisted) fail('An exercised model switch was not persisted');
-        await modelControl.waitFor({ state: 'visible' });
+        await page.waitForFunction(label => document.querySelector('[role="combobox"][aria-label="Model"]')?.innerText.replace(/\s+/g, ' ').trim() === label, normalize(choice.label), { timeout: 30000 });
       }
       const effort = args.effort ?? (wanted.efforts?.includes('low') ? 'low' : null);
       if (effort !== null) {
@@ -269,13 +274,16 @@ async function run(args) {
         await page.getByRole('combobox', { name: 'Thinking effort', exact: true }).click(); await page.getByRole('option', { name: label, exact: true }).click();
       }
       const saved = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}/model`);
-      result.model = await waitModel(page, result.channelId, { model: wanted.id, effort: effort ?? saved.value.effort });
+      result.model = await waitModel(page, result.channelId, { model: wanted.id, effort: effort ?? saved.value.effort }, catalogue.value.default);
+      await page.waitForFunction(label => document.querySelector('[role="combobox"][aria-label="Model"]')?.innerText.replace(/\s+/g, ' ').trim() === label, normalize(wanted.label), { timeout: 30000 });
+      result.defaultModel = catalogue.value.default;
       result.modelSwitchVerified = true;
       const marker = randomUUID(); result.turns = [];
       result.turns.push(await observeTurn(page, channel, `HyperTask native smoke ${marker}: Write four short plain-text paragraphs about organizing a reading list. Do not use tools.`, []));
       result.turns.push(await observeTurn(page, channel, `HyperTask follow-up ${marker}: Give two brief practical examples for that same reading list. Use plain text and no tools.`, result.turns.map(turn => turn.runId)));
     } else {
-      result.model = await waitModel(page, result.channelId, before.model); result.turns = before.turns;
+      const catalogue = await jsonFromNative(page, '/api/models');
+      result.model = await waitModel(page, result.channelId, before.model, catalogue.value.default); result.turns = before.turns;
       for (const turn of before.turns) {
         const read = () => jsonFromNative(page, `/api/copilotkit/threads/${encodeURIComponent(result.threadId)}/messages?agentId=${encodeURIComponent(result.botId)}`);
         await waitForHistoryPair(read, turn.prompt, turn.answer, turn.messages); await renderedTurn(page, turn.messages);
