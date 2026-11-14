@@ -7,3 +7,36 @@ it.skipIf(process.platform !== 'linux')('the bundled Python controller rejects p
   const result = spawnSync('python3', ['-B', '-c', test, source], { encoding: 'utf8', timeout: 10000 });
   expect(result.status, result.stderr).toBe(0); expect(result.stdout.trim()).toBe('scoped-controller-policy-pass');
 });
+it.skipIf(process.platform !== 'linux')('refuses host and shared-container namespaces before any node or service lifecycle operation', () => {
+  const test = `import importlib.util,sys,json,io
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+spec=importlib.util.spec_from_file_location('hyper_network',sys.argv[1])
+m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+target='';mode='';calls=[]
+def command(args,timeout=15):
+ calls.append(args)
+ if args[:2]==['docker','info']: return '29'
+ assert args[:2]==['docker','inspect'],('unexpected mutation',args)
+ name=args[-1];node=name==m.NODE
+ fields=[json.dumps({'Running':True}),'{}']
+ if '.HostConfig.NetworkMode' in args[3]: fields.append(json.dumps(mode if name==target else 'bridge'))
+ fields+=['','',m.STACK] if node else [m.PROJECT,name[len(m.PROJECT)+1:-2],'']
+ return '\\n'.join(fields)+'\\n'
+def urlopen(url,timeout):
+ response=io.StringIO(json.dumps({'mode':'intelligence','licenseStatus':'valid'}));response.status=200;return response
+m.command=command;m.urllib.request.urlopen=urlopen
+with patch.object(Path,'exists',lambda p:True),patch.object(Path,'is_file',lambda p:True),patch.object(Path,'stat',lambda p:SimpleNamespace(st_size=10)):
+ for target in [m.NODE]+[m.PROJECT+'-'+service+'-1' for service in m.SERVICES.values()]:
+  for mode in ['host','container:unrelated-container']:
+   result=m.readiness()
+   assert result['problem']=='unsafe_deployment' and not result['ready'],(target,mode,result)
+   for action in ['start','stop','restart']:
+    assert m.operate(action)['problem']=='unsafe_deployment'
+print('twelve-shared-namespace-scenarios-pass')
+`;
+  const result = spawnSync('python3', ['-B', '-c', test, path.join(__dirname, 'HyperOpenBotBackend.py')], { encoding: 'utf8', timeout: 10000 });
+  expect(result.status, result.stderr).toBe(0);
+  expect(result.stdout.trim()).toBe('twelve-shared-namespace-scenarios-pass');
+});

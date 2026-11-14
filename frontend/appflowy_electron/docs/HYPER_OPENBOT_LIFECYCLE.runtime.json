@@ -21,7 +21,7 @@
     "modelAuthentication": "ChatGPT OAuth; no API key"
   },
   "repositoryValidation": {
-    "passedTests": 559,
+    "passedTests": 560,
     "skippedTests": 1,
     "skipReason": "opt-in simulated-IPC live test",
     "typecheck": "passed",
@@ -142,5 +142,35 @@
     "fixtureSha256": "4b56f214d4670b84ebf8ecb6c6a65c13c2b8678340f7bd0096e40f3ce2c16634",
     "fixtureDriverSha256": "8c3a8d59e2107b3eae7fcf4626c6e92d3d1c7eba55f0e6870552a507dc1a6da0",
     "nativeLifecycleNotRepeatedForTheseUiOnlyFixes": true
+  },
+  "networkPolicyReview": {
+    "finding": 4574018821,
+    "rejectedModes": [
+      "host",
+      "container:<sibling>"
+    ],
+    "simulatedRejectionScenarios": 12,
+    "allStartStopRestartMutationsRefusedForUnsafeModes": true,
+    "actualDeploymentReadOnlyProbe": {
+      "ready": true,
+      "checks": 10,
+      "allSixOwnedContainersUseBridgeNetworks": true,
+      "drivers": [
+        {
+          "name": "hypertask-openbot-baseline_data",
+          "driver": "bridge"
+        },
+        {
+          "name": "hypertask-openbot-baseline_default",
+          "driver": "bridge"
+        },
+        {
+          "name": "bridge",
+          "driver": "bridge"
+        }
+      ],
+      "evidenceSha256": "4403ac382f639c06c474e50ffe5cbbb728b2d76a7875365995c80a370fad51df",
+      "helperSha256": "249502c530de0ed6727501c4389c5df52121d808f2094d33577fd0dc0a55a631"
+    }
   }
 }

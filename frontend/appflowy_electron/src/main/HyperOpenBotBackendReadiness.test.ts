@@ -19,7 +19,7 @@ def inspect(name):
  labels=['','',m.STACK] if node else [m.PROJECT,name[len(m.PROJECT)+1:-2],'']
  if fault=='owner' and node: labels[-1]='unrelated'
  current={'Running':fault!='stopped','Health':{'Status':'unhealthy' if fault=='health' else 'healthy'}}
- return current,{'api':[{'HostIp':'0.0.0.0' if fault=='public' else '127.0.0.1'}]},labels
+ return current,{'api':[{'HostIp':'0.0.0.0' if fault=='public' else '127.0.0.1'}]},'bridge',labels
 def urlopen(url,timeout):
  if fault=='runtime': raise OSError('private diagnostic with secret')
  response=io.StringIO(json.dumps({'mode':'intelligence','licenseStatus':'missing' if fault=='license' else 'valid','secret':'never serialize this'}))

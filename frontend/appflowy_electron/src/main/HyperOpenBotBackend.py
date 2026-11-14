@@ -34,14 +34,20 @@ def state(result, key, value):
 
 
 def inspect(name):
-    # Only state, ownership labels and port bindings are read. Never ask Docker for environment values.
-    template = '{{json .State}}\n{{json .HostConfig.PortBindings}}\n{{index .Config.Labels "com.docker.compose.project"}}\n{{index .Config.Labels "com.docker.compose.service"}}\n{{index .Config.Labels "k3d.cluster"}}'
+    # Only state, ownership and network settings are read. Never ask Docker for environment values.
+    template = '{{json .State}}\n{{json .HostConfig.PortBindings}}\n{{json .HostConfig.NetworkMode}}\n{{index .Config.Labels "com.docker.compose.project"}}\n{{index .Config.Labels "com.docker.compose.service"}}\n{{index .Config.Labels "k3d.cluster"}}'
     lines = command(['docker', 'inspect', '--format', template, name]).splitlines()
-    return json.loads(lines[0]), json.loads(lines[1]), lines[2:]
+    return json.loads(lines[0]), json.loads(lines[1]), json.loads(lines[2]), lines[3:]
 
 
 def private_ports(ports):
     return all(binding.get('HostIp') in ('127.0.0.1', '::1') for bindings in (ports or {}).values() for binding in (bindings or []))
+
+
+def private_network(network):
+    # Shared namespaces ignore the container's published-port contract. A sibling
+    # namespace can itself use host networking, so reject both forms before start.
+    return isinstance(network, str) and bool(network) and network != 'host' and not network.startswith('container:')
 
 
 def readiness():
@@ -54,13 +60,13 @@ def readiness():
     if not all(p.exists() for p in [APP / 'docker-compose.yml', ROOT / 'HyperVmCompose.json', Path(CLI[0])]):
         state(result, 'deployment', 'missing'); return result
     try:
-        node_state, ports, labels = inspect(NODE)
-        if labels[-1] != STACK or not private_ports(ports):
+        node_state, ports, network, labels = inspect(NODE)
+        if labels[-1] != STACK or not private_network(network) or not private_ports(ports):
             result['problem'] = 'unsafe_deployment'; return result
         state(result, 'deployment', 'ready' if node_state['Running'] else 'stopped')
         for check, service in SERVICES.items():
-            current, ports, labels = inspect(PROJECT + '-' + service + '-1')
-            if labels[:2] != [PROJECT, service] or not private_ports(ports):
+            current, ports, network, labels = inspect(PROJECT + '-' + service + '-1')
+            if labels[:2] != [PROJECT, service] or not private_network(network) or not private_ports(ports):
                 result['problem'] = 'unsafe_deployment'; return result
             value = 'stopped' if not current['Running'] else 'unhealthy' if current.get('Health', {}).get('Status', 'healthy') != 'healthy' else 'ready'
             state(result, check, value)
