@@ -1,6 +1,6 @@
 // Copyright (c) 2026 CopilotKit. SPDX-License-Identifier: MIT
 // Adapted for HyperTask, developed by NaveDanan. See REUSE.md.
-import { useEffect, useRef, useState, type Ref } from 'react';
+import { useEffect, useRef, useState, type Ref, type Dispatch, type SetStateAction } from 'react';
 import { ArrowUp, Paperclip, Square, X, FileText, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,6 +47,9 @@ export interface HyperComposerProps {
   disabled?: boolean;
   autoFocus?: boolean;
   initialValue?: string;
+  /** Optional owner-managed draft for native navigation. Uncontrolled usage remains supported. */
+  value?: string;
+  onTextChange?: Dispatch<SetStateAction<string>>;
   /** Clear the reported send error after external recovery, retaining the draft and attachments. */
   recoveryVersion?: number;
   placeholder?: string;
@@ -58,8 +61,10 @@ export interface HyperComposerProps {
 const EMPTY_ATTACHMENTS: readonly HyperComposerAttachment[] = [];
 export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, onRemoveAttachment,
   onConsumeAttachments, onStop, pending = false, stoppable = pending, disabled = false, autoFocus = false,
-  initialValue = '', recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
-  const [text, setText] = useState(initialValue);
+  initialValue = '', value, onTextChange, recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
+  const [localText, setLocalText] = useState(initialValue);
+  const text = value ?? localText;
+  const setText = value !== undefined && onTextChange ? onTextChange : setLocalText;
   const [submitting, setSubmitting] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [staging, setStaging] = useState(0);

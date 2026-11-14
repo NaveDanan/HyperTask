@@ -4,6 +4,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
 import { hyperResolveModelPick, type HyperConversationModel } from './HyperModelSelection';
+import { useHyperConversationDraft } from './useHyperConversationDraft';
+import type { HyperDraftAttachment } from './HyperConversationDraft';
 import { HyperRunConnectionError } from './HyperRunConnection';
 import { hyperRunWithRecovery, hyperWatchGatewayActivity, hyperWatchGatewayErrors } from './HyperRun';
 import { HyperComputerPanel } from './HyperComputerPanel';
@@ -48,8 +50,9 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
   const stopped = useRef(false);
   const generation = useRef(0);
   const retry = useRef<{ id: string; text: string; files: string } | undefined>(undefined);
-  const [uploadGroup] = useState(() => crypto.randomUUID());
-  const [attachments, setAttachments] = useState<(HyperComposerAttachment & { mimeType: string })[]>([]);
+  const { draft, updateDraft } = useHyperConversationDraft(channel.id);
+  const { uploadGroup, attachments } = draft;
+  const setAttachments = (change: (current: readonly HyperDraftAttachment[]) => readonly HyperDraftAttachment[]) => updateDraft(current => ({ ...current, attachments: change(current.attachments) }));
   const [models, setModels] = useState<HyperModelOption[]>([]);
   const [pick, setPick] = useState<HyperModelPick>({ model: '', effort: null });
   const [modelPending, setModelPending] = useState(false);
@@ -123,7 +126,7 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
     <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     <HyperConversationActions threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
-    <HyperComposer className="m-4" recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => setAttachments(previous => previous.filter(file => !ids.includes(file.id)))} onFiles={async files => {
+    <HyperComposer className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={async files => {
       const staged: (HyperComposerAttachment & { mimeType: string })[] = [];
       try { for (const file of files) {
         const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
