@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hyperNativeCdpUrl, hyperNativeCompletion, hyperNativeStream, hyperValidateNativeBefore, hyperOwnsNativeCommand, hyperNativeModelId } from './HyperNativeOpenBotSmoke.mjs';
+import { hyperNativeCdpUrl, hyperNativeRenderedMessage, hyperNativeCompletion, hyperNativeStream, hyperValidateNativeBefore, hyperOwnsNativeCommand, hyperNativeModelId } from './HyperNativeOpenBotSmoke.mjs';
 
 const at = '2026-11-14T00:00:00Z';
 function events(runId = 'run-1', messageId = 'message-1') {
@@ -72,4 +72,13 @@ test('completion waits for the selected new run on its own socket and thread', (
   assert.equal(hyperNativeCompletion({ records: [...interleaved, terminal('a', 'run-1')], threadId: 'thread-1', previousRunIds: [] }), true);
   assert.equal(hyperNativeCompletion({ records: [...pending, terminal('a', 'run-1', 'thread-1', 'RUN_ERROR')], threadId: 'thread-1', previousRunIds: [] }), true);
   assert.equal(hyperNativeCompletion({ records: [...pending, terminal('a', 'run-1')], threadId: 'thread-1', previousRunIds: ['run-1'] }), false);
+});
+test('rendered proof requires exact text or the same numbered list structure and item text', () => {
+  const text = '1. First example.\n\n2. Second example.';
+  const rendered = { text: 'First example.\n\nSecond example.', lists: [{ start: 1, items: ['First example.', 'Second example.'] }] };
+  assert.equal(hyperNativeRenderedMessage({ text, rendered }), true);
+  assert.equal(hyperNativeRenderedMessage({ text, rendered: { ...rendered, lists: [] } }), false);
+  assert.equal(hyperNativeRenderedMessage({ text, rendered: { ...rendered, lists: [{ ...rendered.lists[0], start: 2 }] } }), false);
+  assert.equal(hyperNativeRenderedMessage({ text, rendered: { text: 'First example.', lists: [{ start: 1, items: ['First example.'] }] } }), false);
+  assert.equal(hyperNativeRenderedMessage({ text: 'Plain paragraph.', rendered: { text: 'Plain paragraph.', lists: [] } }), true);
 });

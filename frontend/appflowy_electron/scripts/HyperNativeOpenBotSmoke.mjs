@@ -171,13 +171,26 @@ async function jsonFromNative(page, path) {
   }, path);
 }
 
-async function renderedTurn(page, messages) {
-  for (const message of [messages.user, messages.assistant]) {
-    await page.waitForFunction(({ id, text }) => {
-      const row = document.querySelector(`[data-message-id="${id}"]`);
-      return row && row.innerText.replace(/\s+/g, ' ').trim() === text.replace(/\s+/g, ' ').trim();
-    }, { id: message.id, text: message.text }, { timeout: 30000 });
+/** Preserve plain-text equality, accounting only for a complete HTML numbered list. */
+export function hyperNativeRenderedMessage({ id, text, rendered }) {
+  const fold = value => value.replace(/\s+/g, ' ').trim();
+  if (!rendered) {
+    const row = document.querySelector(`[data-message-id="${id}"]`);
+    if (!row) return false;
+    rendered = { text: row.innerText, lists: [...row.querySelectorAll('ol')].map(list => ({ start: list.start, items: [...list.children].filter(child => child.tagName === 'LI').map(item => item.innerText) })) };
   }
+  if (fold(rendered.text) === fold(text)) return true;
+  // Markdown list markers are CSS markers, absent from innerText. Require the
+  // original numbering, actual list structure and every item, not stripped text alone.
+  const parts = text.trim().split(/\n\s*\n/).map(block => /^(\d+)[.)]\s+([\s\S]+)$/.exec(block));
+  if (parts.some((part, index) => !part || Number(part[1]) !== index + 1) || rendered.lists.length !== 1) return false;
+  const list = rendered.lists[0];
+  return list.start === 1 && list.items.length === parts.length && list.items.every((item, index) => fold(item) === fold(parts[index][2])) && fold(rendered.text) === fold(parts.map(part => part[2]).join(' '));
+}
+
+async function renderedTurn(page, messages) {
+  for (const message of [messages.user, messages.assistant])
+    await page.waitForFunction(hyperNativeRenderedMessage, { id: message.id, text: message.text }, { timeout: 30000 });
 }
 
 async function waitModel(page, channelId, wanted, defaultModel) {
