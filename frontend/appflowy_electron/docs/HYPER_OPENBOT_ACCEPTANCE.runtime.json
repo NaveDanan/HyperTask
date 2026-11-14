@@ -13,7 +13,7 @@
     "passedTests": 569,
     "skippedTests": 1,
     "skipReason": "opt-in simulated-IPC live test; actual native live tests ran separately",
-    "nativeRunnerSafeguards": 7,
+    "nativeRunnerSafeguards": 10,
     "typecheck": "passed",
     "frontendBuild": "passed",
     "realCoreTests": 4,
@@ -155,6 +155,22 @@
       "startedAt": "2026-11-14T16:02:48.816Z",
       "finishedAt": "2026-11-14T16:03:08.974Z",
       "status": "passed"
+    },
+    {
+      "file": "HyperNativeSmokeBeforeIssue8-v5.json",
+      "sha256": "bb9d66183e471a692f6fa28c4ae64aaaa3fd1b8e51edb9b3628f310f7ef8711e",
+      "capturedCommit": "7ab4f7d16da4caa2237c5ee91e2575c3a1c2f429",
+      "startedAt": "2026-11-14T16:12:47.255Z",
+      "finishedAt": "2026-11-14T16:13:06.236Z",
+      "status": "passed"
+    },
+    {
+      "file": "HyperNativeSmokeAfterIssue8-v5.json",
+      "sha256": "01d41d5630b3533d61e9df142ca0a101b5788be880e1944e1edfd1166ae4ab5d",
+      "capturedCommit": "7ab4f7d16da4caa2237c5ee91e2575c3a1c2f429",
+      "startedAt": "2026-11-14T16:13:18.704Z",
+      "finishedAt": "2026-11-14T16:13:21.405Z",
+      "status": "passed"
     }
   ],
   "upstreamAndNotices": "HYPER_OPENBOT_AUDIT.md and ../src/renderer/features/hyper-openbot/REUSE.md, LICENSE and component mappings",
@@ -174,5 +190,27 @@
     "pageErrors": [],
     "oldImplementationReproducedWithOneUserTurn": true,
     "fix": "Choose retry identity from current shared draft at submission time, including clears by an older page."
+  },
+  "smokeToolReviewRefresh": {
+    "capturedCommit": "7ab4f7d16da4caa2237c5ee91e2575c3a1c2f429",
+    "unchangedProductionSourceCommit": "b3dec85da03bdfdda33a657e3546813ef9f0b7d5",
+    "twoTurnsTextDeliveries": [
+      106,
+      43
+    ],
+    "exactStreamAndSavedText": true,
+    "renderedText": "exact plain text or complete matching ordered-list structure, numbering and item text",
+    "actualAppAndCoreRestarted": true,
+    "sameIdsAndContent": true,
+    "restoredModelLabelVerified": true,
+    "noReplacementPrompt": true,
+    "pageErrors": 0,
+    "codeRabbitCommentsAddressed": [
+      4574511407,
+      4574511413,
+      4574511417
+    ],
+    "outsideDiffNitAddressed": 5905662201,
+    "ownedCoreExitBarrier": "bounded wait, delayed exit and timeout tested; actual native relaunch passed"
   }
 }
