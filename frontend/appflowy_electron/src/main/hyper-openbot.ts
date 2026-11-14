@@ -71,8 +71,9 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     own(event);
     if (!request || !safeId(request.id) || running.has(request.id)) throw new Error('Invalid request id');
     if (!hyperOpenBotPathAllowed(request.path)) throw new Error('OpenBot route refused');
-    const requestPathname = new URL(request.path, ORIGIN).pathname;
+    const requestPathname = decodeURIComponent(new URL(request.path, ORIGIN).pathname);
     if (typeof request.method !== 'string' || !['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) throw new Error('OpenBot method refused');
+    if (request.method === 'POST' && /^\/api\/agents\/[^/]+\/callback-token\/?$/.test(requestPathname)) throw new Error('Callback key creation requires a protected native handoff');
     if (request.body !== undefined && typeof request.body !== 'string' && !(request.body instanceof Uint8Array)) throw new Error('Invalid OpenBot body');
     if (request.body && (typeof request.body === 'string' ? Buffer.byteLength(request.body) : request.body.byteLength) > MAX_BYTES) throw new Error('OpenBot request too large');
     if (request.contentType !== undefined && (typeof request.contentType !== 'string' || request.contentType.length > 200)) throw new Error('Invalid content type');

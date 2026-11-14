@@ -10,7 +10,7 @@ vi.mock('./HyperOpenBotTunnel', () => ({ hyperTunnelFetch: ipc.fetch, hyperOpenB
 vi.mock('ws', async () => { const { EventEmitter } = await import('node:events'); return { default: class extends EventEmitter { static OPEN = 1; readyState = 1; terminate = vi.fn(() => { this.readyState = 3; this.emit('close', 1006, Buffer.from('')); }); close = this.terminate; constructor() { super(); ipc.sockets.push(this); } } }; });
 import { HyperOpenBotSession, hyperNativeCoreRequest, type HyperOpenBotSessionDependencies } from './HyperOpenBotSession';
 import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
-beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.path.mockResolvedValue('/private/gateway.sock'); });
+beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.fetch.mockReset(); ipc.path.mockReset().mockResolvedValue('/private/gateway.sock'); });
 function setup(identity: string | null = 'a', ready = () => true) {
   let owner: string | null = null;
   const manager = new HyperOpenBotSession({ readIdentity: async () => identity, bindOwner: async (value: string) => { owner ??= value; if (owner !== value) throw new Error('Owner mismatch'); }, readOwner: async () => owner, partition: () => ({ cookies: {}, clearStorageData: async () => {}, clearAuthCache: async () => {} }), clearLegacyCookies: async () => {} } as unknown as HyperOpenBotSessionDependencies);
@@ -33,11 +33,11 @@ it('forwards the audit export row cap without forwarding authentication headers'
   expect(response.headers).not.toHaveProperty('authorization');
   await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ done: true })));
 });
-it('applies voice CSRF headers and removes provider secrets even when the route has a query string', async () => {
+it.each(['/api/voice/calls?nonce=test', '/api/voice/%63alls?nonce=test'])('applies voice guards to canonical route %s', async route => {
   const h = setup();
   const secret = 'synthetic-voice-secret';
   ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ transport: 'websocket', url: 'wss://api.x.ai/v1/realtime', clientSecret: secret, session: { id: 'session' } })));
-  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'voice-query', path: '/api/voice/calls?nonce=test', method: 'POST', body: '{}' });
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'voice-query', path: route, method: 'POST', body: '{}' });
   expect(ipc.fetch.mock.calls[0][1].headers['x-openbot-voice']).toBe('1');
   await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'voice-query', done: true })));
   const chunks = h.sender.send.mock.calls.filter(([, value]) => value.id === 'voice-query' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString());
@@ -45,6 +45,12 @@ it('applies voice CSRF headers and removes provider secrets even when the route 
   expect(payload).not.toContain(secret);
   expect(JSON.parse(payload).url).toMatch(/^wss:\/\/hyper-openbot\.invalid\/api\/voice\/socket\/[a-f0-9-]{36}$/);
   await h.manager.beginNativeTransition().cleared;
+});
+it.each(['/api/agents/bot/callback-token', '/api/agents/bot/callback%2Dtoken?nonce=test'])('refuses raw callback-key creation through generic renderer HTTP at %s', async route => {
+  const h = setup();
+  ipc.fetch.mockResolvedValueOnce(new Response('{"token":"synthetic-secret"}'));
+  await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'callback', path: route, method: 'POST' })).rejects.toThrow('protected native handoff');
+  expect(ipc.fetch).not.toHaveBeenCalled();
 });
 it('terminates a real registered socket on native signout and blocks new opens', async () => {
   const h = setup();
