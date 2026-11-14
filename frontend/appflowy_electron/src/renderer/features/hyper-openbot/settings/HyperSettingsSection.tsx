@@ -1,12 +1,14 @@
 // Adapted from OpenBot (MIT), Copyright (c) 2026 CopilotKit.
 // app/src/routes/_authed/settings/index.tsx and components/settings/{profile,standing-instructions,message-list-preference,settings-sidebar}.tsx
+import { HyperPersonalActivity } from './HyperPersonalActivity';
+import type { HyperSettingsContext } from './HyperSettingsNavigation';
+import { HyperSettingsEdition } from './HyperSettingsEdition';
 import { useEffect, useState } from 'react';
 import { HyperSettingsAutomation } from './HyperSettingsAutomation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { HYPER_INSTRUCTIONS_LIMIT, hyperSettingsApi, type HyperSettingsUser, type HyperSettingsPreferences } from './HyperSettingsApi';
 export const HYPER_SETTINGS_DESTINATIONS = [
   ['Notifications', 'approvals-inbox'], ['Vault and passwords', 'vault'], ['Connected accounts', 'vault'],
@@ -59,15 +61,16 @@ export function HyperSettingsGeneral({ user, instructions, preferences, onUser, 
     </DialogContent></Dialog>
   </div>;
 }
-export default function HyperSettingsSection({ context: _context }: { context: HyperOpenBotSectionContext }) {
+export default function HyperSettingsSection({ context }: { context: HyperSettingsContext }) {
+  const [page, setPage] = useState<'general' | 'activity'>('general');
   const [data, setData] = useState<{ user: HyperSettingsUser; instructions: string; preferences: HyperSettingsPreferences; edition: 'personal' | 'team' }>();
   const [error, setError] = useState(''); const [attempt, setAttempt] = useState(0);
   useEffect(() => { let active = true; setError(''); setData(undefined);
     void Promise.all([hyperSettingsApi.user(), hyperSettingsApi.instructions(), hyperSettingsApi.preferences(), hyperSettingsApi.edition()]).then(([user, instructions, preferences, edition]) => { if (active) setData({ user, instructions, preferences, edition }); }).catch(problem => { if (active) setError(problem instanceof Error ? problem.message : 'Could not load settings.'); });
     return () => { active = false; };
   }, [attempt]);
-  return <section className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 overflow-y-auto px-8 py-6"><h1 className="text-lg font-semibold tracking-tight">General settings</h1>
-    {error ? <div><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : !data ? <p role="status">Loading settings…</p> : <><HyperSettingsGeneral {...data} onUser={user => setData({ ...data, user })} onInstructions={instructions => setData({ ...data, instructions })} onPreferences={preferences => setData({ ...data, preferences })} /><HyperSettingsAutomation preferences={data.preferences} onPreferences={preferences => setData(current => current && ({ ...current, preferences }))} /></>}
-    <h2 className="text-sm font-medium">More settings</h2><p className="text-sm text-muted-foreground">Open these sections from the OpenBot navigation.</p><ul className="grid grid-cols-2 gap-2 text-sm">{HYPER_SETTINGS_DESTINATIONS.map(([label, id]) => <li key={label} data-section-id={id}>{label}</li>)}</ul>
+  return <section className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 overflow-y-auto px-8 py-6"><h1 className="text-lg font-semibold tracking-tight">Settings</h1><nav className="flex gap-2" aria-label="Settings"><Button variant={page === 'general' ? 'default' : 'outline'} onClick={() => setPage('general')}>General</Button>{data?.edition === 'personal' && <Button variant={page === 'activity' ? 'default' : 'outline'} onClick={() => setPage('activity')}>Activity</Button>}</nav>
+    {error ? <div><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : !data ? <p role="status">Loading settings…</p> : page === 'activity' && data.edition === 'personal' ? <HyperPersonalActivity /> : <><HyperSettingsGeneral {...data} onUser={user => setData({ ...data, user })} onInstructions={instructions => setData({ ...data, instructions })} onPreferences={preferences => setData({ ...data, preferences })} /><HyperSettingsAutomation preferences={data.preferences} onPreferences={preferences => setData(current => current && ({ ...current, preferences }))} /></>}
+    <HyperSettingsEdition edition={data?.edition} /><h2 className="text-sm font-medium">More settings</h2><p className="text-sm text-muted-foreground">Settings for every Bot and your account.</p><ul className="grid grid-cols-2 gap-2 text-sm">{HYPER_SETTINGS_DESTINATIONS.map(([label, id]) => <li key={label} data-section-id={id}><Button variant="outline" disabled={!context.navigate} onClick={() => context.navigate?.(id)}>{label}</Button></li>)}</ul>
   </section>;
 }
