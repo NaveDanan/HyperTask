@@ -9,6 +9,7 @@ import { HyperRunMutation } from './HyperMutation';
 import { HyperDecisionHistory } from './HyperDecisionHistory';
 import * as api from './HyperApprovalsApi';
 import { HyperOffersStandingRule, HyperApprovalDetails } from './HyperApprovalPresentation';
+import { HyperNotificationSettings } from './HyperNotifications';
 import * as notify from './HyperNotificationsApi';
 const behaviours = { allow: 'Take action without asking', pre_approved: 'Take action if pre-approved', ask: 'Ask before taking action', hand_off: 'Hand off to you' } as const;
 export default function HyperApprovalsSection({ context }: { context: HyperOpenBotSectionContext }) {
@@ -87,7 +88,7 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
       {!!inbox.conversationGrants?.length && <h2 className="font-semibold">Conversation allowances</h2>}{inbox.conversationGrants?.map(grant => <div key={grant.id}>{grant.toolRef} · {grant.scope} <Button disabled={busy} variant="outline" onClick={() => void mutate(() => api.HyperRevokeGrant(grant.id))}>Turn off</Button><Button variant="ghost" onClick={() => open(grant.threadId)}>Open conversation</Button></div>)}
     </>}
     {tab === 'Notifications' && (!delivery || !routing ? <p>Loading notifications…</p> : <>
-      <h2 className="font-semibold">Where updates go</h2>
+      <HyperNotificationSettings /><h2 className="font-semibold">Where updates go</h2>
       {!notify.HyperTransports.some(t => delivery.available[t]) && <p>Updates stay in HyperTask. Push, Slack, Microsoft Teams and SMS appear once configured on the server.</p>}
       {notify.HyperKinds.map(kind => <fieldset key={kind} className="flex gap-4"><legend>{kind}</legend>{notify.HyperTransports.filter(t => delivery.available[t]).map(t => <label key={t}><input type="checkbox" disabled={busy} checked={routing[kind] === 'all' || routing[kind].includes(t)} onChange={e => { const next = notify.HyperTransports.filter(value => value === t ? e.target.checked : routing[kind] === 'all' || routing[kind].includes(value)); void mutate(() => notify.HyperRouteUpdates(kind, next.length === 4 ? 'all' : next), 'notifications'); }} /> {t}</label>)}</fieldset>)}
       <h2 className="font-semibold">Your devices</h2><p>Sign in to the OpenBot app on your phone and turn on notifications to add it here.</p>{!delivery.devices.length && <p>No devices yet.</p>}{delivery.devices.map(device => <div key={device.id}>{device.platform}<Button disabled={busy} variant="outline" onClick={() => void mutate(() => notify.HyperRemoveDevice(device.id), 'notifications')}>Remove</Button></div>)}
