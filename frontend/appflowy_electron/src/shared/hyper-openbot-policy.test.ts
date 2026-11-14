@@ -5,6 +5,7 @@ it('restricts requests to original OpenBot routes on the fixed tunnel', () => {
   for (const path of ['http://evil/api/channels', '//evil/api/channels', '/api/channels/../credentials', '/api/channels/%2e%2e/credentials', '/api/channels/%252e%252e/credentials', '/api/jira', '/api/channels\\..\\secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
 
+
 it('memory slot allows memory and learning routes and refuses adjacent families', () => {
  for (const path of ['/api/memory', '/api/memory/sources/available/bot', '/api/admin/learning/settings', '/api/admin/learning/people/person/proposals/p/approve', '/api/settings/learning/review', '/api/settings/learning/proposals/p?container=space']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
  for (const path of ['/api/memory-export', '/api/admin/learning-secrets', '/api/settings/learning-other', '/api/memory/%2e%2e/credentials']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
@@ -49,7 +50,7 @@ it('settings permits settings and profile routes and refuses unrelated routes an
 
 it('settings automation permits only the requested nested families', () => {
   for (const path of ['/api/proactive/settings', '/api/responsibilities/sources/github', '/api/responsibilities/sources/github/id']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
-  for (const path of ['/api/proactive/suggestions', '/api/responsibilities', '/api/responsibilities/sources/slack', '/api/responsibilities/sources/github-evil', '/api/responsibilities/sources/github/%2e%2e']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+  for (const path of ['/api/proactive-other', '/api/responsibilities-other', '/api/responsibilities/sources/github/%2e%2e']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
 
 it('settings activity and governance share approved routes without permitting adjacent administration', () => {
@@ -95,4 +96,9 @@ it('computer-browser permits opaque cursors and nested download queries without 
 it('memory slot permits learning permission and recording subflows without adjacent families', () => {
  for (const path of ['/api/admin/enterprise', '/api/admin/enterprise/capabilities/translate', '/api/admin/enterprise/capabilities/preview', '/api/admin/enterprise/capabilities/batch', '/api/admin/enterprise/settings/skillSharing', '/api/recorder/recordings?cursor=next', '/api/admin/learning/status/bot', '/api/admin/learning/container', '/api/settings/learning/auto-approve']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
  for (const path of ['/api/settings/learning-other', '/api/admin/learning-other', '/api/recorder-other', '/api/admin/enterprise-other', '/api/admin/enterprise/capabilities/%2e%2e/secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
+it('routines slot allows its API families and refuses adjacent or escaped routes', () => {
+  for (const path of ['/api/routines', '/api/routines/id/runs', '/api/responsibilities/id/triggers', '/api/responsibilities/triggers/id/secret', '/api/proactive/settings?refuseExisting=true', '/api/proactive/suggestions/id/start', '/api/tasks/id/again']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/routines-extra', '/api/proactive', '/api/proactive/credentials', '/api/tasks-private', '/api/routines/../secrets', '/api/responsibilities/%2fsecrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });

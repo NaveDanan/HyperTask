@@ -29,7 +29,8 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: conversations
   { id: 'new-conversation', label: 'New conversation', group: 'work', render: hyperLazySection(() => import('./conversations/HyperNewConversationSection')) },
   // slot: routines
-  /* routines */
+  { id: 'routines', label: 'Routines', group: 'work', render: hyperLazySection(() => import('./routines/HyperRoutinesSection')) },
+  { id: 'responsibilities', label: 'Responsibilities', group: 'work', render: hyperLazySection(() => import('./routines/HyperResponsibilitiesSection')) },
   // slot: memory
   { id: 'memory', label: 'Memory', group: 'personal', render: hyperLazySection(() => import('./memory/HyperMemorySection')) },
   { id: 'personal-learning', label: 'Your learned skills', group: 'personal', render: hyperLazySection(() => import('./memory/HyperPersonalLearningSection')) },
