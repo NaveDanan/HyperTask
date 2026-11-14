@@ -49,8 +49,8 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
   const [showComputer, setShowComputer] = useState(false);
   const stopped = useRef(false);
   const generation = useRef(0);
-  const retry = useRef<{ id: string; text: string; files: string } | undefined>(undefined);
   const { draft, updateDraft } = useHyperConversationDraft(channel.id);
+  const retry = useRef(draft.retry);
   const { uploadGroup, attachments } = draft;
   const setAttachments = (change: (current: readonly HyperDraftAttachment[]) => readonly HyperDraftAttachment[]) => updateDraft(current => ({ ...current, attachments: change(current.attachments) }));
   const [models, setModels] = useState<HyperModelOption[]>([]);
@@ -146,8 +146,9 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
       const previous = retry.current;
       const sent = previous?.text === draft.text && previous.files === files ? previous : { id: crypto.randomUUID(), text: draft.text, files };
       retry.current = sent;
+      updateDraft(current => ({ ...current, retry: sent }));
       if (!agent.messages.some(message => message.id === sent.id)) agent.addMessage({ id: sent.id, role: 'user', content: attachments.length ? [{ type: 'text' as const, text: draft.text.trim() }, ...attachments.map(file => ({ type: file.mimeType.startsWith('image/') ? 'image' as const : 'document' as const, source: { type: 'url' as const, value: `/api/attachments/${file.id}`, mimeType: file.mimeType }, metadata: { attachmentId: file.id, filename: file.name } }))] : draft.text.trim() });
-      try { await hyperRunWithRecovery(agent, () => hyperWhileObserved(agent, () => copilotkit.runAgent({ agent })), () => stopped.current); retry.current = undefined; }
+      try { await hyperRunWithRecovery(agent, () => hyperWhileObserved(agent, () => copilotkit.runAgent({ agent })), () => stopped.current); retry.current = undefined; updateDraft(current => current.retry?.id === sent.id ? { ...current, retry: undefined } : current); }
       catch (error) { if (error instanceof HyperRunConnectionError) setReconnectRequired(true); setError(String(error)); throw error; }
       finally { setSending(false); }
     }} />

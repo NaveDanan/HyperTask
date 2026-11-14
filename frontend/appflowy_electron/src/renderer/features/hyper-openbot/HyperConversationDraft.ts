@@ -6,11 +6,12 @@ export interface HyperConversationDraft {
   readonly text: string;
   readonly attachments: readonly HyperDraftAttachment[];
   readonly uploadGroup: string;
+  readonly retry?: { readonly id: string; readonly text: string; readonly files: string };
 }
 const EMPTY: HyperConversationDraft = Object.freeze({ text: '', attachments: Object.freeze([]), uploadGroup: '' });
 function snapshot(value: HyperConversationDraft): HyperConversationDraft {
   // Retain server references and display metadata, never File objects, bytes or credentials.
-  return Object.freeze({ text: value.text, uploadGroup: value.uploadGroup, attachments: Object.freeze(value.attachments.map(file => Object.freeze({ id: file.id, name: file.name, mimeType: file.mimeType, status: file.status, ...(file.error ? { error: file.error } : {}) }))) });
+  return Object.freeze({ text: value.text, uploadGroup: value.uploadGroup, attachments: Object.freeze(value.attachments.map(file => Object.freeze({ id: file.id, name: file.name, mimeType: file.mimeType, status: file.status, ...(file.error ? { error: file.error } : {}) }))), ...(value.retry ? { retry: Object.freeze({ id: value.retry.id, text: value.retry.text, files: value.retry.files }) } : {}) });
 }
 
 /** Renderer-session drafts survive native page navigation and expire at the main auth boundary. */

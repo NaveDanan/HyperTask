@@ -19,6 +19,15 @@ it('an old send completion preserves newer text and attachments entered in the r
   oldPage.update(current => ({ ...current, text: current.text === 'Submitted' ? '' : current.text, attachments: current.attachments.filter(file => file.id !== 'old') }));
   expect(reopened.get().text).toBe('Newer draft'); expect(reopened.get().attachments.map(file => file.id)).toEqual(['new']);
 });
+it('retains failed-send identity on reopening and cannot clear a newer submission identity', () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), original = cache.acquire('one');
+  const sent = { id: 'submitted-user-id', text: 'Retry this', files: 'file-id' };
+  original.update(current => ({ ...current, text: sent.text, retry: sent }));
+  const reopened = cache.acquire('one'); expect(reopened.get().retry).toEqual(sent);
+  reopened.update(current => ({ ...current, retry: { ...sent, id: 'new-user-id' } }));
+  original.update(current => current.retry?.id === sent.id ? { ...current, retry: undefined } : current);
+  expect(reopened.get().retry?.id).toBe('new-user-id');
+});
 it.each(['signed_out', 'profile_required', 'unsupported'] as const)('native %s clears drafts and rejects late upload completions', problem => {
   const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one');
   let onState!: (state: HyperOpenBotServiceState) => void;
