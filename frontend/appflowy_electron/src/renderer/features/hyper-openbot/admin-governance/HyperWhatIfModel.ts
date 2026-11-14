@@ -10,13 +10,7 @@
  */
 
 /** What started the run. The kinds a person can ask about: `deployment` is OpenBot itself. */
-export const WHAT_IF_INITIATORS = [
-  "person",
-  "routine",
-  "handoff",
-  "responsibility",
-  "memory",
-] as const;
+export const WHAT_IF_INITIATORS = ["person", "routine", "handoff", "responsibility", "memory"] as const;
 export type WhatIfInitiator = (typeof WHAT_IF_INITIATORS)[number];
 
 /** What started the run, in words for a chip. */
@@ -25,23 +19,12 @@ export const WHAT_IF_INITIATOR_WORDS: Record<WhatIfInitiator, string> = {
   routine: "A routine",
   handoff: "Another Bot",
   responsibility: "A goal it watches",
-  memory: "A follow-up it set",
+  memory: "A follow-up it set"
 };
 
 /** What a computer action does: the boundary's own `intent`, less the two an app call has. */
-export const WHAT_IF_INTENTS = [
-  "navigate",
-  "activate",
-  "type",
-  "read",
-  "read_file",
-  "write_file",
-  "list_files",
-  "download_file",
-  "run_command",
-] as const;
+export const WHAT_IF_INTENTS = ["navigate", "activate", "type", "read", "read_file", "write_file", "list_files", "download_file", "run_command"] as const;
 export type WhatIfIntent = (typeof WHAT_IF_INTENTS)[number];
-
 export const WHAT_IF_INTENT_WORDS: Record<WhatIfIntent, string> = {
   navigate: "Open a page",
   activate: "Press a button or link",
@@ -51,7 +34,7 @@ export const WHAT_IF_INTENT_WORDS: Record<WhatIfIntent, string> = {
   write_file: "Save a file",
   list_files: "List files",
   download_file: "Download a file",
-  run_command: "Run a command",
+  run_command: "Run a command"
 };
 
 /**
@@ -83,7 +66,6 @@ export type WhatIfAction = {
   /** The file's path, for a file action. Optional. */
   file: string;
 };
-
 export const EMPTY_WHAT_IF_ACTION: WhatIfAction = {
   bot: "",
   person: "",
@@ -96,18 +78,11 @@ export const EMPTY_WHAT_IF_ACTION: WhatIfAction = {
   host: "",
   label: "",
   command: "",
-  file: "",
+  file: ""
 };
 
 /** The controls, in no particular order: each surface lists the ones that apply to it in its own. */
-export type WhatIfLayerId =
-  | "grant"
-  | "app_allowlist"
-  | "capabilities"
-  | "network"
-  | "boundaries"
-  | "safety"
-  | "approvals";
+export type WhatIfLayerId = "grant" | "app_allowlist" | "capabilities" | "network" | "boundaries" | "safety" | "approvals";
 
 /**
  * What one control says.
@@ -116,13 +91,7 @@ export type WhatIfLayerId =
  * themselves. `trial` is a boundary in trial mode: it would refuse, records that, and lets the action
  * through. `allows` lets it past this control.
  */
-export type WhatIfVerdict =
-  | "allows"
-  | "refuses"
-  | "asks"
-  | "hands_off"
-  | "trial";
-
+export type WhatIfVerdict = "allows" | "refuses" | "asks" | "hands_off" | "trial";
 export type WhatIfLayer = {
   id: WhatIfLayerId;
   title: string;
@@ -144,15 +113,8 @@ export type WhatIfLayer = {
 };
 
 /** The Admin pages a control is set on, by route. */
-export type WhatIfPage =
-  | "/admin/plugins"
-  | "/admin/permissions"
-  | "/admin/computers"
-  | "/admin/boundaries"
-  | "/admin/approvals";
-
+export type WhatIfPage = "/admin/plugins" | "/admin/permissions" | "/admin/computers" | "/admin/boundaries" | "/admin/approvals";
 export type WhatIfOutcome = "allowed" | "refused" | "asks" | "hands_off";
-
 export type WhatIfResult = {
   outcome: WhatIfOutcome;
   /** The control that settles it. Null when every control lets it through. */
@@ -179,14 +141,26 @@ export type WhatIfLabels = {
 
 /** What this OpenBot has that an action can name: the only values a chip may hold. */
 export type WhatIfVocabulary = {
-  bots: { id: string; name: string; owner: string | null }[];
-  people: { id: string; name: string | null; email: string }[];
+  bots: {
+    id: string;
+    name: string;
+    owner: string | null;
+  }[];
+  people: {
+    id: string;
+    name: string | null;
+    email: string;
+  }[];
   groups: string[];
   apps: {
     id: string;
     name: string;
     /** Each tool as a call to it is judged: whether it changes something, and whether the app marks it destructive. */
-    tools: { name: string; effect: "read" | "write"; destructive: boolean }[];
+    tools: {
+      name: string;
+      effect: "read" | "write";
+      destructive: boolean;
+    }[];
   }[];
 };
 
@@ -203,23 +177,10 @@ export type WhatIfRecorded = {
 export const WHAT_IF_DETAIL_LIMIT = 300;
 
 /** What a Bot does on a web page, which has no meaning without the page. */
-export const WHAT_IF_IN_THE_BROWSER: ReadonlySet<string> = new Set([
-  "navigate",
-  "activate",
-  "type",
-  "read",
-]);
+export const WHAT_IF_IN_THE_BROWSER: ReadonlySet<string> = new Set(["navigate", "activate", "type", "read"]);
 
 /** The rows "Why did this happen?" can answer: the ones the controls decided. */
-export const WHAT_IF_EXPLAINABLE_EVENT_TYPES = [
-  "mcp.call_succeeded",
-  "mcp.call_failed",
-  "mcp.call_rejected",
-  "computer.action_allowed",
-  "computer.action_refused",
-  "computer.action_failed",
-  "computer.action_stopped",
-] as const;
+export const WHAT_IF_EXPLAINABLE_EVENT_TYPES = ["mcp.call_succeeded", "mcp.call_failed", "mcp.call_rejected", "computer.action_allowed", "computer.action_refused", "computer.action_failed", "computer.action_stopped"] as const;
 
 /**
  * Whether "Why did this happen?" can answer for a row: a computer action or an app call a Bot took.
@@ -230,17 +191,10 @@ export function whatIfExplainable(event: {
   eventType: string;
   payload?: Record<string, unknown> | null;
 }): boolean {
-  if (
-    !(WHAT_IF_EXPLAINABLE_EVENT_TYPES as readonly string[]).includes(
-      event.eventType,
-    )
-  )
-    return false;
+  if (!(WHAT_IF_EXPLAINABLE_EVENT_TYPES as readonly string[]).includes(event.eventType)) return false;
   const payload = event.payload ?? {};
   if (typeof payload.bot !== "string" || payload.bot === "") return false;
-  return !(
-    typeof payload.action === "string" && payload.action.startsWith("host/")
-  );
+  return !(typeof payload.action === "string" && payload.action.startsWith("host/"));
 }
 
 /** A host name from what the model wrote: a bare host, or one inside an address. Null when neither. */
@@ -249,71 +203,45 @@ export function hostIn(value: string): string | null {
   if (!raw) return null;
   let host: string;
   try {
-    const url = new URL(
-      /^[a-z][a-z0-9+.-]*:\/\//.test(raw) ? raw : `https://${raw}`,
-    );
+    const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//.test(raw) ? raw : `https://${raw}`);
     // As the gateway's `hostOf` reads a page: no root dot, and the port where there is one.
     const name = url.hostname.replace(/\.+$/, "");
     host = url.port ? `${name}:${url.port}` : name;
   } catch {
     return null;
   }
-  return host && /^[a-z0-9.-]+(:\d+)?$|^\[[0-9a-f:]+\](:\d+)?$/.test(host)
-    ? host
-    : null;
+  return host && /^[a-z0-9.-]+(:\d+)?$|^\[[0-9a-f:]+\](:\d+)?$/.test(host) ? host : null;
 }
 
 /** The names a chip shows for the values in an action. */
-export function labelsFor(
-  action: WhatIfAction,
-  vocabulary: WhatIfVocabulary,
-): WhatIfLabels {
+export function labelsFor(action: WhatIfAction, vocabulary: WhatIfVocabulary): WhatIfLabels {
   const labels: WhatIfLabels = {};
-  const bot = vocabulary.bots.find((entry) => entry.id === action.bot);
+  const bot = vocabulary.bots.find(entry => entry.id === action.bot);
   if (bot) labels.bot = bot.name;
-  const person = vocabulary.people.find((entry) => entry.id === action.person);
+  const person = vocabulary.people.find(entry => entry.id === action.person);
   if (person) labels.person = person.name ?? person.email;
   if (action.group) labels.group = action.group;
-  const app = vocabulary.apps.find((entry) => entry.id === action.app);
+  const app = vocabulary.apps.find(entry => entry.id === action.app);
   if (app) labels.app = app.name;
   return labels;
 }
 
 /** What is still missing before an action can be checked, in a sentence for the admin. Null when nothing. */
-export function missingFrom(
-  action: WhatIfAction,
-  vocabulary: WhatIfVocabulary,
-): string | null {
-  if (!vocabulary.bots.some((bot) => bot.id === action.bot))
-    return "Choose a Bot.";
-  if (action.person && action.group)
-    return "Choose a person or a group, not both.";
-  if (
-    !(
-      (action.person &&
-        vocabulary.people.some((person) => person.id === action.person)) ||
-      (action.group && vocabulary.groups.includes(action.group))
-    )
-  )
-    return "Choose whose account it runs on.";
-  if (!(WHAT_IF_INITIATORS as readonly string[]).includes(action.initiator))
-    return "Choose what starts the run.";
+export function missingFrom(action: WhatIfAction, vocabulary: WhatIfVocabulary): string | null {
+  if (!vocabulary.bots.some(bot => bot.id === action.bot)) return "Choose a Bot.";
+  if (action.person && action.group) return "Choose a person or a group, not both.";
+  if (!(action.person && vocabulary.people.some(person => person.id === action.person) || action.group && vocabulary.groups.includes(action.group))) return "Choose whose account it runs on.";
+  if (!(WHAT_IF_INITIATORS as readonly string[]).includes(action.initiator)) return "Choose what starts the run.";
   if (action.surface === "app") {
-    const app = vocabulary.apps.find((entry) => entry.id === action.app);
+    const app = vocabulary.apps.find(entry => entry.id === action.app);
     if (!app) return "Choose an app.";
-    if (!app.tools.some((tool) => tool.name === action.tool))
-      return "Choose one of the app's tools.";
+    if (!app.tools.some(tool => tool.name === action.tool)) return "Choose one of the app's tools.";
     return null;
   }
   if (action.surface !== "computer") return "Choose an app or the computer.";
-  if (!(WHAT_IF_INTENTS as readonly string[]).includes(action.intent))
-    return "Choose what the Bot does on its computer.";
-  if (action.host && !hostIn(action.host))
-    return "Enter a web site, such as www.linkedin.com.";
-  if (WHAT_IF_IN_THE_BROWSER.has(action.intent) && !action.host)
-    return "Enter the web site it's on.";
-  for (const field of ["label", "command", "file"] as const)
-    if (action[field].length > WHAT_IF_DETAIL_LIMIT)
-      return `Keep the ${field} under ${WHAT_IF_DETAIL_LIMIT} characters.`;
+  if (!(WHAT_IF_INTENTS as readonly string[]).includes(action.intent)) return "Choose what the Bot does on its computer.";
+  if (action.host && !hostIn(action.host)) return "Enter a web site, such as www.linkedin.com.";
+  if (WHAT_IF_IN_THE_BROWSER.has(action.intent) && !action.host) return "Enter the web site it's on.";
+  for (const field of ["label", "command", "file"] as const) if (action[field].length > WHAT_IF_DETAIL_LIMIT) return `Keep the ${field} under ${WHAT_IF_DETAIL_LIMIT} characters.`;
   return null;
 }

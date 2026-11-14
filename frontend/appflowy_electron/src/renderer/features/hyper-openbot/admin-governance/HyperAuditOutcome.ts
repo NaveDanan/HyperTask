@@ -27,30 +27,18 @@
  * evidence anywhere that anything was attempted: the wire answers all of them with the same opaque
  * refusal on purpose.
  */
-export const REFUSED_EVENT_TYPES = [
-  "computer.action_refused",
-  "component.refused",
-  "component.function_refused",
-  "mcp.call_rejected",
-  "mcp.callback_refused",
-  "routines.dispatch_refused",
-  /*
-   * A hop one Bot was not allowed to make. `server/src/audit.ts` calls this "the more important of
-   * the pair": a hop that happened is visible in the transcript anyway, and a hop that was refused
-   * is invisible everywhere else.
-   */
-  "agent.handoff_refused",
-  /** An endpoint a stored agent tried to reach and the deployment would not dial. */
-  "agent.dial_refused",
-  /** A rotation aimed at a key the credential does not belong to, or at a revoked one. */
-  "credential.rotation_refused",
-  /** A revoked person still holding a bookmark, or an address outside the deployment. */
-  "session.refused",
-  /** A Bot asked for a computer of its own by somebody without "Isolated Bots", or that has no owner. */
-  "bot.isolation_refused",
-  /** A run that would have sent more tools than its model accepts, never sent to it. */
-  "agent.tool_limit_refused",
-] as const;
+export const REFUSED_EVENT_TYPES = ["computer.action_refused", "component.refused", "component.function_refused", "mcp.call_rejected", "mcp.callback_refused", "routines.dispatch_refused",
+/*
+ * A hop one Bot was not allowed to make. `server/src/audit.ts` calls this "the more important of
+ * the pair": a hop that happened is visible in the transcript anyway, and a hop that was refused
+ * is invisible everywhere else.
+ */
+"agent.handoff_refused", /** An endpoint a stored agent tried to reach and the deployment would not dial. */
+"agent.dial_refused", /** A rotation aimed at a key the credential does not belong to, or at a revoked one. */
+"credential.rotation_refused", /** A revoked person still holding a bookmark, or an address outside the deployment. */
+"session.refused", /** A Bot asked for a computer of its own by somebody without "Isolated Bots", or that has no owner. */
+"bot.isolation_refused", /** A run that would have sent more tools than its model accepts, never sent to it. */
+"agent.tool_limit_refused"] as const;
 
 /**
  * Did not happen: nothing was refused, and nothing came of it either.
@@ -59,37 +47,31 @@ export const REFUSED_EVENT_TYPES = [
  * holding and a Bot that was asked and never answered are different faults with different fixes, and
  * only one of them is the deployment working as configured.
  */
-export const DID_NOT_HAPPEN_EVENT_TYPES = [
-  "computer.action_failed",
-  /** A person pressed Stop mid-action: the action did not happen, and nothing broke. */
-  "computer.action_stopped",
-  "agent.stream_stalled",
-  /** A hop that was accepted, ran out of attempts, and never became the other Bot's turn. */
-  "agent.handoff_failed",
-  /** A question that reached nobody: the Bot stopped, and the person was never asked. */
-  "agent.escalation_failed",
-  /*
-   * A tool call this deployment permitted and the vendor did not complete.
-   *
-   * The direct sibling of `computer.action_failed`, written by the same decide-record-then-act
-   * order on the other acting surface: `callTool` writes the decision row first, attempts the
-   * call, and then writes this instead of `mcp.call_succeeded` when the vendor answers `isError`
-   * or the attempt throws. Every failure of a per-person connector lands here — no connection for
-   * the asker, a refresh token the vendor stopped accepting, an API not enabled for the project —
-   * which makes it the row somebody most often comes to this page to find, and it was the one row
-   * of the family drawn in the same muted colour as a call that worked.
-   */
-  "mcp.call_failed",
-  /*
-   * A component's read that was granted and then broke.
-   *
-   * `server/src/audit.ts` says this one is "deliberately not a refusal", and that is right: nothing
-   * was forbidden. But it is not an allowance either. The row exists precisely because the read did
-   * not happen, and the page already labels it "Could not be read" while colouring it as though it
-   * had been.
-   */
-  "component.function_failed",
-] as const;
+export const DID_NOT_HAPPEN_EVENT_TYPES = ["computer.action_failed", /** A person pressed Stop mid-action: the action did not happen, and nothing broke. */
+"computer.action_stopped", "agent.stream_stalled", /** A hop that was accepted, ran out of attempts, and never became the other Bot's turn. */
+"agent.handoff_failed", /** A question that reached nobody: the Bot stopped, and the person was never asked. */
+"agent.escalation_failed",
+/*
+ * A tool call this deployment permitted and the vendor did not complete.
+ *
+ * The direct sibling of `computer.action_failed`, written by the same decide-record-then-act
+ * order on the other acting surface: `callTool` writes the decision row first, attempts the
+ * call, and then writes this instead of `mcp.call_succeeded` when the vendor answers `isError`
+ * or the attempt throws. Every failure of a per-person connector lands here — no connection for
+ * the asker, a refresh token the vendor stopped accepting, an API not enabled for the project —
+ * which makes it the row somebody most often comes to this page to find, and it was the one row
+ * of the family drawn in the same muted colour as a call that worked.
+ */
+"mcp.call_failed",
+/*
+ * A component's read that was granted and then broke.
+ *
+ * `server/src/audit.ts` says this one is "deliberately not a refusal", and that is right: nothing
+ * was forbidden. But it is not an allowance either. The row exists precisely because the read did
+ * not happen, and the page already labels it "Could not be read" while colouring it as though it
+ * had been.
+ */
+"component.function_failed"] as const;
 
 /**
  * Every row about one action a Bot took on its computer, whatever became of it.
@@ -98,29 +80,20 @@ export const DID_NOT_HAPPEN_EVENT_TYPES = [
  * stopped action was missing from the one view named for them, and the actions that remained all
  * read as allowed.
  */
-export const COMPUTER_ACTION_EVENT_TYPES = [
-  "computer.action_allowed",
-  "computer.action_refused",
-  "computer.action_failed",
-  "computer.action_stopped",
-] as const;
+export const COMPUTER_ACTION_EVENT_TYPES = ["computer.action_allowed", "computer.action_refused", "computer.action_failed", "computer.action_stopped"] as const;
 
 /**
  * OpenBot's own working, which the personal edition's Activity leaves out, and the rule that draws an
  * action once. Shared with the server, whose Activity report counts what this page shows.
  */
-export {
-  CALLS_RECORDED_AS_CHANGES,
-  OPENBOT_WORKING_EVENT_TYPES,
-  oneRowPerAction,
-} from "./HyperActivityRows";
-
+export { CALLS_RECORDED_AS_CHANGES, OPENBOT_WORKING_EVENT_TYPES, oneRowPerAction } from "./HyperActivityRows";
 export type AuditOutcome = "refused" | "did-not-happen" | "allowed";
-
 const REFUSED = new Set<string>(REFUSED_EVENT_TYPES);
 const DID_NOT_HAPPEN = new Set<string>(DID_NOT_HAPPEN_EVENT_TYPES);
-
-type Row = { eventType: string; payload?: Record<string, unknown> };
+type Row = {
+  eventType: string;
+  payload?: Record<string, unknown>;
+};
 
 /**
  * What kind of thing this row is, for the label and the colour it is drawn in.
@@ -131,33 +104,28 @@ type Row = { eventType: string; payload?: Record<string, unknown> };
  * the Blocked view, whose list is by type; the action a denial stopped is there as its own row.
  */
 export function outcomeOf(row: string | Row): AuditOutcome {
-  const { eventType, payload } =
-    typeof row === "string" ? { eventType: row, payload: undefined } : row;
+  const {
+    eventType,
+    payload
+  } = typeof row === "string" ? {
+    eventType: row,
+    payload: undefined
+  } : row;
   if (REFUSED.has(eventType)) return "refused";
   if (DID_NOT_HAPPEN.has(eventType)) return "did-not-happen";
   // A folder action recorded before it was a computer's says how it went in its payload.
-  if (
-    eventType === "configuration.changed" &&
-    payload?.change === "host_access_tool_call"
-  ) {
+  if (eventType === "configuration.changed" && payload?.change === "host_access_tool_call") {
     if (payload.outcome === "refused") return "refused";
-    if (payload.outcome === "failed" || payload.outcome === "stopped")
-      return "did-not-happen";
+    if (payload.outcome === "failed" || payload.outcome === "stopped") return "did-not-happen";
   }
-  if (eventType === "approval.person_decided" && payload?.decision === "deny")
-    return "refused";
-  if (
-    eventType === "approval.evaluated" &&
-    (payload?.outcome as { behaviour?: unknown } | undefined)?.behaviour ===
-      "deny"
-  )
-    return "refused";
+  if (eventType === "approval.person_decided" && payload?.decision === "deny") return "refused";
+  if (eventType === "approval.evaluated" && (payload?.outcome as {
+    behaviour?: unknown;
+  } | undefined)?.behaviour === "deny") return "refused";
   return "allowed";
 }
 
 /** The `eventType` query one of the saved views filters by. */
-export function eventTypeFilter(
-  types: readonly string[],
-): `?eventType=${string}` {
+export function eventTypeFilter(types: readonly string[]): `?eventType=${string}` {
   return `?eventType=${types.join(",")}`;
 }

@@ -9,20 +9,7 @@
  */
 
 /** What an action does, as the boundary sees it (`intent` in `server/src/computer/policy.ts`). */
-export const AUDIT_INTENTS = [
-  "activate",
-  "type",
-  "navigate",
-  "read",
-  "read_file",
-  "download_file",
-  "write_file",
-  "list_files",
-  "run_command",
-  "read_tool",
-  "write_tool",
-] as const;
-
+export const AUDIT_INTENTS = ["activate", "type", "navigate", "read", "read_file", "download_file", "write_file", "list_files", "run_command", "read_tool", "write_tool"] as const;
 export type AuditIntent = (typeof AUDIT_INTENTS)[number];
 
 /** Each intent in words, for a chip and for the model reading the filters back. */
@@ -37,30 +24,20 @@ export const AUDIT_INTENT_WORDS: Record<AuditIntent, string> = {
   list_files: "List files",
   run_command: "Run a command",
   read_tool: "App call that reads",
-  write_tool: "App call that changes something",
+  write_tool: "App call that changes something"
 };
-
 export const AUDIT_EFFECTS = ["read", "write"] as const;
 export type AuditEffect = (typeof AUDIT_EFFECTS)[number];
-
 export const AUDIT_EFFECT_WORDS: Record<AuditEffect, string> = {
   read: "Reads",
-  write: "Changes something",
+  write: "Changes something"
 };
 
 /** The `mcp.call_*` rows: an app's tool call, with its app, tool and effect in the payload. */
-export const APP_CALL_EVENT_TYPES = [
-  "mcp.call_succeeded",
-  "mcp.call_failed",
-  "mcp.call_rejected",
-] as const;
+export const APP_CALL_EVENT_TYPES = ["mcp.call_succeeded", "mcp.call_failed", "mcp.call_rejected"] as const;
 
 /** The rows the boundary refused, each naming the rule that refused it in `decision.rule`. */
-export const RULE_REFUSAL_EVENT_TYPES = [
-  "computer.action_refused",
-  "mcp.call_rejected",
-] as const;
-
+export const RULE_REFUSAL_EVENT_TYPES = ["computer.action_refused", "mcp.call_rejected"] as const;
 export type AuditFilters = {
   /** Event types, any of them. */
   eventType?: string[];
@@ -87,33 +64,13 @@ export type AuditFilters = {
 };
 
 /** The filters in the order a chip row and a reading list them. */
-export const AUDIT_FILTER_KEYS = [
-  "bot",
-  "actorUserId",
-  "initiatorKind",
-  "eventType",
-  "app",
-  "tool",
-  "effect",
-  "intent",
-  "rule",
-  "from",
-  "to",
-] as const satisfies readonly (keyof AuditFilters)[];
-
+export const AUDIT_FILTER_KEYS = ["bot", "actorUserId", "initiatorKind", "eventType", "app", "tool", "effect", "intent", "rule", "from", "to"] as const satisfies readonly (keyof AuditFilters)[];
 export type AuditFilterKey = (typeof AUDIT_FILTER_KEYS)[number];
-
-const LISTS = new Set<AuditFilterKey>([
-  "eventType",
-  "initiatorKind",
-  "app",
-  "tool",
-  "intent",
-]);
+const LISTS = new Set<AuditFilterKey>(["eventType", "initiatorKind", "app", "tool", "intent"]);
 
 /** Whether the filters narrow anything at all. */
 export function hasAuditFilters(filters: AuditFilters): boolean {
-  return AUDIT_FILTER_KEYS.some((key) => {
+  return AUDIT_FILTER_KEYS.some(key => {
     const value = filters[key];
     return Array.isArray(value) ? value.length > 0 : Boolean(value);
   });
@@ -143,10 +100,7 @@ export function auditFiltersFromParams(params: URLSearchParams): AuditFilters {
     const raw = params.get(key);
     if (raw === null || raw.trim() === "") continue;
     if (LISTS.has(key)) {
-      const values = raw
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean);
+      const values = raw.split(",").map(value => value.trim()).filter(Boolean);
       if (values.length > 0) (filters as Record<string, unknown>)[key] = values;
     } else {
       (filters as Record<string, unknown>)[key] = raw;
@@ -154,7 +108,6 @@ export function auditFiltersFromParams(params: URLSearchParams): AuditFilters {
   }
   return filters;
 }
-
 const BROKERS = /^(composio|arcade)-/i;
 
 /**
@@ -166,8 +119,5 @@ const BROKERS = /^(composio|arcade)-/i;
  * `server/src/audit-filters.ts`; a test holds the two together.
  */
 export function appKey(server: string): string {
-  return server
-    .replace(BROKERS, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+  return server.replace(BROKERS, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }

@@ -2,7 +2,11 @@
 // Copyright (c) 2026 CopilotKit. MIT licensed. HyperTask developed by NaveDanan.
 import type { ReactNode } from 'react';
 const words = (key: string) => key.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ');
-export function HyperEvidence({ value }: { value: unknown }): ReactNode {
+export function HyperEvidence({
+  value
+}: {
+  value: unknown;
+}): ReactNode {
   if (value == null) return null;
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value !== 'object') return <span className="break-words">{String(value)}</span>;
@@ -15,6 +19,20 @@ export function HyperEvidence({ value }: { value: unknown }): ReactNode {
     return <ul className="list-disc pl-5">{value.map((v, index) => <li key={index}><HyperEvidence value={v} /></li>)}</ul>;
   }
   const object = value as Record<string, unknown>;
-  const { summary, explanation, warning, check, compile, ...fields } = object;
-  return <div className="grid gap-2">{summary != null && <p className="font-medium">{String(summary)}</p>}{explanation != null && <p>{String(explanation)}</p>}{Boolean(warning) && <p role="status" className="text-destructive">{String(warning)}</p>}{[check, compile].filter(Boolean).map((item, index) => { const c = item as { ok: boolean; error?: string; problems?: unknown[] }; return <div role={c.ok ? 'status' : 'alert'} key={index}><p>{c.ok ? 'Validation passed.' : c.error || 'Validation failed.'}</p>{c.problems && <HyperEvidence value={c.problems} />}</div>; })}<dl className="grid gap-2">{Object.entries(fields).filter(([, v]) => v != null).map(([key, v]) => <div key={key}><dt className="font-medium capitalize">{words(key)}</dt><dd><HyperEvidence value={v} /></dd></div>)}</dl></div>;
+  const {
+    summary,
+    explanation,
+    warning,
+    check,
+    compile,
+    ...fields
+  } = object;
+  return <div className="grid gap-2">{summary != null && <p className="font-medium">{String(summary)}</p>}{explanation != null && <p>{String(explanation)}</p>}{Boolean(warning) && <p role="status" className="text-destructive">{String(warning)}</p>}{[check, compile].filter(Boolean).map((item, index) => {
+      const c = item as {
+        ok: boolean;
+        error?: string;
+        problems?: unknown[];
+      };
+      return <div role={c.ok ? 'status' : 'alert'} key={index}><p>{c.ok ? 'Validation passed.' : c.error || 'Validation failed.'}</p>{c.problems && <HyperEvidence value={c.problems} />}</div>;
+    })}<dl className="grid gap-2">{Object.entries(fields).filter(([, v]) => v != null).map(([key, v]) => <div key={key}><dt className="font-medium capitalize">{words(key)}</dt><dd><HyperEvidence value={v} /></dd></div>)}</dl></div>;
 }

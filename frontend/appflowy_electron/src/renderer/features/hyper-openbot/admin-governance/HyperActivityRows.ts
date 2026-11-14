@@ -13,32 +13,30 @@
  * a Bot did or a person can act on, and Admin keeps all of it.
  */
 export const OPENBOT_WORKING_EVENT_TYPES = [
-  /*
-   * Which tools a run was offered, written on every turn ("Choose tools for a run, 96 of 96 tools").
-   * Everything offered was already the Bot's, and a run offered too many says so on its own row
-   * (`agent.tool_limit_refused`). Admin keeps it for tuning which skills declare which tools.
-   */
-  "mcp.tools_discovered",
-  /*
-   * Which Bot a message went to, written on every message ("Sent to the default Bot, fallback:
-   * one-candidate"). The conversation already shows which Bot answered, and a person picks another
-   * with @. Admin keeps it for tuning the router.
-   */
-  "channel.routed",
-  /*
-   * A build's components, published as OpenBot first sees them. The personal edition has no way for
-   * a person to publish or withdraw one, so every such row is OpenBot setting itself up.
-   */
-  "component.published",
-  // The same build's newer wording for a description nobody had edited.
-  "component.description_updated",
-  /*
-   * The computer's boundary and isolation as the server read them at start-up, two rows at every
-   * start. The personal edition has one computer and no admin setting either.
-   */
-  "computer.policy_loaded",
-  "computer.isolation_loaded",
-] as const;
+/*
+ * Which tools a run was offered, written on every turn ("Choose tools for a run, 96 of 96 tools").
+ * Everything offered was already the Bot's, and a run offered too many says so on its own row
+ * (`agent.tool_limit_refused`). Admin keeps it for tuning which skills declare which tools.
+ */
+"mcp.tools_discovered",
+/*
+ * Which Bot a message went to, written on every message ("Sent to the default Bot, fallback:
+ * one-candidate"). The conversation already shows which Bot answered, and a person picks another
+ * with @. Admin keeps it for tuning the router.
+ */
+"channel.routed",
+/*
+ * A build's components, published as OpenBot first sees them. The personal edition has no way for
+ * a person to publish or withdraw one, so every such row is OpenBot setting itself up.
+ */
+"component.published",
+// The same build's newer wording for a description nobody had edited.
+"component.description_updated",
+/*
+ * The computer's boundary and isolation as the server read them at start-up, two rows at every
+ * start. The personal edition has one computer and no admin setting either.
+ */
+"computer.policy_loaded", "computer.isolation_loaded"] as const;
 
 /**
  * Routines calls whose change the routine store records itself (`routine.created`, `routine.updated`
@@ -48,25 +46,18 @@ export const OPENBOT_WORKING_EVENT_TYPES = [
  * and shows the change, which is written whoever made it, a Bot or a person on the Routines page. A
  * call that failed made no change and keeps its row.
  */
-export const CALLS_RECORDED_AS_CHANGES = [
-  "routines/create_routine",
-  "routines/update_routine",
-  "routines/delete_routine",
-] as const;
+export const CALLS_RECORDED_AS_CHANGES = ["routines/create_routine", "routines/update_routine", "routines/delete_routine"] as const;
 
 /**
  * The rows that end an action's attempt: a computer's or a folder's action that failed, was stopped
  * or was refused after its first row was written. Each carries the `attempt` id of that first row.
  */
-export const ACTION_ENDINGS = [
-  "computer.action_failed",
-  "computer.action_stopped",
-  "computer.action_refused",
-] as const;
-
+export const ACTION_ENDINGS = ["computer.action_failed", "computer.action_stopped", "computer.action_refused"] as const;
 const ENDINGS = new Set<string>(ACTION_ENDINGS);
-
-type Row = { eventType: string; payload?: Record<string, unknown> };
+type Row = {
+  eventType: string;
+  payload?: Record<string, unknown>;
+};
 
 /**
  * The rows to draw, with each failed, stopped or refused action shown once.
@@ -81,17 +72,7 @@ type Row = { eventType: string; payload?: Record<string, unknown> };
  * goes to the desktop, which then asks them, and their Deny is the refused row that ends it.
  */
 export function oneRowPerAction<T extends Row>(events: T[]): T[] {
-  const ended = new Set(
-    events
-      .filter((event) => ENDINGS.has(event.eventType))
-      .map((event) => event.payload?.attempt)
-      .filter((attempt): attempt is string => typeof attempt === "string"),
-  );
+  const ended = new Set(events.filter(event => ENDINGS.has(event.eventType)).map(event => event.payload?.attempt).filter((attempt): attempt is string => typeof attempt === "string"));
   if (ended.size === 0) return events;
-  return events.filter(
-    (event) =>
-      event.eventType !== "computer.action_allowed" ||
-      typeof event.payload?.attempt !== "string" ||
-      !ended.has(event.payload.attempt),
-  );
+  return events.filter(event => event.eventType !== "computer.action_allowed" || typeof event.payload?.attempt !== "string" || !ended.has(event.payload.attempt));
 }
