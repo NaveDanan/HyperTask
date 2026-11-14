@@ -452,7 +452,14 @@
     "exactStreamHistoryAndUiMatch": true,
     "capture": "Private diagnostic clone adds only observation writes around unchanged runner assertions; no pass/fail relaxations.",
     "captureSha256": "0ca0c7a4ec0c9df0a58e3dd8e7a994f467bd54f36f526b9e0ee890c237e723f1",
-    "artifactSha256": "9e09a6c1e367ac768d35b325c00f455b819893c5551ef198c6e7d19601981bbf"
+    "artifactSha256": "9e09a6c1e367ac768d35b325c00f455b819893c5551ef198c6e7d19601981bbf",
+    "resolvedModel": "gpt-6.1-terra",
+    "resolvedModelEvidence": {
+      "source": "Authoritative stored events of the accepted thread after restart",
+      "path": "events[219].event.data.output.response_metadata.model",
+      "assistantMessageId": "resp_069ddb9c81fbe2c0016af83080918087d28ee3ff4fcee4d485",
+      "matchingResponseMessageId": true
+    }
   },
   "acceptance": {
     "liveStreaming": "pass",
@@ -609,10 +616,11 @@
   "providerConfiguration": {
     "observedAt": "2026-11-14T10:00:20.435260+00:00",
     "botProvider": "openai",
-    "botModel": "",
     "chatgptAuthFile": "/root/.langchain/chatgpt-auth.json",
     "apiKeysSet": [],
     "proxyOrReplayOverridesSet": [],
-    "providerDirectoryMount": true
+    "providerDirectoryMount": true,
+    "configuredBotModel": "",
+    "resolvedModelForAcceptedRun": "gpt-6.1-terra"
   }
 }

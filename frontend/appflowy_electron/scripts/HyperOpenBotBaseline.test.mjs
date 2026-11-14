@@ -54,10 +54,11 @@ test('waits for the authoritative final write without accepting partial text or 
   let reads = 0;
   const result = await waitForHistoryPair(async remaining => {
     assert.ok(remaining > 0 && remaining <= 1000);
-    return { status: 200, value: ++reads === 1 ? { messages: [complete.messages[0], { ...complete.messages[1], content: 'Hello' }] } : complete };
+    reads++;
+    return { status: 200, value: reads === 1 ? { messages: [] } : reads === 2 ? { messages: [complete.messages[0], { ...complete.messages[1], content: 'Hello' }] } : complete };
   }, 'prompt', 'Hello world', expected, 1000);
   assert.deepEqual(result.messages, expected);
-  assert.equal(result.attempts, 2);
+  assert.equal(result.attempts, 3);
   await assert.rejects(waitForHistoryPair(async () => ({ status: 200, value: { messages: [complete.messages[0]] } }), 'prompt', 'Hello world', expected, 20), /did not settle/);
   for (const response of [{ status: 502, value: complete }, { status: 200, value: { messages: [null] } }, { status: 200, value: { messages: [complete.messages[0], { ...complete.messages[1], id: 'changed' }] } }]) {
     let calls = 0;

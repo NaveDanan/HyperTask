@@ -63,7 +63,8 @@ export function proveStream(events, threadId, runId) {
 }
 
 export function historyPair(status, body, prompt, answer, expected) {
-  if (status < 200 || status >= 300 || !body || !Array.isArray(body.messages) || !body.messages.length) fail('Authoritative history unavailable or malformed');
+  if (status < 200 || status >= 300 || !body || !Array.isArray(body.messages)) fail('Authoritative history unavailable or malformed');
+  if (!body.messages.length) throw new HistoryPendingError('History is empty before the final write');
   if (body.messages.some(m => !m || !id(m.id) || typeof m.role !== 'string')) fail('Malformed history message');
   const users = body.messages.filter(m => m.role === 'user' && m.content === prompt);
   const assistants = body.messages.filter(m => m.role === 'assistant' && m.content === answer);
