@@ -8,7 +8,7 @@ const bots = [{ id: 'picked-harness', visibility: 'public' }] as HyperBotProfile
 it('routes an explicit choice and skills using the original request contract', async () => {
   vi.mocked(hyperOpenBotFetch).mockResolvedValue(new Response(JSON.stringify({ agentId: 'chosen' })));
   expect(await HyperRouteHomeMessage(' task ', 'chosen', ['summarize'])).toBe('chosen');
-  expect(hyperOpenBotFetch).toHaveBeenCalledWith('https://hyper-openbot.invalid/api/route', { method: 'POST', body: JSON.stringify({ text: 'task', agentId: 'chosen', skillSlugs: ['summarize'] }) });
+  expect(hyperOpenBotFetch).toHaveBeenCalledWith('https://hyper-openbot.invalid/api/route', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: 'task', agentId: 'chosen', skillSlugs: ['summarize'] }) });
 });
 it('never falls back on ambiguous routing or skill routing failures', async () => {
   const startConversation = vi.fn();

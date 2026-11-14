@@ -28,7 +28,7 @@ export function HyperRoutingText(text: string) {
   return trimmed.length > 10000 && last >= 0xd800 && last <= 0xdbff ? opening.slice(0, -1) : opening;
 }
 export async function HyperRouteHomeMessage(text: string, agentId?: string, skillSlugs: readonly string[] = []) {
-  const response = await hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + '/api/route', { method: 'POST', body: JSON.stringify({ text: HyperRoutingText(text), ...(agentId ? { agentId } : {}), ...(skillSlugs.length ? { skillSlugs } : {}) }) });
+  const response = await hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + '/api/route', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: HyperRoutingText(text), ...(agentId ? { agentId } : {}), ...(skillSlugs.length ? { skillSlugs } : {}) }) });
   if (!response.ok) {
     const body = await response.json().catch(() => null) as { names?: unknown } | null;
     if (response.status === 409 && Array.isArray(body?.names) && body.names.every(name => typeof name === 'string')) throw new HyperRoutingRefusedError('More than one Bot matches. Choose a Bot before sending.');

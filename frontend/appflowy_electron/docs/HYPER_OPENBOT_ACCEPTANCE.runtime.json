@@ -5,9 +5,10 @@
   "parityCheckpoint": {
     "state": "in_progress_not_accepted",
     "ownerInstruction": "Finish parity, resolve reviews and merge before the next stage. Unfinished workflows are not accepted as complete.",
-    "integratedAreas": ["vault", "linux_window_controls_and_sidebar"],
+    "integratedAreas": ["vault", "linux_window_controls_and_sidebar", "settings", "onboarding", "approvals_inbox"],
     "pendingAreas": ["conversations", "routines", "memory", "bot_tabs", "approvals_inbox", "computer_browser", "interactive_screens", "settings", "admin_governance", "admin_platform", "onboarding"],
-    "repositoryValidation": {"passedTests": 596, "skippedTests": 1, "realCoreTestsRan": 4, "smokeSafeguardsPassed": 13, "typecheck": "pass", "build": "pass"},
+    "parentIntegrationPending": ["Home initial drafts", "settings navigation and conversation emphasis", "global reply notifications", "Vault browser callback"],
+    "repositoryValidation": {"node": "24.18.1", "passedTests": 650, "skippedTests": 1, "realCoreTestsRan": 4, "smokeSafeguardsPassed": 13, "typecheck": "pass", "build": "pass"},
     "nativeVerification": "pending_for_new_parity_ui"
   },
   "branch": "hyper/openbot-acceptance",

@@ -127,7 +127,10 @@ Documents and datasets still use pre-existing placeholder editing bodies. Their 
 - Integrated the Vault implementation and follow-up at `3ff74e3`: keys, saved logins, private sign-in forms and terminal-state polling guards. Browser navigation remains an integration dependency.
 - Fixed Macroscope finding `4575074621` in `72c2429`: the composer reads the channel's current placeholder count instead of adding local reservations again. A real-handler regression fails before the fix and covers rerenders, rapid picks, the eight-file ceiling and Send blocking.
 - Validation at this checkpoint: typecheck and production build pass, 596 tests pass with one optional simulated-IPC skip, and 13 smoke-script safeguards pass. All four real-core tests ran with the existing binary. Native verification of the newly integrated UI remains pending.
-- The eleven unfinished areas retain their work on existing branches. Repeated Codex event-stream closures interrupted them again, so Settings, Onboarding and the Approvals inbox resumed first as a smaller batch. They must finish the remaining upstream workflows, not treat an abbreviated port or a recorded gap as full parity.
+- The smaller batch finished Settings at `4a70da8`, Onboarding at `c8903e6` and the Approvals inbox step at `75a9fa6`. Their code is now integrated. Parent wiring remains for Home initial drafts, settings navigation/emphasis and global reply notifications. The broader attention/admin workflows remain assigned to Bot tabs, routines and admin governance.
+- Conversations, computer/browser and admin governance form the next smaller Codex batch. Other unfinished branches retain their work. They must finish the remaining upstream workflows, not treat an abbreviated port or a recorded gap as full parity.
+- Added the upstream terminal dependencies `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0. No existing locked dependency version changed; no package scripts ran. Fixed JSON Content-Type in the shared request helper and Home routing, with a red/green IPC regression.
+- Current integrated validation on Node 24.18.1: typecheck/build pass, 650 tests pass with one optional skip, all four real-core tests ran, and 13 smoke safeguards pass. New parity screens still need integrated native verification and final review.
 
 ## Queue
 
