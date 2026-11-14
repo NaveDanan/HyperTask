@@ -18,6 +18,8 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
   const [routing, setRouting] = useState<notify.HyperRouting>();
   const [error, setError] = useState('');
   const [personal, setPersonal] = useState<boolean>();
+  const pendingRuleReset = useRef(false);
+  const [ruleFormVersion, setRuleFormVersion] = useState(0);
   const [reset, setReset] = useState(false);
   const mutationLock = useRef(false);
   const unconfirmedTarget = useRef<'inbox' | 'notifications' | 'none'>('none');
@@ -30,7 +32,7 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
     const current = ++version.current;
     try {
       const value = await api.HyperLoadInbox();
-      if (alive.current && current === version.current) { setInbox(value); if (unconfirmedTarget.current !== 'notifications') setUnconfirmed(false); }
+      if (alive.current && current === version.current) { setInbox(value); if (pendingRuleReset.current) { pendingRuleReset.current = false; setRuleFormVersion(v => v + 1); } if (unconfirmedTarget.current !== 'notifications') setUnconfirmed(false); }
     } catch (cause) { if (alive.current && current === version.current) setError('Approvals could not be loaded. Check your connection or access and retry.'); if (propagate) throw cause; }
   }
   useEffect(() => { alive.current = true; void request<{ edition: string }>('/api/capabilities').then(data => { if (alive.current) setPersonal(data.edition === 'personal'); }).catch(() => {}); void refresh(); const timer = setInterval(() => { if (!mutationLock.current) void refresh(); }, 10000); return () => { alive.current = false; version.current++; clearInterval(timer); }; }, []);
@@ -81,7 +83,7 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
       {inbox.team?.customRulesEnabled === false && <p>Your admin has turned off personal rules. Saved rules are kept but do not apply.</p>}
       {!inbox.rules.length && !inbox.teamRules.length && <p>No rules yet.</p>}
       {[...inbox.teamRules.map(rule => ({ rule, locked: true })), ...inbox.rules.map(rule => ({ rule, locked: inbox.team?.customRulesEnabled === false }))].map(({ rule, locked }) => <div key={rule.id} className="space-y-2 rounded border border-border p-3"><p>{rule.botId} · {rule.toolRef} · {rule.effect} · {rule.scope}{rule.account ? ` · ${rule.account}` : ''}</p><select aria-label={`Behaviour for ${rule.toolRef}`} className="bg-background" disabled={busy || locked} value={rule.behaviour} onChange={e => void mutate(() => api.HyperChangeRule(rule.id, e.target.value as api.RuleBehaviour))}>{Object.entries(behaviours).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>{locked ? <span> Locked</span> : <Button variant="outline" disabled={busy} onClick={() => void mutate(() => api.HyperRemoveRule(rule.id))}>Remove</Button>}</div>)}
-      {inbox.preferences && inbox.team?.customRulesEnabled !== false && <HyperRuleForm busy={busy} save={input => mutate(() => api.HyperSaveRule(input))} />}
+      {inbox.preferences && inbox.team?.customRulesEnabled !== false && <HyperRuleForm key={ruleFormVersion} busy={busy} save={input => mutate(async () => { await api.HyperSaveRule(input); pendingRuleReset.current = true; })} />}
       {!!inbox.conversationGrants?.length && <h2 className="font-semibold">Conversation allowances</h2>}{inbox.conversationGrants?.map(grant => <div key={grant.id}>{grant.toolRef} · {grant.scope} <Button disabled={busy} variant="outline" onClick={() => void mutate(() => api.HyperRevokeGrant(grant.id))}>Turn off</Button><Button variant="ghost" onClick={() => open(grant.threadId)}>Open conversation</Button></div>)}
     </>}
     {tab === 'Notifications' && (!delivery || !routing ? <p>Loading notifications…</p> : <>

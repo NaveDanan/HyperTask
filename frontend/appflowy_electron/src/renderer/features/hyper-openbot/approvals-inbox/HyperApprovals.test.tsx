@@ -113,3 +113,8 @@ describe('Hyper authoritative inbox results', () => {
     expect(renderToStaticMarkup(<HyperDecisionHistory requests={[]} open={vi.fn()} />)).toContain('No decisions yet.');
   });
 });
+it('does not read back a shared-consent reset as an inbox write', async () => {
+  const action = () => HyperClearSharedBotConsents();
+  expect(await HyperRunMutation(action, async () => {})).toBe('confirmed');
+  expect(hyperOpenBotRequest).toHaveBeenCalledTimes(1);
+});
