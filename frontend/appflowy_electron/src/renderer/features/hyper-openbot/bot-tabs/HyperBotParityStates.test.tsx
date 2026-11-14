@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { ReactNode } from 'react';
 const mock = vi.hoisted(() => ({ data: undefined as unknown, pending: false, error: '', clicks: new Map<string, () => unknown>() }));
 vi.mock('./HyperBotResource', () => ({ useHyperBotResource: () => ({ data: mock.data, pending: mock.pending, error: mock.error, refresh: vi.fn(), run: (action: () => Promise<unknown>) => action() }) }));
+vi.mock('../HyperNativeCredentials', () => ({ hyperCallbackKey: vi.fn(async () => ({ status: 'revoked' })) }));
+import { hyperCallbackKey } from '../HyperNativeCredentials';
 vi.mock('../transport', () => ({ hyperOpenBotRequest: vi.fn() }));
 vi.mock('@/components/ui/button', () => ({ Button: ({ children, onClick, disabled }: { children: ReactNode; onClick?: () => unknown; disabled?: boolean }) => { if (typeof children === 'string' && onClick && !disabled) mock.clicks.set(children, onClick); return <button disabled={disabled}>{children}</button>; } }));
 import { hyperOpenBotRequest } from '../transport';
@@ -64,7 +66,8 @@ it('revokes callback authority without requesting or exposing a token', async ()
   const html = renderToStaticMarkup(<HyperBotSetupTab agentId="desk" />);
   expect(html).toContain('Revoke callback key'); expect(html).not.toContain('Generate key');
   await mock.clicks.get('Revoke callback key')!();
-  expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/agents/desk/callback-token', 'DELETE');
+  expect(hyperCallbackKey).toHaveBeenCalledWith('desk', 'revoke');
+  expect(hyperOpenBotRequest).not.toHaveBeenCalled();
 });
 
 it('distinguishes account-scoped and Bot-pattern approval rules', () => {
