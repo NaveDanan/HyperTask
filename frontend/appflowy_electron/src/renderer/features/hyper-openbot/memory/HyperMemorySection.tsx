@@ -7,12 +7,27 @@ import { Switch } from '@/components/ui/switch';
 import { hyperOpenBotRequest } from '../transport';
 import { type MemoryRecord, type MemorySource, type MemorySourceTool, createMemory, updateMemory, deleteMemory, addMemorySource, memorySourceAction } from './HyperMemoryApi';
 
-export function useHyperMemoryData<T>(path: string, key?: string, interval?: number) {
-  const [data, setData] = useState<T>(); const [error, setError] = useState(''); const [loading, setLoading] = useState(true);
+export function useHyperMemoryData<T>(path: string | null, key?: string, interval?: number) {
+  const [data, setData] = useState<T>();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(Boolean(path));
   const [revision, setRevision] = useState(0);
-  useEffect(() => { let active = true; setLoading(true); setData(undefined); setError('');
-    const load = () => hyperOpenBotRequest<Record<string, unknown>>(path).then(value => { if(active) { setData((key ? value[key] : value) as T); setError(''); } }).catch(() => { if(active) setError('Could not load this page. Access may be refused by the server.'); }).finally(() => { if(active) setLoading(false); });
-    void load(); const timer = interval ? setInterval(load, interval) : undefined;
+  useEffect(() => {
+    let active = true;
+    setData(undefined); setError(''); setLoading(Boolean(path));
+    if (!path) return;
+    let pending = false;
+    const load = async () => {
+      if (pending) return;
+      pending = true;
+      try {
+        const value = await hyperOpenBotRequest<Record<string, unknown>>(path);
+        if (active) { setData((key ? value[key] : value) as T); setError(''); }
+      } catch { if (active) setError('Could not load this page. Access may be refused by the server.'); }
+      finally { pending = false; if (active) setLoading(false); }
+    };
+    void load();
+    const timer = interval ? setInterval(load, interval) : undefined;
     return () => { active = false; clearInterval(timer); };
   }, [path, key, revision, interval]);
   return { data, error, loading, reload: () => setRevision(value => value + 1) };
