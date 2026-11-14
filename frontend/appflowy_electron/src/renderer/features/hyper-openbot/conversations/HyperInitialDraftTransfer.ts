@@ -5,13 +5,14 @@ export class HyperInitialDraftTransfer<T> {
   private active?: AbortController;
   private held?: { ids: string[]; draft?: HyperInitialDraft; channel?: T };
   cancel() { this.active?.abort(); }
+  forget(channel: T) { if (this.held?.channel === channel) this.held = undefined; }
   async start(ids: string[], draft: HyperInitialDraft | undefined, deps: {
     create(ids: string[]): Promise<T>;
     receive(channel: T, draft: HyperInitialDraft, signal: AbortSignal): Promise<void>;
     navigate(channel: T): void;
   }) {
     if (this.active) throw new Error('A conversation is already being started.');
-    const same = this.held && this.held.ids.join('\0') === ids.join('\0') && this.held.draft?.text === draft?.text && this.held.draft?.submit === draft?.submit && this.held.draft?.commandIds.join('\0') === draft?.commandIds.join('\0') && this.held.draft?.files.length === draft?.files.length && this.held.draft?.files.every((file, index) => file === draft?.files[index]);
+    const same = this.held && this.held.ids.join('\0') === ids.join('\0') && JSON.stringify(this.held.draft?.modelPick) === JSON.stringify(draft?.modelPick) && this.held.draft?.text === draft?.text && this.held.draft?.submit === draft?.submit && this.held.draft?.commandIds.join('\0') === draft?.commandIds.join('\0') && this.held.draft?.files.length === draft?.files.length && this.held.draft?.files.every((file, index) => file === draft?.files[index]);
     const held = same ? this.held! : { ids: [...ids], draft, channel: undefined as T | undefined };
     this.held = held;
     const controller = new AbortController(); this.active = controller;

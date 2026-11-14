@@ -1,4 +1,5 @@
-import { rememberVoiceCall, forgetVoiceCall, recoverVoiceCalls } from './HyperVoiceOutbox';
+import { hyperSaveVoiceTranscript } from './HyperVoiceArchive';
+import { recoverVoiceCalls } from './HyperVoiceOutbox';
 import { connectWebSocket } from './HyperVoiceWebsocket';
 // Copyright (c) 2026 CopilotKit. SPDX-License-Identifier: MIT
 // Adapted from app/src/lib/voice/use-voice-call.ts and components/channels voice controls.
@@ -8,7 +9,8 @@ import { hyperOpenBotRequest as request } from '../transport';
 import { HyperVoiceSession } from './HyperVoiceSession';
 import { connectWebRtc } from './HyperVoiceWebrtc';
 import type { SaveHyperVoiceSessionInput, HyperVoiceSessionPage } from './HyperVoiceContracts';
-export function HyperVoiceControls({ channelId, disabled, context, askAgent, anchorMessageId }: {
+export function HyperVoiceControls({ channelId, disabled, context, askAgent, anchorMessageId, onHistory }: {
+  onHistory?: (history: string) => void;
   channelId: string; disabled: boolean; context: () => string;
   askAgent: (text: string, signal: AbortSignal) => Promise<string>; anchorMessageId: () => string | null;
 }) {
@@ -22,8 +24,7 @@ export function HyperVoiceControls({ channelId, disabled, context, askAgent, anc
   const [revision, setRevision] = useState(0);
   async function save(call: SaveHyperVoiceSessionInput, userId = callOwner.current ?? owner.current) {
     if (!userId) { setUnsaved(value => [...value.filter(item => item.id !== call.id), call]); return; }
-    rememberVoiceCall(call, userId);
-    try { const me = await request<{ user: { id: string } }>('/api/me'); if (me.user.id !== userId) return; await request('/api/voice/sessions', 'POST', call); forgetVoiceCall(call, userId); setUnsaved(value => value.filter(item => item.id !== call.id)); setRevision(value => value + 1); }
+    try { await hyperSaveVoiceTranscript(call, userId); setUnsaved(value => value.filter(item => item.id !== call.id)); setRevision(value => value + 1); }
     catch { setUnsaved(value => [...value.filter(item => item.id !== call.id), call]); }
   }
   const [session] = useState(() => new HyperVoiceSession({ channelId,
@@ -34,7 +35,7 @@ export function HyperVoiceControls({ channelId, disabled, context, askAgent, anc
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot);
   useEffect(() => { let current = true; void request<{ voice?: boolean }>('/api/capabilities').then(value => { if (current) setAvailable(!!value.voice); }).catch(() => undefined); return () => { current = false; session.end(); }; }, [session]);
   useEffect(() => { if (disabled) session.end(); }, [disabled, session]);
-  useEffect(() => { if (!available) return; let current = true; void (async () => { try { const result: HyperVoiceSessionPage['sessions'] = []; let cursor: string | null = null; do { const params = new URLSearchParams({ channelId }); if (cursor) params.set('cursor', cursor); const page = await request<HyperVoiceSessionPage>(`/api/voice/sessions?${params}`); result.push(...page.sessions); cursor = page.nextCursor; } while (cursor && current); if (current) { setHistory(result); setError(undefined); } } catch { if (current) setError('Voice history could not be loaded.'); } })(); return () => { current = false; }; }, [available, channelId, revision]);
+  useEffect(() => { if (!available) return; let current = true; void (async () => { try { const result: HyperVoiceSessionPage['sessions'] = []; let cursor: string | null = null; do { const params = new URLSearchParams({ channelId }); if (cursor) params.set('cursor', cursor); const page = await request<HyperVoiceSessionPage>(`/api/voice/sessions?${params}`); result.push(...page.sessions); cursor = page.nextCursor; } while (cursor && current); if (current) { setHistory(result); onHistory?.(result.slice(0, 12).reverse().map(call => call.transcript.map(line => `${line.role}: ${line.text}`).join('\n')).join('\n').slice(-12000)); setError(undefined); } } catch { if (current) setError('Voice history could not be loaded.'); } })(); return () => { current = false; }; }, [available, channelId, revision]);
   if (!available || !navigator.mediaDevices?.getUserMedia) return null;
   const active = state.phase === 'connecting' || state.phase === 'connected';
   return <details className="border-b p-3"><summary>Voice</summary><div className="space-y-2 py-2">

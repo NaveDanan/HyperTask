@@ -1,6 +1,6 @@
 export function hyperConversationDestination(id: string, intent?: { path: string }) {
   const path = intent?.path;
-  const aliases: Record<string, string> = { 'approvals-inbox': 'approvals', 'computer-browser': 'computer', onboarding: 'home', screens: 'home' };
+  const aliases: Record<string, string> = { 'approvals-inbox': 'approvals', 'computer-browser': 'computer', onboarding: 'setup', screens: 'home' };
   let sectionId = aliases[id] ?? id;
   if (path) {
     const pathname = new URL(path, 'https://native.invalid').pathname;

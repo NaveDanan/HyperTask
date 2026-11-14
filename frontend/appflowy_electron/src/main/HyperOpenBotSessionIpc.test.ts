@@ -151,3 +151,9 @@ it('allows only the exact channel events socket and rejects variants', async () 
   await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'events-allowed', '/api/channels/events', []);
   expect(ipc.sockets).toHaveLength(1); await h.manager.beginNativeTransition().cleared;
 });
+it('synthesizes the required voice header for transcript saves including query paths', async () => {
+  const h = setup(); ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ session: { id: 'call' } })));
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'voice-save', path: '/api/voice/sessions?retry=true', method: 'POST', body: '{}' });
+  expect(ipc.fetch.mock.calls[0][1].headers['x-openbot-voice']).toBe('1');
+  await h.manager.beginNativeTransition().cleared;
+});

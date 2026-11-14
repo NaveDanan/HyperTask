@@ -19,9 +19,9 @@ export interface HyperOpenBotSection {
 }
 
 /** Lazily load an area module whose default export renders the section. Call once per slot entry. */
-export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext }> }>) {
+export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext; path?: string }> }>) {
   const Section = lazy(load);
-  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section context={context} /></Suspense>;
+  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section key={context.navigationIntent?.path} context={context} path={context.navigationIntent?.path} /></Suspense>;
 }
 
 /** Parity sections added beside Conversations, Bots, Skills and Connections. Each area owns its slot. */

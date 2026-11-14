@@ -46,10 +46,13 @@ export interface HyperComposerProps {
   /** Called after success with exactly the attachments consumed by this send. */
   onConsumeAttachments?: (ids: readonly string[]) => void;
   onDiscardAttachment?: (id: string) => void;
+  commandIds?: readonly string[];
+  onCommandIdsChange?: (ids: readonly string[]) => void;
   commands?: readonly { id: string; label: string }[];
   agents?: readonly { id: string; name: string }[];
   onStop?: () => void | Promise<void>;
   pending?: boolean;
+  allowQueue?: boolean;
   stoppable?: boolean;
   disabled?: boolean;
   autoFocus?: boolean;
@@ -67,9 +70,11 @@ export interface HyperComposerProps {
 }
 const EMPTY_ATTACHMENTS: readonly HyperComposerAttachment[] = [];
 export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, getAttachmentCount, onRemoveAttachment,
-  onConsumeAttachments, onDiscardAttachment, commands = [], agents = [], onStop, pending = false, stoppable = pending, disabled = false, autoFocus = false,
+  onConsumeAttachments, onDiscardAttachment, commands = [], agents = [], commandIds, onCommandIdsChange, onStop, pending = false, allowQueue = true, stoppable = pending, disabled = false, autoFocus = false,
   initialValue = '', value, onTextChange, recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
-  const [selectedCommands, setSelectedCommands] = useState<string[]>([]);
+  const [localCommands, setLocalCommands] = useState<readonly string[]>([]);
+  const selectedCommands = commandIds ?? localCommands;
+  const setSelectedCommands = (change: string[] | ((current: readonly string[]) => string[])) => { const next = typeof change === 'function' ? change(selectedCommands) : change; if (onCommandIdsChange) onCommandIdsChange(next); else setLocalCommands(next); };
   const [localText, setLocalText] = useState(initialValue);
   const text = value ?? localText;
   const setText = value !== undefined && onTextChange ? onTextChange : setLocalText;
@@ -79,6 +84,9 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   const [error, setError] = useState<string>();
   useEffect(() => { setError(undefined); }, [recoveryVersion]);
   const [rejected, setRejected] = useState<HyperRejectedFile[]>([]);
+  const liveBase = useRef('');
+  const dictationStop = useRef<((cancel?: boolean) => boolean) | undefined>(undefined);
+  const registerDictationStop = useRef((handler: ((cancel?: boolean) => boolean) | undefined) => { dictationStop.current = handler; }).current;
   const input = useRef<HTMLTextAreaElement | null>(null);
   const picker = useRef<HTMLInputElement>(null);
   const claimedFocus = useRef(false);
@@ -112,19 +120,21 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   const [queued, setQueued] = useState<readonly HyperQueuedMessage[]>([]);
   const queue = useRef<readonly HyperQueuedMessage[]>([]);
   const queueHeldAfterFailure = useRef(false);
+  const activeAttachments = useRef<readonly string[]>([]);
   const activeSnapshot = useRef<string | undefined>(undefined);
   const latest = useRef({ onSubmit, onDiscardAttachment }); latest.current = { onSubmit, onDiscardAttachment };
   const [selectedAgent, setSelectedAgent] = useState('');
   function transition(action: Parameters<typeof hyperReduceQueue>[1]) {
     const next = hyperReduceQueue(queue.current, action); queue.current = next.queue; setQueued(next.queue);
+    if (next.droppedAttachments.length) setError('Only eight files can be sent together. Extra queued files were released.');
     next.droppedAttachments.forEach(file => latest.current.onDiscardAttachment?.(file.id)); return next;
   }
   async function runQueued(next: ReturnType<typeof hyperReduceQueue>) {
     if (!next.run) return;
-    inFlight.current = true; setSubmitting(true); setError(undefined); activeSnapshot.current = next.run.text;
+    inFlight.current = true; setSubmitting(true); setError(undefined); activeSnapshot.current = next.run.text; activeAttachments.current = next.run.attachments.map(file => file.id);
     try { await latest.current.onSubmit(next.run); }
     catch (cause) { queueHeldAfterFailure.current = true; transition({ type: 'restore', messages: next.restoreIfRunFails }); setError(cause instanceof Error ? cause.message : 'Message could not be sent. Try again.'); throw cause; }
-    finally { inFlight.current = false; activeSnapshot.current = undefined; setSubmitting(false); }
+    finally { inFlight.current = false; activeSnapshot.current = undefined; activeAttachments.current = []; setSubmitting(false); }
   }
   useEffect(() => {
     if (pending) { queueHeldAfterFailure.current = false; return; }
@@ -133,18 +143,20 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   }, [pending, submitting]);
   useEffect(() => () => { for (const message of queue.current) for (const file of message.attachments) latest.current.onDiscardAttachment?.(file.id); }, []);
   const submit = async () => {
-    if (disabled || !sendable) return;
-    const prefix = selectedCommands.map(id => `/${id}`).join(' ');
-    const snapshot: HyperQueueDraft = { text: [prefix, text].filter(Boolean).join(' ').trim(), attachments: [...attachments], agentId: selectedAgent || null, commandIds: [...selectedCommands], isEmpty: !text.trim() && !prefix };
-    if (inFlight.current && activeSnapshot.current === snapshot.text) return;
+    if (disabled || !sendable || (!allowQueue && (pending || inFlight.current))) return;
+    const prefix = selectedCommands.filter(id => !text.trimStart().split(/\s+/).includes(`/${id}`)).map(id => `/${id}`).join(' ');
+    const snapshot: HyperQueueDraft = { text: [prefix, text].filter(Boolean).join(' ').trim(), attachments: attachments.filter(file => !activeAttachments.current.includes(file.id)), agentId: selectedAgent || null, commandIds: [...selectedCommands], isEmpty: !text.trim() && !prefix };
+    if ((!snapshot.text.trim() && !snapshot.attachments.length) || (inFlight.current && activeSnapshot.current === snapshot.text && !snapshot.attachments.length)) return;
     const busy = pending || inFlight.current;
     const next = transition({ type: 'submit', id: crypto.randomUUID(), draft: snapshot, busy });
     if (busy) { setText(''); setSelectedCommands([]); onConsumeAttachments?.(snapshot.attachments.map(file => file.id)); return; }
+    const originalText = text;
+    setText('');
     try {
       queueHeldAfterFailure.current = false; await runQueued(next);
-      setText(current => current === text ? '' : current); setSelectedCommands([]);
+      setSelectedCommands([]);
       onConsumeAttachments?.(snapshot.attachments.map(file => file.id)); input.current?.focus();
-    } catch { /* Caller draft and stable retry identity remain available. */ }
+    } catch { setText(current => current || originalText); /* Stable retry identity remains available. */ }
   };
   const stop = async () => {
     if (!onStop || stoppingRef.current) return;
@@ -164,7 +176,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     <Textarea data-slot="composer-input" aria-label="Message" placeholder={placeholder} disabled={disabled} value={text}
       ref={(element) => { input.current = element; if (typeof textareaRef === 'function') textareaRef(element); else if (textareaRef) textareaRef.current = element; }}
       className="max-h-64 min-h-24 resize-none border-0 bg-transparent shadow-none"
-      onChange={(event) => setText(event.target.value)}
+      onChange={(event) => { dictationStop.current?.(true); setText(event.target.value); }}
       onPaste={(event) => {
         if (event.clipboardData.getData('text/plain')) return;
         const files = Array.from(event.clipboardData.files);
@@ -172,18 +184,18 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
       }}
       onKeyDown={(event) => {
         if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
-          event.preventDefault(); void submit();
+          event.preventDefault(); if (dictationStop.current?.()) return; void submit();
         }
       }} />
     {error && <p role="alert" className="py-2 text-sm text-destructive">{error}</p>}
     {!!rejected.length && <ul aria-label="Files not added" className="space-y-1 py-2">{rejected.map((file) => <li key={file.id} className="flex items-center gap-2 text-sm text-destructive"><span role="alert">{file.reason}</span><Button type="button" size="icon-xs" variant="ghost" aria-label={`Dismiss rejection for ${file.name}`} onClick={() => setRejected((current) => current.filter((item) => item.id !== file.id))}><X /></Button></li>)}</ul>}
     <div className="flex flex-wrap items-center gap-2">
       {onFiles && <><input ref={picker} type="file" multiple className="hidden" tabIndex={-1} aria-label="Choose attachments" accept="image/png,image/jpeg,image/gif,image/webp,text/plain,text/markdown,text/csv,application/json" onChange={(event) => { void stage(Array.from(event.target.files ?? [])); event.target.value = ''; }} /><Button type="button" variant="ghost" size="icon-sm" aria-label="Attach files" disabled={disabled} onClick={() => picker.current?.click()}><Paperclip /></Button></>}
-      <HyperDictationControl disabled={disabled || pending || submitting} onText={words => setText(current => [current.trimEnd(), words].filter(Boolean).join(' '))} />
+      <HyperDictationControl registerStop={registerDictationStop} onLiveStart={() => { liveBase.current = text; }} onLiveText={words => setText([liveBase.current.trimEnd(), words].filter(Boolean).join(' '))} disabled={disabled || pending || submitting} onText={words => setText(current => [current.trimEnd(), words].filter(Boolean).join(' '))} />
       {!!agents.length && <label>To <select aria-label="Mention a Bot" value={selectedAgent} onChange={event => setSelectedAgent(event.target.value)}><option value="">Default recipient</option>{agents.map(bot => <option key={bot.id} value={bot.id}>@{bot.name}</option>)}</select></label>}
       {!!commands.length && <label>Skill <select aria-label="Add skill command" value="" onChange={event => { const id = event.target.value; if (id) setSelectedCommands(current => [...new Set([...current, id])]); }}><option value="">Choose a skill</option>{commands.map(command => <option key={command.id} value={command.id}>/{command.id} · {command.label}</option>)}</select></label>}
       {modelPicker && <HyperModelPicker {...modelPicker} disabled={disabled || modelPicker.disabled} onPicked={() => { modelPicker.onPicked?.(); input.current?.focus(); }} />}
-      <div className="ml-auto flex gap-2">{stoppable && onStop && <Button type="button" size="icon-sm" aria-label="Stop generating" disabled={stopping} onClick={() => void stop()}><Square /></Button>}<Button type="submit" size="icon-sm" aria-label={pending || submitting ? 'Queue message' : 'Send message'} disabled={disabled || !sendable}><ArrowUp /></Button></div>
+      <div className="ml-auto flex gap-2">{stoppable && onStop && <Button type="button" size="icon-sm" aria-label="Stop generating" disabled={stopping} onClick={() => void stop()}><Square /></Button>}<Button type="submit" size="icon-sm" aria-label={pending || submitting ? 'Queue message' : 'Send message'} disabled={disabled || !sendable || (!allowQueue && (pending || submitting))}><ArrowUp /></Button></div>
     </div>
   </form>;
 }

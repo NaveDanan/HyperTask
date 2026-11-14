@@ -1,3 +1,4 @@
+import { HyperPauseNotice } from './HyperPauseNotice';
 import { useHyperConversationDraft } from '../useHyperConversationDraft';
 import { HyperDeliveryControls } from './HyperDeliveryControls';
 // Copyright (c) 2026 CopilotKit. SPDX-License-Identifier: MIT
@@ -66,6 +67,7 @@ export function HyperGroupChat({ channelId, serviceReady, eventRevision = 0 }: {
   const names = new Map(data.bots.map(bot => [bot.id, bot.name]));
   return <div className="flex h-full min-h-0 flex-col pb-12">
     <div className="flex items-center gap-2 border-b p-2"><span>{data.bots.map(bot => bot.name).join(', ')}</span><Button variant="ghost" onClick={() => setPeopleOpen(value => !value)}>{data.people.length} people</Button><Button variant="ghost" onClick={() => setRevision(value => value + 1)}>Refresh</Button></div>
+    {data.bots.map(bot => <HyperPauseNotice key={bot.id} botId={bot.id} enabled={serviceReady} />)}
     <HyperDeliveryControls channelId={channelId} bots={data.bots} enabled={serviceReady} />
     {error && <p role="alert" className="p-3 text-destructive">{error}</p>}
     {peopleOpen && <div className="space-y-2 border-b p-3"><p>Everyone here sees the whole conversation.</p>{data.people.map(person => <div key={person.userId} className="flex items-center gap-3"><span>{person.userId === me ? 'You' : person.name ?? person.email}{person.creator ? ' · Started this group' : ''}</span>{(person.userId === me ? !person.creator : creator) && <Button disabled={pending || !serviceReady} variant="outline" onClick={() => void mutate(() => hyperRemoveGroupMember(channelId, person.userId))}>{person.userId === me ? 'Leave' : 'Remove'}</Button>}</div>)}<form className="flex gap-2" onSubmit={event => { event.preventDefault(); void mutate(async () => { await hyperAddGroupMember(channelId, email); setEmail(''); }); }}><Input type="email" required aria-label="Their email" value={email} onChange={event => setEmail(event.target.value)} /><Button disabled={pending || !email.trim() || !serviceReady}>Add</Button></form></div>}

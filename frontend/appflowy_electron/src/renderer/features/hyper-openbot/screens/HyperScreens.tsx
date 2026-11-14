@@ -26,8 +26,8 @@ function HyperSearch({ value, onChange, label }: { value: string; onChange: (val
 }
 
 function HyperAnimatedConversationTitle({ row }: { row: HyperConversation }) {
-  const reveal = useHyperTypedReveal(HyperConversationTitle(row) || undefined);
-  return <>{reveal.text || 'New conversation'}{reveal.typing && <span aria-hidden="true">▏</span>}</>;
+  const reveal = useHyperTypedReveal(row.summary ?? undefined);
+  return <>{reveal.text || HyperConversationTitle(row) || 'New conversation'}{reveal.typing && <span aria-hidden="true">▏</span>}</>;
 }
 export interface HyperConversationsScreenProps extends HyperScreenState {
   conversations: readonly HyperConversation[];
