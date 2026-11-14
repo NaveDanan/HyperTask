@@ -114,9 +114,11 @@ This remains a provisioned Linux development connection to the authorized person
 
 ## Current step: issue #8
 
-The `hyper/openbot-acceptance` branch starts from the #13 merge. The acceptance audit is checking each matrix item against the actual native app and original VM runtime. A committed two-phase native smoke runner and controlled launcher are being validated using existing Electron/core/Playwright installations. They preserve the test profile and never install dependencies or close unrelated applications.
+The `hyper/openbot-acceptance` branch starts from the #13 merge. The [acceptance report](HYPER_OPENBOT_ACCEPTANCE.md) and [machine-readable evidence index](HYPER_OPENBOT_ACCEPTANCE.runtime.json) record the final native checks and limitations. A committed two-phase smoke runner and owned-app launcher passed on the actual Electron window using the existing binaries. Two turns received 105 and 50 live text deliveries, and an actual app/core restart restored the same view/channel/thread/messages/model/effort without resending.
 
-Documents and datasets still use the Electron port's pre-existing placeholder bodies. The integration changes only the Chat renderer registration; it did not remove document/grid/board/calendar editors from this frontend. Their existing navigation and native core contracts can be regression-tested, but full editing UI acceptance is unavailable. This limitation must be explicit in the report and owner checkpoint.
+Fresh native approval/denial, independent marker/absence proof, failed tool/follow-up, Stop/continue, runtime error/retry after Jira navigation and private-tunnel disconnect/reconnect passed. Temporary rules were revoked, the same harness was restored, preferences were restored and the backend is healthy. Native themes and text/file draft retention across page/Jira navigation passed. Acceptance found and fixed a blank default-model label and navigation draft loss, including retained retry identity and trusted auth invalidation. Repository validation passes 568 tests with one optional skip, seven runner safeguards, typecheck and build.
+
+Documents and datasets still use pre-existing placeholder editing bodies. Their navigation and real core data persistence across restart pass; full editor UI acceptance is unavailable. The pre-existing command palette also does not restore composer focus after Escape. These limits, Linux development packaging, single-owner VM scope, offline dependencies and notice records are explicit in the report. Owner readiness confirmation required by issue #8 and the exact-head code/security review remain pending. Issue #8 and the epic remain open.
 
 ## Queue
 
@@ -127,7 +129,7 @@ Documents and datasets still use the Electron port's pre-existing placeholder bo
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11 merged as d026839; issue closed |
 | [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12 merged as bb158354; issue closed |
 | [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | PR #13 merged as 98f0b912; issue closed |
-| [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Requirements/evidence audit and repeatable native smoke runner in progress |
+| [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Native checks/report ready; owner checkpoint and PR review pending |
 
 ## Working-copy note
 

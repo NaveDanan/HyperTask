@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "issue": 8,
+  "state": "validated_owner_and_pr_review_pending",
+  "branch": "hyper/openbot-acceptance",
+  "baseMerge": "98f0b91267dfe72c78b3be1049778ae0dcf2622c",
+  "runtimeCaptureCommit": "3eb5d6a4e50ac096b9e6b0f7472522b471b0754c",
+  "singleNativeUi": true,
+  "backend": "existing authorized MMEMS personal VM; original OpenBot and CopilotKit Intelligence",
+  "originalSourceCommit": "f8af37ab73e96784f174a11104505a965e722cab",
+  "providerAuthentication": "ChatGPT OAuth; no API key",
+  "repositoryValidation": {
+    "passedTests": 568,
+    "skippedTests": 1,
+    "skipReason": "opt-in simulated-IPC live test; actual native live tests ran separately",
+    "nativeRunnerSafeguards": 7,
+    "typecheck": "passed",
+    "frontendBuild": "passed",
+    "realCoreTests": 4,
+    "coreRebuilt": false
+  },
+  "nativeSmoke": {
+    "twoTurnsTextDeliveries": [
+      105,
+      50
+    ],
+    "exactLiveSavedRendered": true,
+    "modelAndEffortSelection": true,
+    "newConversation": true,
+    "appAndCoreRestarted": true,
+    "sameNativeViewChannelThreadAndMessageIds": true,
+    "noReplacementPrompt": true,
+    "sameModelAndEffort": true,
+    "pageErrors": 0
+  },
+  "nativeActions": {
+    "approvedViaOriginalGateway": true,
+    "deniedViaOriginalGateway": true,
+    "independentWorkspaceFilesystemProof": true,
+    "temporaryRuleRevoked": true,
+    "preferencesUnchanged": true,
+    "toolFailureAndSuccessfulFollowup": true,
+    "stopAfterTextDeliveries": 27,
+    "sameThreadContinuation": true
+  },
+  "recovery": {
+    "realHarnessRunError": true,
+    "draftRetainedThroughJiraNavigation": true,
+    "oneSavedPromptAfterRetry": true,
+    "sameContainerRestored": true,
+    "startupPreferenceRestored": true,
+    "privateSshInterruptedOnly": true,
+    "connectionErrorWithinMs": 68,
+    "noResendOnReconnect": true,
+    "exactSavedRenderedAfterReconnect": true,
+    "backendHealthyAtEnd": true
+  },
+  "nativeUi": {
+    "textAndUploadedFileRetainedAcrossPagesAndJira": true,
+    "stagedFileRemoved": true,
+    "nativeSidebarAndShortcuts": true,
+    "namedVisibleKeyboardFocus": true,
+    "darkLightLavenderTokensAndVisuals": "passed; original Auto/Default restored",
+    "jira": "native navigation and repository regression tests; no real external mutation",
+    "documentAndGrid": "native navigation plus real core data persistence across restart; editing UI placeholders remain",
+    "commandPaletteEscapeFocusReturn": "existing gap; active element becomes BODY"
+  },
+  "limitations": [
+    "Document/grid/board/calendar editing bodies are pre-existing Electron placeholders. Full editor UI acceptance is unavailable.",
+    "Command palette Escape does not return focus to the composer. This behavior predates the integration; keyboard Tab/focus remains usable.",
+    "Linux development build with explicit process-only --no-sandbox is not production packaging acceptance.",
+    "Fixed personal VM and original local native owner only; remote account provenance, reconnect to another owner and ownership transfer remain unsupported and fail closed.",
+    "A provider store readiness check does not establish unexpired provider access; real model turns establish access only at capture time.",
+    "Real license/credential corruption was not performed. Ten prerequisite scenarios are simulated controller/helper tests.",
+    "No real Jira credentials, external issue mutation, full accessibility audit or Windows/macOS acceptance.",
+    "Drafts are renderer-session memory only. Ready attachment references and retry identity survive navigation; drafts do not survive process exit."
+  ],
+  "evidence": [
+    {
+      "file": "HyperNativeSmokeBeforeIssue8-v3.json",
+      "sha256": "d6ac0d2c8feb65f65de26c7f499db1f65e237bb23d650180f990a25353933ad8",
+      "capturedCommit": "3eb5d6a4e50ac096b9e6b0f7472522b471b0754c",
+      "startedAt": "2026-11-14T15:49:07.093Z",
+      "finishedAt": "2026-11-14T15:49:22.789Z",
+      "status": "passed"
+    },
+    {
+      "file": "HyperNativeSmokeAfterIssue8-v3.json",
+      "sha256": "39612e9898b82eb3e05ed120a4c3c5e8def199f67a8929b7bf7efa4a33878bd5",
+      "capturedCommit": "3eb5d6a4e50ac096b9e6b0f7472522b471b0754c",
+      "startedAt": "2026-11-14T15:49:55.372Z",
+      "finishedAt": "2026-11-14T15:49:56.199Z",
+      "status": "passed"
+    },
+    {
+      "file": "HyperNativeActionsIssue8.json",
+      "sha256": "69856187bf742959854fdc9d16d1f956ba556103e9c100372671e9e8ec2b4887",
+      "capturedCommit": "6d9ea32530bacb5f5e199aca8e17b1c624004cb4",
+      "startedAt": "2026-11-14T15:20:14.147Z",
+      "finishedAt": "2026-11-14T15:21:18.067Z",
+      "status": "see_assertions"
+    },
+    {
+      "file": "HyperNativeToolFailureIssue8.json",
+      "sha256": "03ad6c4f5be7bc1d5601d9232db0b84b6451acfa1e28d8fc71549d21e3dd1fef",
+      "capturedCommit": "6d9ea32530bacb5f5e199aca8e17b1c624004cb4",
+      "startedAt": "2026-11-14T15:26:05.995Z",
+      "finishedAt": "2026-11-14T15:26:35.816Z",
+      "status": "see_assertions"
+    },
+    {
+      "file": "HyperNativeStopResumeIssue8.json",
+      "sha256": "9ffc13e00063a6ad5cb2100d9698e4739111bbdf1a217d22e642a3dff92ceb1d",
+      "capturedCommit": "6d9ea32530bacb5f5e199aca8e17b1c624004cb4",
+      "startedAt": "2026-11-14T15:27:09.049Z",
+      "finishedAt": "2026-11-14T15:27:22.140Z",
+      "status": "see_assertions"
+    },
+    {
+      "file": "HyperNativeUiIssue8.json",
+      "sha256": "72b3e428cee76006c95decaee63db47e7acd2e203fb19a059a58aadc53c59c11",
+      "capturedCommit": "3eb5d6a4e50ac096b9e6b0f7472522b471b0754c",
+      "startedAt": "2026-11-14T15:44:38.661Z",
+      "finishedAt": "2026-11-14T15:44:45.265Z",
+      "status": "passed_with_recorded_baseline_limits"
+    },
+    {
+      "file": "HyperNativeRuntimeFailureIssue8.json",
+      "sha256": "c4f7bc2cfd3a3f4302d39f717cbb1e40ff0a1f4169332e33128d35639b941a44",
+      "capturedCommit": "3eb5d6a4e50ac096b9e6b0f7472522b471b0754c",
+      "startedAt": "2026-11-14T15:48:40.627Z",
+      "finishedAt": "2026-11-14T15:48:57.525Z",
+      "status": "passed"
+    },
+    {
+      "file": "HyperNativeDisconnectIssue8.json",
+      "sha256": "ce5d76a99a571a9c3dc81656ff01f1a3d0b94c5135f5e67829abf351c975ab8b",
+      "capturedCommit": "3eb5d6a4e50ac096b9e6b0f7472522b471b0754c",
+      "startedAt": "2026-11-14T15:50:10.421Z",
+      "finishedAt": "2026-11-14T15:50:18.967Z",
+      "status": "passed"
+    },
+    {
+      "file": "HyperNativeFocusIssue8.json",
+      "sha256": "2184fe0ecbebf3ffbf847d79a48506c51d68d0af1d1f734fc87f895612eef3ac",
+      "capturedCommit": "3eb5d6a4e50ac096b9e6b0f7472522b471b0754c",
+      "startedAt": null,
+      "finishedAt": null,
+      "status": "see_assertions"
+    }
+  ],
+  "upstreamAndNotices": "HYPER_OPENBOT_AUDIT.md and ../src/renderer/features/hyper-openbot/REUSE.md, LICENSE and component mappings",
+  "ownerCheckpoint": {
+    "state": "pending",
+    "requirement": "Issue #8 requires owner review of readiness for subsequent HyperTask features and later Intelligence replacement."
+  },
+  "prReview": {
+    "state": "pending",
+    "policy": "Merge only the exact final head after clean Codex code/security reviews, resolved findings and passing checks."
+  }
+}

@@ -16,9 +16,7 @@ Exact direct dependencies: @copilotkit/react-core 1.85.0 matches original runtim
 
 ## Acceptance boundaries
 
-This branch is draft UI integration. Backend deployment and Electron live acceptance belong to parent. The initial assembly ran no live model tests during the authorized VM restart. Immediate post-run persistence reads never overwrite live text.
-
-The enhancement section below supersedes the initial assembly limitations. Existing Extra vigilant server policy is unchanged. Native plain-chat acceptance now passes as recorded in docs/HYPER_OPENBOT_NATIVE.runtime.json. Tool/approval acceptance remains separate.
+Native UI, action/recovery and VM lifecycle integration are merged in PRs #11, #12 and #13. The original server policy and Intelligence runtime remain unchanged. Current acceptance and limits are recorded in [HYPER_OPENBOT_ACCEPTANCE.md](../../../../docs/HYPER_OPENBOT_ACCEPTANCE.md); owner confirmation and issue #8's final PR gate remain pending. Earlier enhancement notes below describe the assembly sequence; current lifecycle and identity restrictions supersede their planned-work wording.
 
 HyperConversationActions.tsx adapts app/src/lib/approvals.ts and app/src/components/approvals/question-notice.tsx for thread-scoped durable approval/question reads and responses. shared/hyper-openbot-policy.ts is new restricted transport validation, including encoded traversal refusal.
 
