@@ -1,6 +1,7 @@
 // Adapted from OpenBot settings/browsers and lib/recorder queries/mutations.
 // Copyright (c) 2026 CopilotKit. MIT.
 import { useEffect, useState } from 'react';
+import { HyperRecorder } from './HyperRecorder';
 import { Button } from '@/components/ui/button';
 import { hyperOpenBotRequest } from '../transport';
 interface HyperConnection { id: string; label: string; recording: boolean; lastUsedAt: string | null }
@@ -17,6 +18,7 @@ export default function HyperBrowsersSection() {
     {error && <p role="alert" className="text-destructive">{error}</p>}{!rows && !error && <p role="status">Loading browsers…</p>}
     {rows?.length === 0 && <p>No browsers connected.</p>}
     {rows?.map(row => <div key={row.id} className="flex items-center gap-3 rounded-lg border p-4"><span className="flex-1">{row.label || 'Browser'}<span className="block text-xs text-muted-foreground">{row.recording ? 'Recording now' : row.lastUsedAt ? `Last used ${new Date(row.lastUsedAt).toLocaleString()}` : 'Not used yet'}</span></span><Button variant="outline" onClick={() => setTarget(row)}>Disconnect…</Button></div>)}
+    <HyperRecorder />
     {target && <div role="alertdialog" aria-label="Disconnect browser" className="rounded-lg border p-4"><p>Disconnect {target.label || 'this browser'}? Its Recorder will stop sending to OpenBot.</p><Button variant="outline" disabled={busy} onClick={() => setTarget(undefined)}>Cancel</Button><Button disabled={busy} onClick={() => void revoke()}>Disconnect</Button></div>}
   </section>;
 }

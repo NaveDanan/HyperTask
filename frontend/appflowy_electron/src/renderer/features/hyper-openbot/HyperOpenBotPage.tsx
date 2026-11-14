@@ -15,6 +15,7 @@ import type { HyperDraftAttachment } from './HyperConversationDraft';
 import { HYPER_PENDING_ATTACHMENT, hyperUploadDraftFiles } from './HyperConversationDraft';
 import { HyperRunConnectionError } from './HyperRunConnection';
 import { hyperRunWithRecovery, hyperWatchGatewayActivity, hyperWatchGatewayErrors } from './HyperRun';
+import { hyperOpenBotComputer } from './computer-browser/HyperComputerDestination';
 import { HyperComputerPanel } from './HyperComputerPanel';
 import { HyperSkillsPanel } from './skills';
 import { readThreadMessages } from './HyperThreadMessages';
@@ -259,7 +260,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
     </nav>
     {error && <p role="alert" className="p-2 text-sm text-destructive">{error}</p>}
     {receiving && <div hidden><HyperChannelChat key={receiving.id} channel={receiving} serviceReady={serviceReady} registerReceiver={registerReceiver} /></div>}
-    {channel ? channel.agentIds.length > 1 ? <HyperGroupChat key={channel.id} channelId={channel.id} serviceReady={serviceReady} /> : <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} /> : section ? section.render(context) : screen === 'bots' ? <HyperBotsPanel onChat={id => { void start([id]).catch(() => {}); }} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen loading={loading} conversations={channels} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('new-conversation')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
+    {channel ? channel.agentIds.length > 1 ? <HyperGroupChat key={channel.id} channelId={channel.id} serviceReady={serviceReady} /> : <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} /> : section ? section.render(context) : screen === 'bots' ? <HyperBotsPanel onComputer={id => hyperOpenBotComputer(id, context.navigate)} onChat={id => { void start([id]).catch(() => {}); }} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen loading={loading} conversations={channels} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('new-conversation')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
   </div>;
 }
 export function HyperOpenBotPage({ viewId }: { viewId: string }) {
