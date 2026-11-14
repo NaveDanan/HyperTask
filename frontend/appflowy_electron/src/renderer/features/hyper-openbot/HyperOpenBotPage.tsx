@@ -6,6 +6,7 @@ import { hyperLoadAllChannels } from './HyperChannelPaging';
 import { hyperResolveModelPick, type HyperConversationModel } from './HyperModelSelection';
 import { useHyperConversationDraft } from './useHyperConversationDraft';
 import type { HyperDraftAttachment } from './HyperConversationDraft';
+import { HYPER_PENDING_ATTACHMENT, hyperUploadDraftFiles } from './HyperConversationDraft';
 import { HyperRunConnectionError } from './HyperRunConnection';
 import { hyperRunWithRecovery, hyperWatchGatewayActivity, hyperWatchGatewayErrors } from './HyperRun';
 import { HyperComputerPanel } from './HyperComputerPanel';
@@ -19,7 +20,7 @@ import { HyperConversationActions } from './HyperConversationActions';
 import { Button } from '@/components/ui/button';
 import { HyperOpenBotProvider } from './provider';
 import { hyperOpenBotFetch, HYPER_OPENBOT_ORIGIN, hyperOpenBotRequest as request } from './transport';
-import { HyperComposer, type HyperComposerAttachment, type HyperModelOption, type HyperModelPick } from './composer';
+import { HyperComposer, type HyperModelOption, type HyperModelPick } from './composer';
 import { HyperTranscript, type HyperTranscriptMessage } from './transcript';
 import { HyperConversationsScreen, type HyperConversation } from './screens';
 import { HyperBotsPanel } from './bots';
@@ -126,16 +127,13 @@ function HyperChannelChat({ channel, serviceReady }: { channel: HyperChannel; se
     {showComputer && <HyperComputerPanel botId={channel.agentIds[0]} steps={messages.flatMap(message => message.tools ?? []).filter(tool => tool.label.startsWith('computer_')).map(tool => ({ id: tool.id, label: tool.label, status: tool.status === 'complete' ? 'completed' : tool.status === 'refused' ? 'denied' : tool.status === 'failed' ? 'failed' : tool.status === 'running' ? 'running' : 'waiting', detail: tool.result }))} />}
     <HyperTranscript messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     <HyperConversationActions threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
-    <HyperComposer className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={async files => {
-      const staged: (HyperComposerAttachment & { mimeType: string })[] = [];
-      try { for (const file of files) {
-        const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
-        const response = await hyperOpenBotFetch(`${HYPER_OPENBOT_ORIGIN}/api/channels/${channel.id}/attachments`, { method: 'POST', body: form });
-        const saved = await response.json();
-        if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error(saved.error ?? 'Attachment upload failed');
-        staged.push({ id: saved.id, name: saved.name, mimeType: saved.mimeType, status: 'ready' });
-      } } finally { setAttachments(previous => [...previous, ...staged]); }
-    }} modelPicker={models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
+    <HyperComposer className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} onRemoveAttachment={id => { setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => hyperUploadDraftFiles(files, async file => {
+      const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
+      const response = await hyperOpenBotFetch(`${HYPER_OPENBOT_ORIGIN}/api/channels/${channel.id}/attachments`, { method: 'POST', body: form });
+      const saved = await response.json();
+      if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error(saved.error ?? 'Attachment upload failed');
+      return { id: saved.id, name: saved.name, mimeType: saved.mimeType, status: 'ready' };
+    }, setAttachments, id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); })} modelPicker={models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
       if (modelUpdating.current) return;
       modelUpdating.current = true; setModelPending(true);
       void request<HyperConversationModel>(`/api/channels/${channel.id}/model`, 'PUT', next).then(saved => setPick(hyperResolveModelPick(saved, defaultModel.current))).catch(error => setError(String(error))).finally(() => { modelUpdating.current = false; setModelPending(false); });

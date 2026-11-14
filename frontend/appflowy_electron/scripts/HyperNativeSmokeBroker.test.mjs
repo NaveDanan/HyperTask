@@ -46,10 +46,11 @@ test('the launcher closes its own log handle while the child retains its duplica
   try {
     await writeFile(directory + '/index.js', "console.log('ready');setTimeout(()=>console.log('later'),30);setTimeout(()=>process.exit(0),50);");
     child = await hyperLaunchSmokeApp({ app: directory, profile: directory, logPath, electron: process.execPath, sessionId: 'a'.repeat(32) });
+    const exited = child.exitCode === null && child.signalCode === null ? once(child, 'exit') : Promise.resolve();
     const descriptors = await readdir('/proc/self/fd');
     const targets = await Promise.all(descriptors.map(fd => readlink('/proc/self/fd/' + fd).catch(() => '')));
     assert.equal(targets.includes(logPath), false);
-    await once(child, 'exit');
+    await exited;
     assert.equal(await readFile(logPath, 'utf8'), 'ready\nlater\n');
   } finally { if (child?.exitCode === null) child.kill('SIGTERM'); await rm(directory, { recursive: true, force: true }); }
 });

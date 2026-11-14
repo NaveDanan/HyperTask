@@ -1,6 +1,28 @@
 import { expect, it, vi } from 'vitest';
 import type { HyperOpenBotServiceState } from '@shared/HyperOpenBotService';
-import { HyperConversationDraftCache, hyperObserveDraftIdentity } from './HyperConversationDraft';
+import { HyperConversationDraftCache, hyperObserveDraftIdentity, hyperUploadDraftFiles, type HyperDraftAttachment } from './HyperConversationDraft';
+
+function leaseAttachments(lease: ReturnType<HyperConversationDraftCache['acquire']>) {
+  return (change: (current: readonly HyperDraftAttachment[]) => readonly HyperDraftAttachment[]) => { lease.update(current => ({ ...current, attachments: change(current.attachments) })); };
+}
+it('reserves uploading placeholders in the channel draft so a reopened composer still blocks Send', async () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), original = cache.acquire('one');
+  let finish!: (value: HyperDraftAttachment) => void;
+  const upload = hyperUploadDraftFiles([new File(['x'], 'notes.txt', { type: 'text/plain' })], () => new Promise(resolve => { finish = resolve; }), leaseAttachments(original), vi.fn());
+  const reopened = cache.acquire('one');
+  expect(reopened.get().attachments).toEqual([expect.objectContaining({ name: 'notes.txt', status: 'uploading' })]);
+  finish({ id: 'server-id', name: 'notes.txt', mimeType: 'text/plain', status: 'ready' }); await upload;
+  expect(reopened.get().attachments).toEqual([{ id: 'server-id', name: 'notes.txt', mimeType: 'text/plain', status: 'ready' }]);
+});
+it('discards an upload removed while pending and clears unsettled placeholders after a failure', async () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one'), discard = vi.fn();
+  let finish!: (value: HyperDraftAttachment) => void;
+  const upload = hyperUploadDraftFiles([new File(['a'], 'a.txt'), new File(['b'], 'b.txt')], file => file.name === 'a.txt' ? new Promise(resolve => { finish = resolve; }) : Promise.reject(new Error('Attachment upload failed')), leaseAttachments(lease), discard);
+  lease.update(current => ({ ...current, attachments: current.attachments.filter(file => file.name !== 'a.txt') }));
+  finish({ id: 'server-a', name: 'a.txt', mimeType: 'text/plain', status: 'ready' });
+  await expect(upload).rejects.toThrow('Attachment upload failed');
+  expect(discard).toHaveBeenCalledExactlyOnceWith('server-a'); expect(lease.get().attachments).toEqual([]);
+});
 
 it('restores a conversation draft and staged references in a new page without mixing channels', () => {
   const cache = new HyperConversationDraftCache(() => 'group');

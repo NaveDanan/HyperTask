@@ -80,4 +80,7 @@ test('rendered proof requires exact text or the same numbered list structure and
   assert.equal(hyperNativeRenderedMessage({ text, rendered: { ...rendered, lists: [{ ...rendered.lists[0], start: 2 }] } }), false);
   assert.equal(hyperNativeRenderedMessage({ text, rendered: { text: 'First example.', lists: [{ start: 1, items: ['First example.'] }] } }), false);
   assert.equal(hyperNativeRenderedMessage({ text: 'Plain paragraph.', rendered: { text: 'Plain paragraph.', lists: [] } }), true);
+  const consecutive = '1. First example.\n2. Second example.';
+  assert.equal(hyperNativeRenderedMessage({ text: consecutive, rendered }), true);
+  assert.equal(hyperNativeRenderedMessage({ text: consecutive, rendered: { text: 'First example.', lists: [{ start: 1, items: ['First example.'] }] } }), false);
 });
