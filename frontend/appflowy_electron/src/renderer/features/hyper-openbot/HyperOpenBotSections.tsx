@@ -22,7 +22,7 @@ export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ 
 /** Parity sections added beside Conversations, Bots, Skills and Connections. Each area owns its slot. */
 export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: conversations
-  /* conversations */
+  { id: 'new-conversation', label: 'New conversation', group: 'work', render: hyperLazySection(() => import('./conversations/HyperNewConversationSection')) },
   // slot: routines
   /* routines */
   // slot: memory

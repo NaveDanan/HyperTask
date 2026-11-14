@@ -1,3 +1,4 @@
+import { HyperGroupChat, hyperStartGroup } from './conversations';
 import { HyperServiceStatus, useHyperOpenBotService } from './HyperServiceStatus';
 // OpenBot channel/provider integration adapted from pinned f8af37a. Copyright (c) 2026 CopilotKit, MIT.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -185,7 +186,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
   }
   async function start(agentIds: string[]) {
     const selection = ++selectionVersion.current;
-    try { const value = await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds }); version.current++; setLoading(false); setChannels(previous => [value.channel, ...previous]); if (selection === selectionVersion.current) { setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); } }
+    try { const value = agentIds.length > 1 ? { channel: await hyperStartGroup<HyperChannel>(agentIds) } : await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds }); version.current++; setLoading(false); setChannels(previous => [value.channel, ...previous]); if (selection === selectionVersion.current) { setChannel(value.channel); localStorage.setItem(`hyper-openbot.channel.${viewId}`, value.channel.id); } }
     catch (error) { if (selection === selectionVersion.current) setError(String(error)); }
   }
   const tabs: readonly { id: string; label: string }[] = [{ id: 'conversations', label: 'Conversations' }, { id: 'bots', label: 'Bots' }, { id: 'skills', label: 'Skills' }, { id: 'connections', label: 'Connections' }, ...HYPER_OPENBOT_SECTIONS];
@@ -198,7 +199,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
       {screen === 'conversations' && <Button variant="ghost" onClick={() => void refresh()}>Refresh</Button>}
     </nav>
     {error && <p role="alert" className="p-2 text-sm text-destructive">{error}</p>}
-    {channel ? <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} /> : section ? section.render(context) : screen === 'bots' ? <HyperBotsPanel onChat={id => void start([id])} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen loading={loading} conversations={channels} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('bots')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
+    {channel ? channel.agentIds.length > 1 ? <HyperGroupChat key={channel.id} channelId={channel.id} serviceReady={serviceReady} /> : <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} /> : section ? section.render(context) : screen === 'bots' ? <HyperBotsPanel onChat={id => void start([id])} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen loading={loading} conversations={channels} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('new-conversation')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
   </div>;
 }
 export function HyperOpenBotPage({ viewId }: { viewId: string }) {

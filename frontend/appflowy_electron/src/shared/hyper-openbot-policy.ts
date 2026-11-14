@@ -2,7 +2,7 @@
 const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   'channels', 'agents', 'bots', 'plugins', 'models', 'attachments', 'threads', 'copilotkit', 'skills', 'connections', 'approvals', 'decisions', 'capabilities',
   // slot: conversations
-  /* conversations */
+  'groups', 'team-bots', 'me',
   // slot: routines
   /* routines */
   // slot: memory
