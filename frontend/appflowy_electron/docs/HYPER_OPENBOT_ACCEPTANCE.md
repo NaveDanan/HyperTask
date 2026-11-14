@@ -117,6 +117,18 @@ For action and fault reproduction, follow [the action procedure](HYPER_OPENBOT_A
 
 ## Differences from upstream OpenBot
 
+### Parity implementation checkpoint
+
+The owner has asked to finish parity, resolve review findings and merge before the next stage. This instruction authorizes that work; it is not evidence that unfinished features passed acceptance.
+
+Vault and the Linux window-controls/sidebar fixes are integrated into the PR branch. Vault adds saved-login management, key creation/replacement/revocation and private sign-in requests, including verification codes, saved-login confirmation and takeover. Browser navigation from a sign-in request still needs the computer/browser area. The caption buttons now cover Linux and Windows, while macOS keeps its native controls. The sidebar collapses to a keyboard-accessible icon rail with the existing Chat entry. These additions have automated coverage; the integrated native UI still needs verification.
+
+The upload review fixes retain channel-scoped uploading placeholders and count each file once toward the eight-file limit, including rapid picks before React renders again. The regression exercises the real composer file-input handler and the draft cache. The native smoke list check also accepts consecutive numbered items, and the broker safeguard starts waiting for child exit before descriptor inspection.
+
+Settings, Onboarding and the Approvals inbox code are also integrated. They add personal Activity, profile/preferences, repository settings, native Home/Setup/tour, approval history, standing-rule recovery and notification settings. Home draft transfer, cross-area navigation, conversation emphasis and global notification wiring remain parent-integration work. The broader attention/admin workflows are still assigned to their other parity areas.
+
+Current validation on Node 24.18.1: typecheck, production build, 650 tests and 13 smoke-script safeguards pass. One opt-in simulated-IPC live test is skipped; the four real-core tests ran. The upstream terminal packages `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0 are now locked; existing package versions were unchanged. The remaining parity areas are still in progress. The table below describes the earlier owner-demo baseline, not a claim of current full parity.
+
 The complete original OpenBot backend and Intelligence run on the VM. HyperTask exposes a selected part of the original app's roughly ninety routes at the pinned source. The main-process route allowlist in [hyper-openbot-policy.ts](../src/shared/hyper-openbot-policy.ts) admits only the API families those native screens use, so unlisted features are unreachable from HyperTask even though the backend provides them. Phase 1 scoped chat, agents, tools, approvals, streaming and service lifecycle; the epic directs later work toward HyperTask components rather than duplicate OpenBot screens.
 
 | Upstream feature | HyperTask native support |
