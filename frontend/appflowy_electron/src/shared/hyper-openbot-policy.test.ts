@@ -5,7 +5,21 @@ it('restricts requests to original OpenBot routes on the fixed tunnel', () => {
   for (const path of ['http://evil/api/channels', '//evil/api/channels', '/api/channels/../credentials', '/api/channels/%2e%2e/credentials', '/api/channels/%252e%252e/credentials', '/api/jira', '/api/channels\\..\\secret']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });
 
-
+it('bot-tabs permits team publication and rejects unrelated and traversal paths', () => {
+  expect(hyperOpenBotPathAllowed('/api/team-bots')).toBe(true);
+  expect(hyperOpenBotPathAllowed('/api/team-bots/desk/publication')).toBe(true);
+  expect(hyperOpenBotPathAllowed('/api/team-bots/../secrets')).toBe(false);
+  expect(hyperOpenBotPathAllowed('/api/team-bots/%2e%2e/secrets')).toBe(false);
+  expect(hyperOpenBotPathAllowed('/api/unrelated-family')).toBe(false);
+});
+it('bot-tabs permits delivery and current-user reads without permitting auth or traversal', () => {
+  for (const path of ['/api/me', '/api/delivery', '/api/delivery/opentag/start', '/api/delivery/sms/confirm', '/api/delivery/bindings/id']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/auth/me', '/api/delivery/../private', '/api/me/%2e%2e/private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+it('bot-tabs allows attention tasks and findings and refuses traversal and unrelated admin routes', () => {
+  for (const path of ['/api/bots/attention', '/api/tasks', '/api/tasks/task/again', '/api/proactive/suggestions', '/api/proactive/suggestions/item/start']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
+  for (const path of ['/api/tasks/../secrets', '/api/proactive/%2e%2e/secrets', '/api/admin/arbitrary']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
 it('memory slot allows memory and learning routes and refuses adjacent families', () => {
  for (const path of ['/api/memory', '/api/memory/sources/available/bot', '/api/admin/learning/settings', '/api/admin/learning/people/person/proposals/p/approve', '/api/settings/learning/review', '/api/settings/learning/proposals/p?container=space']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
  for (const path of ['/api/memory-export', '/api/admin/learning-secrets', '/api/settings/learning-other', '/api/memory/%2e%2e/credentials']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
@@ -101,4 +115,9 @@ it('memory slot permits learning permission and recording subflows without adjac
 it('routines slot allows its API families and refuses adjacent or escaped routes', () => {
   for (const path of ['/api/routines', '/api/routines/id/runs', '/api/responsibilities/id/triggers', '/api/responsibilities/triggers/id/secret', '/api/proactive/settings?refuseExisting=true', '/api/proactive/suggestions/id/start', '/api/tasks/id/again']) expect(hyperOpenBotPathAllowed(path)).toBe(true);
   for (const path of ['/api/routines-extra', '/api/proactive', '/api/proactive/credentials', '/api/tasks-private', '/api/routines/../secrets', '/api/responsibilities/%2fsecrets']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
+});
+
+it('bot-tabs permits routine counts without adjacent route families or escaped paths', () => {
+  expect(hyperOpenBotPathAllowed('/api/routines')).toBe(true);
+  for (const path of ['/api/routines-other', '/api/tasks-other', '/api/proactive/suggestions-other', '/api/routines/%2e%2e/private']) expect(hyperOpenBotPathAllowed(path)).toBe(false);
 });

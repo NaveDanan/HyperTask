@@ -36,7 +36,10 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   { id: 'personal-learning', label: 'Your learned skills', group: 'personal', render: hyperLazySection(() => import('./memory/HyperPersonalLearningSection')) },
   { id: 'learning', label: 'Learning', group: 'admin', render: hyperLazySection(() => import('./memory/HyperLearningSection')) },
   // slot: bot-tabs
-  /* bot-tabs */
+  { id: 'bot', label: 'Bot', group: 'bots', render: hyperLazySection(() => import('./bot-tabs/HyperBotSection')) },
+  { id: 'needs-you', label: 'Needs you', group: 'work', render: hyperLazySection(() => import('./bot-tabs/HyperBotAttentionBoard')) },
+  { id: 'external-agents', label: 'External agents', group: 'bots', render: hyperLazySection(() => import('./bot-tabs/HyperExternalAgents')) },
+  { id: 'reachability', label: 'Reaching you', group: 'personal', render: hyperLazySection(() => import('./bot-tabs/HyperReachability')) },
   // slot: approvals-inbox
   { id: 'approvals', label: 'Approvals', group: 'personal', render: hyperLazySection(() => import('./approvals-inbox/HyperApprovalsSection')) },
   // slot: vault

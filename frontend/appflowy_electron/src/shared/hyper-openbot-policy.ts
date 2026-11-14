@@ -8,7 +8,7 @@ const HYPER_OPENBOT_ROUTE_FAMILIES: readonly string[] = [
   // slot: memory
   'memory', 'admin/learning', 'settings/learning', 'recorder/recordings$', 'admin/enterprise$', 'admin/enterprise/capabilities', 'admin/enterprise/settings/skillSharing$',
   // slot: bot-tabs
-  /* bot-tabs */
+  'team-bots', 'me', 'delivery', 'tasks', 'proactive/suggestions', 'routines',
   // slot: approvals-inbox
   'delivery', 'team-bots/consents$',
   // slot: vault

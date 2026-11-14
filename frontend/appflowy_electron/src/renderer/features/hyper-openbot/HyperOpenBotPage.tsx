@@ -10,6 +10,7 @@ import { hyperWatchChannelEvents, hyperMarkChannelRead } from './conversations/H
 import { hyperSettingsApi } from './settings/HyperSettingsApi';
 import { hyperConversationDestination } from './conversations/HyperNavigation';
 import { HyperInitialDraftTransfer, hyperReceiveInitialDraft, type HyperInitialDraftReceiver } from './conversations/HyperInitialDraftTransfer';
+import { HyperRoutineNavigationProvider } from './routines';
 import type { HyperInitialDraft } from './conversations/HyperInitialDraftTransfer';
 import { HyperVoiceControls } from './conversations/HyperVoiceControls';
 import { voiceContext, askChannelAgent, withVoiceContext } from './conversations/HyperVoiceAgentBridge';
@@ -342,7 +343,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
   useEffect(() => { if (!palette || !serviceReady) return; let current = true; void request<{ agents: { id: string; name: string }[] }>('/api/agents').then(value => { if (current) setPaletteBots(value.agents); }).catch(() => {}); return () => { current = false; }; }, [palette, serviceReady]);
   const section = HYPER_OPENBOT_SECTIONS.find(each => each.id === screen);
   const context: HyperOpenBotSectionContext = { openConversation: id => void openAny(id), initialDraftSupported: true, startConversation: start, initialAgentIds: newRecipients, navigationIntent, navigate: (id, intent) => { if (!serviceRef.current) return; const resolved = hyperConversationDestination(id, intent); const destination = resolved.sectionId; if (tabs.some(tab => tab.id === destination)) { cancelStart(); selectionVersion.current++; setNavigationIntent(resolved.path ? { path: resolved.path } : undefined); setScreen(destination); setChannel(undefined); } else { setNavigationIntent(current => current?.path === resolved.path ? current : resolved.path ? { path: resolved.path } : undefined); setError(`The ${destination} destination has not been registered by its owning area yet.`); } } };
-  return <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
+  return <HyperRoutineNavigationProvider context={context}><div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />
     <nav aria-label="OpenBot" className="flex shrink-0 flex-wrap gap-1 border-b border-border p-2">
       {tabs.map(tab => <Button key={tab.id} variant={screen === tab.id && !channel ? 'secondary' : 'ghost'} onClick={() => { cancelStart(); selectionVersion.current++; setScreen(tab.id); setChannel(undefined); }}>{tab.label}</Button>)}
@@ -352,7 +353,7 @@ function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string; servi
     {error && <p role="alert" className="p-2 text-sm text-destructive">{error}</p>}
     {receiving && <div hidden><HyperChannelChat key={receiving.id} channel={receiving} serviceReady={serviceReady} registerReceiver={registerReceiver} /></div>}
     {channel ? channel.agentIds.length > 1 ? <HyperGroupChat key={channel.id} channelId={channel.id} serviceReady={serviceReady} eventRevision={eventRevision} /> : <HyperChannelChat key={channel.id} channel={channel} serviceReady={serviceReady} eventRevision={eventRevision} /> : section ? section.render(context) : screen === 'bots' ? <HyperBotsPanel onComputer={id => hyperOpenBotComputer(id, context.navigate)} onChat={id => { void start([id]).catch(() => {}); }} /> : screen === 'skills' ? <HyperSkillsPanel /> : screen === 'connections' ? <HyperConnectionsPanel /> : <HyperConversationsScreen onRename={async (id, title) => { await hyperRenameConversation(id, title); await refresh(); }} loading={loading} conversations={channels.map(row => emphasis === 'agent' ? { ...row, summary: row.name, name: row.summary ?? row.opening ?? 'New conversation' } : row)} onRetry={() => void refresh()} onOpen={open} onNew={() => setScreen('new-conversation')} onSetPinned={async (id, pinned) => { await request(`/api/channels/${encodeURIComponent(id)}/pin`, 'PUT', { pinned }); await refresh(); }} onDelete={async id => { await request(`/api/channels/${encodeURIComponent(id)}`, 'DELETE'); if (localStorage.getItem(`hyper-openbot.channel.${viewId}`) === id) localStorage.removeItem(`hyper-openbot.channel.${viewId}`); await refresh(); }} />}
-  </div>;
+  </div></HyperRoutineNavigationProvider>;
 }
 export function HyperOpenBotPage({ viewId }: { viewId: string }) {
   const service = useHyperOpenBotService(true);
