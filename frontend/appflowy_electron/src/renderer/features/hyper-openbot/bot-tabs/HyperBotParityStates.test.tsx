@@ -53,3 +53,8 @@ it('renders read errors distinctly from an empty skills list', () => {
   const html = renderToStaticMarkup(<HyperBotSkillsTab agentId="desk" mine />);
   expect(html).toContain('role="alert"'); expect(html).not.toContain('No skills yet');
 });
+it('keeps the upstream routines app always on without an action editor', () => {
+  mock.data = { admin: true, tools: [{ ref: 'routines/create', name: 'Create routine', description: 'Create', grantedTo: [] }] };
+  const html = renderToStaticMarkup(<HyperBotAppGrants agentId="desk" app="routines" onSaved={() => {}} />);
+  expect(html).toContain('Always on'); expect(html).not.toContain('Save action changes'); expect(html).not.toContain('type="checkbox"');
+});
