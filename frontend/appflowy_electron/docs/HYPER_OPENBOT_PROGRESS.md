@@ -201,6 +201,12 @@ The three bounded rechecks at `5e5cc7f` fully inspected their eight assigned fil
 
 Three regressions failed before these fixes and pass afterward, plus joined-send and stale-identity guards. Source validation is 1103 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The owned disposable app was relaunched on `993d9a1` with stores retained. No new native smoke or owner acceptance is claimed. Full-diff coverage and fresh exact-head reviews remain required; Tailscale authentication remains the native prerequisite.
 
+### Mounted recovery and deletion navigation
+
+The bounded rechecks at `7e590c3` completed all eight assigned files. Grant lifetime had no confirmed defect; queue/composer and Skills each found one. `ffdb5fd` matches pinned upstream by restoring failed text before newer text and merging earlier/newer skill selections. Successful personal and admin Skills deletion now emits the native list route, so remounting cannot reopen the deleted slug. Three new regressions fail before these changes and pass afterward.
+
+Source validation: 1106 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The owned disposable app runs `ffdb5fd` with stores retained, not a new native acceptance pass. Full-diff coverage, exact-head reviews, account-holder Tailscale authentication and owner acceptance remain open.
+
 ## Queue
 
 | Issue | Deliverable | State |
