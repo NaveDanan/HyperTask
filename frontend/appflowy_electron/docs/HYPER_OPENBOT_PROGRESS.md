@@ -239,6 +239,12 @@ Four unresolved Codex reports were reproduced and fixed in `073c694`. Background
 
 Four reproducing regressions and six further guards pass. Full validation: 1180 tests, one optional skip, four real-core tests, typecheck/build and thirteen smoke safeguards. The owned disposable app runs this source with stores retained. The current aggregate carries 83 byte-identical inspected files in a 409-file diff, leaving 326; changed inspected files require fresh review. Earlier clean/skipped receipts are not approval for the new source. Exact-head code/security reviews, full Spec coverage, human Tailscale authentication, native workflows and owner acceptance still block merge and next-stage work.
 
+### Authoritative model choices and open routine runs
+
+The final two review batches at `08a7e1a` completed all five assigned files. They found three Spec issues, now corrected in `618c3c0`: an external-framework Bot had a model picker that did not control its runtime; an open routine run with null status displayed No finished run; and reuse notes contradicted the joint check-in draft. Native Chat now gates model reads, rendering and writes on a true server-reported `runsOnOpenBotModel`, not `builtIn`. Channel/Bot lifetime and generations reject late reads, cached callbacks and old save settlement. Managed harnesses retain valid model choice; unknown capabilities fail closed. Routine running/succeeded/failed/skipped/no-run states remain distinct, and the notes describe Focus/How often saving together.
+
+Five tests failed before correction and pass after it. Thirteen more guard cases pass. Full validation: 1198 tests, one optional skip, four real-core tests, typecheck/build and thirteen smoke safeguards. The owned disposable app runs `618c3c0` with stores retained. Both completed coverage ledgers were validated; only the two byte-identical network files carry forward, giving 85 of 409 inspected unchanged files and 324 remaining. Modified files require fresh inspection. Exact-head code/security reviews, full Spec coverage, account-holder Tailscale authentication, native workflows and owner acceptance still precede merge or the next stage.
+
 ## Queue
 
 | Issue | Deliverable | State |
