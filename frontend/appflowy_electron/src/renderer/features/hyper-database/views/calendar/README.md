@@ -30,11 +30,21 @@ live controller adapter, toolbar, settings, full-day overflow body and row dialo
   click-to-schedule and a CalendarOff icon instead of a nonfunctional drag grip.
 - The default overflow body shows hidden events only. HyperCalendarMoreContent
   uses ReUI's indexed day segments and original event chips to show the full day.
-  A small reserved area below the measured event content keeps the overflow trigger
-  visible when all-day bars occupy every available lane.
-- Keep the brief's minimum 8rem month rows. The existing app shell leaves less
-  than 768px at 1440×900, so the sixth row is reached by scrolling inside the grid.
-  The toolbar remains fixed; the page does not scroll.
+  Two fixed month lanes and a reserved footer keep the overflow trigger visible
+  when all-day bars occupy both available lanes.
+- The binding design review replaces the original 8rem row minimum with 6rem
+  month rows. All six weeks fit at 1440×900; smaller panels scroll internally.
+  Two event lanes replace the auto-fit cap. Month chips composite their tint
+  onto the opaque background token so bars
+  cover column borders. Weekend/outside cells use the review's stronger tint.
+- ReUI keeps a multi-day bar in one lane across its entire week. A bar in lane
+  three stays in overflow even if lane two is unused on its final day (for example,
+  Measure adoption on November 15). The two-chip timed overflow case is fixed;
+  filling that final-day gap would require custom packing or a vendor edit.
+- Timed chip content uses the vendor's renderEvent slot: a truncated title with
+  a colour dot and a time line for blocks at or above its compact-event threshold.
+  Vendor packing, pointer gestures, short-block geometry and resize handles stay
+  intact. The today cell has no bottom rule; the date square remains filled.
 - Foundation ec54c299 lets every Hyper view own empty states. Calendar renders
   its normal grid for zero rows, the agenda empty block for an empty period, and
   a separate missing-Date-property state. No shared shell change is needed.
@@ -60,5 +70,8 @@ remain outside the brief's scope.
   and keyboard view switching. The resumed pass also tested default-field failure
   and Retry recovery. The toolbar measured 48px; the month had 42 cells and no page
   scroll. Chip title contrast was at least 10.54:1 in dark mode.
-- Screenshots remain in ignored shared scratch storage. Only the error captures
-  needed updating in the resumed pass; unchanged interaction evidence was kept.
+- Screenshots remain in ignored shared scratch storage. Design review round 1
+  refreshed 29 affected captures at 1440×900; five images were viewed. The six
+  month weeks fit at 900px and scroll internally below the 6rem row minimum.
+  Findings 1, 2, 4, 5, 6 and 7 are fixed; finding 3 retains the vendor lane limit
+  described above.
