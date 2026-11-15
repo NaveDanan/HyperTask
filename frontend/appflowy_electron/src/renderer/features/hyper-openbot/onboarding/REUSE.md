@@ -47,6 +47,7 @@ interface HyperInitialDraft {
 }
 interface HyperHomeContext {
   initialDraftSupported?: boolean;
+  isCurrentNavigation?(): boolean;
   openConversation(channelId: string): void;
   startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): void | Promise<void>;
 }
@@ -63,10 +64,14 @@ and do not serialize file contents or unsent text into browser storage. Home alr
 The shared receiver owns pending conversation navigation, upload lifecycle and send restoration.
 Home optionally receives `initialText` for upstream `ask` prefilling, capped at 2000 characters.
 
+Home routing carries the mounted composer's cancellation signal and checks the parent's captured navigation generation before starting a conversation. Readiness loss cancels active transfer/routing intent without erasing same-owner drafts. A renderer-lifetime native-state listener clears Home memory on trusted sign-out, profile rejection or unsupported identity, including while Chat is unmounted. Successful sends consume only their own draft revision.
+
 `HyperDesktopReturnSection` is exported with `{ context, app?: string }`. The parent-owned
 main callback must pass the app key after external OAuth return and open this native view.
 No `openbot://` handler or second identity flow is installed. Nested Setup/Connections destinations
 currently open their section; selecting their exact nested detail needs the parent's navigation seam.
+
+The historical app-key return contract above is superseded by the integrated parent handling of pinned `openbot://open`. That return carries no ID or credential, and only requests native Connections navigation plus authoritative refresh. Typed nested destinations are now integrated. An administrator can explicitly confirm a shared broker account after consent; the server determines its holder. No OS protocol association or renderer credential reader is added here.
 
 `HyperStarterTasks` is also exported for the conversation owner to mount with `agentId`,
 `channelId`, `disabled` and `onSelect(message)`. Home mounts it already. Account-level tour claims

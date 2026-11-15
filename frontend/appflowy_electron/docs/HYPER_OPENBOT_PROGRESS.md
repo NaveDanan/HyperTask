@@ -185,6 +185,16 @@ Spec rechecked the same head and confirmed the three earlier source corrections 
 
 Source `309d26a` passes 1082 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. Native verification and owner acceptance remain blocked. A stale notification described the checks on `ece4710` as passed; GitHub records both as skipped. CodeRabbit exceeded its 100-file limit, and Macroscope exceeded the unchanged $10 cap. Neither result approves the corrected head. No review ignore or billing configuration was changed.
 
+### Draft ownership and decision-recovery corrections
+
+Codex reviews of `5dda63a` and `b8452ef` left six valid findings. `2062e53` cancels abandoned Home routing before creation, binds shared-access confirmation to its displayed app/Bot/tool, locks Memory edits during save, stops Skills from re-emitting incoming route selection, restores unsent queued content to the channel draft on navigation, and keeps Home drafts through same-owner service restarts. A renderer-lifetime identity observer still clears Home drafts on trusted sign-out/profile rejection, including outside Chat. Restored queued content requires explicit sending; it is not a background outbox and does not survive renderer exit.
+
+The smaller Spec pilots completed their assigned seven files at `b8452ef`. Policy had no confirmed defect. Two other findings are fixed in `2062e53`: invalid forms retain their original recovery response instead of leaving a decision suspended; admins can confirm a shared broker account after consent through the authoritative server endpoint. The server determines the account holder, not renderer input.
+
+Nine new regressions failed before the fixes and pass afterward. Additional ownership and positive-path cases pass. Source validation: 1098 tests, one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The owned disposable demo was relaunched on `2062e53` with its stores retained. A fresh SSH check still requires the human Tailscale step, so no new native smoke is counted.
+
+All nineteen notified historical CodeRabbit threads were verified as resolved. Codex security receipt `6887269682` is clean for `b8452ef`; the summary's displayed CDP advisory is an older resolved finding, not a new defect. That receipt does not approve `2062e53` or later heads. Full-diff Spec coverage remains incomplete, and changed files need fresh inspection. Native verification and owner acceptance still precede merge.
+
 ## Queue
 
 | Issue | Deliverable | State |
