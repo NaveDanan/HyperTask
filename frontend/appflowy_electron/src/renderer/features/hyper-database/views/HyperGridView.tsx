@@ -28,6 +28,7 @@ import {
 import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { viewExtra } from '@/features/view/view-ext';
 import { showToast } from '@/ui/toast';
+import { useHyperDatabaseScan } from '../useHyperDatabaseScan';
 import type { HyperCell, HyperCellMutation, HyperDatabaseViewProps } from '../HyperDatabaseTypes';
 import { HyperGridColumns } from './grid/HyperGridColumns';
 import type { HyperGridRow } from './grid/HyperGridColumns';
@@ -134,18 +135,19 @@ export function HyperGridView(
     return () => clearTimeout(timer);
   }, [query]);
 
-  const firstSelect = state.fields.find(field => field.type === FieldType.SingleSelect);
+  const firstSelect = orderedFields.find(field => field.type === FieldType.SingleSelect);
+
+  const scan = useHyperDatabaseScan(controller, state, state.rowIds, search.trim() ? state.fields.map(f => f.id) : firstSelect ? [firstSelect.id] : [], Boolean(search.trim() || option));
 
   // Local search filters rowIds below; the header always counts the core's full loaded row list.
   const databaseRowCount = state.rowIds.length;
 
   const rowIds = useMemo(
-    () => search.trim() || option ? HyperGridFilterRows(state, search, firstSelect?.id, option) : state.rowIds,
+    () => search.trim() || option ? HyperGridFilterRows({ ...state, cells: scan.cells }, search, firstSelect?.id, option) : state.rowIds,
     [
       state.rowIds,
       state.fields,
-      search ? state.cells : null,
-      option ? state.cells : null,
+      scan.cells,
       search,
       option,
       firstSelect?.id,
@@ -254,12 +256,7 @@ export function HyperGridView(
   useEffect(() => {
     if (state.status === 'ready')
       void run(() => controller.loadRows(visibleRows, fields.map(field => field.id)));
-  }, [controller, state.status, pageKey, fieldKey]);
-
-  useEffect(() => {
-    if ((search || option) && state.status === 'ready')
-      void run(() => controller.loadRows(state.rowIds));
-  }, [controller, state.status, state.rowIds, search, option, state.fields]);
+  }, [controller, state.status, pageKey, fieldKey, state.fields]);
 
   useEffect(() => {
     const last = Math.max(0, Math.ceil(rowIds.length / pagination.pageSize) - 1);
@@ -443,7 +440,7 @@ export function HyperGridView(
         data-hyper-grid
         className='@container/hyper-grid flex h-full min-h-0 min-w-0 flex-col bg-background p-4'
         onKeyDownCapture={event => {
-          if (event.target instanceof Element && event.target.closest('input, textarea, [data-slot=popover-content], [data-slot=dropdown-menu-content]'))
+          if (event.target instanceof Element && event.target.closest('input, textarea, select, button, a[href], [contenteditable=true], [role=checkbox], [role=switch], [role=combobox], [role=slider], [role=menuitem], [role=menuitemcheckbox], [role=menuitemradio], [data-slot=popover-content], [data-slot=dropdown-menu-content]'))
             return;
 
           const focus = table.getFocusedCell();
