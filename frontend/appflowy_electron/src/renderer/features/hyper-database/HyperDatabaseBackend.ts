@@ -1,5 +1,5 @@
 import * as database from '@/backend/events/flowy-database2';
-import { FolderEventGetAllViews } from '@/backend/events/flowy-folder';
+import { FolderEventGetAllViews, FolderEventUpdateView } from '@/backend/events/flowy-folder';
 import { listenAll, NotificationSource } from '@/backend/notifications';
 import { ViewBackendService } from '@/features/view/view-service';
 import type { SubscribeObject } from '@shared/protobuf/flowy-notification/subject_pb';
@@ -8,6 +8,7 @@ export const hyperDatabaseBackend = {
   ...database,
   views: ViewBackendService,
   allViews: FolderEventGetAllViews,
+  updateView: FolderEventUpdateView,
   subscribe: (handler: (subject: SubscribeObject) => void) => listenAll(subject => {
     if (subject.source === NotificationSource.Database || subject.source === NotificationSource.Folder) handler(subject);
   }),

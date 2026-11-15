@@ -42,6 +42,7 @@ function fixture(rows = ['r', 's']) {
     DatabaseEventGetGroups: vi.fn(async () => ok(create(RepeatedGroupPBSchema))),
     DatabaseEventGetCell: vi.fn(async ({ rowId, fieldId }: { rowId?: string; fieldId?: string }) => ok(create(CellPBSchema, { rowId, fieldId, data: utf8('A task') }))),
     allViews: vi.fn(async () => ok(create(RepeatedViewPBSchema, { items: [view] }))),
+    updateView: vi.fn(async (_payload: Parameters<typeof hyperDatabaseBackend.updateView>[0]) => ok(undefined)),
     views: { ...hyperDatabaseBackend.views, getView: vi.fn(async () => ok(view)), createView: vi.fn(async () => ok(create(ViewPBSchema, { id: 'new', name: 'Timeline', layout: ViewLayoutPB.Grid, oneOfExtra: { case: 'extra', value: '{"font":"Geist"}' } }))), updateView: vi.fn(async (_payload: Parameters<typeof hyperDatabaseBackend.views.updateView>[0]) => ok(view)) },
     DatabaseEventUpdateCell: vi.fn(async () => ok(undefined)), DatabaseEventUpdateDateCell: vi.fn(async (_payload: Parameters<typeof hyperDatabaseBackend.DatabaseEventUpdateDateCell>[0]) => ok(undefined)),
     DatabaseEventUpdateChecklistCell: vi.fn(async () => ok(undefined)), DatabaseEventUpdateSelectOptionCell: vi.fn(async () => ok(undefined)),
@@ -224,7 +225,7 @@ describe('Hyper review regressions', () => {
     let finish!: (value: ReturnType<typeof ok<typeof view>>) => void;
     backend.views.getView.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
     const refreshing = controller.refresh();
-    backend.views.updateView.mockImplementation(async payload => ok(create(ViewPBSchema, { ...view, oneOfExtra: { case: 'extra', value: payload.extra! } })));
+    backend.updateView.mockImplementation(async () => ok(undefined));
     await Promise.all([controller.updateViewExtra({ a: 1 }), controller.updateViewExtra({ b: 2 })]);
     finish(ok(view)); await refreshing;
     expect(JSON.parse(controller.state.view!.oneOfExtra.value!)).toMatchObject({ a: 1, b: 2 });
@@ -310,4 +311,29 @@ it.each([N.DidReorderRows, N.DidReorderSingleRow])('replays a first-load sort ag
   await controller.open();
   expect(controller.state.rowIds).toEqual(ordered);
   expect(Object.keys(controller.state.rows)).toHaveLength(50);
+});
+it('does not replace newer row metadata with a read started before its notification', async () => {
+  const { controller, backend, open } = fixture(); await open();
+  let finish!: (value: ReturnType<typeof ok<ReturnType<typeof create<typeof RowMetaPBSchema>>>>) => void;
+  backend.DatabaseEventGetRowMeta = vi.fn(() => new Promise<Awaited<ReturnType<typeof hyperDatabaseBackend.DatabaseEventGetRowMeta>>>(resolve => { finish = resolve; }));
+  const read = controller.loadRowMeta('r');
+  notify(controller, N.DidUpdateRowMeta, toBinary(RowMetaPBSchema, create(RowMetaPBSchema, { id: 'r', oneOfIcon: { case: 'icon', value: 'new' } })), 'r');
+  finish(ok(create(RowMetaPBSchema, { id: 'r', oneOfIcon: { case: 'icon', value: 'old' } }))); await read;
+  expect(controller.state.rows.r.icon).toBe('new');
+});
+it('uses one date-cell version for both calendar endpoints', async () => {
+  const { controller, backend, f, open } = fixture(); f.fieldType = FieldType.DateTime; await open();
+  backend.DatabaseEventGetAllCalendarEvents = vi.fn(async () => ok(create(RepeatedCalendarEventPBSchema, { items: [{ rowMeta: { id: 'r' }, dateFieldId: 'f', oneOfTimestamp: { case: 'timestamp', value: 50n } }] })));
+  backend.DatabaseEventGetCell.mockImplementation(async () => ok(create(CellPBSchema, { rowId: 'r', fieldId: 'f', data: toBinary(DateCellDataPBSchema, create(DateCellDataPBSchema, { oneOfTimestamp: { case: 'timestamp', value: 300n }, oneOfEndTimestamp: { case: 'endTimestamp', value: 350n }, isRange: true })) })));
+  expect(await controller.getCalendarEvents(150n, 250n)).toEqual([]);
+  expect(await controller.getCalendarEvents(300n, 400n)).toMatchObject([{ timestamp: 300n, endTimestamp: 350n }]);
+});
+it('commits queued extras from the update acknowledgement without a fragile readback', async () => {
+  const { controller, backend, view, open } = fixture(); await open(); let persisted = view.oneOfExtra.value ?? '{}';
+  backend.views.updateView.mockImplementation(async payload => { persisted = payload.extra!; throw new Error('write succeeded but GetView readback failed'); });
+  backend.updateView.mockImplementation(async payload => { persisted = payload.oneOfExtra?.value ?? '{}'; return ok(undefined); });
+  const results = await Promise.allSettled([controller.updateViewExtra({ a: 1 }), controller.updateViewExtra({ b: 2 })]);
+  expect(results.map(result => result.status)).toEqual(['fulfilled', 'fulfilled']);
+  expect(JSON.parse(persisted)).toMatchObject({ a: 1, b: 2 });
+  expect(backend.views.updateView).not.toHaveBeenCalled();
 });

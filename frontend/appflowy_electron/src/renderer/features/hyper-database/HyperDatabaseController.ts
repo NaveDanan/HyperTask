@@ -46,6 +46,8 @@ export class HyperDatabaseController {
   private rowOrderPatches?: Array<(ids: string[], rows: HyperDatabaseState['rows']) => string[]>;
   private extraQueue: Promise<unknown> = Promise.resolve();
   private extraVersion = 0;
+  private rowMetaVersions = new Map<string, number>();
+  private checklistQueue = new Map<string, Promise<void>>();
   private queue: Array<() => void> = [];
   private active = 0;
   private viewIds = new Map<string, string>();
@@ -75,6 +77,7 @@ export class HyperDatabaseController {
   dispose() {
     this.epoch++; this.stop?.(); this.stop = undefined;
     clearTimeout(this.timer); this.timer = undefined;
+    this.rowMetaVersions.clear(); this.checklistQueue.clear();
     this.dirtyCells.clear(); this.versions.clear(); this.cachedKeys.clear(); this.viewIds.clear();
   }
   /** Coalesced metadata refresh; preserves cached cells whose field schema is unchanged. */
@@ -183,10 +186,16 @@ export class HyperDatabaseController {
     }
     return cells;
   }
+  private rememberRowMeta(meta: RowMetaPB) {
+    this.rowMetaVersions.set(meta.id, (this.rowMetaVersions.get(meta.id) ?? 0) + 1);
+    return normalizeRow(meta);
+  }
   async loadRowMeta(rowId: string) {
     const epoch = this.epoch;
+    const version = (this.rowMetaVersions.get(rowId) ?? 0) + 1;
+    this.rowMetaVersions.set(rowId, version);
     const meta = unwrap(await this.backend.DatabaseEventGetRowMeta({ viewId: this.viewId, rowId }));
-    if (epoch === this.epoch && this.state.rows[rowId]) this.patch({ rows: { ...this.state.rows, [rowId]: normalizeRow(meta) } });
+    if (epoch === this.epoch && version === this.rowMetaVersions.get(rowId) && this.state.rows[rowId]) this.patch({ rows: { ...this.state.rows, [rowId]: normalizeRow(meta) } });
   }
   async loadCell(rowId: string, fieldId: string, force = false): Promise<HyperCell | undefined> {
     const key = `${rowId}:${fieldId}`;
@@ -269,12 +278,12 @@ export class HyperDatabaseController {
         return;
       }
       if (subject.ty === N.DidUpdateRowMeta && state.rows[subject.id]) {
-        const meta = fromBinary(RowMetaPBSchema, bytes); this.patch({ rows: { ...state.rows, [meta.id]: normalizeRow(meta) } }); this.scheduleRefresh(); return;
+        const meta = fromBinary(RowMetaPBSchema, bytes); this.patch({ rows: { ...state.rows, [meta.id]: this.rememberRowMeta(meta) } }); this.scheduleRefresh(); return;
       }
       if (subject.ty === N.DidUpdateField && state.fields.some(f => f.id === subject.id)) { this.scheduleRefresh(); return; }
       if (subject.ty === N.DidUpdateGroupRow && state.groups.some(g => g.groupId === subject.id)) { this.scheduleRefresh(); return; }
       if (subject.ty === N.DidFetchRow && state.rows[subject.id]) {
-        const row = fromBinary(DidFetchRowPBSchema, bytes); if (row.meta) this.patch({ rows: { ...state.rows, [row.rowId]: normalizeRow(row.meta) } }); return;
+        const row = fromBinary(DidFetchRowPBSchema, bytes); if (row.meta) this.patch({ rows: { ...state.rows, [row.rowId]: this.rememberRowMeta(row.meta) } }); return;
       }
       if (subject.id !== this.viewId && subject.id !== state.databaseId) return;
       switch (subject.ty) {
@@ -285,11 +294,11 @@ export class HyperDatabaseController {
           for (const id of removed) { delete rows[id]; delete cells[id]; }
           for (const entry of update.insertedRows) {
             const meta = entry.rowMeta; if (!meta || entry.isHiddenInView) continue;
-            rowIds = rowIds.filter(id => id !== meta.id); rowIds.splice(entry.oneOfIndex.value ?? rowIds.length, 0, meta.id); rows[meta.id] = normalizeRow(meta);
+            rowIds = rowIds.filter(id => id !== meta.id); rowIds.splice(entry.oneOfIndex.value ?? rowIds.length, 0, meta.id); rows[meta.id] = this.rememberRowMeta(meta);
           }
           const invalidated: Array<[string, string]> = [];
           for (const entry of update.updatedRows) {
-            if (entry.oneOfRowMeta.case === 'rowMeta') rows[entry.rowId] = normalizeRow(entry.oneOfRowMeta.value);
+            if (entry.oneOfRowMeta.case === 'rowMeta') rows[entry.rowId] = this.rememberRowMeta(entry.oneOfRowMeta.value);
             for (const fieldId of entry.fieldIds) invalidated.push([entry.rowId, fieldId]);
           }
           this.patch({ rows, rowIds, cells });
@@ -308,7 +317,7 @@ export class HyperDatabaseController {
           this.patch({ rowIds: ids }); break;
         }
         case N.DidFetchRow: {
-          const row = fromBinary(DidFetchRowPBSchema, bytes); if (row.meta) this.patch({ rows: { ...state.rows, [row.rowId]: normalizeRow(row.meta) } }); break;
+          const row = fromBinary(DidFetchRowPBSchema, bytes); if (row.meta) this.patch({ rows: { ...state.rows, [row.rowId]: this.rememberRowMeta(row.meta) } }); break;
         }
         case N.DidUpdateViewRowsVisibility: {
           const change = fromBinary(RowsVisibilityChangePBSchema, bytes); const hidden = new Set(change.invisibleRows);
@@ -383,11 +392,16 @@ export class HyperDatabaseController {
     await this.loadCell(rowId, fieldId, true);
     this.patch({ dataRevision: this.state.dataRevision + 1 });
   }
-  async setChecklistItemCompleted(rowId: string, fieldId: string, itemId: string, completed: boolean) {
-    const cell = await this.loadCell(rowId, fieldId);
-    if (cell?.kind !== 'checklist' || cell.error) throw new Error('Checklist could not be loaded');
-    const item = cell.items.find(item => item.id === itemId); if (!item) throw new Error('Checklist item was deleted');
-    if (item.completed !== completed) await this.updateCell(rowId, fieldId, { kind: 'checklist', completedIds: [itemId] });
+  setChecklistItemCompleted(rowId: string, fieldId: string, itemId: string, completed: boolean) {
+    const key = rowId + ':' + fieldId + ':' + itemId;
+    const run = (this.checklistQueue.get(key) ?? Promise.resolve()).catch(() => undefined).then(async () => {
+      const cell = await this.loadCell(rowId, fieldId);
+      if (cell?.kind !== 'checklist' || cell.error) throw new Error('Checklist could not be loaded');
+      const item = cell.items.find(item => item.id === itemId); if (!item) throw new Error('Checklist item was deleted');
+      if (item.completed !== completed) await this.updateCell(rowId, fieldId, { kind: 'checklist', completedIds: [itemId] });
+    }).finally(() => { if (this.checklistQueue.get(key) === run) this.checklistQueue.delete(key); });
+    this.checklistQueue.set(key, run);
+    return run;
   }
   async createSelectOption(fieldId: string, name: string, rowId = '', color?: SelectOptionPB['color']) {
     let option = unwrap(await this.backend.DatabaseEventCreateSelectOption({ viewId: this.viewId, fieldId, optionName: name }));
@@ -432,7 +446,8 @@ export class HyperDatabaseController {
     return events.flatMap(e => {
       if (!e.rowMeta || e.oneOfTimestamp.case !== 'timestamp') return [];
       const date = cells[e.rowMeta.id]?.[e.dateFieldId];
-      const timestamp = e.oneOfTimestamp.value;
+      const timestamp = date?.kind === 'date' ? date.timestamp : e.oneOfTimestamp.value;
+      if (timestamp === null) return [];
       const endTimestamp = date?.kind === 'date' && date.isRange ? date.endTimestamp : null;
       return timestamp < end && (endTimestamp ?? timestamp) >= start ? [{ rowId: e.rowMeta.id, title: e.title, dateFieldId: e.dateFieldId, timestamp, endTimestamp, includeTime: date?.kind === 'date' && date.includeTime, meta: e.rowMeta }] : [];
     });
@@ -466,10 +481,10 @@ export class HyperDatabaseController {
     const run = this.extraQueue.then(async () => {
       const view = this.state.view; if (!view) throw new Error('Open the database first');
       const extra = mergeViewExtra(view, patch);
-      const updated = unwrap(await this.backend.views.updateView({ viewId: view.id, extra }));
-      // UpdateView can return an empty acknowledgement; retain the known view and merged extra.
+      unwrap(await this.backend.updateView({ viewId: view.id, oneOfExtra: { case: 'extra', value: extra } }));
+      // Extra writes need only the core acknowledgement; retain the known full view.
       this.extraVersion++;
-      this.patch({ view: updated.id ? updated : { ...view, oneOfExtra: { case: 'extra', value: extra } } }); await this.refreshViews();
+      this.patch({ view: { ...view, oneOfExtra: { case: 'extra', value: extra } } }); await this.refreshViews();
     });
     this.extraQueue = run.catch(() => undefined);
     return run;
