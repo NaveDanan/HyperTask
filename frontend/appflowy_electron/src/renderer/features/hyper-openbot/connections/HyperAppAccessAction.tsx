@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import * as api from './HyperAppAccessApi';
+import { useHyperAccessRequestList } from './HyperAccessRequestList';
 export interface HyperAppAccessActionProps { agentId: string; app: string; refusal?: 'connect' | 'reconnect' | 'shared'; admin?: boolean; onOpenConnection?(key: string): void }
 export function HyperAppAccessAction({ agentId, app, refusal, admin = false, onOpenConnection }: HyperAppAccessActionProps) {
   const [access, setAccess] = useState<api.HyperAppAccess>();
@@ -17,9 +18,6 @@ export function HyperAppAccessAction({ agentId, app, refusal, admin = false, onO
   </div>;
 }
 export function HyperAppAccessRequests({ app, busy, run }: { app: string; busy: boolean; run(action: () => Promise<void>): Promise<void> }) {
-  const [data, setData] = useState<api.HyperAppAccessInbox>();
-  const [error, setError] = useState('');
-  async function load() { try { setData(await api.hyperLoadAppRequests(app)); } catch { setError('Could not load app access requests.'); } }
-  useEffect(() => { void load(); const timer = setInterval(() => void load(), 10000); return () => clearInterval(timer); }, [app]);
-  return <div className="space-y-3"><h2>App access requests</h2>{error && <p role="alert">{error}</p>}{data?.requests.length === 0 && <p>No app access requests.</p>}{data?.requests.map(request => <div key={request.id} className="space-y-2 rounded-lg border border-border p-3"><p>{request.requesterName ?? request.requesterEmail ?? 'Person'} · {request.botName ?? 'Bot'} · {request.kind}</p><p>Approval enables the app and grants read-only actions. Setup requirements can refuse the request after a partial change.</p>{(['approve', 'dismiss'] as const).map(decision => <Button key={decision} disabled={busy} variant={decision === 'approve' ? 'default' : 'outline'} onClick={() => void run(async () => { try { await api.hyperDecideAppRequest(request.id, decision); } finally { await load(); } })}>{decision === 'approve' ? 'Approve read-only access' : 'Dismiss request'}</Button>)}</div>)}</div>;
+  const { requests, failed, decide } = useHyperAccessRequestList(app, busy, async () => (await api.hyperLoadAppRequests(app)).requests.filter(request => request.appKey === app));
+  return <div className="space-y-3"><h2>App access requests</h2>{failed && <p role="alert">Could not load app access requests.</p>}{!requests && !failed && <p role="status">Loading app access requests…</p>}{requests?.length === 0 && <p>No app access requests.</p>}{requests?.map(request => <div key={request.id} className="space-y-2 rounded-lg border border-border p-3"><p>{request.requesterName ?? request.requesterEmail ?? 'Person'} · {request.botName ?? 'Bot'} · {request.kind}</p><p>Approval enables the app and grants read-only actions. Setup requirements can refuse the request after a partial change.</p>{(['approve', 'dismiss'] as const).map(decision => <Button key={decision} disabled={busy} variant={decision === 'approve' ? 'default' : 'outline'} onClick={() => void decide(request, () => api.hyperDecideAppRequest(request.id, decision), run)}>{decision === 'approve' ? 'Approve read-only access' : 'Dismiss request'}</Button>)}</div>)}</div>;
 }

@@ -15,6 +15,8 @@ import { FormCardArgs, HyperFormCard } from './screens-gen/form';
 import { HyperCheckInEditor } from './routines/HyperRoutinesSection';
 import { HyperGroupChat } from './conversations/HyperGroupChat';
 import { hyperAcquireConversationDraft } from './useHyperConversationDraft';
+import { HyperAppAccessRequests } from './connections/HyperAppAccessAction';
+import { HyperSharedAccessRequests } from './connections/HyperSharedAccessRequests';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
 const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0 }));
@@ -366,4 +368,114 @@ it('already merges an older rejected group send into the reopened owner draft in
   find(tree, element => element.props['data-slot'] === 'composer-input')!.props.onChange({ target: { value: 'B' } });
   fail(new Error('refused')); await drain();
   expect(lease.get().text).toBe('A B');
+});
+const requestLists = [
+  { name: 'app', component: HyperAppAccessRequests, props: (key: string) => ({ app: key }), label: 'Approve read-only access' },
+  { name: 'shared', component: HyperSharedAccessRequests, props: (key: string) => ({ serverId: key }), label: 'Approve requested access' },
+];
+const requestRows = (key: string) => ({ requests: [{ id: `request-${key}`, appKey: key, appTitle: `App ${key}`, serverId: key, botName: `Bot ${key}`, requesterName: `Person ${key}`, kind: 'enable', status: 'pending', reason: 'Read access', proposed: approval, current: null }], counts: { total: 1, byApp: { [key]: 1 } } });
+it.each(requestLists)('$name requests cannot remain actionable under another app while its read is pending', async list => {
+  let finish!: (value: unknown) => void;
+  f.request.mockResolvedValueOnce(requestRows('A')).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const run = async (action: () => Promise<void>) => action(), props = (key: string) => ({ ...list.props(key), busy: false, run });
+  render(list.component, props('A')); mountEffects(); await drain();
+  const old = button(render(list.component, props('A')), list.label)!;
+  const changed = render(list.component, props('B'));
+  expect(button(changed, list.label)).toBeUndefined();
+  old.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[1] === 'POST')).toBe(false);
+  mountEffects(); await drain();
+  const current = render(list.component, props('B'));
+  try {
+    expect(button(current, list.label)).toBeUndefined(); old.props.onClick(); await drain();
+    expect(f.request.mock.calls.some(call => call[1] === 'POST')).toBe(false);
+  } finally { finish(requestRows('B')); await drain(); }
+});
+it.each(requestLists)('$name requests discard a late previous-app read after the new app has loaded', async list => {
+  let oldRead!: (value: unknown) => void;
+  f.request.mockImplementationOnce(() => new Promise(resolve => { oldRead = resolve; })).mockResolvedValueOnce(requestRows('B'));
+  const props = (key: string) => ({ ...list.props(key), busy: false, run: async (action: () => Promise<void>) => action() });
+  render(list.component, props('A')); mountEffects();
+  render(list.component, props('B')); mountEffects(); await drain(); oldRead(requestRows('A')); await drain();
+  const current = render(list.component, props('B'));
+  expect(find(current, element => element.type === 'p' && text(element.props.children).includes('Bot A'))).toBeUndefined();
+  expect(find(current, element => element.type === 'p' && text(element.props.children).includes('Bot B'))).toBeDefined();
+});
+it.each(requestLists)('$name request decisions reject a cached callback after unmount', async list => {
+  f.request.mockResolvedValue(requestRows('A'));
+  const props = { ...list.props('A'), busy: false, run: async (action: () => Promise<void>) => action() };
+  render(list.component, props); mountEffects(); await drain();
+  const old = button(render(list.component, props), list.label)!;
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  old.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[1] === 'POST')).toBe(false);
+});
+it.each(requestLists)('$name requests keep another app hidden when the current read fails and recover on polling', async list => {
+  f.request.mockResolvedValueOnce(requestRows('A')).mockRejectedValueOnce(new Error('synthetic-read-failure')).mockResolvedValue(requestRows('B'));
+  const props = (key: string) => ({ ...list.props(key), busy: false, run: async (action: () => Promise<void>) => action() });
+  render(list.component, props('A')); mountEffects(); await drain();
+  render(list.component, props('B')); mountEffects(); await drain();
+  let tree = render(list.component, props('B'));
+  expect(button(tree, list.label)).toBeUndefined(); expect(find(tree, element => element.props.role === 'alert')).toBeDefined();
+  await vi.advanceTimersByTimeAsync(10000); tree = render(list.component, props('B'));
+  expect(button(tree, list.label)).toBeDefined(); expect(find(tree, element => element.props.role === 'alert')).toBeUndefined();
+});
+it.each(requestLists)('$name requests reject reordered reads within the same app', async list => {
+  let original!: (value: unknown) => void;
+  f.request.mockImplementationOnce(() => new Promise(resolve => { original = resolve; })).mockResolvedValue({ ...requestRows('A'), requests: [{ ...requestRows('A').requests[0], botName: 'Latest Bot' }] });
+  const props = { ...list.props('A'), busy: false, run: async (action: () => Promise<void>) => action() };
+  render(list.component, props); mountEffects(); await vi.advanceTimersByTimeAsync(10000);
+  original(requestRows('A')); await drain(); const tree = render(list.component, props);
+  expect(find(tree, element => element.type === 'p' && text(element.props.children).includes('Latest Bot'))).toBeDefined();
+  expect(find(tree, element => element.type === 'p' && text(element.props.children).includes('Bot A'))).toBeUndefined();
+});
+it.each(requestLists)('$name decisions recheck the target when the parent defers their execution', async list => {
+  let deferred!: () => Promise<void>;
+  f.request.mockResolvedValue(requestRows('A'));
+  const run = vi.fn(async (action: () => Promise<void>) => { deferred = action; }), props = (key: string) => ({ ...list.props(key), busy: false, run });
+  render(list.component, props('A')); mountEffects(); await drain();
+  button(render(list.component, props('A')), list.label)!.props.onClick(); await drain(); expect(run).toHaveBeenCalledOnce();
+  render(list.component, props('B')); await deferred();
+  expect(f.request.mock.calls.some(call => call[1] === 'POST')).toBe(false);
+});
+it.each(requestLists)('$name decisions do not revive an old callback when returning to the same app', async list => {
+  f.request.mockImplementation(async () => requestRows('A'));
+  const props = (key: string) => ({ ...list.props(key), busy: false, run: async (action: () => Promise<void>) => action() });
+  render(list.component, props('A')); mountEffects(); await drain();
+  const old = button(render(list.component, props('A')), list.label)!;
+  render(list.component, props('B')); mountEffects(); await drain();
+  render(list.component, props('A')); mountEffects(); await drain();
+  expect(button(render(list.component, props('A')), list.label)).toBeDefined(); old.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[1] === 'POST')).toBe(false);
+});
+it.each(requestLists)('$name requests exclude rows belonging to another app even in the current response', async list => {
+  f.request.mockResolvedValue({ ...requestRows('A'), requests: [...requestRows('A').requests, ...requestRows('B').requests] });
+  const props = { ...list.props('A'), busy: false, run: async (action: () => Promise<void>) => action() };
+  render(list.component, props); mountEffects(); await drain(); const tree = render(list.component, props);
+  expect(find(tree, element => element.type === 'p' && text(element.props.children).includes('Bot A'))).toBeDefined();
+  expect(find(tree, element => element.type === 'p' && text(element.props.children).includes('Bot B'))).toBeUndefined();
+});
+it.each([
+  { ...requestLists[0], decision: 'approve', endpoint: '/api/plugins/access-requests/request-A/approve' },
+  { ...requestLists[0], label: 'Dismiss request', decision: 'dismiss', endpoint: '/api/plugins/access-requests/request-A/dismiss' },
+  { ...requestLists[1], decision: 'approve', endpoint: '/api/approvals/shared-use/request-A/approve' },
+  { ...requestLists[1], label: 'Decline', decision: 'decline', endpoint: '/api/approvals/shared-use/request-A/decline' },
+])('$name current-target $decision still posts and reloads after the parent marks itself busy', async list => {
+  let deferred!: () => Promise<void>;
+  f.request.mockImplementation(async (_path: string, method?: string) => method === 'POST' ? {} : requestRows('A'));
+  const run = vi.fn(async (action: () => Promise<void>) => { deferred = action; }), props = { ...list.props('A'), busy: false, run };
+  render(list.component, props); mountEffects(); await drain();
+  button(render(list.component, props), list.label)!.props.onClick(); await drain();
+  render(list.component, { ...props, busy: true }); await deferred();
+  expect(f.request.mock.calls.filter(call => call[1] === 'POST').map(call => call[0])).toEqual([list.endpoint]);
+  expect(f.request.mock.calls.filter(call => call[1] !== 'POST')).toHaveLength(2);
+});
+it.each(requestLists)('$name settling decisions do not reload the old app after navigation', async list => {
+  let finish!: (value: unknown) => void;
+  f.request.mockImplementation(async (_path: string, method?: string) => method === 'POST' ? new Promise(resolve => { finish = resolve; }) : requestRows('A'));
+  const props = (key: string) => ({ ...list.props(key), busy: false, run: async (action: () => Promise<void>) => action() });
+  render(list.component, props('A')); mountEffects(); await drain();
+  button(render(list.component, props('A')), list.label)!.props.onClick(); await drain();
+  render(list.component, props('B')); mountEffects(); await drain(); finish({}); await drain();
+  expect(f.request.mock.calls.filter(call => call[1] !== 'POST')).toHaveLength(2);
 });
