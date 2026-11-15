@@ -89,9 +89,12 @@ export function hyperValidateGovernanceResponse(path: string, method: string, va
     counts: z.object({ people: z.number(), losing: z.number(), gaining: z.number(), keeping: z.number(), unchanged: z.number() }),
     activity: z.object({ days: z.number(), unmapped: z.array(object) }),
     warning: nullableText
-  });else if (route.endsWith('/rules/translate')) schema = reading.extend({
-    rules: z.array(rule)
-  });else if (route.endsWith('/rules/backtest')) schema = z.object({
+  });else if (route.endsWith('/rules/translate')) schema = z.union([
+    reading.extend({ check: check.extend({ ok: z.literal(true) }), rules: z.array(rule) }),
+    // Failed model checks intentionally return invalid behavior strings so the
+    // administrator can inspect and correct them. Saved/valid rows stay strict.
+    reading.extend({ check: check.extend({ ok: z.literal(false) }), rules: z.array(rule.extend({ behaviour: z.string() })) })
+  ]);else if (route.endsWith('/rules/backtest')) schema = z.object({
     check,
     warning: nullableText,
     report: z.object({ scanned: z.number(), matched: z.number(), changed: z.number(), removedAsks: z.number(), removedDenied: z.number(), addedAsks: z.number(), fixed: z.number(), changes: z.array(z.object({ id: z.string(), would: z.string(), reason: z.string() }).passthrough()) })

@@ -121,6 +121,14 @@ describe('admin-governance transport contracts', () => {
       text: 'Unknown permission'
     })).toBe(result);
   });
+  it('preserves structurally valid failed-check approval rows for correction, not saving', async () => {
+    const result = { rules: [{ botId: '*', toolRef: 'app/read', effect: '*', scope: '*', behaviour: 'deny' }], summary: null, explanation: 'Correct this behavior', warning: null, check: { ok: false, error: 'Unknown behavior', problems: [] } };
+    transport.mockResolvedValue(result);
+    expect(await hyperGovernanceRequest('/api/approvals/team/rules/translate', 'POST', { text: 'A described rule' })).toBe(result);
+  });
+  it('still refuses an invalid approval behavior claimed to have passed its check', () => {
+    expect(() => hyperValidateGovernanceResponse('/api/approvals/team/rules/translate', 'POST', { rules: [{ botId: '*', toolRef: 'app/read', effect: '*', scope: '*', behaviour: 'deny' }], summary: null, explanation: null, warning: null, check: { ok: true } })).toThrow();
+  });
   it.each([['/api/admin/enterprise/capabilities/batch', {
     changes: [{
       scopeKind: 'role',

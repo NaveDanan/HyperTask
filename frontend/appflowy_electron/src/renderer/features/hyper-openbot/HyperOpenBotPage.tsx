@@ -25,6 +25,7 @@ import { HyperServiceStatus, useHyperOpenBotService } from './HyperServiceStatus
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
 import { hyperLoadAllChannels } from './HyperChannelPaging';
+import { hyperChannelHasWork, hyperUpdateChannelWork, type HyperChannelWorkHint } from './HyperChannelWork';
 import { hyperResolveModelPick, hyperRequestModelPick, type HyperConversationModel, type HyperModelCatalogue } from './HyperModelSelection';
 import { hyperAcquireConversationDraft, useHyperConversationDraft } from './useHyperConversationDraft';
 import type { HyperDraftAttachment } from './HyperConversationDraft';
@@ -53,7 +54,7 @@ import { HyperRuntimeTools, hyperObserveApprovalAgent, hyperWhileObserved } from
 import { hyperPrepareRuntimeAgent, hyperResolveRuntimeFacts } from './HyperRuntimeIntegration';
 import { HYPER_OPENBOT_SECTIONS, hyperRenderConnections, type HyperOpenBotSectionContext } from './HyperOpenBotSections';
 
-type HyperChannel = HyperConversation & { threadId: string; agentIds: string[]; active: boolean; busy?: boolean; lastMessageAgentId?: string | null; lastMessageAt?: string | null; lastReadAt?: string | null };
+type HyperChannel = HyperConversation & HyperChannelWorkHint & { threadId: string; agentIds: string[]; active: boolean; lastMessageAgentId?: string | null; lastMessageAt?: string | null; lastReadAt?: string | null };
 function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerReceiver, rosterSaysWorking }: { channel: HyperChannel; serviceReady: boolean; eventRevision?: number; registerReceiver?: (receiver: HyperInitialDraftReceiver | undefined) => void; rosterSaysWorking?: (channelId: string) => boolean | undefined }) {
   const { copilotkit } = useCopilotKit();
   const { agent, isReady } = useAgent({ agentId: `channel:${channel.id}`, runtimeAgentId: channel.agentIds[0], threadId: channel.threadId });
@@ -81,7 +82,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
   const stopped = useRef(false);
   const stopEpoch = useRef(0);
   const workingHint = useRef({ busy: channel.busy, rosterSaysWorking }); workingHint.current = { busy: channel.busy, rosterSaysWorking };
-  const serverWorking = () => !!(workingHint.current.rosterSaysWorking?.(channel.id) ?? workingHint.current.busy) || turnsGoingAway(channel.id) > 0;
+  const serverWorking = () => continuation.current || workingHint.current.rosterSaysWorking?.(channel.id) === true || workingHint.current.busy === true || turnsGoingAway(channel.id) > 0;
   const stopRun = () => { stopEpoch.current++; stopped.current = true; return copilotkit.stopAgent({ agent }); };
   const generation = useRef(0);
   const { draft, getDraft, assertDraftCurrent, updateDraft, beginAttachmentSend, restoreQueuedDraft, prepareSubmission } = useHyperConversationDraft(channel.id);
@@ -168,6 +169,10 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
     })();
     return () => { current = false; generation.current++; join.cancel(); watching.unsubscribe(); watchErrors.unsubscribe(); releaseApproval(); };
   }, [agent, copilotkit, isReady, channel.threadId, historyRevision, serviceReady]);
+  const continuation = useRef(false);
+  const [carryingOn, setCarryingOn] = useState(false);
+  const priorCarryOn = useRef(false);
+  useEffect(() => { if (priorCarryOn.current && !carryingOn && serviceReady) setHistoryRevision(value => value + 1); priorCarryOn.current = carryingOn; }, [carryingOn, serviceReady]);
   const running = sending || agent.isRunning || serverWorking() || awayTurns > 0;
   useEffect(() => { if (eventRevision && serviceReady && !agent.isRunning && !sending && !channel.busy) setHistoryRevision(value => value + 1); }, [eventRevision, serviceReady]);
   const messages: HyperTranscriptMessage[] = agent.messages.flatMap<HyperTranscriptMessage>(message => {
@@ -247,7 +252,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
     <HyperDeliveryControls channelId={channel.id} bots={channel.agentIds.map(id => ({ id, name: id }))} enabled={serviceReady} />
     <HyperTranscript renderTool={tool => tool.label === 'run_subagent' ? <HyperToolMessage {...tool}><HyperSubagentSteps toolCallId={tool.id} parentThreadId={channel.threadId} agentId={channel.agentIds[0]} result={tool.result} live={tool.status === 'running'} /></HyperToolMessage> : <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} ask={!running && serviceReady && !restoring && !reconnectRequired ? text => { void sendDraft({ text, attachments: [] }).catch(() => setError('The follow-up could not be sent.')); } : undefined} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     {!!agent.messages.length && <HyperNotifyPrompt />}
-    <HyperConversationActions onQuestions={value => { questions.current = value; }} threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
+    <HyperConversationActions onQuestions={value => { questions.current = value; }} onCarryOnChange={value => { continuation.current = value; setCarryingOn(value); }} threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
     <HyperComposer activeAttachmentIds={draft.activeAttachments?.ids} onRestoreQueued={restoreQueuedDraft} commandIds={draft.commandIds} onCommandIdsChange={ids => updateDraft(current => ({ ...current, commandIds: ids }))} commands={commands} onDiscardAttachment={id => { if (!getDraft().activeAttachments?.ids.includes(id)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }} className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} getAttachmentCount={() => getDraft().attachments.length} onRemoveAttachment={id => { if (getDraft().activeAttachments?.ids.includes(id)) return; setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => hyperUploadDraftFiles(files, async file => {
       const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
       const response = await hyperOpenBotFetch(`${HYPER_OPENBOT_ORIGIN}/api/channels/${channel.id}/attachments`, { method: 'POST', body: form });
@@ -255,7 +260,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
       if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error(saved.error ?? 'Attachment upload failed');
       return { id: saved.id, name: saved.name, mimeType: saved.mimeType, status: 'ready' };
     }, setAttachments, id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }, assertDraftCurrent)} modelPicker={modelAllowed && models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
-      if (modelScope.current !== modelOwner || !modelOwner.active || !modelOwner.allowed || catalogueRef.current?.choosable !== true || modelUpdating.current) return;
+      if (serverWorking() || turns.current.size || agent.isRunning || modelScope.current !== modelOwner || !modelOwner.active || !modelOwner.allowed || catalogueRef.current?.choosable !== true || modelUpdating.current) return;
       const sequence = modelOwner.sequence;
       const valid = () => modelScope.current === modelOwner && modelOwner.active && modelOwner.allowed && sequence === modelOwner.sequence;
       modelUpdating.current = true; setModelPending(true);
@@ -300,8 +305,8 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
     });
   }, []);
 
-  const busyChannels = useRef(new Map<string, boolean>());
-  const rosterSaysWorking = (id: string) => busyChannels.current.get(id);
+  const busyChannels = useRef(new Map<string, HyperChannelWorkHint>());
+  const rosterSaysWorking = (id: string) => hyperChannelHasWork(busyChannels.current.get(id)) ? true : undefined;
   const activeChannel = useRef(channel); activeChannel.current = channel;
   const eventsCallback = useRef({ refresh: () => refresh(), open: (id: string) => { void openAny(id); } });
   eventsCallback.current = { refresh: () => refresh(), open: id => { void openAny(id); } };
@@ -309,7 +314,7 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
     if (!serviceReady) return;
     return hyperWatchChannelEvents(event => {
       if (event && 'resync' in event) busyChannels.current.clear();
-      else if (event?.busy !== undefined) busyChannels.current.set(event.channelId, event.busy);
+      else if (event) busyChannels.current.set(event.channelId, hyperUpdateChannelWork(busyChannels.current.get(event.channelId), event));
       void eventsCallback.current.refresh(); setEventRevision(value => value + 1);
       if (event && !('resync' in event) && event.deleted) setChannel(current => current?.id === event.channelId ? undefined : current);
       if (event && !('resync' in event) && event.channelId === activeChannel.current?.id && event.lastMessageAt) void hyperMarkChannelRead(event.channelId).catch(() => {});
@@ -322,7 +327,10 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
     try {
       const list = await hyperLoadAllChannels();
       if (current !== version.current) return;
-      const live = list.channels.map(row => ({ ...row, busy: busyChannels.current.get(row.id) ?? row.busy, unreadCount: hyperHasUnseenActivity(row) ? 1 : 0 }));
+      const live = list.channels.map(row => {
+        if (Array.isArray(row.work)) busyChannels.current.set(row.id, hyperUpdateChannelWork(busyChannels.current.get(row.id), { work: row.work, workAt: row.workAt }));
+        return { ...row, busy: hyperChannelHasWork(busyChannels.current.get(row.id)) || hyperChannelHasWork(row), unreadCount: hyperHasUnseenActivity(row) ? 1 : 0 };
+      });
       setChannels(live);
       setChannel(current => current ? live.find(row => row.id === current.id) ?? current : current);
       if (restoreInitial && selection === selectionVersion.current) {

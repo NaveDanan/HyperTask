@@ -299,7 +299,7 @@ function RankedBars({ points, max }: { points: BarPoint[]; max: number }) {
                 style={{ paddingRight: `calc(${widest}ch + 0.375rem)` }}
               >
                 <span
-                  className={`h-3 shrink-0 rounded-r-[4px] transition-[width] motion-reduce:transition-none ${isValue(entry.value) ? "" : "bg-muted"}`}
+                  className={`h-3 shrink-0 rounded-r-md transition-[width] motion-reduce:transition-none ${isValue(entry.value) ? "" : "bg-muted"}`}
                   data-bar=""
                   style={{
                     // A bar whose number has not arrived holds a sliver in a muted tone.

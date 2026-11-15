@@ -2,7 +2,7 @@
 import { HyperConversationTag, HyperInSight, HyperShowNotice, HyperNotificationPermissionState, type HyperNotice } from './HyperNotifications';
 export type HyperChannelActivityEvent = {
   channelId: string; lastMessageAgentId: string | null; lastMessage: string | null; firstLine?: string | null;
-  summary?: unknown; opening?: unknown; pinned?: unknown; busy?: boolean; work?: unknown; deleted?: unknown;
+  summary?: unknown; opening?: unknown; pinned?: unknown; busy?: boolean; work?: unknown; workAt?: string; deleted?: unknown;
 };
 export type HyperBotNotify = 'all' | 'needs_input' | 'none';
 export type HyperNoticeBot = { agentId: string; name: string; waitingIn?: string | null };

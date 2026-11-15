@@ -30,10 +30,11 @@ import { hyperRoutineSelectionFromPath } from './routines/HyperRoutineNavigation
 import { HyperReachability } from './bot-tabs/HyperReachability';
 import { HyperConversationResult } from './screens-gen/HyperConversationResult';
 import { HyperSharedApprovalFields } from './connections/HyperPluginGrants';
+import { HyperConversationActions } from './HyperConversationActions';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
 const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0, context: undefined as any }));
-const f = vi.hoisted(() => ({ request: vi.fn(), fetch: vi.fn(), lookup: vi.fn(), decision: vi.fn(), connections: vi.fn(), stateListener: undefined as undefined | ((state: any) => void), agent: undefined as any, core: undefined as any }));
+const f = vi.hoisted(() => ({ request: vi.fn(), fetch: vi.fn(), lookup: vi.fn(), decision: vi.fn(), connections: vi.fn(), stateListener: undefined as undefined | ((state: any) => void), channelEvent: undefined as undefined | ((event: any) => void), agent: undefined as any, core: undefined as any }));
 vi.mock('react', async original => {
   const react = await original<typeof import('react')>();
   const effect = (...args: Parameters<typeof react.useEffect>) => { if (h.active) { h.effects.push(args[0]); h.deps.push(args[1]); } else react.useEffect(...args); };
@@ -56,6 +57,7 @@ vi.mock('@copilotkit/react-core/v2', () => ({ useFrontendTool: vi.fn(), useCopil
 vi.mock('./provider', () => ({ HyperOpenBotProvider: () => null }));
 vi.mock('./HyperServiceStatus', () => ({ HyperServiceStatus: () => null, useHyperOpenBotService: () => ({ state: { ready: false, problem: 'stopped' } }) }));
 vi.mock('./HyperComputerPanel', () => ({ HyperComputerPanel: () => null }));
+vi.mock('./conversations/HyperChannelEvents', async original => ({ ...await original<typeof import('./conversations/HyperChannelEvents')>(), hyperWatchChannelEvents: (onEvent: (event: any) => void) => { f.channelEvent = onEvent; return () => { f.channelEvent = undefined; }; }, hyperMarkChannelRead: vi.fn(async () => {}) }));
 vi.mock('./screens-gen/HyperGalleryRegistry', () => ({ hyperGalleryComponent: f.lookup, GALLERY_COMPONENTS: [] }));
 vi.mock('./screens-gen/HyperScreensApi', async original => { const api = await original<typeof import('./screens-gen/HyperScreensApi')>(); return { ...api, hyperScreensApi: { ...api.hyperScreensApi, decision: f.decision } }; });
 vi.mock('./connections/HyperConnectionsApi', async original => ({ ...await original<typeof import('./connections/HyperConnectionsApi')>(), hyperLoadConnections: f.connections }));
@@ -64,6 +66,7 @@ beforeEach(() => {
   vi.useFakeTimers(); vi.clearAllMocks(); h.active = false; h.states = []; h.refs = []; h.effects = []; h.deps = []; h.cleanups = [];
   hyperHomeDraftStore.clear(); f.lookup.mockReset(); f.request.mockReset().mockImplementation(async (path: string) => path.startsWith('/api/plugins/for/') ? { skills: [] } : {}); f.fetch.mockReset(); f.connections.mockReset().mockResolvedValue([]);
   f.stateListener = undefined;
+  f.channelEvent = undefined;
   f.agent = undefined; f.core = undefined;
   h.context = undefined;
   vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(), appflowy: { hyperOpenBot: { service: { onState: (listener: (state: any) => void) => { f.stateListener = listener; return () => { if (f.stateListener === listener) f.stateListener = undefined; }; } } }, shell: { openExternal: vi.fn() } } });
@@ -1453,4 +1456,31 @@ it('actor read failure does not infer administrator privilege', async () => {
   const props = { agentId: 'bot', app: 'app', deriveAdmin: true };
   render(HyperAppAccessAction, props); mountEffects(); await drain();
   expect(button(render(HyperAppAccessAction, props), 'Enable and grant read-only access')).toBeUndefined();
+});
+
+async function hyperReviewedChatFixture(inbox: unknown = { requests: [], questions: [] }, busy = false) {
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() });
+  const channel = { id: 'reviewed-channel', threadId: 'reviewed-thread', agentIds: ['bot'], active: true, busy, name: 'Reviewed' };
+  f.request.mockImplementation(async (path: string) => path === '/api/approvals' ? inbox : path === '/api/channels' ? { channels: [channel], nextCursor: null } : path === '/api/channels/reviewed-channel' ? { channel } : path.startsWith('/api/plugins/for/') ? { skills: [] } : {});
+  render(HyperOpenBotWorkspace, { viewId: 'reviewed-view', serviceReady: true }); mountEffects(); await drain();
+  let tree = render(HyperOpenBotWorkspace, { viewId: 'reviewed-view', serviceReady: true });
+  (tree as ReactElement<any>).props.context.openConversation(channel.id); await drain(); tree = render(HyperOpenBotWorkspace, { viewId: 'reviewed-view', serviceReady: true });
+  return find(tree, element => typeof element.type === 'function' && element.type.name === 'HyperChannelChat')!;
+}
+it.each(['approved', 'denied', 'consumed'])('a %s server continuation blocks a stale composer submit before run or HTTP', async status => {
+  const chat = await hyperReviewedChatFixture({ requests: [{ id: 'approval', status, createdAt: new Date().toISOString(), decidedAt: new Date().toISOString(), action: { threadId: 'reviewed-thread' } }], questions: [] });
+  f.agent = { agentId: 'channel:reviewed-channel', runtimeAgentId: 'bot', threadId: 'reviewed-thread', messages: [], isRunning: false, pendingInterrupts: [], addMessage: vi.fn(), subscribe: vi.fn(observer => { observer.onRunInitialized?.({ input: { threadId: 'reviewed-thread', runId: 'reviewed-run' }, messages: [] }); return { unsubscribe() {} }; }) };
+  f.core = { runAgent: vi.fn(async () => {}), stopAgent: vi.fn() };
+  h.states = []; h.refs = []; const tree = render(chat.type as any, chat.props);
+  const composer = find(tree, element => element.type === HyperComposer)!, actions = find(tree, element => element.type === HyperConversationActions)!;
+  h.states = []; h.refs = []; render(HyperConversationActions, actions.props); mountEffects(); await drain();
+  await expect(composer.props.onSubmit({ text: 'Do not race', attachments: [] })).rejects.toThrow('still working');
+  expect(f.core.runAgent).not.toHaveBeenCalled(); expect(f.request.mock.calls.some(call => call[0].endsWith('/busy') && call[1] === 'POST')).toBe(false);
+});
+it('a busy-false event cannot erase continuing server work or an authoritative busy roster', async () => {
+  await hyperReviewedChatFixture(undefined, true);
+  f.channelEvent!({ channelId: 'reviewed-channel', busy: false, work: [{ id: 'handoff', source: 'handoff' }], workAt: '2026-11-15T01:00:01Z' }); await drain();
+  const tree = render(HyperOpenBotWorkspace, { viewId: 'reviewed-view', serviceReady: true });
+  const chat = find(tree, element => typeof element.type === 'function' && element.type.name === 'HyperChannelChat')!;
+  expect(chat.props.channel.busy).toBe(true); expect(chat.props.rosterSaysWorking('reviewed-channel')).toBe(true);
 });

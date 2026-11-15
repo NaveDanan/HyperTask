@@ -23,12 +23,16 @@ export function HyperDecisionCard({title, caption, children, options, other, ans
   }, [id, answer, submitting]);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if (waitingCards.at(-1) !== id || answer || submitting || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (waitingCards.at(-1) !== id || answer || submitting || event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
       const option = options[Number(event.key) - 1];
       if (/^[1-9]$/.test(event.key) && option) {event.preventDefault(); setPicked(option.value);}
-      if (event.key === 'Enter' && (picked !== OTHER || text.trim())) {event.preventDefault(); form.current?.requestSubmit();}
+      if (event.key === 'Enter' && (picked !== OTHER || text.trim())) {
+        const focused = document.activeElement;
+        if (focused && focused !== document.body && !form.current?.contains(focused)) return;
+        event.preventDefault(); form.current?.requestSubmit();
+      }
     };
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);

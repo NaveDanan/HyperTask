@@ -288,6 +288,7 @@ export function HyperBoundaryEditor({
         }>('/api/computers/policy-translate', 'POST', {
           text
         });
+        if (result.effect !== 'deny') throw new Error('This description was interpreted as an allow rule. Describe what this boundary should stop, or edit the expression directly.');
         setReading(result);
         setWrittenText(text);
         setExpression(result.rule);
