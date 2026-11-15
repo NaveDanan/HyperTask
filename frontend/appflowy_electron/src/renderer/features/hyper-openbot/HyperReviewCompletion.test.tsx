@@ -15,7 +15,7 @@ import { FormCardArgs, HyperFormCard } from './screens-gen/form';
 import { HyperCheckInEditor } from './routines/HyperRoutinesSection';
 import { HyperGroupChat } from './conversations/HyperGroupChat';
 import { hyperAcquireConversationDraft } from './useHyperConversationDraft';
-import { HyperAppAccessRequests } from './connections/HyperAppAccessAction';
+import { HyperAppAccessAction, HyperAppAccessRequests } from './connections/HyperAppAccessAction';
 import { HyperSharedAccessRequests } from './connections/HyperSharedAccessRequests';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
@@ -478,4 +478,124 @@ it.each(requestLists)('$name settling decisions do not reload the old app after 
   button(render(list.component, props('A')), list.label)!.props.onClick(); await drain();
   render(list.component, props('B')); mountEffects(); await drain(); finish({}); await drain();
   expect(f.request.mock.calls.filter(call => call[1] !== 'POST')).toHaveLength(2);
+});
+const botAppAccess = (agentId: string, app: string) => ({ app: { key: app, displayName: `Access ${agentId} ${app}`, state: 'not_connected', accountHolder: 'you', request: { id: `request-${agentId}-${app}`, kind: 'enable', createdAt: '2026-11-15T00:00:00Z' }, requestKind: 'enable' } });
+const cardTargets = [
+  { name: 'Bot', before: { agentId: 'A', app: 'mail' }, after: { agentId: 'B', app: 'mail' } },
+  { name: 'app', before: { agentId: 'A', app: 'mail' }, after: { agentId: 'A', app: 'calendar' } },
+];
+it.each(cardTargets)('Bot app-access card hides old state and rejects cached withdrawal immediately on $name change', async target => {
+  f.request.mockResolvedValue(botAppAccess(target.before.agentId, target.before.app));
+  render(HyperAppAccessAction, target.before); mountEffects(); await drain();
+  const old = button(render(HyperAppAccessAction, target.before), 'Withdraw request')!;
+  const next = render(HyperAppAccessAction, target.after);
+  expect(button(next, 'Withdraw request')).toBeUndefined(); old.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[1] === 'DELETE')).toBe(false);
+});
+it.each(cardTargets)('Bot app-access card rejects a late read from the previous $name after current state loads', async target => {
+  let finish!: (value: unknown) => void;
+  f.request.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; })).mockResolvedValueOnce(botAppAccess(target.after.agentId, target.after.app));
+  render(HyperAppAccessAction, target.before); mountEffects();
+  render(HyperAppAccessAction, target.after); mountEffects(); await drain();
+  finish(botAppAccess(target.before.agentId, target.before.app)); await drain(); const tree = render(HyperAppAccessAction, target.after);
+  expect(find(tree, element => element.type === 'p' && text(element.props.children).includes(`Access ${target.before.agentId} ${target.before.app}`))).toBeUndefined();
+  expect(find(tree, element => element.type === 'p' && text(element.props.children).includes(`Access ${target.after.agentId} ${target.after.app}`))).toBeDefined();
+  button(tree, 'Withdraw request')!.props.onClick(); await drain();
+  expect(f.request.mock.calls.filter(call => call[1] === 'DELETE').map(call => call[0])).toEqual([`/api/plugins/access-requests/request-${target.after.agentId}-${target.after.app}`]);
+});
+it.each(cardTargets)('Bot app-access card settling withdrawal does not reload the previous $name', async target => {
+  let finish!: (value: unknown) => void;
+  f.request.mockImplementation(async (path: string, method?: string) => method === 'DELETE' ? new Promise(resolve => { finish = resolve; }) : path.includes(`/for/${target.after.agentId}/apps/${target.after.app}`) ? botAppAccess(target.after.agentId, target.after.app) : botAppAccess(target.before.agentId, target.before.app));
+  render(HyperAppAccessAction, target.before); mountEffects(); await drain();
+  button(render(HyperAppAccessAction, target.before), 'Withdraw request')!.props.onClick(); await drain();
+  render(HyperAppAccessAction, target.after); mountEffects(); await drain(); finish({}); await drain();
+  expect(f.request.mock.calls.filter(call => call[1] !== 'DELETE')).toHaveLength(2);
+  expect(find(render(HyperAppAccessAction, target.after), element => element.type === 'p' && text(element.props.children).includes(`Access ${target.after.agentId} ${target.after.app}`))).toBeDefined();
+});
+it('Bot app-access card rejects cached withdrawal and refresh callbacks after unmount', async () => {
+  const props = { agentId: 'A', app: 'mail' }; f.request.mockResolvedValue(botAppAccess(props.agentId, props.app));
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  const withdraw = button(tree, 'Withdraw request')!, refresh = button(tree, 'Refresh access')!;
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  withdraw.props.onClick(); refresh.props.onClick(); await drain();
+  expect(f.request).toHaveBeenCalledOnce();
+});
+it.each([
+  { label: 'Withdraw request', changes: {}, admin: false, method: 'DELETE', path: '/api/plugins/access-requests/request-A-mail' },
+  { label: 'Request access', changes: { request: null }, admin: false, method: 'POST', path: '/api/plugins/access-requests' },
+  { label: 'Let it use your app', changes: { state: 'owner_grantable', needsConnect: false, request: null }, admin: false, method: 'POST', path: '/api/plugins/for/A/apps/mail/give' },
+  { label: 'Take back what you gave', changes: { givenByOwner: true }, admin: false, method: 'DELETE', path: '/api/plugins/for/A/apps/mail/give' },
+  { label: 'Enable and grant read-only access', changes: { state: 'not_granted' }, admin: true, method: 'POST', path: '/api/plugins/for/A/apps/mail/approve' },
+])('Bot app-access card preserves current-selection "$label" and reloads afterward', async action => {
+  const props = { agentId: 'A', app: 'mail', admin: action.admin }, response = botAppAccess(props.agentId, props.app);
+  f.request.mockImplementation(async (_path: string, method?: string) => method ? {} : { app: { ...response.app, ...action.changes } });
+  render(HyperAppAccessAction, props); mountEffects(); await drain();
+  button(render(HyperAppAccessAction, props), action.label)!.props.onClick(); await drain();
+  expect(f.request.mock.calls.filter(call => call[1]).map(call => [call[0], call[1]])).toEqual([[action.path, action.method]]);
+  expect(f.request.mock.calls.filter(call => !call[1])).toHaveLength(2);
+  expect(button(render(HyperAppAccessAction, props), action.label)!.props.disabled).toBe(false);
+});
+it.each(cardTargets)('Bot app-access setup and refresh callbacks cannot act after a $name change', async target => {
+  const navigate = vi.fn(), props = { ...target.before, onOpenConnection: navigate };
+  f.request.mockResolvedValue(botAppAccess(target.before.agentId, target.before.app));
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  const open = button(tree, 'Open app setup and connection')!, refresh = button(tree, 'Refresh access')!;
+  render(HyperAppAccessAction, { ...target.after, onOpenConnection: navigate }); open.props.onClick(); refresh.props.onClick(); await drain();
+  expect(navigate).not.toHaveBeenCalled(); expect(f.request).toHaveBeenCalledOnce();
+});
+it('Bot app-access setup and refresh work for the current selection', async () => {
+  const navigate = vi.fn(), props = { agentId: 'A', app: 'mail', onOpenConnection: navigate };
+  f.request.mockResolvedValue(botAppAccess(props.agentId, props.app));
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  button(tree, 'Open app setup and connection')!.props.onClick(); button(tree, 'Refresh access')!.props.onClick(); await drain();
+  expect(navigate).toHaveBeenCalledWith('mail'); expect(f.request).toHaveBeenCalledTimes(2);
+});
+it('Bot app-access card does not revive an old callback when returning to the same Bot', async () => {
+  const props = { agentId: 'A', app: 'mail' }; f.request.mockResolvedValue(botAppAccess(props.agentId, props.app));
+  render(HyperAppAccessAction, props); mountEffects(); await drain();
+  const old = button(render(HyperAppAccessAction, props), 'Withdraw request')!;
+  render(HyperAppAccessAction, { ...props, agentId: 'B' }); mountEffects(); await drain();
+  render(HyperAppAccessAction, props); mountEffects(); await drain();
+  expect(button(render(HyperAppAccessAction, props), 'Withdraw request')).toBeDefined(); old.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[1] === 'DELETE')).toBe(false);
+});
+it('Bot app-access card expires an admin approval callback on role change', async () => {
+  const props = { agentId: 'A', app: 'mail', admin: true };
+  f.request.mockResolvedValue({ app: { ...botAppAccess(props.agentId, props.app).app, state: 'not_granted' } });
+  render(HyperAppAccessAction, props); mountEffects(); await drain();
+  const approve = button(render(HyperAppAccessAction, props), 'Enable and grant read-only access')!;
+  render(HyperAppAccessAction, { ...props, admin: false }); approve.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[1] === 'POST')).toBe(false);
+});
+it('Bot app-access card rejects reordered manual refreshes on the same selection', async () => {
+  const props = { agentId: 'A', app: 'mail' }; let older!: (value: unknown) => void;
+  f.request.mockResolvedValueOnce(botAppAccess(props.agentId, props.app)).mockImplementationOnce(() => new Promise(resolve => { older = resolve; })).mockResolvedValue({ app: { ...botAppAccess(props.agentId, props.app).app, displayName: 'Newest state' } });
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  button(tree, 'Refresh access')!.props.onClick(); button(tree, 'Refresh access')!.props.onClick(); await drain();
+  older(botAppAccess(props.agentId, props.app)); await drain();
+  expect(find(render(HyperAppAccessAction, props), element => element.type === 'p' && text(element.props.children).includes('Newest state'))).toBeDefined();
+});
+it('Bot app-access card prevents a duplicate withdrawal before React rerenders', async () => {
+  const props = { agentId: 'A', app: 'mail' }; let finish!: (value: unknown) => void;
+  f.request.mockImplementation(async (_path: string, method?: string) => method === 'DELETE' ? new Promise(resolve => { finish = resolve; }) : botAppAccess(props.agentId, props.app));
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const withdraw = button(render(HyperAppAccessAction, props), 'Withdraw request')!;
+  withdraw.props.onClick(); withdraw.props.onClick(); await drain();
+  expect(f.request.mock.calls.filter(call => call[1] === 'DELETE')).toHaveLength(1); finish({}); await drain();
+});
+it('Bot app-access card keeps generic mutation failure feedback after readback and clears it on refresh', async () => {
+  const props = { agentId: 'A', app: 'mail' };
+  f.request.mockImplementation(async (_path: string, method?: string) => { if (method) throw new Error('synthetic-private-failure'); return botAppAccess(props.agentId, props.app); });
+  render(HyperAppAccessAction, props); mountEffects(); await drain();
+  button(render(HyperAppAccessAction, props), 'Withdraw request')!.props.onClick(); await drain(); let tree = render(HyperAppAccessAction, props);
+  expect(text(find(tree, element => element.props.role === 'alert')!.props.children)).toBe('Access could not be changed. Check the refreshed state and retry.');
+  expect(button(tree, 'Withdraw request')!.props.disabled).toBe(false); button(tree, 'Refresh access')!.props.onClick(); await drain(); tree = render(HyperAppAccessAction, props);
+  expect(find(tree, element => element.props.role === 'alert')).toBeUndefined();
+});
+it('Bot app-access card rejects a read from the previous StrictMode effect lifetime', async () => {
+  const props = { agentId: 'A', app: 'mail' }; let older!: (value: unknown) => void;
+  f.request.mockImplementationOnce(() => new Promise(resolve => { older = resolve; })).mockResolvedValue({ app: { ...botAppAccess(props.agentId, props.app).app, displayName: 'Fresh mount state' } });
+  render(HyperAppAccessAction, props); mountEffects();
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = []; mountEffects(); await drain();
+  older(botAppAccess(props.agentId, props.app)); await drain();
+  expect(find(render(HyperAppAccessAction, props), element => element.type === 'p' && text(element.props.children).includes('Fresh mount state'))).toBeDefined();
 });
