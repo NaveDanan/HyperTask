@@ -15,12 +15,21 @@ stores, events and behaviour stay exactly as they are; this redesign changes mar
 | --- | --- | --- |
 | Tailwind v4 + tokens | `src/renderer/styles/app.css` | Design-lead only. |
 | shadcn/ui (base-nova, Base UI primitives) | `src/renderer/components/ui/*` | Vendor code. **Never edit.** Customise with `className`. |
-| ReUI | `src/renderer/components/reui/*` (`badge`, `alert`, `frame`, `color-picker`) | Vendor code. **Never edit.** |
+| ReUI | `src/renderer/components/reui/*` (`badge`, `alert`, `frame`, `color-picker`, `data-grid/*`, `kanban`, `event-calendar/*`, `gantt/*`, `icon-stack`) | Vendor code. **Never edit.** |
 | App building blocks | `src/renderer/components/app/*` | Design-lead only. Use them; do not edit them. If you need a variant, build it locally in your feature folder and say so in your report. |
 | Icons | `lucide-react` | All chrome icons. See §5. |
 | Class merge | `import { cn } from '@/lib/utils'` | |
 
-Do **not** add npm dependencies and do not run the shadcn CLI.
+Do **not** add npm dependencies and do not run the shadcn CLI, except for the approved
+Hyper database foundation vendor pass. That pass installs the free ReUI data-grid family,
+kanban, event-calendar, gantt and their supporting calendar/icon-stack registry dependencies.
+Allowed new runtime dependencies: `@tanstack/react-table` (9.3.1), `@tanstack/react-virtual`
+(3.14.26), `@dnd-kit/core` (6.3.1), `@dnd-kit/sortable` (10.0.0), `@dnd-kit/utilities` (3.2.2),
+`@dnd-kit/modifiers` (9.0.0), `date-fns` (4.4.0), `@date-fns/tz` (1.5.0), and `react-day-picker`
+(10.0.2). These are pinned exactly. View executors must not add further dependencies.
+The foundation's documented lucide IconPlaceholder replacements and approved unused-declaration
+cleanup and the documented Kanban item-drop correctness fix are the only ReUI vendor changes. The supporting calendar's internal button import
+resolves to the existing Base UI primitive. See `features/hyper-database/README.md`.
 
 Available shadcn components (import from `@/components/ui/<name>`): alert-dialog, avatar,
 breadcrumb, button, button-group, card, checkbox, collapsible, combobox, command, context-menu,

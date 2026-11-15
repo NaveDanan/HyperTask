@@ -93,7 +93,8 @@ pub enum FolderEvent {
   GetView = 11,
 
   /// Update the view's properties including the name,description, etc.
-  #[event(input = "UpdateViewPayloadPB", output = "ViewPB")]
+  // The handler acknowledges success; use GetView to read the persisted properties.
+  #[event(input = "UpdateViewPayloadPB")]
   UpdateView = 12,
 
   /// Move the view to the trash folder

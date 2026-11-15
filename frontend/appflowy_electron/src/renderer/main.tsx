@@ -8,3 +8,7 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+if (Reflect.get(window, '__HYPER_HARNESS__')) {
+  void import('./features/hyper-database/HyperDatabaseHarness').then(module => module.installHyperDatabaseHarness());
+}

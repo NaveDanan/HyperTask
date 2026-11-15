@@ -36,8 +36,8 @@ export function FolderEventGetView(payload: MessageInitShape<typeof ViewIdPBSche
   return request('GetView', toBinary(ViewIdPBSchema, create(ViewIdPBSchema, payload)), ViewPBSchema);
 }
 
-export function FolderEventUpdateView(payload: MessageInitShape<typeof UpdateViewPayloadPBSchema>): Promise<FlowyResult<ViewPB>> {
-  return request('UpdateView', toBinary(UpdateViewPayloadPBSchema, create(UpdateViewPayloadPBSchema, payload)), ViewPBSchema);
+export function FolderEventUpdateView(payload: MessageInitShape<typeof UpdateViewPayloadPBSchema>): Promise<FlowyResult<void>> {
+  return request('UpdateView', toBinary(UpdateViewPayloadPBSchema, create(UpdateViewPayloadPBSchema, payload)));
 }
 
 export function FolderEventDeleteView(payload: MessageInitShape<typeof RepeatedViewIdPBSchema>): Promise<FlowyResult<void>> {

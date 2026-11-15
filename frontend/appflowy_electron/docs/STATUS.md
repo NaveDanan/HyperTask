@@ -1,10 +1,21 @@
 # HyperTask Electron port status
 
-Milestone 1 (foundation and app shell) is in place. The document editor, databases and AI chat are later milestones; their pages open with a placeholder body, while their tabs, headers and menus are real.
+Milestone 1 (foundation and app shell) is in place. The database data layer and linked-view shell are implemented; Grid, Board, Calendar and Gantt view bodies are the next milestone. The document editor remains a placeholder.
 
 The planned OpenBot integration is tracked in [epic #2](https://github.com/NaveDanan/HyperTask/issues/2). The [baseline audit](HYPER_OPENBOT_AUDIT.md) records the architecture and PR #1 reuse decision; the [progress record](HYPER_OPENBOT_PROGRESS.md) tracks review and delivery. This planning work does not implement chat or change the capabilities listed below.
 
 ## Done
+
+**Databases**
+- Live `HyperDatabaseController`: typed cells for all 15 core field types, bounded lazy cell loading,
+  core notifications, row/field/cell/group/calendar/meta mutations, and a shared linked-view tab bar.
+- Grid/Board/Calendar route to `HyperDatabasePage`; Gantt uses compatible Grid +
+  `ViewPB.extra.hyper_layout`, including the add-page menus. Four independent view seams are ready.
+- Free ReUI Data Grid, Kanban, Event Calendar and Gantt families are vendored with all dependencies.
+- Headless Linux core/harness tooling, realistic sample seed and an opt-in real-core smoke test.
+  Linux core build, 48-row live mutation smoke, light/dark shell PNGs, typecheck, tests and
+  production build are verified.
+  API and executor ownership: `src/renderer/features/hyper-database/README.md`.
 
 **Local tools**
 - Jira dashboard (Server / Data Center): connection settings, sync with offline cache, stats, filters and search, create/edit with conflict handling, status transitions, database mirror. Settings, cache and DPAPI credential files are shared with the Flutter build.
@@ -30,7 +41,7 @@ The planned OpenBot integration is tracked in [epic #2](https://github.com/NaveD
 
 ## Placeholders and simplified parts
 
-- Document editor, grid/board/calendar, row pages and AI chat: placeholder bodies. Pages imported from templates or mirrored from Jira are created correctly but open with these placeholders.
+- Document editor and row pages: placeholder bodies. Database view bodies (Grid/Board/Calendar/Gantt) are small dispatcher placeholders on the live foundation. Pages imported from templates or mirrored from Jira are created correctly but open with these placeholders.
 - Document export to HTML/Markdown/clipboard needs the editor's converters ("Unimplemented" for now); CSV export works.
 - Icon and emoji pickers have no upload tab, skin tones or recent icons. The colour picker uses the native colour input.
 - Notification items show plain text instead of the mini editor.

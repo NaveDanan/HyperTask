@@ -11,15 +11,18 @@ import path from 'node:path';
 
 const [url, stepsFile] = process.argv.slice(2);
 const plan = JSON.parse(fs.readFileSync(stepsFile, 'utf8'));
-const chrome = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(
-  (p) => fs.existsSync(p),
+const chrome = [process.env.HYPER_CHROME_BINARY, '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome', path.resolve('..', '..', '.cache/hyper-views/browser/chrome-headless-shell-linux64/chrome-headless-shell'), 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(
+  (p) => p && fs.existsSync(p),
 );
+if (!chrome) throw new Error('Set HYPER_CHROME_BINARY to a Chrome/Chromium headless executable');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'af-shot-'));
 const port = 9300 + Math.floor(Math.random() * 500);
 const browser = spawn(
   chrome,
   [
     '--headless=new',
+    '--no-sandbox',
+    '--disable-dev-shm-usage',
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profile}`,
     `--window-size=${plan.width ?? 1280},${plan.height ?? 860}`,
@@ -30,6 +33,7 @@ const browser = spawn(
   { stdio: 'ignore' },
 );
 
+process.on('exit', () => browser.kill());
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let target;
 for (let i = 0; i < 50 && !target; i++) {
@@ -53,8 +57,10 @@ ws.addEventListener('message', (event) => {
     pending.delete(msg.id);
   } else if (msg.method === 'Runtime.consoleAPICalled' && ['error', 'warning'].includes(msg.params.type)) {
     logs.push(`${msg.params.type}: ${msg.params.args.map((a) => a.value ?? a.description).join(' ')}`);
+    console.error(logs.at(-1));
   } else if (msg.method === 'Runtime.exceptionThrown') {
     logs.push(`exception: ${msg.params.exceptionDetails.exception?.description ?? msg.params.exceptionDetails.text}`);
+    console.error(logs.at(-1));
   }
 });
 const send = (method, params = {}, timeoutMs = 20_000) =>
@@ -102,6 +108,11 @@ const findText = (text) => `(() => {
 
 for (const step of plan.steps) {
   if (step.wait) await sleep(step.wait);
+  if (step.waitFor) {
+    const deadline = Date.now() + (step.timeout ?? 60000); let ready = false;
+    while (Date.now() < deadline) { const r = await send('Runtime.evaluate', { expression: step.waitFor, returnByValue: true }); if (r.result?.result?.value) { ready = true; break; } await sleep(100); }
+    if (!ready) { console.error(logs.slice(0, 30).join('\n')); throw new Error(`Timed out waiting for ${step.waitFor}`); }
+  }
   if (step.move) await mouse('mouseMoved', step.move[0], step.move[1]);
   if (step.click) await click(step.click);
   if (step.clickText) {
@@ -118,14 +129,17 @@ for (const step of plan.steps) {
   }
   if (step.settle) await sleep(step.settle);
   if (step.eval) {
-    const result = await send('Runtime.evaluate', { expression: step.eval, awaitPromise: true, returnByValue: true });
+    const result = await send('Runtime.evaluate', { expression: step.eval, awaitPromise: true, returnByValue: true }, step.timeout ?? 240000);
+    if (result.timeout || result.error || result.result?.exceptionDetails) throw new Error(JSON.stringify(result));
     const value = result.result?.result?.value;
+    if (step.result) { fs.mkdirSync(path.dirname(step.result), { recursive: true }); fs.writeFileSync(step.result, JSON.stringify(value, null, 2)); }
     if (value !== undefined) console.log(`eval → ${JSON.stringify(value)}`);
     if (result.result?.exceptionDetails) console.log(`eval error: ${result.result.exceptionDetails.exception?.description}`);
   }
   if (step.shot) {
     const shot = await send('Page.captureScreenshot', { format: 'png' });
     if (shot.timeout) continue;
+    fs.mkdirSync(path.dirname(step.shot), { recursive: true });
     fs.writeFileSync(step.shot, Buffer.from(shot.result.data, 'base64'));
     console.log(`saved ${step.shot}`);
   }

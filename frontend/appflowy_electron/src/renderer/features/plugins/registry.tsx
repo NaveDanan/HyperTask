@@ -19,6 +19,8 @@ import { listenView } from '../view-header/view-listener';
 import { BlankPage, HyperLayoutIcon, LocalToolPlaceholder, PlaceholderMessage, ViewPlaceholderPage } from './PlaceholderPage';
 import { TrashPage } from './trash/TrashPage';
 import { TemplateStorePage } from '../templates/TemplateStorePage';
+import { HyperDatabasePage } from '../hyper-database/HyperDatabasePage';
+import { hyperLayout } from '../hyper-database/HyperDatabaseController';
 import { HyperOpenBotPage } from '../hyper-openbot/HyperOpenBotPage';
 import { JiraDashboardPage } from '../jira/ui/JiraDashboardPage';
 
@@ -56,6 +58,7 @@ export const pluginBuilders = () => [
   { pluginType: PluginType.grid, menuName: tr('grid.menuName'), icon: 'icon_grid_s' as const, layout: ViewLayoutPB.Grid },
   { pluginType: PluginType.board, menuName: tr('board.menuName'), icon: 'icon_board_s' as const, layout: ViewLayoutPB.Board },
   { pluginType: PluginType.calendar, menuName: tr('calendar.menuName'), icon: 'icon_calendar_s' as const, layout: ViewLayoutPB.Calendar },
+  { pluginType: PluginType.grid, menuName: 'Gantt', icon: 'icon_grid_s' as const, layout: ViewLayoutPB.Grid, hyperLayout: 'gantt' as const },
   { pluginType: PluginType.chat, menuName: 'AI Chat', icon: 'chat_ai_page_s' as const, layout: ViewLayoutPB.Chat },
 ];
 
@@ -67,7 +70,7 @@ export function ViewTabBarItem({ view, shortForm }: { view: ViewPB; shortForm: b
   useEffect(() => listenView(view.id, { onViewUpdated: setCurrent }), [view.id]);
   return (
     <div className={cn('flex min-w-0 items-center gap-1.5', shortForm && 'justify-center')}>
-      {initialIcon ? <RawEmojiIcon icon={initialIcon} size={16} /> : <HyperLayoutIcon layout={view.layout} />}
+      {initialIcon ? <RawEmojiIcon icon={initialIcon} size={16} /> : <HyperLayoutIcon layout={view.layout} hyperLayout={hyperLayout(view)} />}
       {!shortForm && <span className="min-w-0 truncate">{nameOrDefault(current)}</span>}
     </div>
   );
@@ -193,8 +196,8 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
             <DocumentRightBar view={view} />
           ),
         // Document and chat use EdgeInsets.zero; databases EdgeInsets.only(top: 28).
-        contentPadding: isDatabase ? '28px 0 0 0' : 0,
-        buildWidget: (context) => type === PluginType.chat ? <HyperOpenBotPage viewId={view.id} /> : <ViewPlaceholderPage view={view} context={context} />,
+        contentPadding: 0,
+        buildWidget: (context) => type === PluginType.chat ? <HyperOpenBotPage viewId={view.id} /> : isDatabase ? <HyperDatabasePage key={view.id} view={view} context={context} /> : <ViewPlaceholderPage view={view} context={context} />,
       };
     }
   }

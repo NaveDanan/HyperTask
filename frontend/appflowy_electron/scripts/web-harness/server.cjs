@@ -10,14 +10,14 @@ const path = require('node:path');
 const tls = require('node:tls');
 
 const root = path.resolve(__dirname, '../..');
-const compiled = path.join(root, '.cache/harness');
+const compiled = path.join(root, '.cache/harness/main');
 const { CoreProcess } = require(path.join(compiled, 'core/process.js'));
 const { coreBinaryPath } = require(path.join(compiled, 'core/binary.js'));
 const { SharedPreferences } = require(path.join(compiled, 'prefs.js'));
 const { readDeviceId } = require(path.join(compiled, 'device-id.js'));
 
 // Trust the OS certificate store too (corporate CAs), as Electron's net.fetch does.
-tls.setDefaultCACertificates([...tls.getCACertificates('default'), ...tls.getCACertificates('system')]);
+if (tls.setDefaultCACertificates && tls.getCACertificates) tls.setDefaultCACertificates([...tls.getCACertificates('default'), ...tls.getCACertificates('system')]);
 
 const arg = (name, fallback) => {
   const index = process.argv.indexOf(`--${name}`);

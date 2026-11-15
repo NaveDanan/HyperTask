@@ -74,8 +74,8 @@ function Space() {
       <SidebarSpaceHeader
         isExpanded={isExpanded}
         space={currentSpace}
-        onAdded={(layout) => {
-          void sidebarSpace.actions.createPage({ name: '', layout, index: 0, openAfterCreate: true });
+        onAdded={(layout, hyperLayout) => {
+          void sidebarSpace.actions.createPage({ name: '', layout, hyperLayout, index: 0, openAfterCreate: true });
           void sidebarSpace.actions.expand(currentSpace, true);
         }}
         onCreateNewSpace={() => showCreateSpaceDialog(sidebarSpace)}
@@ -106,7 +106,7 @@ function SidebarSpaceHeader({
 }: {
   space: ViewPB;
   isExpanded: boolean;
-  onAdded: (layout: ViewLayoutPB) => void;
+  onAdded: (layout: ViewLayoutPB, hyperLayout?: 'gantt') => void;
   onCreateNewSpace: () => void;
   onCollapseAllPages: () => void;
 }) {
@@ -186,8 +186,8 @@ function SidebarSpaceHeader({
           isHovered={hovered}
           tooltip={tr('sideBar.addAPage')}
           onEditing={() => {}}
-          onSelected={(layout, createNewView) => {
-            if (createNewView) onAdded(layout);
+          onSelected={(layout, createNewView, hyperLayout) => {
+            if (createNewView) onAdded(layout, hyperLayout);
           }}
         />
       </div>

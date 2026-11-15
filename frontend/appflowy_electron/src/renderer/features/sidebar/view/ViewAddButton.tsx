@@ -2,7 +2,7 @@
 // creatable layouts (pluginBuilders() in registration order) plus "Import".
 import { useRef, useState, type ReactNode } from 'react';
 import { ViewLayoutPB } from '@shared/protobuf/flowy-folder/view_pb';
-import { CalendarDays, FileText, Import, MessageSquareText, Plus, SquareKanban, Table2, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ChartGantt, FileText, Import, MessageSquareText, Plus, SquareKanban, Table2, type LucideIcon } from 'lucide-react';
 import { MenuRow, MenuSeparator } from '@/components/app/menu-row';
 import { NavIconButton } from '@/components/app/nav';
 import { useTr } from '@/i18n';
@@ -12,6 +12,7 @@ import { showImportPanel } from '../import/ImportPanel';
 
 interface AddItem {
   layout: ViewLayoutPB;
+  hyperLayout?: 'gantt';
   icon: LucideIcon;
   label: (tr: (key: string) => string) => string;
 }
@@ -21,6 +22,7 @@ const ADD_ITEMS: AddItem[] = [
   { layout: ViewLayoutPB.Grid, icon: Table2, label: (tr) => tr('grid.menuName') },
   { layout: ViewLayoutPB.Board, icon: SquareKanban, label: (tr) => tr('board.menuName') },
   { layout: ViewLayoutPB.Calendar, icon: CalendarDays, label: (tr) => tr('calendar.menuName') },
+  { layout: ViewLayoutPB.Grid, hyperLayout: 'gantt', icon: ChartGantt, label: () => 'Gantt' },
   // AIChatPluginBuilder.menuName is not localized.
   { layout: ViewLayoutPB.Chat, icon: MessageSquareText, label: () => 'AI Chat' },
 ];
@@ -35,7 +37,7 @@ export function ViewAddButton({
   parentViewId: string;
   onEditing: (value: boolean) => void;
   /** (layout, createNewView): "Import" reports a Document with createNewView = false. */
-  onSelected: (layout: ViewLayoutPB, createNewView: boolean) => void;
+  onSelected: (layout: ViewLayoutPB, createNewView: boolean, hyperLayout?: 'gantt') => void;
   isHovered?: boolean;
   tooltip?: ReactNode;
 }) {
@@ -54,12 +56,12 @@ export function ViewAddButton({
         <>
           {ADD_ITEMS.map((item) => (
             <MenuRow
-              key={item.layout}
+              key={item.hyperLayout ?? item.layout}
               label={item.label(tr)}
               icon={<item.icon className="size-4" />}
               onClick={() => {
                 onEditing(false);
-                onSelected(item.layout, true);
+                onSelected(item.layout, true, item.hyperLayout);
                 close();
               }}
             />

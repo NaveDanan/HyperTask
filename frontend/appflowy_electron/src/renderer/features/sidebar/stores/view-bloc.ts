@@ -206,13 +206,14 @@ export function createViewBloc(view: ViewPB, { shouldLoadChildViews = true, enga
       return ViewBackendService.moveViewV2({ viewId: from.id, newParentId, prevViewId: prevId, fromSection, toSection });
     },
 
-    async createView(name: string, layoutType: ViewLayoutPB, { openAfterCreated = true, section }: { openAfterCreated?: boolean; section?: ViewSectionPB } = {}) {
+    async createView(name: string, layoutType: ViewLayoutPB, { openAfterCreated = true, section, hyperLayout }: { openAfterCreated?: boolean; section?: ViewSectionPB; hyperLayout?: 'gantt' } = {}) {
       const gen = generation;
       const result = await ViewBackendService.createView({
         parentViewId: view.id,
         name,
         layoutType,
         ext: {},
+        hyperLayout,
         openAfterCreate: openAfterCreated,
         section,
       });
