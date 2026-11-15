@@ -20,13 +20,16 @@ export interface HyperOpenBotSection {
 }
 
 /** Lazily load an area module whose default export renders the section. Call once per slot entry. */
-export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext; path?: string }> }>) {
+export function hyperLazySection(load: () => Promise<{ default: ComponentType<{ context: HyperOpenBotSectionContext; path?: string }> }>, remountOnPath = true) {
   const Section = lazy(load);
-  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section key={context.navigationIntent?.path} context={context} path={context.navigationIntent?.path} /></Suspense>;
+  return (context: HyperOpenBotSectionContext) => <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}><Section key={remountOnPath ? context.navigationIntent?.path : undefined} context={context} path={context.navigationIntent?.path} /></Suspense>;
 }
 
-function hyperLazyAdminSection(load: Parameters<typeof hyperLazySection>[0]) {
-  const render=hyperLazySection(load);
+// Connection forms own an in-flight response across nested path changes. Native returns still remount them.
+export const hyperRenderConnections = hyperLazySection(() => import('./connections/HyperNativeConnections'), false);
+
+function hyperLazyAdminSection(load: Parameters<typeof hyperLazySection>[0], remountOnPath = true) {
+  const render=hyperLazySection(load, remountOnPath);
   return (context:HyperOpenBotSectionContext)=><HyperAdminDestinationGate path={context.navigationIntent?.path} navigate={context.navigate}>{render(context)}</HyperAdminDestinationGate>;
 }
 
@@ -67,7 +70,7 @@ export const HYPER_OPENBOT_SECTIONS: readonly HyperOpenBotSection[] = [
   // slot: admin-platform
   { id: 'admin-providers', label: 'Providers', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperProvidersSection')) },
   { id: 'admin-credentials', label: 'Credentials', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperCredentialsSection')) },
-  { id: 'admin-plugins', label: 'Plugins', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperPluginsSection')) },
+  { id: 'admin-plugins', label: 'Plugins', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperPluginsSection'), false) },
   { id: 'admin-skills', label: 'Skills', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperSkillsSection')) },
   { id: 'admin-proactive', label: 'Routines', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperProactiveSection')) },
   { id: 'admin-playground', label: 'Playground', group: 'admin', render: hyperLazyAdminSection(() => import('./admin-platform/HyperPlaygroundSection')) },

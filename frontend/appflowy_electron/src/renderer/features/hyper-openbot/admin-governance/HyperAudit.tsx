@@ -55,6 +55,7 @@ export function HyperAudit({
   const [cursor, setCursor] = useState('');
   const [events, setEvents] = useState<HyperEvent[]>([]);
   const [query, setQuery] = useState('');
+  const [exportCap, setExportCap] = useState(0);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<{
     reading: string | null;
@@ -160,8 +161,11 @@ export function HyperAudit({
         setCursor('');
         r.reload();
       }}>Refresh</Button><Button disabled={a.busy} onClick={() => void a.run(async () => {
+        setExportCap(0);
         const response = await hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + hyperAuditExportPath(search));
         if (!response.ok) throw new Error();
+        const capped = Number(response.headers.get('x-audit-export-truncated'));
+        if (Number.isSafeInteger(capped) && capped > 0) setExportCap(capped);
         const url = URL.createObjectURL(await response.blob());
         const anchor = document.createElement('a');
         anchor.href = url;
@@ -169,6 +173,7 @@ export function HyperAudit({
         anchor.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       })}>Export matching CSV</Button></div>
+    {exportCap > 0 && <p role="status">The file has the newest {exportCap.toLocaleString()} events, not all of them. Narrow the filter or dates to export the rest.</p>}
     <HyperStatus resource={r}>{!visible.length && <p>No matching events.</p>}{visible.map(event => <details className="rounded border p-3" key={event.id}><summary>{new Date(event.createdAt).toLocaleString()} · {hyperAuditEventName(event.eventType, event.payload.action)} · {outcomeOf(event)}</summary><p>Person: {v.data?.people.find(p => p.id === event.actorUserId)?.email || event.actorUserId || 'OpenBot'}</p><p>Target: {event.targetType} {event.targetId} · Started by {event.initiatorKind || 'unknown'}</p><HyperResult value={event.payload} />{whatIfExplainable(event) && <Button disabled={a.busy} onClick={() => void a.run(async () => {
           setTryAction(undefined);
           setExplanation(await request(`/api/admin/what-if/explain/${encodeURIComponent(event.id)}`));

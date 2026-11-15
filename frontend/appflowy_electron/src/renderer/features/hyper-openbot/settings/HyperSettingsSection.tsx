@@ -5,7 +5,7 @@ import { HyperPersonalActivity } from './HyperPersonalActivity';
 import { hyperSettingsDestination, HYPER_SETTINGS_DESTINATION_IDS as destinations } from './HyperSettingsNavigation';
 import type { HyperSettingsContext } from './HyperSettingsNavigation';
 import { HyperSettingsEdition } from './HyperSettingsEdition';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { HyperSettingsAutomation } from './HyperSettingsAutomation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,12 +66,13 @@ export function HyperSettingsGeneral({ user, instructions, preferences, onUser, 
 export default function HyperSettingsSection({ context, path = '/settings' }: { context: HyperSettingsContext; path?: string }) {
   const [page, setPage] = useState<'general' | 'activity'>('general');
   const [data, setData] = useState<{ user: HyperSettingsUser; instructions: string; preferences: HyperSettingsPreferences; edition: 'personal' | 'team' }>();
+  const navigate = useRef(context.navigate); navigate.current = context.navigate;
   useEffect(() => {
     if (!data) return;
     const destination = hyperSettingsDestination(path, data.edition);
-    if (destination.sectionId !== 'settings') context.navigate?.(destination.sectionId, { path: destination.path });
+    if (destination.sectionId !== 'settings') navigate.current?.(destination.sectionId, { path: destination.path });
     else setPage(destination.path.startsWith('/settings/activity') ? 'activity' : 'general');
-  }, [path, data?.edition, context.navigate]);
+  }, [path, data?.edition]);
   const [error, setError] = useState(''); const [attempt, setAttempt] = useState(0);
   useEffect(() => { let active = true; setError(''); setData(undefined);
     void Promise.all([hyperSettingsApi.user(), hyperSettingsApi.instructions(), hyperSettingsApi.preferences(), hyperSettingsApi.edition()]).then(([user, instructions, preferences, edition]) => { if (active) setData({ user, instructions, preferences, edition }); }).catch(problem => { if (active) setError(problem instanceof Error ? problem.message : 'Could not load settings.'); });

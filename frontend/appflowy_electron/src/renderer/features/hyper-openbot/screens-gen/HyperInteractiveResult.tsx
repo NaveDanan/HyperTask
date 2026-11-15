@@ -13,16 +13,19 @@ export function HyperInteractiveResult({name, agentId, args, complete = true, re
   const permissionKey = JSON.stringify([name, agentId, args, complete]);
   useEffect(() => {
     let live = true;
+    let generation = 0;
     setState(null);
     const check = async () => {
+      const current = ++generation;
       if (!agentId || !complete) return;
       const decision = await hyperScreensApi.decision(name, agentId, spec?.reads?.(args));
+      if (!live || current !== generation) return;
       let source: PublishedSandboxed | undefined;
       if (decision.allowed && !spec) {
         try { source = (await hyperScreensApi.published()).find(item => item.name === name); }
-        catch { if (live) setState({key: permissionKey, allowed: false, reason: 'The published component could not be loaded.'}); return; }
+        catch { if (live && current === generation) setState({key: permissionKey, allowed: false, reason: 'The published component could not be loaded.'}); return; }
       }
-      if (live) setState({...decision, source, key: permissionKey});
+      if (live && current === generation) setState({...decision, source, key: permissionKey});
     };
     void check();
     const timer = setInterval(() => void check(), 5000);
