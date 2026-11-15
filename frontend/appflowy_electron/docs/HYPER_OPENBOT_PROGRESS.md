@@ -233,6 +233,12 @@ Seven regressions were red before the fix and green afterward. Fourteen more gua
 
 The validated request-scope ledger adds only its two unchanged inbox files to current carried coverage. The card and reuse documentation changed after inspection and remain due for recheck. Current coverage is 86 byte-identical inspected files in a 408-file diff, with 322 remaining; no exhaustive approval is claimed.
 
+### Form actions, voice continuity and Bots navigation
+
+Four unresolved Codex reports were reproduced and fixed in `073c694`. Background history restoring no longer ends an active voice call: start readiness is separate from hard continuation gates, retaining service/channel/reconnect/unmount termination. Shared-audience editors use stable per-instance radio groups. Native Bots attention and selected-editor views receive the existing conversation navigation callback. A real Base UI rendering check confirmed its non-submit default; a JSX guard found twenty-two intended form controls without explicit submit types across seventeen screens. Those types are now supplied without changing handlers, validation, permissions or global Button behavior. Existing server-proposed membership tests remain intact, and no packages were added or upgraded.
+
+Four reproducing regressions and six further guards pass. Full validation: 1180 tests, one optional skip, four real-core tests, typecheck/build and thirteen smoke safeguards. The owned disposable app runs this source with stores retained. The current aggregate carries 83 byte-identical inspected files in a 409-file diff, leaving 326; changed inspected files require fresh review. Earlier clean/skipped receipts are not approval for the new source. Exact-head code/security reviews, full Spec coverage, human Tailscale authentication, native workflows and owner acceptance still block merge and next-stage work.
+
 ## Queue
 
 | Issue | Deliverable | State |
