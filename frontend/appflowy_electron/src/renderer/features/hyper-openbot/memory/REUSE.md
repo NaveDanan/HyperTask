@@ -4,6 +4,8 @@ Adapted from OpenBot, Copyright (c) 2026 CopilotKit, MIT. Upstream revision f8af
 
 All upstream paths below are relative to the pinned checkout.
 
+Learning configuration completion clears only the submitted draft revision. Newer container/revision/enablement/participation edits stay unsent until another explicit save. Source-creation controls are disabled during submission so its successful reset cannot discard later edits. Original payload validation, separately saved review preferences and backend permissions remain authoritative; no credentials or background outbox are added.
+
 | Local file | Exact upstream source |
 | --- | --- |
 | HyperMemoryApi.ts | app/src/lib/memory.ts |

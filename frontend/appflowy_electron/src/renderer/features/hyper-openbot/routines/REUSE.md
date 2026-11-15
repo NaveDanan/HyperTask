@@ -39,6 +39,8 @@ All upstream paths below are relative to `app/src/`.
 
 The parent integration keeps check-in Focus and How often in one local draft until Save changes. This deliberately replaces immediate interval PATCH/remount behavior, which could erase an unsaved focus edit. Saving sends both values through the original PATCH contract; navigation without saving remains discardable local editor state.
 
+Goal/check-in fields are disabled during their submitted save. The native save adapter rejects duplicate/stale-target writes and cannot refresh a replacement editor after unmount. `HyperRead` retains same-query cached children during background failure and manual retry, with a separate error panel. Query/read/lifetime generations reject obsolete data; the editor stays in the same fragment position so unsaved drafts survive refresh failures. Initial failures still offer retry, without claiming loaded data.
+
 Verified against `server/src/routines/routes.ts`, `responsibilities/routes.ts`, `proactive/routes.ts`, `tasks/routes.ts`, channel routes, settings routes, shared-use approval routes and `/api/me`.
 
 - `GET/POST /api/routines`; `PUT /api/routines/:id/enabled`; `POST /api/routines/:id/run`; `DELETE /api/routines/:id`; `GET /api/routines/:id/runs`.

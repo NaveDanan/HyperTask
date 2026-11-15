@@ -245,6 +245,14 @@ The final two review batches at `08a7e1a` completed all five assigned files. The
 
 Five tests failed before correction and pass after it. Thirteen more guard cases pass. Full validation: 1198 tests, one optional skip, four real-core tests, typecheck/build and thirteen smoke safeguards. The owned disposable app runs `618c3c0` with stores retained. Both completed coverage ledgers were validated; only the two byte-identical network files carry forward, giving 85 of 409 inspected unchanged files and 324 remaining. Modified files require fresh inspection. Exact-head code/security reviews, full Spec coverage, account-holder Tailscale authentication, native workflows and owner acceptance still precede merge or the next stage.
 
+### Save/retry recovery and fresh compositions
+
+The completion notices cover `d26cdf0`; its clean security receipt is historical. Three open Code findings and four confirmed Spec issues were reproduced and corrected in `9f8bc1d`: initial scoped access retry, snapshot-matching Learning completion, locked goal/check-in saves, cached editors during routine refresh failure, capability/policy-gated new model choices, null defaults without unnecessary saves, and fresh composition arrivals. `eeeba68` also locks source-creation fields during submission. Fifteen regressions were red before correction; nineteen additional guards pass. Full validation: 1232 tests, one optional skip, four real-core tests, typecheck/build and thirteen safeguards. Original endpoints, permissions, Intelligence and owner binding remain unchanged.
+
+The latest three ledgers verified six of nine files and left three contract inspections incomplete. The Memory no-findings report does not override reproduced Learning/source-control gaps. The disposable app runs `eeeba68` with stores retained, not a native acceptance pass. Complete Spec coverage, fresh exact-head Code/Security reviews, account-holder Tailscale authentication, native workflows and owner acceptance still precede merge and the next stage.
+
+The validated aggregate carries 86 byte-identical inspected files of 409, with 323 remaining. Changed documentation/code loses earlier carried coverage; three consumed diffs still lack full contract verification. No exhaustive clearance is claimed.
+
 ## Queue
 
 | Issue | Deliverable | State |
