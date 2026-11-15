@@ -12,13 +12,13 @@ import { hyperOpenBotRequest as request } from '../transport';
 
 export const HYPER_NOT_DRAWN = 'Not drawn: you called this in the same step as other tools, before their results came back. Draw it now, from those results.';
 export const HYPER_NOT_ASKED = 'Not asked: you called this in the same step as other tools, before their results came back. Ask it now, from those results.';
-type Pending = {botId: string; resolve: (value: unknown) => void; reject: (reason: Error) => void; stop: () => void};
-const waiting = new Map<string, Pending>();
+export type HyperPendingGalleryCall = {botId: string; resolve: (value: unknown) => void; reject: (reason: Error) => void; stop: () => void};
+const waiting = new Map<string, HyperPendingGalleryCall>();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach(listener => listener());
-export function hyperAnswerGalleryCall(id: string, value: unknown) {
+export function hyperAnswerGalleryCall(id: string, value: unknown, expected?: HyperPendingGalleryCall) {
   const call = waiting.get(id);
-  if (!call) return;
+  if (!call || (expected && call !== expected)) return;
   waiting.delete(id); call.stop(); emit(); call.resolve(value);
 }
 export function useHyperGalleryCall(id: string) {
@@ -37,14 +37,17 @@ export function hyperPrepareGalleryAgent(agent: AbstractAgent) {
   }).pipe(mergeMap(input => next.run(input))));
 }
 export async function hyperExecuteGalleryCall(spec: Pick<HyperGalleryComponent, 'name' | 'title' | 'kind' | 'confirmation' | 'reads'>, args: Record<string, unknown>, context: {agent?: {runtimeAgentId?: string; agentId?: string; messages?: readonly {role: string; toolCalls?: readonly {id: string; function: {name: string}}[]}[]}; toolCall?: {id: string}; signal?: AbortSignal}) {
+  if (context.signal?.aborted) throw new Error('Gallery interaction aborted');
   const step = context.agent?.messages?.find(message => message.toolCalls?.some(call => call.id === context.toolCall?.id))?.toolCalls;
   if (step?.some(call => !hyperGalleryComponent(call.function.name) && !call.function.name.startsWith('custom_'))) return spec.kind === 'decision' ? HYPER_NOT_ASKED : HYPER_NOT_DRAWN;
   const botId = hyperRuntimeBotOf(context.agent) ?? '';
   const decision = await api.decision(spec.name, botId, spec.reads?.(args));
+  if (context.signal?.aborted) throw new Error('Gallery interaction aborted');
   if (!decision.allowed) return `Not shown: ${spec.title}. ${decision.reason ?? 'That component is not allowed here.'} Nothing was displayed, so tell the person that.`;
   if (spec.kind !== 'decision') return spec.confirmation ?? 'It is now on screen for the person.';
   const id = context.toolCall?.id;
   if (!id) throw new Error('A decision needs a tool call identity.');
+  if (waiting.has(id)) throw new Error('A decision is already waiting for this tool call.');
   return new Promise<unknown>((resolve, reject) => {
     const abort = () => {if (waiting.get(id)?.resolve === resolve) {waiting.delete(id); emit();} reject(new Error('Human-in-the-loop interaction aborted'));};
     if (context.signal?.aborted) {abort(); return;}
@@ -63,6 +66,8 @@ function HyperRegisteredGalleryTool({spec}: {spec: HyperGalleryComponent}) {
   return null;
 }
 function HyperRegisteredSandbox({source}: {source: PublishedSandboxed}) {
+  const { copilotkit } = useCopilotKit();
+  useEffect(() => () => copilotkit.removeHookRenderToolCall(source.name), [copilotkit, source.name]);
   let parameters = z.object({}).catchall(z.unknown());
   try { const parsed = z.fromJSONSchema(source.argumentSchema); if (parsed instanceof z.ZodObject) parameters = parsed as typeof parameters; } catch { /* Upstream permissive fallback. */ }
   useFrontendTool({name: source.name, description: `A component authored in this deployment: ${source.name}.`, parameters,

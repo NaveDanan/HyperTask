@@ -2,10 +2,13 @@
 // Copyright (c) 2026 CopilotKit. MIT license, see ../LICENSE.
 import { OpenGenerativeUIActivityRenderer } from '@copilotkit/react-core/v2';
 import { z } from 'zod';
+// Full content contract from pinned SDK 1.85.0 OpenGenerativeUIRenderer.tsx.
 const HyperActivityContent = z.object({
+  initialHeight: z.number().optional(),
   html: z.array(z.string()).optional(), htmlComplete: z.boolean().optional(),
   css: z.string().optional(), cssComplete: z.boolean().optional(),
   jsFunctions: z.string().optional(), jsFunctionsComplete: z.boolean().optional(),
+  jsExpressions: z.array(z.string()).optional(), jsExpressionsComplete: z.boolean().optional(),
   generating: z.boolean().optional(),
 });
 /** Only the SDK sandbox receives remote markup and code, including streamed activity patches. */
