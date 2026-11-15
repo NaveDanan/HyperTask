@@ -32,6 +32,8 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
   const assigneeCell = assigneeField ? cells[assigneeField.id] : undefined;
   const [title, setTitle] = useState(primary ? cells[primary.id]?.display ?? '' : '');
   const [titleDirty, setTitleDirty] = useState(false);
+  const [assignee, setAssignee] = useState(assigneeCell?.display ?? '');
+  const [assigneeDirty, setAssigneeDirty] = useState(false);
   const [range, setRange] = useState<DateRange | undefined>(task.event ? { from: task.event.start, to: task.due ?? task.event.start } : undefined);
   const [dateOpen, setDateOpen] = useState(false);
   const [progress, setProgress] = useState(task.progress ?? 0);
@@ -49,6 +51,14 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
     return pending;
   };
   const update = (fieldId: string, mutation: HyperCellMutation) => { void run(() => controller.updateCell(rowId, fieldId, mutation)); };
+  const assigneeDisplay = assigneeCell?.display ?? '';
+  const assigneeReady = Boolean(assigneeCell && !assigneeCell.error);
+  useEffect(() => { if (!assigneeDirty) setAssignee(assigneeDisplay); }, [assigneeDisplay, assigneeDirty]);
+  const saveAssignee = async () => {
+    if (!assigneeField || !assigneeReady || !assigneeDirty) return;
+    if (assignee !== assigneeDisplay) await controller.updateCell(rowId, assigneeField.id, { kind: 'text', text: assignee });
+    setAssigneeDirty(false);
+  };
   const primaryDisplay = primary ? cells[primary.id]?.display ?? '' : '';
   useEffect(() => { if (!titleDirty) setTitle(primaryDisplay); }, [primaryDisplay, titleDirty]);
   const saveTitle = async () => {
@@ -128,9 +138,10 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
           <FieldLabel htmlFor="hyper-gantt-task-assignee">Assignee</FieldLabel>
           {assigneeField.type === FieldType.RichText ? <Input
             id="hyper-gantt-task-assignee"
-            disabled={busy}
-            defaultValue={assigneeCell?.display ?? ''}
-            onBlur={e => { if (e.target.value !== assigneeCell?.display) update(assigneeField.id, { kind: 'text', text: e.target.value }); }}
+            disabled={busy || !assigneeReady}
+            value={assignee}
+            onChange={e => { setAssignee(e.target.value); setAssigneeDirty(true); }}
+            onBlur={() => { if (assigneeDirty) void run(saveAssignee); }}
           /> : <Popover>
             <PopoverTrigger render={<Button
                 id="hyper-gantt-task-assignee"

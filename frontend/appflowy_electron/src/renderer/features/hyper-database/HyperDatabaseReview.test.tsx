@@ -121,7 +121,7 @@ it.each([false, true])('honors a detail close during title blur-save (failure=%s
   expect(close).toHaveBeenCalledTimes(failure ? 0 : 1);
 });
 it('disables the board title while its submitted draft is saving', async () => {
-  setup(1); let finish!: () => void; vi.spyOn(controller, 'loadRows').mockResolvedValue(undefined);
+  setup(1); controller.store.setState({ cells: { 'row-0': { title: { kind: 'text', text: 'Before', display: 'Before' } } } }); let finish!: () => void; vi.spyOn(controller, 'loadRows').mockResolvedValue(undefined);
   vi.spyOn(controller, 'updateCell').mockImplementation(() => new Promise(resolve => { finish = resolve; }));
   const work = () => HyperBoardCardDetail({ controller, state: controller.state, rowId: 'row-0', returnFocus: null, onClose: vi.fn() });
   let tree = render(work); find(tree, e => e.props?.['aria-label'] === 'Card title').props.onChange({ target: { value: 'Edited' } });
@@ -200,4 +200,36 @@ it('updates the actual detail checklist slider without reopening completed items
   const tree = render(() => HyperGanttRowDetail({ rowId: 'row-0', controller, state: controller.state, config: { start_field_id: 'date', end_field_id: null, progress_field_id: 'checklist', color_field_id: null, assignee_field_id: null, zoom: 1, list_width: 416, scale: 'month' }, task: { rowId: 'row-0', title: 'Before', color: '', due: null, assignees: [], done: false, progress: 50 }, fraction: false, close: vi.fn(), setDates: vi.fn(), remove: vi.fn() }));
   find(tree, e => e.props?.id === 'hyper-gantt-task-progress').props.onValueCommitted([75]); await settle();
   expect(items.map(item => item.completed)).toEqual([true, false, true, true]); expect(write).toHaveBeenCalledTimes(1);
+});
+it('waits for a successful Board title read and preserves an edited draft during hydration', async () => {
+  setup(1); vi.spyOn(controller, 'loadRows').mockResolvedValue(undefined);
+  const save = vi.spyOn(controller, 'updateCell').mockResolvedValue(undefined);
+  const work = () => HyperBoardCardDetail({ controller, state: controller.state, rowId: 'row-0', returnFocus: null, onClose: vi.fn() });
+  const input = () => find(render(work), e => e.props?.['aria-label'] === 'Card title');
+  expect(input().props.disabled).toBe(true);
+  controller.store.setState({ cells: { 'row-0': { title: { kind: 'text', text: '', display: '', error: 'offline' } } } });
+  expect(input().props.disabled).toBe(true);
+  controller.store.setState({ cells: { 'row-0': { title: { kind: 'text', text: 'Stored title', display: 'Stored title' } } } });
+  input(); expect(input().props.value).toBe('Stored title'); expect(input().props.disabled).toBe(false);
+  input().props.onChange({ target: { value: 'My draft' } }); input();
+  controller.store.setState({ cells: { 'row-0': { title: { kind: 'text', text: 'Refreshed title', display: 'Refreshed title' } } } });
+  input(); expect(input().props.value).toBe('My draft');
+  input().props.onBlur(); await settle();
+  expect(save).toHaveBeenCalledWith('row-0', 'title', { kind: 'text', text: 'My draft' });
+});
+it('hydrates a controlled Gantt assignee and saves only successful-read user changes', async () => {
+  setup(1); controller.store.setState({ fields: [...controller.state.fields, field('assignee', FieldType.RichText)] });
+  const save = vi.spyOn(controller, 'updateCell').mockResolvedValue(undefined);
+  const work = () => HyperGanttRowDetail({ rowId: 'row-0', controller, state: controller.state, config: { start_field_id: 'date', end_field_id: null, progress_field_id: null, color_field_id: null, assignee_field_id: 'assignee', zoom: 1, list_width: 416, scale: 'month' }, task: { rowId: 'row-0', title: 'Task', color: '', due: null, assignees: [], done: false }, fraction: false, close: vi.fn(), setDates: vi.fn(), remove: vi.fn() });
+  const input = () => find(render(work), e => e.props?.id === 'hyper-gantt-task-assignee');
+  expect(input().props.disabled).toBe(true);
+  controller.store.setState({ cells: { 'row-0': { assignee: { kind: 'text', text: '', display: '', error: 'offline' } } } });
+  expect(input().props.disabled).toBe(true); input().props.onBlur({ target: { value: '' } }); await settle(); expect(save).not.toHaveBeenCalled();
+  controller.store.setState({ cells: { 'row-0': { assignee: { kind: 'text', text: 'Ada', display: 'Ada' } } } });
+  input(); expect(input().props.value).toBe('Ada'); expect(input().props.defaultValue).toBeUndefined();
+  input().props.onBlur({ target: { value: '' } }); await settle(); expect(save).not.toHaveBeenCalled();
+  input().props.onChange({ target: { value: 'Ada, Lin' } }); input();
+  controller.store.setState({ cells: { 'row-0': { assignee: { kind: 'text', text: 'Refreshed', display: 'Refreshed' } } } });
+  input(); expect(input().props.value).toBe('Ada, Lin'); input().props.onBlur(); await settle();
+  expect(save).toHaveBeenCalledWith('row-0', 'assignee', { kind: 'text', text: 'Ada, Lin' });
 });
