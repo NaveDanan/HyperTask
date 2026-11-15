@@ -219,6 +219,12 @@ Seven later Codex threads were checked against current code. Late queued failure
 
 Six regressions failed before these five corrections and pass afterward. Ownership, queue serialization, gateway compatibility and identity guards also pass. Source validation: 1127 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The owned disposable app runs `816e874` with stores retained. No new native/owner acceptance is claimed. Exact-head reviews, remaining Spec coverage and account-holder Tailscale authentication still precede merge.
 
+### App-bound access-request decisions
+
+`8408d03` fixes Codex Code/Security reports `4576826333` and `4576826773` in both request lists. Six tests reproduced actionable A rows under B, late A readbacks overwriting B, and cached decision buttons POSTing after unmount. Rows, reads and decisions now share a mounted-app scope. A target change hides the previous rows immediately; read generations reject reordered responses; stale or deferred decisions return before HTTP; old settlement skips reload. Current-target responses are filtered by app/server identity. Sixteen further guard cases preserve approve/dismiss/decline and polling recovery.
+
+Validation: 1149 tests pass with one optional skip, four real-core tests, typecheck/build and thirteen smoke safeguards. The owned disposable app runs `8408d03` with stores retained. Three completed lifecycle rechecks at `26d4969` inspected all seven assigned files with no confirmed findings; the aggregate now carries 84 byte-identical inspected files in a 408-file diff, leaving 324. Full Spec coverage, fresh exact-head code/security reviews, human Tailscale authentication, native verification and owner acceptance still block merge. Neither skipped checks nor starting the app count as acceptance.
+
 ## Queue
 
 | Issue | Deliverable | State |
