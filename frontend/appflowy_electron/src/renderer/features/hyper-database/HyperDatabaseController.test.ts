@@ -296,3 +296,18 @@ it('returns current scan data when a cell is invalidated while its first read is
   finish(ok(cell(utf8('Stale'))));
   expect((await scan).r.f?.display).toBe('Current');
 });
+it.each([N.DidReorderRows, N.DidReorderSingleRow])('replays a first-load sort against the incoming snapshot rows (%s)', async type => {
+  const ids = Array.from({ length: 50 }, (_, index) => 'row-' + index);
+  const { controller, backend, database } = fixture(ids);
+  const ordered = type === N.DidReorderRows ? [...ids].reverse() : [ids[49], ...ids.slice(0, 49)];
+  backend.DatabaseEventGetDatabase.mockImplementationOnce(async () => {
+    expect(controller.state.rows).toEqual({});
+    notify(controller, type, type === N.DidReorderRows
+      ? toBinary(ReorderAllRowsPBSchema, create(ReorderAllRowsPBSchema, { rowOrders: ordered }))
+      : toBinary(ReorderSingleRowPBSchema, create(ReorderSingleRowPBSchema, { rowId: ids[49], newIndex: 0 })));
+    return ok(database);
+  });
+  await controller.open();
+  expect(controller.state.rowIds).toEqual(ordered);
+  expect(Object.keys(controller.state.rows)).toHaveLength(50);
+});

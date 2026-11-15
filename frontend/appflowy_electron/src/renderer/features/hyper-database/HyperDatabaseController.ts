@@ -43,7 +43,7 @@ export class HyperDatabaseController {
   private dirtyCells = new Set<string>();
   private versions = new Map<string, number>();
   private pendingCells = new Map<string, { epoch: number; version: number; promise: Promise<HyperCell | undefined> }>();
-  private rowOrderPatches?: Array<(ids: string[]) => string[]>;
+  private rowOrderPatches?: Array<(ids: string[], rows: HyperDatabaseState['rows']) => string[]>;
   private extraQueue: Promise<unknown> = Promise.resolve();
   private extraVersion = 0;
   private queue: Array<() => void> = [];
@@ -84,7 +84,7 @@ export class HyperDatabaseController {
     const work = async () => {
       do {
         this.refreshAgain = false;
-        const orderPatches: Array<(ids: string[]) => string[]> = [];
+        const orderPatches: Array<(ids: string[], rows: HyperDatabaseState['rows']) => string[]> = [];
         this.rowOrderPatches = orderPatches;
         const extraVersion = this.extraVersion;
         try {
@@ -113,7 +113,7 @@ export class HyperDatabaseController {
           const rows = Object.fromEntries(database.rows.map(meta => [meta.id, snapshotRow(meta, previous.rows[meta.id])]));
           // Replay ordering and visibility notifications received during the snapshot request.
           if (orderPatches.length) Object.assign(rows, previous.rows);
-          const rowIds = orderPatches.reduce((ids, apply) => apply(ids), database.rows.map(r => r.id));
+          const rowIds = orderPatches.reduce((ids, apply) => apply(ids, rows), database.rows.map(r => r.id));
           const cells: HyperDatabaseState['cells'] = {};
           for (const meta of database.rows) {
             const cached = previous.cells[meta.id]; if (!cached) continue;
@@ -298,13 +298,13 @@ export class HyperDatabaseController {
         }
         case N.DidReorderRows: {
           const ids = fromBinary(ReorderAllRowsPBSchema, bytes).rowOrders;
-          this.rowOrderPatches?.push(() => ids.filter(id => !!this.state.rows[id]));
+          this.rowOrderPatches?.push((_order, snapshotRows) => ids.filter(id => !!snapshotRows[id]));
           this.patch({ rowIds: ids.filter(id => !!state.rows[id]) }); break;
         }
         case N.DidReorderSingleRow: {
           const change = fromBinary(ReorderSingleRowPBSchema, bytes); const ids = state.rowIds.filter(id => id !== change.rowId);
           if (state.rows[change.rowId]) ids.splice(change.newIndex, 0, change.rowId);
-          this.rowOrderPatches?.push(order => { const next = order.filter(id => id !== change.rowId); if (this.state.rows[change.rowId]) next.splice(change.newIndex, 0, change.rowId); return next; });
+          this.rowOrderPatches?.push((order, snapshotRows) => { const next = order.filter(id => id !== change.rowId); if (snapshotRows[change.rowId]) next.splice(change.newIndex, 0, change.rowId); return next; });
           this.patch({ rowIds: ids }); break;
         }
         case N.DidFetchRow: {
