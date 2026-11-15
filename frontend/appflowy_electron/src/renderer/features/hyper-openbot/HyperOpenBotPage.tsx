@@ -47,6 +47,7 @@ import { HyperComposer, HyperScreenPickedFiles, type HyperModelOption, type Hype
 import { HyperTranscript, type HyperTranscriptMessage } from './transcript';
 import { HyperConversationsScreen, type HyperConversation } from './screens';
 import { HyperBotsPanel } from './bots';
+import { HyperAgentPath, type HyperBotProfile } from './bots/HyperBotsApi';
 import { hyperReceiveConnectionReturn, type HyperNativeConnectionBridge } from './connections/HyperNativeConnections';
 import { HyperRuntimeTools, hyperObserveApprovalAgent, hyperWhileObserved } from './runtime';
 import { hyperPrepareRuntimeAgent, hyperResolveRuntimeFacts } from './HyperRuntimeIntegration';
@@ -89,13 +90,32 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
   const [modelPending, setModelPending] = useState(false);
   const modelUpdating = useRef(false);
   const defaultModel = useRef('');
+  const modelKey = JSON.stringify([channel.id, channel.agentIds[0], serviceReady]);
+  const modelScope = useRef({ key: modelKey, active: false, sequence: 0, allowed: false });
+  if (modelScope.current.key !== modelKey) modelScope.current = { key: modelKey, active: false, sequence: 0, allowed: false };
+  const modelOwner = modelScope.current;
+  const [modelCapability, setModelCapability] = useState<{ owner: typeof modelOwner; allowed: boolean }>();
+  const modelAllowed = modelCapability?.owner === modelOwner && modelCapability.allowed && modelOwner.allowed;
   useEffect(() => {
     if (!serviceReady) return;
     let current = true;
-    void request<{ skills: { slug: string; title: string }[] }>(`/api/plugins/for/${encodeURIComponent(channel.agentIds[0])}`).then(value => { if (current) setCommands(value.skills.map(skill => ({ id: skill.slug, label: skill.title || skill.slug }))); }).catch(() => {});
-    void Promise.all([request<{ models: HyperModelOption[]; default: string }>('/api/models'), request<HyperConversationModel>(`/api/channels/${channel.id}/model`)]).then(([catalogue, saved]) => { if (current) { defaultModel.current = catalogue.default; setModels(catalogue.models); setPick(hyperResolveModelPick(saved, catalogue.default)); } }).catch(error => { if (current) setError(String(error)); });
-    return () => { current = false; };
-  }, [channel.id, serviceReady]);
+    modelOwner.active = true; modelOwner.allowed = false;
+    const sequence = ++modelOwner.sequence;
+    const valid = () => current && modelScope.current === modelOwner && modelOwner.active && sequence === modelOwner.sequence;
+    setModels([]); setPick({ model: '', effort: null }); setModelPending(false); setModelCapability({ owner: modelOwner, allowed: false });
+    modelUpdating.current = false; defaultModel.current = '';
+    void request<{ skills: { slug: string; title: string }[] }>(`/api/plugins/for/${encodeURIComponent(channel.agentIds[0])}`).then(value => { if (valid()) setCommands(value.skills.map(skill => ({ id: skill.slug, label: skill.title || skill.slug }))); }).catch(() => {});
+    void (async () => {
+      try {
+        const profile = await request<{ agent: Pick<HyperBotProfile, 'id' | 'runsOnOpenBotModel'> }>(HyperAgentPath(channel.agentIds[0]));
+        if (!valid() || profile.agent.id !== channel.agentIds[0] || profile.agent.runsOnOpenBotModel !== true) return;
+        modelOwner.allowed = true; setModelCapability({ owner: modelOwner, allowed: true });
+        const [catalogue, saved] = await Promise.all([request<{ models: HyperModelOption[]; default: string }>('/api/models'), request<HyperConversationModel>(`/api/channels/${channel.id}/model`)]);
+        if (valid() && modelOwner.allowed) { defaultModel.current = catalogue.default; setModels(catalogue.models); setPick(hyperResolveModelPick(saved, catalogue.default)); }
+      } catch (error) { if (valid()) setError(String(error)); }
+    })();
+    return () => { current = false; modelOwner.active = false; modelOwner.allowed = false; modelOwner.sequence++; };
+  }, [channel.id, channel.agentIds[0], serviceReady]);
   useEffect(() => {
     if (!isReady || !serviceReady) return;
     let current = true;
@@ -226,10 +246,12 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
       const saved = await response.json();
       if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error(saved.error ?? 'Attachment upload failed');
       return { id: saved.id, name: saved.name, mimeType: saved.mimeType, status: 'ready' };
-    }, setAttachments, id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }, assertDraftCurrent)} modelPicker={models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
-      if (modelUpdating.current) return;
+    }, setAttachments, id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }, assertDraftCurrent)} modelPicker={modelAllowed && models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
+      if (modelScope.current !== modelOwner || !modelOwner.active || !modelOwner.allowed || modelUpdating.current) return;
+      const sequence = modelOwner.sequence;
+      const valid = () => modelScope.current === modelOwner && modelOwner.active && modelOwner.allowed && sequence === modelOwner.sequence;
       modelUpdating.current = true; setModelPending(true);
-      void request<HyperConversationModel>(`/api/channels/${channel.id}/model`, 'PUT', next).then(saved => setPick(hyperResolveModelPick(saved, defaultModel.current))).catch(error => setError(String(error))).finally(() => { modelUpdating.current = false; setModelPending(false); });
+      void request<HyperConversationModel>(`/api/channels/${channel.id}/model`, 'PUT', next).then(saved => { if (valid()) setPick(hyperResolveModelPick(saved, defaultModel.current)); }).catch(error => { if (valid()) setError(String(error)); }).finally(() => { if (valid()) { modelUpdating.current = false; setModelPending(false); } });
     } } : undefined} onStop={() => { stopped.current = true; return copilotkit.stopAgent({ agent }); }} onSubmit={sendDraft} />
   </div>;
 }

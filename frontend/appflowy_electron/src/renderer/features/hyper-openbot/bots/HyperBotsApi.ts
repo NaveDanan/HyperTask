@@ -5,6 +5,8 @@ export interface HyperBotProfile {
   visibility: 'private' | 'public'; canManage: boolean; mine: boolean;
   systemOwned: boolean; pinned: boolean; hidden: boolean; assignedToMe?: boolean;
   hasCallbackToken?: boolean; keyFromOpenBot?: boolean; isolated?: boolean; isolationActive?: boolean; isolationOffReason?: string | null; builtIn?: boolean; instructions?: string; endpoint: string | null;
+  /** Server-resolved capability; only true permits OpenBot model/effort choices. */
+  runsOnOpenBotModel?: boolean;
 }
 export interface HyperBotInput {
   name: string; title: string; roleDescription: string; visibility: 'private' | 'public'; instructions?: string;

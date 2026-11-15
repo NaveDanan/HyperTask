@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
+import { readFileSync } from 'node:fs';
 import { HyperPluginGrants } from './connections/HyperPluginGrants';
 import { HyperConnectionsPanel } from './connections/HyperConnectionsPanel';
 import HyperMemorySection from './memory/HyperMemorySection';
@@ -12,7 +13,7 @@ import { HyperComposer } from './composer';
 import { HyperConversationDraftCache } from './HyperConversationDraft';
 import { HyperInteractiveResult } from './screens-gen/HyperInteractiveResult';
 import { FormCardArgs, HyperFormCard } from './screens-gen/form';
-import { HyperCheckInEditor } from './routines/HyperRoutinesSection';
+import HyperRoutinesSection, { HyperCheckInEditor } from './routines/HyperRoutinesSection';
 import { HyperGroupChat } from './conversations/HyperGroupChat';
 import { hyperAcquireConversationDraft } from './useHyperConversationDraft';
 import { HyperAppAccessAction, HyperAppAccessRequests } from './connections/HyperAppAccessAction';
@@ -37,6 +38,7 @@ vi.mock('react', async original => {
     useEffect: effect, useLayoutEffect: effect,
     useCallback: (callback: any, deps: unknown[]) => h.active ? callback : react.useCallback(callback, deps),
     useMemo: (create: () => unknown, deps: unknown[]) => h.active ? create() : react.useMemo(create, deps),
+    useContext: (...args: Parameters<typeof react.useContext>) => h.active ? undefined : react.useContext(...args),
     useSyncExternalStore: (...args: Parameters<typeof react.useSyncExternalStore>) => h.active ? args[1]() : react.useSyncExternalStore(...args),
   };
 });
@@ -653,4 +655,125 @@ it('Memory Remember is an explicit submit control for the real form save handler
   const form = find(tree, element => element.type === 'form')!, submit = find(form, element => text(element.props.children) === 'Remember')!;
   expect(submit.props.type).toBe('submit'); form.props.onSubmit({ preventDefault() {} }); await drain();
   expect(f.request).toHaveBeenCalledWith('/api/memory', 'POST', { content: 'remember this fact' });
+});
+function hyperModelTestChat(agentId = 'model-bot') {
+  const channel = { id: 'model-channel', name: 'Model', threadId: 'model-thread', agentIds: [agentId], active: true };
+  const workspace = render(HyperOpenBotWorkspace, { viewId: 'model-test', serviceReady: true }, ['conversations', [], false, '', [], 'thread', 0, 0, undefined, [channel], channel]);
+  const chat = find(workspace, element => element.props.channel?.id === channel.id)!;
+  h.states = []; h.refs = [];
+  const component = chat.type as (props: any) => ReactNode;
+  render(component, chat.props);
+  return { component, props: chat.props, metadataEffect: h.effects[2] };
+}
+const hyperModelCatalogue = { models: [{ id: 'openbot-model', name: 'OpenBot model', provider: 'openbot', efforts: ['high'] }], default: 'openbot-model' };
+it.each([false, undefined])('does not fetch or offer OpenBot model choices for Bot capability %s', async capability => {
+  f.request.mockImplementation(async (path: string) => path.startsWith('/api/agents/') ? { agent: { id: 'model-bot', runsOnOpenBotModel: capability } } : path === '/api/models' ? hyperModelCatalogue : path.endsWith('/model') ? { model: 'openbot-model', effort: 'high' } : { skills: [] });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/models' || call[0] === '/api/channels/model-channel/model')).toBe(false);
+  expect(find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker).toBeUndefined();
+});
+it('waits for authoritative native-model capability before loading model choices', async () => {
+  let resolveBot!: (value: unknown) => void;
+  f.request.mockImplementation(async (path: string) => path.startsWith('/api/agents/') ? new Promise(resolve => { resolveBot = resolve; }) : path === '/api/models' ? hyperModelCatalogue : path.endsWith('/model') ? { model: 'openbot-model', effort: 'high' } : { skills: [] });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/models')).toBe(false);
+  resolveBot({ agent: { id: 'model-bot', runsOnOpenBotModel: true } }); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/models');
+  expect(find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker).toBeDefined();
+});
+it('shows an open routine run with null status as Running rather than No finished run', () => {
+  const tree = render(HyperRoutinesSection, { initialTab: 'routines' });
+  const read = find(tree, element => element.props.path === '/api/routines')!;
+  const rows = read.props.children({ sweep: { working: true }, routines: [{ id: 'routine', title: 'Routine', instruction: 'Check', schedule: '* * * * *', enabled: true, channel: { gone: true }, lastRun: { status: null } }] });
+  expect(find(rows, element => element.type === 'p' && text(element.props.children) === 'Last run: Running…')).toBeDefined();
+});
+it('documents check-in interval and focus as a joint local draft instead of immediate interval writes', () => {
+  const reuse = readFileSync(new URL('./routines/REUSE.md', import.meta.url), 'utf8');
+  expect(reuse.includes('immediate interval writes')).toBe(false);
+  expect(reuse).toContain('Save changes');
+});
+it('keeps model choices for a managed harness even when builtIn is false', async () => {
+  f.request.mockImplementation(async (path: string, method?: string) => method === 'PUT' ? { model: 'openbot-model', effort: 'high' } : path.startsWith('/api/agents/') ? { agent: { id: 'model-bot', builtIn: false, runsOnOpenBotModel: true } } : path === '/api/models' ? hyperModelCatalogue : path.endsWith('/model') ? { model: null, effort: null } : { skills: [] });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  const picker = find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker;
+  expect(picker.value).toEqual({ model: 'openbot-model', effort: null });
+  picker.onChange({ model: 'openbot-model', effort: 'high' }); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/channels/model-channel/model', 'PUT', { model: 'openbot-model', effort: 'high' });
+  expect(find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker.value).toEqual({ model: 'openbot-model', effort: 'high' });
+});
+it.each(['wrong Bot', 'nonboolean flag', 'read failure'])('does not infer a model capability from %s', async mode => {
+  f.request.mockImplementation(async (path: string) => {
+    if (path.startsWith('/api/agents/')) { if (mode === 'read failure') throw new Error('synthetic-profile-failure'); return { agent: { id: mode === 'wrong Bot' ? 'other' : 'model-bot', runsOnOpenBotModel: mode === 'nonboolean flag' ? 'true' : true } }; }
+    return path === '/api/models' ? hyperModelCatalogue : path.endsWith('/model') ? { model: null, effort: null } : { skills: [] };
+  });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/models')).toBe(false);
+  expect(find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker).toBeUndefined();
+});
+it('hides old model choices and rejects a cached picker before another Bot metadata effect runs', async () => {
+  f.request.mockImplementation(async (path: string) => path.startsWith('/api/agents/') ? { agent: { id: 'model-bot', runsOnOpenBotModel: true } } : path === '/api/models' ? hyperModelCatalogue : path.endsWith('/model') ? { model: null, effort: null } : { skills: [] });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  const old = find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker;
+  const next = { ...chat.props, channel: { ...chat.props.channel, agentIds: ['external'] } };
+  expect(find(render(chat.component, next), element => element.type === HyperComposer)!.props.modelPicker).toBeUndefined();
+  old.onChange({ model: 'openbot-model', effort: 'high' }); await drain();
+  expect(f.request.mock.calls.some(call => call[1] === 'PUT')).toBe(false);
+});
+it('rejects a late native capability read after the selected Bot changes', async () => {
+  let native!: (value: unknown) => void;
+  f.request.mockImplementation(async (path: string) => path === '/api/agents/model-bot' ? new Promise(resolve => { native = resolve; }) : path === '/api/agents/external' ? { agent: { id: 'external', runsOnOpenBotModel: false } } : path === '/api/models' ? hyperModelCatalogue : path.endsWith('/model') ? { model: null, effort: null } : { skills: [] });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  const next = { ...chat.props, channel: { ...chat.props.channel, agentIds: ['external'] } };
+  render(chat.component, next); const nextCleanup = h.effects[2](); if (typeof nextCleanup === 'function') h.cleanups.push(nextCleanup as () => void); await drain();
+  native({ agent: { id: 'model-bot', runsOnOpenBotModel: true } }); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/models')).toBe(false);
+  expect(find(render(chat.component, next), element => element.type === HyperComposer)!.props.modelPicker).toBeUndefined();
+});
+it('rejects a late native catalogue after an external Bot is selected', async () => {
+  let catalogue!: (value: unknown) => void;
+  f.request.mockImplementation(async (path: string) => path.startsWith('/api/agents/') ? { agent: { id: path.endsWith('/external') ? 'external' : 'model-bot', runsOnOpenBotModel: !path.endsWith('/external') } } : path === '/api/models' ? new Promise(resolve => { catalogue = resolve; }) : path.endsWith('/model') ? { model: null, effort: null } : { skills: [] });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  const next = { ...chat.props, channel: { ...chat.props.channel, agentIds: ['external'] } };
+  render(chat.component, next); const nextCleanup = h.effects[2](); if (typeof nextCleanup === 'function') h.cleanups.push(nextCleanup as () => void); await drain();
+  catalogue(hyperModelCatalogue); await drain();
+  expect(find(render(chat.component, next), element => element.type === HyperComposer)!.props.modelPicker).toBeUndefined();
+});
+it('rejects a cached model picker after unmount', async () => {
+  f.request.mockImplementation(async (path: string) => path.startsWith('/api/agents/') ? { agent: { id: 'model-bot', runsOnOpenBotModel: true } } : path === '/api/models' ? hyperModelCatalogue : path.endsWith('/model') ? { model: null, effort: null } : { skills: [] });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  const picker = find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker;
+  for (const off of h.cleanups) off(); h.cleanups = [];
+  picker.onChange({ model: 'openbot-model', effort: 'high' }); await drain(); expect(f.request.mock.calls.some(call => call[1] === 'PUT')).toBe(false);
+});
+it('old model-save settlement cannot overwrite or unlock the current channel picker', async () => {
+  let oldSave!: (value: unknown) => void, newSave!: (value: unknown) => void;
+  f.request.mockImplementation(async (path: string, method?: string) => {
+    if (method === 'PUT') return new Promise(resolve => { if (path.includes('other-channel')) newSave = resolve; else oldSave = resolve; });
+    if (path.startsWith('/api/agents/')) return { agent: { id: path.endsWith('other-bot') ? 'other-bot' : 'model-bot', runsOnOpenBotModel: true } };
+    if (path === '/api/models') return hyperModelCatalogue;
+    if (path.endsWith('/model')) return path.includes('other-channel') ? { model: 'other-model', effort: 'low' } : { model: null, effort: null };
+    return { skills: [] };
+  });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker.onChange({ model: 'openbot-model', effort: 'high' }); await drain();
+  const next = { ...chat.props, channel: { ...chat.props.channel, id: 'other-channel', threadId: 'other-thread', agentIds: ['other-bot'] } };
+  render(chat.component, next); const nextCleanup = h.effects[2](); if (typeof nextCleanup === 'function') h.cleanups.push(nextCleanup as () => void); await drain();
+  find(render(chat.component, next), element => element.type === HyperComposer)!.props.modelPicker.onChange({ model: 'other-model', effort: 'high' }); await drain();
+  oldSave({ model: 'openbot-model', effort: 'high' }); await drain();
+  let picker = find(render(chat.component, next), element => element.type === HyperComposer)!.props.modelPicker;
+  expect(picker.value).toEqual({ model: 'other-model', effort: 'low' }); expect(picker.disabled).toBe(true);
+  newSave({ model: 'other-model', effort: 'high' }); await drain();
+  picker = find(render(chat.component, next), element => element.type === HyperComposer)!.props.modelPicker;
+  expect(picker.value).toEqual({ model: 'other-model', effort: 'high' }); expect(picker.disabled).toBe(false);
+});
+it.each([
+  { lastRun: null, label: 'No finished run' },
+  { lastRun: { status: 'succeeded' }, label: 'succeeded' },
+  { lastRun: { status: 'failed' }, label: 'failed' },
+  { lastRun: { status: 'skipped' }, label: 'skipped' },
+])('keeps the distinct routine last-run display for $label', test => {
+  const tree = render(HyperRoutinesSection, { initialTab: 'routines' });
+  const read = find(tree, element => element.props.path === '/api/routines')!;
+  const rows = read.props.children({ sweep: { working: true }, routines: [{ id: 'routine', title: 'Routine', enabled: true, channel: { gone: true }, lastRun: test.lastRun }] });
+  expect(find(rows, element => element.type === 'p' && text(element.props.children) === `Last run: ${test.label}`)).toBeDefined();
 });
