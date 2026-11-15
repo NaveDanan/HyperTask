@@ -195,6 +195,12 @@ Nine new regressions failed before the fixes and pass afterward. Additional owne
 
 All nineteen notified historical CodeRabbit threads were verified as resolved. Codex security receipt `6887269682` is clean for `b8452ef`; the summary's displayed CDP advisory is an older resolved finding, not a new defect. That receipt does not approve `2062e53` or later heads. Full-diff Spec coverage remains incomplete, and changed files need fresh inspection. Native verification and owner acceptance still precede merge.
 
+### Late-unmount follow-up
+
+The three bounded rechecks at `5e5cc7f` fully inspected their eight assigned files. Workspace had no confirmed finding. Draft lifetime and scoped decisions each found one remaining unmount gap. `993d9a1` restores a send that fails after navigation through the owner-held draft, including queued and live portions, command IDs and attachment references. Failed-send restoration preserves a matching retry identity; identity-invalidated leases still refuse it. Shared-grant scope expires on unmount, and every single/bulk/batch write rechecks that scope before HTTP. Already accepted writes are not undone.
+
+Three regressions failed before these fixes and pass afterward, plus joined-send and stale-identity guards. Source validation is 1103 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The owned disposable app was relaunched on `993d9a1` with stores retained. No new native smoke or owner acceptance is claimed. Full-diff coverage and fresh exact-head reviews remain required; Tailscale authentication remains the native prerequisite.
+
 ## Queue
 
 | Issue | Deliverable | State |
