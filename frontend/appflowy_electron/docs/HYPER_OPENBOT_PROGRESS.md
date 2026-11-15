@@ -253,6 +253,12 @@ The latest three ledgers verified six of nine files and left three contract insp
 
 The validated aggregate carries 86 byte-identical inspected files of 409, with 323 remaining. Changed documentation/code loses earlier carried coverage; three consumed diffs still lack full contract verification. No exhaustive clearance is claimed.
 
+### Fresh transaction identity, live replay and original route IDs
+
+The notified `b2f403d` checks were both skipped: CodeRabbit exceeded its 100-file limit, Macroscope its unchanged $10 cap. CodeRabbit's risk summary still covered `79e96da5`. Actual current Code review completed at `5458c0d` with finding `4577136132`, not approval. `64901f2` resets retained transactions on explicit fresh composition while preserving actual retry; guards superseded cleanup; maps canonical/legacy routine routes to actual IDs; fetches absent preselected Bots through scoped permission-filtered details; respects live working hints before replay detach; and rejects stopped delegated voice results by epoch. No old server history is deleted and no original Intelligence or owner binding changes.
+
+Eight regressions were red before correction; fourteen additional guards pass. Full validation: 1254 tests, one optional skip, four real-core tests, typecheck/build and thirteen safeguards. The owned disposable app runs `64901f2` with stores retained. The latest three ledgers fully verified five of eight files and left three broad contract inspections incomplete, finding four Spec defects now source-fixed. Current carried coverage is 90 byte-identical inspected files of 409, with 319 remaining. Fresh exact-head reviews, full contract inspection, human Tailscale authentication, native workflows and owner acceptance remain required before merge or next-stage work.
+
 ## Queue
 
 | Issue | Deliverable | State |
