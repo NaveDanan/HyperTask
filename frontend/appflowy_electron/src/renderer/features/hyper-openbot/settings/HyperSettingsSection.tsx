@@ -13,9 +13,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { HYPER_INSTRUCTIONS_LIMIT, hyperSettingsApi, type HyperSettingsUser, type HyperSettingsPreferences } from './HyperSettingsApi';
 export const HYPER_SETTINGS_DESTINATIONS = [
-  ['Notifications', destinations.notifications], ['Vault and passwords', destinations.vault], ['Connected accounts', destinations.accounts],
-  ['Computer and browsers', destinations.computer], ['Approvals', destinations.approvals], ['Memory and learning', destinations.memory],
-  ['Skills', destinations.skills], ['Apps', destinations.apps], ['Setup', destinations.setup], ['Components gallery', destinations.gallery],
+  ['Notifications', destinations.notifications, '/settings/notifications'], ['Vault and passwords', destinations.vault, undefined], ['Connected accounts', destinations.accounts, '/connections'],
+  ['Computer and browsers', destinations.computer, undefined], ['Approvals', destinations.approvals, '/settings/approvals'], ['Memory and learning', destinations.memory, undefined],
+  ['Skills', destinations.skills, undefined], ['Apps', destinations.apps, undefined], ['Setup', destinations.setup, undefined], ['Components gallery', destinations.gallery, undefined],
 ] as const;
 export function HyperSettingsGeneral({ user, instructions, preferences, onUser, onInstructions, onPreferences }: {
   user: HyperSettingsUser; instructions: string; preferences: HyperSettingsPreferences;
@@ -80,6 +80,6 @@ export default function HyperSettingsSection({ context, path = '/settings' }: { 
   }, [attempt]);
   return <section className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 overflow-y-auto px-8 py-6"><h1 className="text-lg font-semibold tracking-tight">Settings</h1><nav className="flex gap-2" aria-label="Settings"><Button variant={page === 'general' ? 'default' : 'outline'} onClick={() => setPage('general')}>General</Button>{data?.edition === 'personal' && <Button variant={page === 'activity' ? 'default' : 'outline'} onClick={() => setPage('activity')}>Activity</Button>}</nav>
     {error ? <div><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => setAttempt(value => value + 1)}>Try again</Button></div> : !data ? <p role="status">Loading settings…</p> : page === 'activity' && data.edition === 'personal' ? <HyperPersonalActivity bot={path.startsWith('/settings/activity') ? new URL(path, 'https://settings.invalid').searchParams.get('bot') ?? undefined : undefined} /> : <><HyperSettingsGeneral {...data} onUser={user => setData(current => current && ({ ...current, user }))} onInstructions={instructions => setData(current => current && ({ ...current, instructions }))} onPreferences={preferences => setData(current => current && ({ ...current, preferences }))} /><HyperSettingsAutomation preferences={data.preferences} onPreferences={preferences => setData(current => current && ({ ...current, preferences }))} /></>}
-    <HyperSettingsEdition edition={data?.edition} /><h2 className="text-sm font-medium">More settings</h2><p className="text-sm text-muted-foreground">Settings for every Bot and your account.</p><ul className="grid grid-cols-2 gap-2 text-sm">{HYPER_SETTINGS_DESTINATIONS.map(([label, id]) => <li key={label} data-section-id={id}><Button variant="outline" disabled={!context.navigate} onClick={() => context.navigate?.(id)}>{label}</Button></li>)}</ul>
+    <HyperSettingsEdition edition={data?.edition} /><h2 className="text-sm font-medium">More settings</h2><p className="text-sm text-muted-foreground">Settings for every Bot and your account.</p><ul className="grid grid-cols-2 gap-2 text-sm">{HYPER_SETTINGS_DESTINATIONS.map(([label, id, destinationPath]) => <li key={label} data-section-id={id}><Button variant="outline" disabled={!context.navigate} onClick={() => { if (context.isCurrentNavigation?.() !== false) context.navigate?.(id, destinationPath ? { path: destinationPath } : undefined); }}>{label}</Button></li>)}</ul>
   </section>;
 }

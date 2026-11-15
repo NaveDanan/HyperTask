@@ -93,6 +93,19 @@ export function auditFilterParams(filters: AuditFilters): [string, string][] {
   return params;
 }
 
+/** A saved view and the user's chips both hold, as pinned audit withFilters does. */
+export function hyperAuditViewParams(view: AuditFilters, filters: AuditFilters): URLSearchParams {
+  const params = new URLSearchParams(auditFilterParams(view));
+  for (const [key, value] of auditFilterParams(filters)) {
+    const existing = params.get(key);
+    if (existing && (key === 'eventType' || key === 'initiatorKind' || key === 'bot')) {
+      const have = new Set(existing.split(',')), both = value.split(',').filter(item => have.has(item));
+      params.set(key, both.length ? both.join(',') : 'none');
+    } else params.set(key, value);
+  }
+  return params;
+}
+
 /** The filters read back from a query string, the way the server reads them. */
 export function auditFiltersFromParams(params: URLSearchParams): AuditFilters {
   const filters: AuditFilters = {};

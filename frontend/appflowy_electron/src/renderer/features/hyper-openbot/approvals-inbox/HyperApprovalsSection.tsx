@@ -12,8 +12,19 @@ import { HyperOffersStandingRule, HyperApprovalDetails } from './HyperApprovalPr
 import { HyperNotificationSettings } from './HyperNotifications';
 import * as notify from './HyperNotificationsApi';
 const behaviours = { allow: 'Take action without asking', pre_approved: 'Take action if pre-approved', ask: 'Ask before taking action', hand_off: 'Hand off to you' } as const;
+export function hyperApprovalTabFromPath(path?: string) {
+  try {
+    const url = new URL(path ?? '/approvals', 'https://approval-settings.invalid');
+    if (url.origin !== 'https://approval-settings.invalid') return 'Inbox';
+    const pathname = url.pathname.replace(/\/+$/, '');
+    if (pathname === '/settings/notifications' || pathname === '/approvals/notifications') return 'Notifications';
+    if (pathname === '/settings/approvals' || pathname === '/approvals/rules') return 'Standing rules';
+  } catch { /* Invalid/foreign destinations never select settings controls. */ }
+  return 'Inbox';
+}
 export default function HyperApprovalsSection({ context }: { context: HyperOpenBotSectionContext }) {
-  const [tab, setTab] = useState('Inbox');
+  const path = context.navigationIntent?.path;
+  const [tab, setTab] = useState(() => hyperApprovalTabFromPath(path));
   const [inbox, setInbox] = useState<api.HyperApprovalInboxData>();
   const [delivery, setDelivery] = useState<notify.HyperReachability>();
   const [routing, setRouting] = useState<notify.HyperRouting>();
@@ -31,6 +42,12 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
   const alive = useRef(false);
   const version = useRef(0);
   const notificationVersion = useRef(0);
+  const navigation = useRef({ check: context.isCurrentNavigation, epoch: 0 });
+  if (navigation.current.check?.() === false && context.isCurrentNavigation?.() !== false) {
+    navigation.current = { check: context.isCurrentNavigation, epoch: navigation.current.epoch + 1 };
+    notificationVersion.current++;
+  }
+  const navigationEpoch = navigation.current.epoch;
   async function refresh(propagate = false) {
     const current = ++version.current;
     try {
@@ -44,13 +61,19 @@ export default function HyperApprovalsSection({ context }: { context: HyperOpenB
   }
   useEffect(() => { alive.current = true; void loadEdition(); void refresh(); const timer = setInterval(() => { if (!mutationLock.current) void refresh(); }, 10000); return () => { alive.current = false; version.current++; notificationVersion.current++; clearInterval(timer); }; }, []);
   async function loadNotifications(propagate = false) {
+    if (!alive.current || context.isCurrentNavigation?.() === false) { if (propagate) throw new Error('Notification navigation ended'); return; }
     const current = ++notificationVersion.current;
     const [d, r] = await Promise.all([notify.HyperLoadDelivery(), notify.HyperLoadRouting()]);
-    if (!alive.current || current !== notificationVersion.current) { if (propagate) throw new Error('Notification read was superseded'); return; }
+    if (!alive.current || context.isCurrentNavigation?.() === false || current !== notificationVersion.current) { if (propagate) throw new Error('Notification read was superseded'); return; }
     setDelivery(d); setRouting(r); if (unconfirmedTarget.current !== 'inbox') setUnconfirmed(false);
   }
+  useEffect(() => {
+    if (context.isCurrentNavigation?.() === false) return;
+    const next = hyperApprovalTabFromPath(path); setTab(next);
+    if (next === 'Notifications') void loadNotifications().catch(() => { if (alive.current && context.isCurrentNavigation?.() !== false) setError('Notifications could not be loaded.'); });
+  }, [path, navigationEpoch]);
   async function mutate(action: () => Promise<unknown>, target: 'inbox' | 'notifications' | 'none' = 'inbox') {
-    if (mutationLock.current || unconfirmed) return false;
+    if (!alive.current || context.isCurrentNavigation?.() === false || mutationLock.current || unconfirmed) return false;
     mutationLock.current = true;
     if (target === 'notifications') notificationVersion.current++;
     if (target === 'inbox') version.current++;

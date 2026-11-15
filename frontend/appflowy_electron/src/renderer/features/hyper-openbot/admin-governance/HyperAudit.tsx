@@ -8,7 +8,7 @@ import { hyperAuditEventName } from './HyperAuditNames';
 import { HyperRecordingSettings } from './HyperEnterpriseSettings';
 import { HyperVerdict, HyperWhatIf } from './HyperWhatIf';
 import { whatIfExplainable, type WhatIfAction, type WhatIfResult } from './HyperWhatIfModel';
-import { AUDIT_FILTER_KEYS, auditFilterParams, type AuditFilters, type AuditFilterKey } from './HyperAuditFilters';
+import { AUDIT_FILTER_KEYS, hyperAuditViewParams, type AuditFilters, type AuditFilterKey } from './HyperAuditFilters';
 import { outcomeOf, REFUSED_EVENT_TYPES, DID_NOT_HAPPEN_EVENT_TYPES, COMPUTER_ACTION_EVENT_TYPES } from './HyperAuditOutcome';
 import { oneRowPerAction, OPENBOT_WORKING_EVENT_TYPES, CALLS_RECORDED_AS_CHANGES } from './HyperActivityRows';
 type HyperEvent = {
@@ -70,11 +70,12 @@ export function HyperAudit({
     result: WhatIfResult;
   }>();
   const [tryAction, setTryAction] = useState<WhatIfAction>();
+  const [viewFilters, setViewFilters] = useState<AuditFilters>({});
   const v = useHyperResource<HyperVocabulary>('/api/admin/audit-events/vocabulary');
   const edition = useHyperResource<{
     edition?: string;
   }>('/api/capabilities');
-  const params = new URLSearchParams(auditFilterParams(filters));
+  const params = hyperAuditViewParams(viewFilters, filters);
   if (edition.data?.edition === 'personal') {
     params.set('excludeEventType', OPENBOT_WORKING_EVENT_TYPES.join(','));
     params.set('excludeCalls', CALLS_RECORDED_AS_CHANGES.join(','));
@@ -152,7 +153,7 @@ export function HyperAudit({
         filters: {
           initiatorKind: ['routine', 'handoff', 'responsibility', 'memory']
         }
-      }].map(view => <Button variant="outline" key={view.label} onClick={() => update(view.filters)}>{view.label}</Button>)}</div>
+      }].map(view => <Button variant="outline" key={view.label} onClick={() => { setViewFilters(view.filters); setCursor(''); setEvents([]); setAnswer(undefined); }}>{view.label}</Button>)}</div>
     <details><summary>Filters</summary><HyperStatus resource={v}><div className="grid gap-3 sm:grid-cols-2">{AUDIT_FILTER_KEYS.map(key => <label key={key} className="grid gap-1">{key}{lists.has(key) ? ' · comma-separated alternatives' : ''}<input className="rounded border bg-background p-2" list={`audit-${key}`} value={Array.isArray(filters[key]) ? (filters[key] as string[]).join(',') : filters[key] || ''} onChange={e => update({
               ...filters,
               [key]: lists.has(key) ? e.target.value.split(',').map(s => s.trim()).filter(Boolean) : e.target.value

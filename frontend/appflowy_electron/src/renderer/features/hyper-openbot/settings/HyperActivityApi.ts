@@ -22,13 +22,10 @@ export const hyperActivityApi = {
   },
   names: async () => {
     const roster = async (hidden: boolean) => {
-      const bots: { id: string; name: string }[] = []; const seen = new Set<string>(); let cursor: string | undefined;
-      do {
-        const params = new URLSearchParams({ limit: '100', ...(hidden ? { hidden: 'true' } : {}), ...(cursor ? { cursor } : {}) });
-        const page = await hyperOpenBotRequest<{ bots: { id: string; name: string }[]; nextCursor?: string }>(`/api/v2/organizations/default/bots?${params}`);
-        bots.push(...page.bots); if (cursor) seen.add(cursor); cursor = page.nextCursor;
-      } while (cursor && !seen.has(cursor));
-      return bots;
+      // The pinned served-today adapter maps the generated v2 catalogue to
+      // /api/agents, which returns the complete permission-filtered roster.
+      const page = await hyperOpenBotRequest<{ agents: { id: string; name: string }[] }>(`/api/agents${hidden ? '?hidden=true' : ''}`);
+      return page.agents;
     };
     const [shown, hidden, plugins] = await Promise.all([roster(false), roster(true).catch(() => []), hyperOpenBotRequest<{ skills: { slug: string; title: string }[] }>('/api/plugins')]);
     return { bots: Object.fromEntries([...hidden, ...shown].map(bot => [bot.id, bot.name])), skills: Object.fromEntries(plugins.skills.map(skill => [skill.slug, skill.title])) };
