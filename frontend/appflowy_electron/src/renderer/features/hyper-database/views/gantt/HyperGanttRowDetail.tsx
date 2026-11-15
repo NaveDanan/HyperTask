@@ -50,10 +50,10 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
     if (primary && titleDirty) { await controller.updateCell(rowId, primary.id, { kind: 'text', text: title }); setTitleDirty(false); }
   };
   const closeDetail = () => { if (titleDirty) void run(async () => { await saveTitle(); close(); }); else close(); };
-  const statusItems = [{ value: '', label: 'No status' }, ...(statusField?.options.map(o => ({ value: o.id, label: o.name })) ?? [])];
+  const statusItems = [{ value: HyperGanttNone, label: 'No status' }, ...(statusField?.options.map(o => ({ value: o.id, label: o.name })) ?? [])];
   const selectedAssignees = assigneeCell?.kind === 'singleSelect' || assigneeCell?.kind === 'multiSelect' ? assigneeCell.selected.map(o => o.id) : [];
   return <Sheet open onOpenChange={open => { if (!open) closeDetail(); }}>
-    <SheetContent side="right" className="w-[440px] max-w-full sm:max-w-[440px]">
+    <SheetContent side="right" data-hyper-gantt-detail className="max-w-full data-[side=right]:w-[440px] data-[side=right]:sm:max-w-[440px]">
       <SheetHeader>
         <SheetTitle>Task details</SheetTitle>
         <SheetDescription>Edit this task’s schedule and properties.</SheetDescription>

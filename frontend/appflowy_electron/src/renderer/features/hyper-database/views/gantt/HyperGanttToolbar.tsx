@@ -6,12 +6,13 @@ import type { HyperField } from '../../HyperDatabaseTypes';
 import { HyperGanttScales, type HyperGanttConfig } from './HyperGanttMapping';
 import { HyperGanttSettings } from './HyperGanttSettings';
 
-export function HyperGanttToolbar({ config, fields, save, settingsOpen, setSettingsOpen, createTask, creating }: {
+export function HyperGanttToolbar({ config, fields, save, settingsOpen, setSettingsOpen, createTask, creating, hasDateField }: {
   config: HyperGanttConfig; fields: HyperField[]; save: (patch: Partial<HyperGanttConfig>) => Promise<void>;
-  settingsOpen: boolean; setSettingsOpen: (open: boolean) => void; createTask: () => void; creating: boolean;
+  settingsOpen: boolean; setSettingsOpen: (open: boolean) => void; createTask: () => void; creating: boolean; hasDateField: boolean;
 }) {
   const items = HyperGanttScales.map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }));
   return <div className="flex h-10 shrink-0 items-center gap-1" data-hyper-gantt-toolbar>
+    {hasDateField && <>
     <GanttNavToday tooltip={null}>Today</GanttNavToday>
     <Select
       value={config.scale}
@@ -31,6 +32,7 @@ export function HyperGanttToolbar({ config, fields, save, settingsOpen, setSetti
     <GanttNavPrev />
     <GanttNavNext />
     <GanttTitle className="ml-1" />
+    </>}
     <div className="ml-auto flex shrink-0 items-center gap-2">
       <HyperGanttSettings
         fields={fields}
@@ -39,13 +41,16 @@ export function HyperGanttToolbar({ config, fields, save, settingsOpen, setSetti
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       />
-      <Button
+      {hasDateField && <Button
+        data-hyper-gantt-create-task
+        variant="default"
         size="sm"
+        className="bg-primary text-primary-foreground transition-colors"
         disabled={creating}
         onClick={createTask}
       >
         <Plus className="size-4" />{creating ? 'Creating…' : 'New task'}
-      </Button>
+      </Button>}
 
     </div>
 
