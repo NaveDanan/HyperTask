@@ -2,12 +2,15 @@ import { HyperAdminDestinationGate } from './admin-governance/HyperAdminDestinat
 import type { HyperInitialDraft } from './conversations/HyperInitialDraftTransfer';
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 
+export interface HyperAppSetupIntent { admin: boolean; provider?: 'arcade' | 'composio' }
 export interface HyperOpenBotSectionContext {
   /** Open an existing conversation by channel ID. */
   openConversation(channelId: string): void;
   /** Start a new conversation with one or more Bots. */
   initialDraftSupported?: boolean;
   startConversation(agentIds: string[], initialDraft?: HyperInitialDraft): Promise<void>;
+  /** Open setup with the current actor's personal or administrator account controls. */
+  openAppConnection?(key: string, intent: HyperAppSetupIntent): void;
   navigate?(destinationId: string, intent?: { path: string }): void;
   initialAgentIds?: readonly string[];
   navigationIntent?: { path: string };

@@ -1,3 +1,8 @@
+import { hyperRefreshPendingConnection } from './connections/HyperAccessRefresh';
+import { hyperConnectionSelectionPath } from './connections/HyperNativeConnections';
+import { hyperContinueAppTask, hyperAppCallIsLatest } from './connections/HyperAppContinuation';
+import { readConnectPrompt, SHOW_APP_ACCESS_TOOL } from './screens-gen/HyperConnectPrompt';
+import { useHyperRoutineNavigation } from './routines/HyperRoutineNavigation';
 import { hyperObserveHomeDraftIdentity } from './onboarding/HyperHomeDraft';
 import { hyperReplyToConversationQuestion, hyperShownQuestionAnswer, hyperHasUnseenActivity } from './conversations/HyperQuestionReply';
 import { turnsLeftRunning, turnsNoLongerAway, turnsGoingAway, turnFinishedAway, onTurnFinishedAway, onTurnsAwayChanged } from './conversations/HyperTurnsAway';
@@ -83,7 +88,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
   const stopEpoch = useRef(0);
   const workingHint = useRef({ busy: channel.busy, rosterSaysWorking }); workingHint.current = { busy: channel.busy, rosterSaysWorking };
   const serverWorking = () => continuation.current || workingHint.current.rosterSaysWorking?.(channel.id) === true || workingHint.current.busy === true || turnsGoingAway(channel.id) > 0;
-  const stopRun = () => { stopEpoch.current++; stopped.current = true; return copilotkit.stopAgent({ agent }); };
+  const stopRun = () => { supersedeAppCards(); stopEpoch.current++; stopped.current = true; return copilotkit.stopAgent({ agent }); };
   const generation = useRef(0);
   const { draft, getDraft, assertDraftCurrent, updateDraft, beginAttachmentSend, restoreQueuedDraft, prepareSubmission } = useHyperConversationDraft(channel.id);
   const { uploadGroup, attachments } = draft;
@@ -188,6 +193,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
   });
   async function sendDraft(draft: { commandIds?: readonly string[]; text: string; attachments: readonly import('./composer').HyperComposerAttachment[] }) {
       if (turns.current.size || agent.isRunning || serverWorking()) throw new Error('This Bot is still working. Wait or stop it first.');
+      supersedeAppCards();
       let answerMessage: { id: string; role: 'user'; content: string } | undefined;
       if (!draft.attachments.length && !draft.commandIds?.length && !/^\s*\//.test(draft.text)) {
         let asked = questions.current.find(question => question.threadId === channel.threadId && (!question.channelId || question.channelId === channel.id));
@@ -236,6 +242,58 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
     });
     return () => registerReceiver(undefined);
   }, [registerReceiver, isReady, serviceReady, restoring, reconnectRequired, channel.active, carryingOn]);
+  const navigation = useHyperRoutineNavigation();
+  const appCardsSuperseded = useRef(new Set<string>());
+  function supersedeAppCards() {
+    for (const message of agent.messages) if (message.role === 'assistant') for (const call of message.toolCalls ?? []) appCardsSuperseded.current.add(call.id);
+  }
+  const appReadiness = useRef({ serviceReady, isReady, restoring, reconnectRequired, modelPending, active: channel.active });
+  appReadiness.current = { serviceReady, isReady, restoring, reconnectRequired, modelPending, active: channel.active };
+  const appRuntime = useRef({ agent, copilotkit, threadId: channel.threadId, botId: channel.agentIds[0] });
+  appRuntime.current = { agent, copilotkit, threadId: channel.threadId, botId: channel.agentIds[0] };
+  function latestAppCard(id: string) {
+    if (appCardsSuperseded.current.has(id) || !hyperAppCallIsLatest(agent.messages, id)) return false;
+    // Only the newest access card may wake this task when several tools were refused together.
+    const cards = agent.messages.flatMap(message => message.role === 'assistant' ? (message.toolCalls ?? []).filter(call => {
+      const result = agent.messages.find(row => row.role === 'tool' && row.toolCallId === call.id);
+      const raw = result && typeof result.content === 'string' ? result.content : '';
+      let decoded = raw;
+      try { const value: unknown = JSON.parse(raw); if (typeof value === 'string') decoded = value; } catch { /* Plain result. */ }
+      return (call.function.name === SHOW_APP_ACCESS_TOOL || hyperToolOutcome(raw, false) === 'refused') && !!readConnectPrompt(decoded.trim().replace(/^Refused\.\s+/, ''));
+    }) : []);
+    return cards.at(-1)?.id === id;
+  }
+  function appContinuationState(id: string) {
+    const ready = appReadiness.current, draft = getDraft();
+    return {
+      current: mounted.current && navigation?.isCurrentNavigation?.() !== false && appRuntime.current.agent === agent && appRuntime.current.copilotkit === copilotkit && appRuntime.current.threadId === channel.threadId && appRuntime.current.botId === channel.agentIds[0],
+      ready: ready.serviceReady && ready.isReady && ready.active && !ready.restoring && !ready.reconnectRequired && !ready.modelPending && !modelUpdating.current,
+      busy: !!turns.current.size || agent.isRunning || serverWorking(),
+      latest: latestAppCard(id),
+      hasDraft: !!draft.text.trim() || !!draft.attachments.length || !!draft.commandIds?.length || !!draft.retry || !!draft.activeAttachments,
+      hasQuestion: questions.current.some(question => question.threadId === channel.threadId) || agent.pendingInterrupts.some(interrupt => !!interrupt.metadata?.openbotWaiting),
+      assertOwner: assertDraftCurrent,
+    };
+  }
+  async function continueAppTask(id: string) {
+    return hyperContinueAppTask(() => appContinuationState(id), async () => {
+      appCardsSuperseded.current.add(id);
+      const turn = {}; turns.current.add(turn); setSending(true); setError(undefined); stopped.current = false;
+      const before = new Set(agent.messages.map(message => message.id));
+      void request(`/api/channels/${encodeURIComponent(channel.id)}/busy`, 'POST', { busy: true }).catch(() => {});
+      try {
+        // The existing channel agent/thread and CopilotKit core receive the unchanged transcript.
+        await hyperRunWithRecovery(agent, () => hyperWhileObserved(agent, () => copilotkit.runAgent({ agent })), () => stopped.current);
+      } catch (error) { if (error instanceof HyperRunConnectionError) setReconnectRequired(true); setError('The app task could not continue. Reopen the conversation to retry.'); throw error; }
+      finally {
+        turns.current.delete(turn); turnsNoLongerAway(channel.id, [turn]);
+        const reply = agent.messages.findLast(message => message.role === 'assistant' && !before.has(message.id) && hyperMessageContent(message.content).text.trim());
+        if (reply) void request(`/api/channels/${encodeURIComponent(channel.id)}/activity`, 'POST', { text: hyperMessageContent(reply.content).text, agentId: channel.agentIds[0], at: new Date().toISOString() }).catch(() => {});
+        void request(`/api/channels/${encodeURIComponent(channel.id)}/busy`, 'POST', { busy: false }).catch(() => {});
+        if (!mounted.current) turnFinishedAway(channel.id); else setSending(false);
+      }
+    });
+  }
   // The existing workspace support bubble occupies the bottom-right corner.
   // Keep the composer controls above it, including in the minimum-size window.
   return <div className="flex h-full min-h-0 flex-col pb-12">
@@ -250,16 +308,16 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
 
     } }); if (epoch !== stopEpoch.current) throw new Error('The user stopped this task before it completed.'); return answer; }} />
     <HyperDeliveryControls channelId={channel.id} bots={channel.agentIds.map(id => ({ id, name: id }))} enabled={serviceReady} />
-    <HyperTranscript renderTool={tool => tool.label === 'run_subagent' ? <HyperToolMessage {...tool}><HyperSubagentSteps toolCallId={tool.id} parentThreadId={channel.threadId} agentId={channel.agentIds[0]} result={tool.result} live={tool.status === 'running'} /></HyperToolMessage> : <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} ask={!running && serviceReady && !restoring && !reconnectRequired ? text => { void sendDraft({ text, attachments: [] }).catch(() => setError('The follow-up could not be sent.')); } : undefined} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
+    <HyperTranscript renderTool={tool => tool.label === 'run_subagent' ? <HyperToolMessage {...tool}><HyperSubagentSteps toolCallId={tool.id} parentThreadId={channel.threadId} agentId={channel.agentIds[0]} result={tool.result} live={tool.status === 'running'} /></HyperToolMessage> : <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} appCarryOn={{ key: `${channel.id}:${channel.threadId}:${hyperRuntimeBotOf(agent) ?? ''}:${tool.id}`, latest: () => { const state = appContinuationState(tool.id); return state.current && state.ready && !state.busy && state.latest && !state.hasDraft && !state.hasQuestion; }, resume: () => continueAppTask(tool.id) }} ask={!running && serviceReady && !restoring && !reconnectRequired ? text => { void sendDraft({ text, attachments: [] }).catch(() => setError('The follow-up could not be sent.')); } : undefined} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     {!!agent.messages.length && <HyperNotifyPrompt />}
     <HyperConversationActions onQuestions={value => { questions.current = value; }} onCarryOnChange={value => { continuation.current = value; setCarryingOn(value); }} threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
-    <HyperComposer activeAttachmentIds={draft.activeAttachments?.ids} onRestoreQueued={restoreQueuedDraft} commandIds={draft.commandIds} onCommandIdsChange={ids => updateDraft(current => ({ ...current, commandIds: ids }))} commands={commands} onDiscardAttachment={id => { if (!getDraft().activeAttachments?.ids.includes(id)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }} className="m-4" value={draft.text} onTextChange={change => { updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} getAttachmentCount={() => getDraft().attachments.length} onRemoveAttachment={id => { if (getDraft().activeAttachments?.ids.includes(id)) return; setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => hyperUploadDraftFiles(files, async file => {
+    <HyperComposer activeAttachmentIds={draft.activeAttachments?.ids} onRestoreQueued={(...args) => { supersedeAppCards(); return restoreQueuedDraft(...args); }} commandIds={draft.commandIds} onCommandIdsChange={ids => { supersedeAppCards(); updateDraft(current => ({ ...current, commandIds: ids })); }} commands={commands} onDiscardAttachment={id => { if (!getDraft().activeAttachments?.ids.includes(id)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }} className="m-4" value={draft.text} onTextChange={change => { supersedeAppCards(); updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} getAttachmentCount={() => getDraft().attachments.length} onRemoveAttachment={id => { if (getDraft().activeAttachments?.ids.includes(id)) return; setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => { supersedeAppCards(); return hyperUploadDraftFiles(files, async file => {
       const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
       const response = await hyperOpenBotFetch(`${HYPER_OPENBOT_ORIGIN}/api/channels/${channel.id}/attachments`, { method: 'POST', body: form });
       const saved = await response.json();
       if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error(saved.error ?? 'Attachment upload failed');
       return { id: saved.id, name: saved.name, mimeType: saved.mimeType, status: 'ready' };
-    }, setAttachments, id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }, assertDraftCurrent)} modelPicker={modelAllowed && models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
+    }, setAttachments, id => { void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }, assertDraftCurrent); }} modelPicker={modelAllowed && models.length ? { models, value: pick, disabled: running || modelPending, onChange: next => {
       if (serverWorking() || turns.current.size || agent.isRunning || modelScope.current !== modelOwner || !modelOwner.active || !modelOwner.allowed || catalogueRef.current?.choosable !== true || modelUpdating.current) return;
       const sequence = modelOwner.sequence;
       const valid = () => modelScope.current === modelOwner && modelOwner.active && modelOwner.allowed && sequence === modelOwner.sequence;
@@ -299,6 +357,7 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
     const bridge = window.appflowy.hyperOpenBot as typeof window.appflowy.hyperOpenBot & HyperNativeConnectionBridge;
     return bridge.onNativeDestination?.(destination => {
       if (!serviceRef.current) return;
+      if (destination?.kind === 'connections' && destination.confirmation === 'native-confirmed' && hyperRefreshPendingConnection()) return;
       hyperReceiveConnectionReturn(destination, (id, intent) => {
         cancelStart(); selectionVersion.current++; setNavigationIntent(intent); setScreen(id); setChannel(undefined);
       }, () => setConnectionReturnRevision(value => value + 1));
@@ -403,7 +462,7 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
   useEffect(() => { if (!palette || !serviceReady) return; let current = true; void request<{ agents: { id: string; name: string }[] }>('/api/agents').then(value => { if (current) setPaletteBots(value.agents); }).catch(() => {}); return () => { current = false; }; }, [palette, serviceReady]);
   const section = HYPER_OPENBOT_SECTIONS.find(each => each.id === screen);
   const contextVersion = selectionVersion.current;
-  const context: HyperOpenBotSectionContext = { isCurrentNavigation: () => serviceRef.current && selectionVersion.current === contextVersion, openConversation: id => void openAny(id), initialDraftSupported: true, startConversation: start, initialAgentIds: newRecipients, navigationIntent, navigate: (id, intent) => { if (!serviceRef.current) return; cancelStart(); selectionVersion.current++; const resolved = hyperConversationDestination(id, intent); const destination = resolved.sectionId; if (tabs.some(tab => tab.id === destination)) { if (destination === 'new-conversation') freshComposition(); setNavigationIntent(resolved.path ? { path: resolved.path } : undefined); setScreen(destination); setChannel(undefined); } else { setNavigationIntent(current => current?.path === resolved.path ? current : resolved.path ? { path: resolved.path } : undefined); setError(`The ${destination} destination has not been registered by its owning area yet.`); } } };
+  const context: HyperOpenBotSectionContext = { openAppConnection: (key, intent) => { if (serviceRef.current && selectionVersion.current === contextVersion) context.navigate?.(intent.admin ? 'admin-plugins' : 'connections', { path: hyperConnectionSelectionPath(intent.provider ? { page: 'browse', provider: intent.provider } : { page: 'app', key }, intent.admin) }); }, isCurrentNavigation: () => serviceRef.current && selectionVersion.current === contextVersion, openConversation: id => void openAny(id), initialDraftSupported: true, startConversation: start, initialAgentIds: newRecipients, navigationIntent, navigate: (id, intent) => { if (!serviceRef.current) return; cancelStart(); selectionVersion.current++; const resolved = hyperConversationDestination(id, intent); const destination = resolved.sectionId; if (tabs.some(tab => tab.id === destination)) { if (destination === 'new-conversation') freshComposition(); setNavigationIntent(resolved.path ? { path: resolved.path } : undefined); setScreen(destination); setChannel(undefined); } else { setNavigationIntent(current => current?.path === resolved.path ? current : resolved.path ? { path: resolved.path } : undefined); setError(`The ${destination} destination has not been registered by its owning area yet.`); } } };
   return <HyperRoutineNavigationProvider context={context}><div className="flex h-full min-h-0 flex-col bg-background text-foreground">
     <HyperRuntimeTools resolveFacts={hyperResolveRuntimeFacts} />
     <HyperGalleryTools />

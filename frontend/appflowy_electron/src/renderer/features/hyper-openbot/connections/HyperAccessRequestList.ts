@@ -1,3 +1,4 @@
+import { hyperSubscribeAppAccess } from './HyperAccessRefresh';
 import { useEffect, useRef, useState } from 'react';
 
 /** Rows, readbacks and decisions belong to one mounted app selection. */
@@ -32,6 +33,7 @@ export function useHyperAccessRequestList<Request extends { id: string }>(
     const timer = setInterval(() => void load(), 10000);
     return () => { scope.active = false; scope.sequence++; scope.requests = undefined; clearInterval(timer); };
   }, [target]);
+  useEffect(() => hyperSubscribeAppAccess(() => { if (isCurrent() && !scope.busy) { scope.sequence++; void load(); } }), [target]);
   async function decide(request: Request, action: () => Promise<unknown>, run: (action: () => Promise<void>) => Promise<void>) {
     const allowed = () => isCurrent() && !!scope.requests?.includes(request);
     if (scope.busy || !allowed()) return;

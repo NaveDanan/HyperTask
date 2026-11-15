@@ -33,10 +33,11 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
   const [batchGrant, setBatchGrant] = useState(true);
   const [batchApprovals, setBatchApprovals] = useState<HyperBatchApprovals>();
   const [progress, setProgress] = useState('');
-  useEffect(() => { let active = true; hyperLoadPluginBots().then(value => { if (active) setBots(value); }).catch(() => { if (active) setError('Could not load Bots. Refresh this app to retry.'); }); return () => { active = false; }; }, [server.id]);
+  useEffect(() => { let active = true; Promise.all([hyperLoadPluginBots(), hyperOpenBotRequest<{ edition: string }>('/api/capabilities')]).then(([value, capabilities]) => { if (active) { if (!['personal', 'team'].includes(capabilities.edition)) throw new Error('Edition unavailable'); setBots(value); setEdition(capabilities.edition); } }).catch(() => { if (active) setError('Could not load Bots. Refresh this app to retry.'); }); return () => { active = false; }; }, [server.id]);
+  const [edition, setEdition] = useState<string>();
   const chosenBot = selection?.page === 'bot' ? selection.agentId : undefined;
   const chosenTool = selection?.page === 'tool' ? selection.tool : undefined;
-  const scopeKey = JSON.stringify([server.id, server.accountMode, selection?.page, chosenBot, chosenTool, admin, callbackAllowed]);
+  const scopeKey = JSON.stringify([server.id, server.accountMode, selection?.page, chosenBot, chosenTool, admin, callbackAllowed, edition]);
   const currentScope = useRef<HyperGrantScope>({ key: scopeKey, active: true, operation: 0 });
   if (currentScope.current.key !== scopeKey) currentScope.current = { key: scopeKey, active: true, operation: 0 };
   const scope = currentScope.current, operation = scope.operation;
@@ -69,11 +70,11 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
   }
   const tools = server.tools.filter(t => !chosenTool || t.name === chosenTool);
   const reads = server.tools.filter(tool => tool.effect === 'read');
-  const alwaysOn = server.id === 'routines';
+  const alwaysOn = server.id === 'routines' || edition === 'personal';
   const holders = new Set([...server.tools.flatMap(t => t.grantedTo ?? []), ...(server.withdrawn?.flatMap(t => t.grantedTo) ?? [])]);
   const roster: HyperPluginBot[] = [...(bots ?? []).filter(b => !b.hidden || holders.has(b.id)), ...[...holders].filter(id => !bots?.some(b => b.id === id)).map(id => ({ id, name: 'Bot no longer here', hidden: true }))];
   async function change(ref: string, bot: string, granted: boolean) {
-    if (busy || !valid(operation)) return;
+    if (edition === 'personal' || busy || !valid(operation)) return;
     const ticket = ++scope.operation; setPending(undefined); setBatchApprovals(undefined); setError('');
     await execute(ticket, async () => {
       if (granted && server.accountMode === 'shared') {
@@ -133,10 +134,11 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
       if (valid(pending.operation)) setPending(undefined);
     });
   }
+  if (edition === 'personal') return <div className="space-y-3"><h2>Bot and tool access</h2><p>Every app you connect is available to every Bot. Disconnect or turn off this app in Connections to take it from all Bots.</p>{tools.map(tool => <p key={tool.name}>{tool.name} · {tool.description}</p>)}</div>;
   return <div className="space-y-3"><h2 className="font-medium">Bot and tool access</h2>{error && <p role="alert" className="text-destructive">{error}</p>}{!bots && !error && <p role="status">Loading Bots…</p>}
     {!chosenBot && !chosenTool && roster.map(bot => <Button variant="outline" key={bot.id} onClick={() => go({ page: 'bot', key: server.id, agentId: bot.id })}>{bot.name}{bot.hidden ? ' · hidden' : ''}</Button>)}
     {(chosenBot || chosenTool) && <Button variant="outline" onClick={() => go({ page: 'app', key: server.id })}>Back to app</Button>}
-    {chosenBot && <HyperAppAccessAction agentId={chosenBot} app={server.id} admin={admin} onOpenConnection={key => go({ page: 'app', key })} />}{chosenBot && <h3>{bots?.find(b => b.id === chosenBot)?.name ?? chosenBot}</h3>}
+    {chosenBot && <HyperAppAccessAction agentId={chosenBot} app={server.id} admin={admin} onSettled={() => { if (valid(operation)) void run(async () => {}); }} onOpenConnection={key => go({ page: 'app', key })} />}{chosenBot && <h3>{bots?.find(b => b.id === chosenBot)?.name ?? chosenBot}</h3>}
     {chosenBot && !alwaysOn && <Button disabled={busy || !bots} onClick={() => void readBulk()}>Grant every read-only action · {reads.length}</Button>}{progress && <p role="status">Granting {progress}</p>}
     {!alwaysOn && <Button disabled={busy || !bots} variant="outline" onClick={() => { if (!valid(operation)) return; invalidate(); setPending(undefined); setBatch(true); setBatchBots([]); setBatchTools([]); setBatchApprovals(undefined); }}>Choose Bots and tools in a batch</Button>}
     {batch && <div role="dialog" aria-label="Grant tools to Bots" className="space-y-3 rounded-lg border border-border p-4"><h3>Choose Bots and tools</h3><p>Each change is saved separately. If a request fails, earlier changes remain and the current server state is reloaded.</p>

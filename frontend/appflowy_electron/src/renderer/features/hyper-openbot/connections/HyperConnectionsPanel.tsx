@@ -1,4 +1,5 @@
 // Adapted from CopilotKit OpenBot, MIT. See REUSE.md and ../LICENSE.
+import { hyperInvalidateAppAccess, hyperSubscribeAppAccess } from './HyperAccessRefresh';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ExternalLink, Plug, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -94,6 +95,7 @@ export function HyperConnectionsPanel({ admin = false, selection, onSelectionCha
     catch (e) { if (request === sequence.current) setError('Could not load connections. Check your permissions and retry.'); }
     finally { if (request === sequence.current) setLoading(false); }
   }, [admin]);
+  useEffect(() => hyperSubscribeAppAccess(() => { void load(false); }), [load]);
   useEffect(() => { void load(); return () => { sequence.current++; }; }, [load]);
   useEffect(() => { const refresh = () => { const confirm = pendingReturn.current; pendingReturn.current = false; void load(confirm); }; window.addEventListener('focus', refresh); return () => window.removeEventListener('focus', refresh); }, [load]);
   async function action(run: () => Promise<void>) {
@@ -101,7 +103,7 @@ export function HyperConnectionsPanel({ admin = false, selection, onSelectionCha
     setBusy(true); setError(''); setNotice('');
     let failure = '';
     try { await run(); } catch (e) { failure = 'The connection request failed or was refused. Current server state has been reloaded. Retype any secret to retry.'; }
-    finally { await load(false); if (failure) setError(failure); setBusy(false); }
+    finally { hyperInvalidateAppAccess(); await load(false); if (failure) setError(failure); setBusy(false); }
   }
   async function connect(id: string, another = false) {
     const result = await hyperStartConnection(id, admin, another);

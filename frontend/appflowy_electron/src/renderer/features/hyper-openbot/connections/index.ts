@@ -5,3 +5,5 @@ export { HyperConnectionSecrets, type HyperConnectionSecretsProps } from './Hype
 export * from './HyperAppAccessApi';
 export { HyperAppAccessAction, HyperAppAccessRequests, type HyperAppAccessActionProps } from './HyperAppAccessAction';
 export { hyperReceiveConnectionReturn, type HyperNativeConnectionReturn, type HyperNativeConnectionBridge } from './HyperNativeConnections';
+
+export { hyperInvalidateAppAccess, hyperSubscribeAppAccess } from './HyperAccessRefresh';
