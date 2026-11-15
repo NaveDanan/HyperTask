@@ -111,10 +111,14 @@ Await actions and show errors in the view. Do not report success before the prom
   Duplication keeps this database linked and copies extra keys, field settings, layout,
   group-by configuration, filter trees and sorts; the core assigns new filter/sort IDs.
   `updateViewExtra(patch)` merges per-view custom settings through the existing extra helper.
-  If `UpdateView` returns an empty acknowledgement, the known view with the merged extra is kept.
+  The core `UpdateView` event returns an empty acknowledgement for every layout; its generated
+  wrapper returns `void`. The view service follows successful updates with `GetView`, preserving
+  its `ViewPB` result contract and the persisted id/extra. Creation with `extra` and linked
+  `database_id` metadata both return a full `ViewPB` from `CreateView`.
   `hyperLayout(view)` resolves Grid/Board/Calendar/Gantt; `hyperCoreLayout(layout)` maps
   product layouts to **folder** `ViewLayoutPB` (database `DatabaseLayoutPB` has different
-  numeric values). Gantt creation writes its extra marker before announcing the current view.
+  numeric values). Gantt creation writes and re-reads its extra marker before announcing the
+  current view.
   Switching uses the existing `tabsActions.openView(view)`.
 
 ## Notifications and performance
@@ -207,9 +211,13 @@ It removes only the new database's default sample rows/fields. For unit tests, p
 adapter; no real core or filesystem is required by the seed module.
 
 Run `npm run harness:smoke` for an opt-in live core test (outside the ordinary mocked suite).
-It seeds 48 rows, edits a title, moves a board card, and moves a calendar event while preserving
-its range. It writes `.cache/hyper-views/sample-views.json`, `live-smoke.json` and `live-core.log`
-at the repo root. The web harness exposes `window.hyperViews.ready/seed/open/theme` only when
+It uses a new scratch support directory on every run (or an empty `HYPER_SMOKE_SUPPORT`),
+checks core responses for all layouts with/without linked metadata and Gantt extra, and exercises
+both sidebar add-page actions and the tab-bar linked-view action for Grid/Board/Calendar/Gantt.
+It seeds 48 rows, checks persisted Gantt ids/layout and shared linked rows, edits a title, moves
+a board card, and moves a calendar event while preserving its range. It writes
+`.cache/hyper-views/sample-views.json`, `live-smoke.json`, `live-core.log` and
+`live-view-replies.json` at the repo root. The web harness exposes `window.hyperViews.ready/seed/open/theme` only when
 its injected shim marks the page; native Electron startup never loads this development API.
 
 Exact Linux build, seed and PNG commands and the verification record are in the repo-root

@@ -62,7 +62,7 @@ export const ViewBackendService = {
     });
     if (!result.ok || hyperLayout !== 'gantt') return result;
     const extra = mergeViewExtra(result.value, { hyper_layout: 'gantt' });
-    const updated = await FolderEventUpdateView({ viewId: result.value.id, oneOfExtra: { case: 'extra', value: extra } });
+    const updated = await ViewBackendService.updateView({ viewId: result.value.id, extra });
     if (!updated.ok) return updated;
     if (openAfterCreate) {
       const opened = await FolderEventSetLatestView({ value: result.value.id });
@@ -119,13 +119,15 @@ export const ViewBackendService = {
     return FolderEventToggleFavorite({ items: [viewId] });
   },
 
-  updateView({ viewId, name, isFavorite, extra }: { viewId: string; name?: string; isFavorite?: boolean; extra?: string }) {
-    return FolderEventUpdateView({
+  /** UpdateView only acknowledges success; keep this service's ViewPB contract with GetView. */
+  async updateView({ viewId, name, isFavorite, extra }: { viewId: string; name?: string; isFavorite?: boolean; extra?: string }): Promise<FlowyResult<ViewPB>> {
+    const result = await FolderEventUpdateView({
       viewId,
       ...(name !== undefined ? { oneOfName: { case: 'name', value: name } } : null),
       ...(isFavorite !== undefined ? { oneOfIsFavorite: { case: 'isFavorite', value: isFavorite } } : null),
       ...(extra !== undefined ? { oneOfExtra: { case: 'extra', value: extra } } : null),
     });
+    return result.ok ? FolderEventGetView({ value: viewId }) : result;
   },
 
   /** updateViewIcon: a replaced custom (uploaded) icon file is deleted. */
