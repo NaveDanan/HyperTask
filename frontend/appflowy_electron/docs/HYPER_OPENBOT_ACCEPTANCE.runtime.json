@@ -6,12 +6,13 @@
     "state": "in_progress_not_accepted",
     "ownerInstruction": "Finish parity, resolve reviews and merge before the next stage. Unfinished workflows are not accepted as complete.",
     "integratedAreas": ["vault", "linux_window_controls_and_sidebar", "settings", "onboarding", "approvals_inbox", "conversation_draft_voice_delivery_units", "computer_browser", "admin_governance", "memory_learning"],
-    "pendingAreas": ["remaining_memory_and_admin_destinations", "native_verification", "final_code_and_security_reviews"],
+    "pendingAreas": ["human_tailscale_ssh_reauthentication", "native_verification", "final_code_and_security_reviews"],
     "sourceBranchesIntegrated": ["conversations", "routines", "memory", "bot_tabs", "approvals_inbox", "vault", "computer_browser", "interactive_screens", "settings", "admin_governance", "admin_platform", "onboarding", "window_sidebar"],
-    "parentIntegrationPending": ["standalone Memory-source detail and deeper admin destination consumers"],
+    "parentIntegrationPending": [],
     "environmentLimits": ["Tauri-only local updates, container measurements and speech callbacks are not present in the remote Electron architecture; managed-service controls use the existing closed HyperTask API"],
-    "repositoryValidation": {"node": "24.18.1", "passedTests": 1050, "skippedTests": 1, "realCoreTestsRan": 4, "smokeSafeguardsPassed": 13, "typecheck": "pass", "build": "pass"},
-    "nativeVerification": "pending_for_new_parity_ui"
+    "repositoryValidation": {"node": "24.18.1", "passedTests": 1059, "skippedTests": 1, "realCoreTestsRan": 4, "smokeSafeguardsPassed": 13, "typecheck": "pass", "build": "pass"},
+    "nativeVerification": "blocked_by_human_tailscale_ssh_check",
+    "failedNativeAttempt": {"buildHead": "878987585c7f78b3fd21acde6e7b028c6a34d7f0", "actualElectron": true, "phase": "before", "result": "failed_readiness_deadline", "rendererExceptions": 0, "countsAsAcceptance": false, "cause": "fixed backend SSH requires additional human Tailscale authentication"}
   },
   "branch": "hyper/openbot-acceptance",
   "baseMerge": "98f0b91267dfe72c78b3be1049778ae0dcf2622c",

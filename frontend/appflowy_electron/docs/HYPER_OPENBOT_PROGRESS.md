@@ -154,6 +154,14 @@ Documents and datasets still use pre-existing placeholder editing bodies. Their 
 - Integrated `fff0846` destination selections, authoritative connection-return refresh, verified access cards and versioned Home draft ownership. Standalone Memory-source and deeper admin destinations remain with the same integration specialist.
 - Validation at this checkpoint: 1050 tests pass with one optional skip, four real-core tests ran, typecheck/build pass on Node 24.18.1, and the existing thirteen smoke safeguards remain passing. Integrated native OS dialog/vendor consent and final-head reviews are still required before merge.
 
+### Source completion and native acceptance blocker
+
+- Integrated `151ffdb`: standalone Memory-source list/detail/actions and the remaining admin People, Permissions, Approvals, Boundaries, Identity, Audit, What-if, Enterprise and Credentials paths. No known source-integration interface remains blocked.
+- Combined validation: 1059 tests pass with one optional skip, four real-core tests ran, typecheck/build pass on Node 24.18.1, and thirteen smoke safeguards pass.
+- Launched the actual Electron app from `8789875` with the retained disposable profile and private inherited pipes. The before phase failed because AI readiness did not recover; no renderer exceptions were recorded. This artifact is a failed attempt, not acceptance.
+- The same fixed backend check encountered Tailscale SSH's additional human authentication requirement. No alternate route, check bypass, identity reset or billing change was attempted. A secure sign-in request timed out without an answer. Native streaming/restart/full-UI acceptance remains blocked until the account holder reauthenticates.
+- Standards and Spec review compare the non-empty diff with PR #14's fixed main base `98f0b91267dfe72c78b3be1049778ae0dcf2622c`. The supplied GitHub epic/issues and later parity instructions remain the spec. Native acceptance, final code/security reviews and owner completion gates still precede merge.
+
 ## Queue
 
 | Issue | Deliverable | State |
