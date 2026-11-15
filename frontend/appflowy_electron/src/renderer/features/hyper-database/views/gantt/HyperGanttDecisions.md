@@ -27,3 +27,13 @@ Commit author/committer use the foundation commit’s existing `HyperTask implem
 - Reverse-edge resize is still bounded by the vendor before validation. A genuine crossing gesture was captured as a clamped 64px valid ghost, then cancelled with Escape; an `end < start` destructive ghost cannot be captured without changing the vendor or inventing a state. No such state was manufactured.
 - A linked Grid view capture was added and its core date cells were checked against Gantt. The Grid renderer in this worktree is still the foundation placeholder, so a visible Grid date cell remains outside the allowed scope. After-reload date and Quarter/zoom captures, and Settings/New task theme pairs, are included.
 - Per the orchestrator’s image-limit instruction, this round inspects no more than eight screenshots directly. Remaining captures are checked by timestamps, dimensions, browser style assertions, geometry and live core readbacks.
+
+## Design review round 2
+
+The reported grey now-line (r1-#4) does not reproduce at `acc4314578dbbd3d4463c94105f5097005a92e4b`. Pixel inspection of the exact reviewed `unscheduled-light.png` finds `(231, 0, 11)` at x=1059 for y=255, 300, 560, 610, 650, 700 and 810. The corresponding dark capture has `(255, 100, 103)` at the same coordinates. Both are red throughout the visible line, including the hovered row outside the schedule hint.
+
+The live harness reproduces the pointer at (1070, 626) on “Follow up on feedback”, with “Click to schedule” visible. DevTools reports the now-line's background as the destructive token, no background image, and z-index 20. No separate grey guide line overlaps it. Refreshed light/dark hover captures also pass a rendered-pixel check. This is a verification finding; there is no reproduced runtime defect to justify a stylesheet or vendor change. The pixel proof is saved under the review scratch directory as `gantt-r2-hover-pixel-proof.json`.
+
+Typecheck, the full test suite (1,652 passed, 1 skipped), and the production build pass with the supplied Rust core. This pass inspects four images, within the five-image limit. The shared browser's 2x hover captures are saved at the brief's 1440×900 size using nearest-neighbour downsampling; rendered pixels are checked again after saving.
+
+Remaining limits are the vendor's reverse-resize clamp, which prevents an invalid reversed-span ghost, and visible Grid date-cell evidence, which requires the Grid PR. Both remain outside this view's permitted scope.
