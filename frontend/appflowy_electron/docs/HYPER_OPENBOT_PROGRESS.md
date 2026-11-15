@@ -265,6 +265,14 @@ The notified check-in finding/review belonged to older `b2f403d` and was already
 
 Twelve regressions were red before correction; fourteen further guards pass. Full validation: 1280 tests, one optional skip, four real-core tests, typecheck/build and thirteen safeguards. Existing direct-call transcript fixtures were extended for the new navigation hook without removing identity checks. The owned app runs `cd4c7aa` with stores retained, not a native acceptance pass. Latest ledgers fully verified four of nine assigned files; five remain incomplete and eight known incomplete contracts are retained. Coverage carries 93 byte-identical inspected files of 409, leaving 316. Fresh exact-head reviews, complete contract coverage, account-holder Tailscale authentication, native workflows and owner acceptance still block merge and next-stage work.
 
+### First grants, addressed groups and inline creation
+
+`6150f94d637b1bf504ac5d1fb728bee7e7e161f6` corrects five review-05 Spec findings. First unheld shared-app grants require explicit confirmation of server-resolved exposure with no fabricated client approval; held-app grants retain each Bot's proposed membership. New-group first messages preserve the selected addressed Bot through transfer and native sending. Inline Bot creation keeps composition/files and appends the new recipient, rejecting stale completion. Pinned refused result envelopes now render verified app-access cards with authenticated actor-derived administrator actions.
+
+Eight regressions were red before correction; eleven compatibility guards also pass. Validation on Node 24.18.1 passes 1299 tests with one optional skip, four real-core tests, typecheck/build and thirteen safeguards. Review-05 assigned seven files, fully verified one and left six incomplete. The verified API changed in this correction. Current reconciliation carries 92 byte-identical inspected files of 409, leaving 317 and eleven known incomplete contracts. No whole-module, native or owner clearance follows from these counts.
+
+At this checkpoint the source commit is local and one commit ahead of the remote `192a040`; publication and fresh exact-head reviews follow the evidence commit. The worktree was clean before evidence edits. The retained disposable app still runs `cd4c7aa`. A fresh SSH check again reported the required human Tailscale authentication. The owner requested continued work using Codex GPT-6.1 Sol high effort and Fast mode, exposed by the provider as the priority tier. OpenCode Sol/Terra high are authorized fallbacks only if the Codex workers fail. Original Intelligence, owner binding, protocol/data paths and review billing/ignores remain unchanged. Complete contract review, native/vendor/credential verification and owner acceptance still precede merge.
+
 ## Queue
 
 | Issue | Deliverable | State |
