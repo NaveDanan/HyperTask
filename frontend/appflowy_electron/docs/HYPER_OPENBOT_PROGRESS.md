@@ -162,6 +162,21 @@ Documents and datasets still use pre-existing placeholder editing bodies. Their 
 - The same fixed backend check encountered Tailscale SSH's additional human authentication requirement. No alternate route, check bypass, identity reset or billing change was attempted. A secure sign-in request timed out without an answer. Native streaming/restart/full-UI acceptance remains blocked until the account holder reauthenticates.
 - Standards and Spec review compare the non-empty diff with PR #14's fixed main base `98f0b91267dfe72c78b3be1049778ae0dcf2622c`. The supplied GitHub epic/issues and later parity instructions remain the spec. Native acceptance, final code/security reviews and owner completion gates still precede merge.
 
+### Independent Standards and Spec review
+
+Standards found three design-rule violations and one duplication heuristic at `b2148f9`. `86caf78` replaces status colours with semantic tokens, uses the supported text/radius scale and Tailwind chart heights, and makes both Playground destinations use one editor/API implementation.
+
+Spec found three source defects and the unresolved native-acceptance requirement. `cd8dc33` removes generated/revealed trigger keys from renderer state and IPC response bytes. Trigger create/reveal/rotate routes require native confirmation; main-owned dialogs deliver keys and explicit clipboard choices. Failed response text is sanitized, and cancellation/signout stops mutation. Shared-account approvals retain server-proposed members without arbitrary ID/group editors. Legacy Bot Access selects Apps. Regression tests cover these fixes.
+
+Combined validation at `cd8dc33`: 1070 tests pass with one optional skip, four real-core tests ran, typecheck/build and 13 smoke safeguards pass. The owned disposable app was relaunched on that source with its stores retained. No real keys or vendor sign-ins were exercised. Fresh corrected-source Standards/Spec and exact-head Codex code/security reviews remain required. Native acceptance is still blocked by the human Tailscale SSH check, and owner acceptance remains outstanding. Neither review axis clears those gates.
+
+### Later Codex findings and corrected source
+
+- `7a3b91b` fixes seven later findings from reviews of `ece4710` and `b2148f9`: Admin CSV exports now report the server cap; overlapping component permission/source checks cannot restore revoked content; Settings Activity survives workspace callback changes; file overwrite confirmation is bound to the read path and confirmed contents; connection forms survive nested destination changes; SMS challenges are scoped to owner/channel/Bot and late responses are discarded.
+- Group chat now matches pinned upstream, whose Composer has no queue handler: text remains editable mid-turn, but submission waits. Single-Bot queuing remains available. This prevents queued follow-ups from losing the selected recipient without adding unsupported group-queue semantics.
+- Seven focused regressions failed before the fixes. Ten focused cases and the full suite now pass: 1080 tests, one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The disposable native app was relaunched on `7a3b91b` with its profile and stores retained.
+- A fresh secure Tailscale sign-in request timed out. An independent SSH recheck still requires the account-holder check. No native smoke was repeated against that unresolved prerequisite. Native verification, fresh corrected-source Standards/Spec review, exact-head Codex code/security receipts and owner acceptance still block merge.
+
 ## Queue
 
 | Issue | Deliverable | State |
