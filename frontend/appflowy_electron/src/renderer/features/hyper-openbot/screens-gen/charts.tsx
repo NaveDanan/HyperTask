@@ -234,7 +234,7 @@ function Legend({ items }: { items: { label: string; colour: string }[] }) {
       {HyperbyPosition(items).map(({ item, key }) => (
         <li className="flex items-center gap-1.5 text-xs" key={key}>
           <span
-            className="size-2 shrink-0 rounded-[3px]"
+            className="size-2 shrink-0 rounded-md"
             style={{ background: item.colour }}
           />
           <span className="text-muted-foreground">{item.label}</span>
@@ -493,7 +493,7 @@ export function HyperPieChartCard({
                   wrap={false}
                 >
                   <span
-                    className="size-2.5 shrink-0 rounded-[3px]"
+                    className="size-2.5 shrink-0 rounded-md"
                     style={{ background: slice.colour }}
                   />
                   <span className="min-w-0 flex-1 truncate">{slice.label}</span>
