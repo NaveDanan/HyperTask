@@ -3,7 +3,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { readFileSync } from 'node:fs';
 import { HyperPluginGrants } from './connections/HyperPluginGrants';
 import { HyperConnectionsPanel } from './connections/HyperConnectionsPanel';
-import HyperMemorySection from './memory/HyperMemorySection';
+import HyperMemorySection, { HyperBotMemoryTab } from './memory/HyperMemorySection';
 import { HyperSkillsPanel } from './skills/HyperSkillsPanel';
 import HyperNativeSkills from './skills/HyperNativeSkills';
 import { HyperHomeComposer } from './onboarding/HyperHomeComposer';
@@ -985,4 +985,15 @@ it('same-view native new-conversation navigation also resets its composition and
   section.props.context.navigate('new-conversation'); tree = render(HyperOpenBotWorkspace, props);
   expect(hyperComposition(tree)!.key).not.toBe(before);
   expect(find(tree, element => 'path' in element.props && element.props.context?.initialDraftSupported)!.props.context.initialAgentIds).toEqual([]);
+});
+it('locks source-creation fields while the submitted source is being added', async () => {
+  const resource = (path: string, key: string | undefined, data: unknown) => [data, '', false, 0, `${path}:${key ?? ''}`];
+  const tab = HyperBotMemoryTab({ agentId: 'source-bot' }) as ReactElement<any>;
+  const states = [...resource('/api/capabilities', undefined, { edition: 'team' }), ...resource('/api/memory/sources', 'sources', []),
+    ...resource('/api/memory/sources/available/source-bot', 'tools', [{ ref: 'app/read', title: 'Read app', inputSchema: { properties: { limit: { type: 'integer' } } } }]), false, '', 'app/read', 'Source', { limit: '5' }];
+  const component = tab.type as (props: any) => ReactNode;
+  let finish!: (value: unknown) => void; f.request.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  const tree = render(component, tab.props, states); find(tree, element => element.type === 'form')!.props.onSubmit({ preventDefault() {} }); await drain();
+  try { expect(find(render(component, tab.props), element => element.type === 'fieldset')?.props.disabled).toBe(true); }
+  finally { finish({}); await drain(); }
 });
