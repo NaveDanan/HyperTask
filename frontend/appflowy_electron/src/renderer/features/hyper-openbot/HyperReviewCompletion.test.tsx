@@ -27,9 +27,12 @@ import { HyperBotAttentionBoard } from './bot-tabs/HyperBotAttentionBoard';
 import { HyperVoiceControls } from './conversations/HyperVoiceControls';
 import { HyperInitialDraftTransfer } from './conversations/HyperInitialDraftTransfer';
 import { hyperRoutineSelectionFromPath } from './routines/HyperRoutineNavigation';
+import { HyperReachability } from './bot-tabs/HyperReachability';
+import { HyperConversationResult } from './screens-gen/HyperConversationResult';
+import { HyperSharedApprovalFields } from './connections/HyperPluginGrants';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
-const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0 }));
+const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0, context: undefined as any }));
 const f = vi.hoisted(() => ({ request: vi.fn(), fetch: vi.fn(), lookup: vi.fn(), decision: vi.fn(), connections: vi.fn(), stateListener: undefined as undefined | ((state: any) => void), agent: undefined as any, core: undefined as any }));
 vi.mock('react', async original => {
   const react = await original<typeof import('react')>();
@@ -44,7 +47,7 @@ vi.mock('react', async original => {
     useEffect: effect, useLayoutEffect: effect,
     useCallback: (callback: any, deps: unknown[]) => h.active ? callback : react.useCallback(callback, deps),
     useMemo: (create: () => unknown, deps: unknown[]) => h.active ? create() : react.useMemo(create, deps),
-    useContext: (...args: Parameters<typeof react.useContext>) => h.active ? undefined : react.useContext(...args),
+    useContext: (...args: Parameters<typeof react.useContext>) => h.active ? h.context : react.useContext(...args),
     useSyncExternalStore: (...args: Parameters<typeof react.useSyncExternalStore>) => h.active ? args[1]() : react.useSyncExternalStore(...args),
   };
 });
@@ -62,6 +65,7 @@ beforeEach(() => {
   hyperHomeDraftStore.clear(); f.lookup.mockReset(); f.request.mockReset().mockImplementation(async (path: string) => path.startsWith('/api/plugins/for/') ? { skills: [] } : {}); f.fetch.mockReset(); f.connections.mockReset().mockResolvedValue([]);
   f.stateListener = undefined;
   f.agent = undefined; f.core = undefined;
+  h.context = undefined;
   vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(), appflowy: { hyperOpenBot: { service: { onState: (listener: (state: any) => void) => { f.stateListener = listener; return () => { if (f.stateListener === listener) f.stateListener = undefined; }; } } }, shell: { openExternal: vi.fn() } } });
 });
 afterEach(() => { for (const cleanup of h.cleanups) cleanup(); vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
@@ -1085,7 +1089,7 @@ it.each(['refused', 'wrong ID'])('never offers or submits a preselected Bot deta
   const context = { initialAgentIds: ['hidden-bot'], startConversation: vi.fn(), openConversation: vi.fn() };
   render(HyperNewConversationSection, { context }); mountEffects(); await drain();
   const tree = render(HyperNewConversationSection, { context }), composer = find(tree, element => element.type === HyperComposer)!;
-  expect(composer.props.disabled).toBe(true); expect(composer.props.modelPicker).toBeUndefined();
+  expect(composer.props.disabled).toBe(false); expect(composer.props.submitDisabled).toBe(true); expect(composer.props.modelPicker).toBeUndefined();
   expect(find(tree, element => element.type === 'input' && element.props.type === 'checkbox')).toBeUndefined();
   await expect(composer.props.onSubmit({ text: 'Task', attachments: [], commandIds: [] })).rejects.toThrow('available Bot');
   expect(context.startConversation).not.toHaveBeenCalled(); expect(f.request.mock.calls.some(call => call[0] === '/api/models')).toBe(false);
@@ -1121,4 +1125,208 @@ it('returns a successful delegated voice answer when no Stop occurred', async ()
   });
   const controls = find(render(chat.component, chat.props), element => element.type === HyperVoiceControls)!;
   await expect(controls.props.askAgent('Do the task', new AbortController().signal)).resolves.toBe('Complete answer');
+});
+const hyperReachabilityData = {
+  delivery: { bindings: [], devices: [], deliveries: [], available: { sms: true, slack: false, teams: false } },
+  channels: [{ id: 'channel-a', name: 'A', active: true, agentIds: ['bot-a', 'bot-b'] }, { id: 'channel-b', name: 'B', active: true, agentIds: ['bot-a', 'bot-b'] }],
+  bots: [{ id: 'bot-a', name: 'A' }, { id: 'bot-b', name: 'B' }],
+};
+const hyperReachabilityStates = () => [hyperReachabilityData, false, '', 0, 'channel-a', '+15555550123', '123456', undefined, 'bot-a', '', {}];
+function hyperReachabilitySelect(tree: ReactNode, label: string, value: string) {
+  const field = find(tree, element => element.type === 'label' && text(element.props.children) === label)!;
+  find(field, element => element.type === 'select')!.props.onChange({ target: { value } });
+}
+const hyperSmsForm = (tree: ReactNode, confirmation = false) => find(tree, element => element.type === 'form' && !!find(element.props.children, input => confirmation ? input.props.autoComplete === 'one-time-code' : input.props.type === 'tel'));
+it.each(['Conversation', 'Bot'])('Reaching you invalidates issued SMS confirmation after changing $0', async field => {
+  f.request.mockResolvedValue({ challengeId: 'challenge-a' });
+  let tree = render(HyperReachability, {}, hyperReachabilityStates()); hyperSmsForm(tree)!.props.onSubmit({ preventDefault() {} }); await drain();
+  tree = render(HyperReachability, {}); const oldConfirm = hyperSmsForm(tree, true)!;
+  hyperReachabilitySelect(tree, field, field === 'Conversation' ? 'channel-b' : 'bot-b'); tree = render(HyperReachability, {});
+  expect(hyperSmsForm(tree, true)).toBeUndefined(); oldConfirm.props.onSubmit({ preventDefault() {} }); await drain();
+  expect(f.request.mock.calls.some(call => String(call[0]).includes('/sms/confirm'))).toBe(false);
+});
+it('Reaching you rejects a late previous-destination SMS response without clearing newer phone input', async () => {
+  let finish!: (value: unknown) => void; f.request.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  let tree = render(HyperReachability, {}, hyperReachabilityStates()); hyperSmsForm(tree)!.props.onSubmit({ preventDefault() {} }); await drain();
+  hyperReachabilitySelect(render(HyperReachability, {}), 'Conversation', 'channel-b'); tree = render(HyperReachability, {});
+  hyperReachabilitySelect(tree, 'Bot', 'bot-b'); tree = render(HyperReachability, {});
+  find(tree, element => element.props.type === 'tel')!.props.onChange({ target: { value: '+15555550999' } });
+  finish({ challengeId: 'old-challenge' }); await drain(); tree = render(HyperReachability, {});
+  expect(hyperSmsForm(tree, true)).toBeUndefined(); expect(find(tree, element => element.props.type === 'tel')!.props.value).toBe('+15555550999');
+});
+it('lets a new composition accept writing before a Bot is chosen while keeping submission blocked', () => {
+  const context = { initialAgentIds: [], startConversation: vi.fn(), openConversation: vi.fn() };
+  const tree = render(HyperNewConversationSection, { context });
+  const composer = find(tree, element => element.type === HyperComposer)!;
+  expect(composer.props.disabled).toBe(false); expect(composer.props.submitDisabled).toBe(true);
+});
+it('clips only the routing opening without splitting a surrogate pair or clipping the first message', async () => {
+  const bot = { id: 'route-bot', name: 'Bot', runsOnOpenBotModel: false }, full = 'x'.repeat(9999) + '😀' + 'trailing message';
+  f.request.mockResolvedValue({ agents: [bot], skills: [] });
+  const context = { initialAgentIds: [bot.id], startConversation: vi.fn(async () => {}), openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }, [[], [], [], { model: '', effort: null }, [bot], [bot.id], undefined, 0]); mountEffects(); await drain();
+  const composer = find(render(HyperNewConversationSection, { context }), element => element.type === HyperComposer)!;
+  await composer.props.onSubmit({ text: full, attachments: [], commandIds: [] });
+  expect(f.request.mock.calls.find(call => call[0] === '/api/route')?.[2].text === 'x'.repeat(9999)).toBe(true);
+  expect(context.startConversation).toHaveBeenCalledWith([bot.id], { text: full, files: [], commandIds: [], submit: true });
+});
+it.each(['reconnect', 'shared'])('overrides stale recorded readiness for a %s refusal and offers the appropriate setup', async refusal => {
+  const access = { ...botAppAccess('bot', 'app').app, state: 'ready', connectedAt: '2026-11-15T00:00:00Z', request: null, requestKind: null };
+  f.request.mockResolvedValue({ app: access }); const props = { agentId: 'bot', app: 'app', refusal, refusalAt: '2026-11-15T01:00:00Z', admin: true, onOpenConnection: vi.fn() };
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  expect(find(tree, element => element.type === 'p' && text(element.props.children).toLowerCase().includes('reconnect'))).toBeDefined();
+  expect(button(tree, 'Open app setup and connection')).toBeDefined();
+});
+it('passes the refusal instant from the authenticated tool marker into its app-access card', () => {
+  const at = '2026-11-15T01:00:00Z';
+  const tool = { id: 'refusal-time', label: 'app/read', status: 'refused', result: '[connect-app]' + JSON.stringify({ serverId: 'app', agentId: 'bot', title: 'App', message: 'Connection lost', reason: 'reconnect', at }) };
+  const tree = render(HyperConversationResult, { tool, callingBotId: 'bot' });
+  expect(find(tree, element => element.type === HyperAppAccessAction)!.props.refusalAt).toBe(at);
+});
+function hyperGrantTestProps(selection: any = { page: 'bot', key: 'server', agentId: 'bot-a' }) {
+  return { server, busy: false, admin: true, selection, navigate: vi.fn(), run: async (action: () => Promise<void>) => action() };
+}
+const hyperGrantStates = () => [bots, '', '', undefined, approval, false, [], [], true, {}, ''];
+it('a shared grant read cannot resume after navigating A to B and back to A', async () => {
+  let finish!: (value: unknown) => void;
+  f.request.mockImplementation(async (path: string) => path === '/api/approvals/shared-use/bot/bot-a' ? new Promise(resolve => { finish = resolve; }) : {});
+  const props = hyperGrantTestProps(); const tree = render(HyperPluginGrants, props, hyperGrantStates());
+  find(tree, element => element.type === 'input' && element.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); await drain();
+  render(HyperPluginGrants, { ...props, selection: { ...props.selection, agentId: 'bot-b' } }); render(HyperPluginGrants, props);
+  finish({ apps: [{ serverId: 'server', needed: approval, approval, covered: true }] }); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/plugins/grants')).toBe(false);
+});
+it('canceling a shared approval invalidates its cached confirmation before HTTP', async () => {
+  f.request.mockResolvedValue({ apps: [{ serverId: 'server', needed: approval, approval: null, covered: false }] });
+  const props = hyperGrantTestProps(); let tree = render(HyperPluginGrants, props, hyperGrantStates());
+  find(tree, element => element.type === 'input' && element.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); await drain(); tree = render(HyperPluginGrants, props);
+  const dialog = find(tree, element => element.props['aria-label'] === 'Approve shared app access')!, confirm = button(dialog, 'Approve and grant')!;
+  button(dialog, 'Cancel')!.props.onClick(); render(HyperPluginGrants, props); confirm.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/plugins/grants')).toBe(false);
+});
+it('shared read-bulk loads its Bot server-proposed membership before confirmation', async () => {
+  const needed = { audience: 'people', outsideInput: true, members: [{ kind: 'user', value: 'member-a' }] };
+  f.request.mockResolvedValue({ apps: [{ serverId: 'server', needed, approval: null, covered: false }] });
+  const props = hyperGrantTestProps(); const tree = render(HyperPluginGrants, props, hyperGrantStates());
+  find(tree, element => typeof element.props.onClick === 'function' && text(element.props.children).startsWith('Grant every read-only action'))!.props.onClick(); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/approvals/shared-use/bot/bot-a');
+  const dialog = find(render(HyperPluginGrants, props), element => element.props['aria-label'] === 'Approve shared app access')!;
+  expect(find(dialog, element => element.type === HyperSharedApprovalFields)!.props.value).toEqual(needed);
+  expect(f.request.mock.calls.some(call => call[0] === '/api/plugins/grants')).toBe(false);
+});
+it('shared batches review and submit the distinct server-proposed members of each Bot', async () => {
+  const needed = (bot: string) => ({ audience: 'people', outsideInput: false, members: [{ kind: 'user', value: `member-${bot}` }] });
+  f.request.mockImplementation(async (path: string) => path.startsWith('/api/approvals/shared-use/bot/') ? { apps: [{ serverId: 'server', needed: needed(path.endsWith('bot-a') ? 'a' : 'b'), approval: null, covered: false }] } : {});
+  const props = hyperGrantTestProps({ page: 'app', key: 'server' }); let tree = render(HyperPluginGrants, props, hyperGrantStates());
+  button(tree, 'Choose Bots and tools in a batch')!.props.onClick(); tree = render(HyperPluginGrants, props);
+  for (const name of ['A', 'B']) {
+    const label = find(tree, element => element.type === 'label' && text(element.props.children) === name)!;
+    find(label, element => element.type === 'input')!.props.onChange({ target: { checked: true } }); tree = render(HyperPluginGrants, props);
+  }
+  const tool = find(tree, element => element.type === 'label' && text(element.props.children).includes('read') && !!find(element.props.children, input => input.type === 'input'))!;
+  find(tool, element => element.type === 'input')!.props.onChange({ target: { checked: true } }); tree = render(HyperPluginGrants, props);
+  (button(tree, 'Review shared audiences') ?? button(tree, 'Confirm grant batch'))!.props.onClick(); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/approvals/shared-use/bot/bot-a'); expect(f.request).toHaveBeenCalledWith('/api/approvals/shared-use/bot/bot-b');
+  expect(f.request.mock.calls.some(call => call[0] === '/api/plugins/grants')).toBe(false);
+  tree = render(HyperPluginGrants, props); button(tree, 'Confirm grant batch')!.props.onClick(); await drain();
+  expect(f.request.mock.calls.filter(call => call[0] === '/api/plugins/grants').map(call => [call[2].agentId, call[2].approval])).toEqual([['bot-a', needed('a')], ['bot-b', needed('b')]]);
+});
+it('the composer retains editable text while submission alone is disabled', () => {
+  const submit = vi.fn();
+  let tree = render(HyperComposer, { submitDisabled: true, onSubmit: submit, initialValue: 'Draft first' });
+  const input = find(tree, element => element.props['data-slot'] === 'composer-input')!;
+  expect(input.props.disabled).toBe(false); input.props.onChange({ target: { value: 'Draft without a recipient' } });
+  tree = render(HyperComposer, { submitDisabled: true, onSubmit: submit });
+  find(tree, element => element.type === 'form')!.props.onSubmit({ preventDefault() {} });
+  expect(submit).not.toHaveBeenCalled(); expect(find(tree, element => element.props['data-slot'] === 'composer-input')!.props.value).toBe('Draft without a recipient');
+  tree = render(HyperComposer, { submitDisabled: false, onSubmit: submit });
+  find(tree, element => element.type === 'form')!.props.onSubmit({ preventDefault() {} }); expect(submit).toHaveBeenCalledOnce();
+});
+it.each(['reconnect', 'shared'])('returns to live readiness after reconnecting since a %s refusal', async refusal => {
+  f.request.mockResolvedValue({ app: { ...botAppAccess('bot', 'app').app, state: 'ready', request: null, requestKind: null, connectedAt: '2026-11-15T01:00:01Z' } });
+  const props = { agentId: 'bot', app: 'app', refusal, refusalAt: '2026-11-15T01:00:00Z', onOpenConnection: vi.fn() };
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  expect(button(tree, 'Open app setup and connection')).toBeUndefined();
+  expect(find(tree, element => element.type === 'p' && text(element.props.children).includes('Ready'))).toBeDefined();
+});
+it('never offers another user setup for an owner-held reconnect refusal', async () => {
+  f.request.mockResolvedValue({ app: { ...botAppAccess('bot', 'app').app, state: 'ready', request: null, requestKind: null, accountHolder: 'owner', connectedAt: null } });
+  const props = { agentId: 'bot', app: 'app', refusal: 'reconnect', onOpenConnection: vi.fn() };
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  expect(button(tree, 'Open app setup and connection')).toBeUndefined(); expect(find(tree, element => element.type === 'p' && text(element.props.children).includes('Bot owner'))).toBeDefined();
+});
+it('connect refusals do not override a live ready state', async () => {
+  f.request.mockResolvedValue({ app: { ...botAppAccess('bot', 'app').app, state: 'ready', request: null, requestKind: null } });
+  const props = { agentId: 'bot', app: 'app', refusal: 'connect', onOpenConnection: vi.fn() };
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  expect(button(tree, 'Open app setup and connection')).toBeUndefined(); expect(find(tree, element => element.type === 'p' && text(element.props.children).includes('Ready'))).toBeDefined();
+});
+it('refusal setup navigates to the named app without using stale navigation callbacks', () => {
+  let current = true; const navigate = vi.fn(); h.context = { navigate, isCurrentNavigation: () => current };
+  const tool = { id: 'refusal-navigation', label: 'app/read', status: 'refused', result: '[connect-app]' + JSON.stringify({ serverId: 'app', agentId: 'bot', title: 'App', message: 'Lost', reason: 'reconnect', at: '2026-11-15T01:00:00Z' }) };
+  const tree = render(HyperConversationResult, { tool, callingBotId: 'bot' }), card = find(tree, element => element.type === HyperAppAccessAction)!;
+  card.props.onOpenConnection('app/key'); expect(navigate).toHaveBeenCalledWith('connections', { path: '/connections/app%2Fkey' });
+  current = false; card.props.onOpenConnection('other'); expect(navigate).toHaveBeenCalledOnce();
+});
+it('uses a current server proposal instead of narrower old approval for single shared grants', async () => {
+  const needed = { audience: 'people', outsideInput: true, members: [{ kind: 'group', value: 'new-members' }] };
+  f.request.mockResolvedValue({ apps: [{ serverId: 'server', approval, needed, covered: false }] });
+  const props = hyperGrantTestProps(); let tree = render(HyperPluginGrants, props, hyperGrantStates());
+  find(tree, element => element.type === 'input' && element.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); await drain(); tree = render(HyperPluginGrants, props);
+  const dialog = find(tree, element => element.props['aria-label'] === 'Approve shared app access')!;
+  expect(find(dialog, element => element.type === HyperSharedApprovalFields)!.props.value).toEqual(needed);
+  button(dialog, 'Approve and grant')!.props.onClick(); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/plugins/grants', 'POST', { kind: 'mcp', ref: 'server/read', agentId: 'bot-a', approval: needed });
+});
+it('does not grant shared read-bulk when the server proposal is missing', async () => {
+  f.request.mockResolvedValue({ apps: [] }); const props = hyperGrantTestProps(); const tree = render(HyperPluginGrants, props, hyperGrantStates());
+  find(tree, element => typeof element.props.onClick === 'function' && text(element.props.children).startsWith('Grant every read-only action'))!.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/plugins/grants')).toBe(false);
+  expect(find(render(HyperPluginGrants, props), element => element.props.role === 'alert')).toBeDefined();
+});
+it('Reaching you keeps current SMS confirmation usable and sends only its issued challenge', async () => {
+  f.request.mockImplementation(async (path: string) => path === '/api/delivery' ? hyperReachabilityData.delivery : path === '/api/channels' ? { channels: hyperReachabilityData.channels } : path === '/api/agents' ? { agents: hyperReachabilityData.bots } : path === '/api/delivery/sms/start' ? { challengeId: 'current-challenge' } : {});
+  render(HyperReachability, {}, hyperReachabilityStates()); mountEffects(); await drain();
+  hyperSmsForm(render(HyperReachability, {}))!.props.onSubmit({ preventDefault() {} }); await drain();
+  render(HyperReachability, {}); const cleanup = h.effects[0](); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  let tree = render(HyperReachability, {});
+  find(tree, element => element.props.autoComplete === 'one-time-code')!.props.onChange({ target: { value: '654321' } });
+  tree = render(HyperReachability, {}); hyperSmsForm(tree, true)!.props.onSubmit({ preventDefault() {} }); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/delivery/sms/confirm', 'POST', { challengeId: 'current-challenge', code: '654321' });
+});
+it('Reaching you rejects a cached SMS confirm after unmount', async () => {
+  f.request.mockImplementation(async (path: string) => path === '/api/delivery' ? hyperReachabilityData.delivery : path === '/api/channels' ? { channels: hyperReachabilityData.channels } : path === '/api/agents' ? { agents: hyperReachabilityData.bots } : { challengeId: 'current-challenge' });
+  render(HyperReachability, {}, hyperReachabilityStates()); mountEffects(); await drain();
+  hyperSmsForm(render(HyperReachability, {}))!.props.onSubmit({ preventDefault() {} }); await drain();
+  const confirm = hyperSmsForm(render(HyperReachability, {}), true)!;
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  confirm.props.onSubmit({ preventDefault() {} }); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/delivery/sms/confirm')).toBe(false);
+});
+it('Reaching you does not revive a confirmation after A to B to A', async () => {
+  f.request.mockResolvedValue({ challengeId: 'challenge-a' });
+  let tree = render(HyperReachability, {}, hyperReachabilityStates()); hyperSmsForm(tree)!.props.onSubmit({ preventDefault() {} }); await drain();
+  tree = render(HyperReachability, {}); const old = hyperSmsForm(tree, true)!;
+  hyperReachabilitySelect(tree, 'Conversation', 'channel-b'); tree = render(HyperReachability, {});
+  hyperReachabilitySelect(tree, 'Conversation', 'channel-a'); tree = render(HyperReachability, {});
+  hyperReachabilitySelect(tree, 'Bot', 'bot-a'); tree = render(HyperReachability, {});
+  expect(hyperSmsForm(tree, true)).toBeUndefined(); old.props.onSubmit({ preventDefault() {} }); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/delivery/sms/confirm')).toBe(false);
+});
+it('canceling shared read-bulk during a write stops later writes without reverting accepted ones', async () => {
+  let first!: (value: unknown) => void;
+  const doubled = { ...server, tools: [...server.tools, { ...server.tools[0], name: 'second', ref: 'server/second' }] };
+  f.request.mockImplementation(async (path: string) => path.startsWith('/api/approvals/shared-use/') ? { apps: [{ serverId: 'server', needed: approval, covered: false }] } : path === '/api/plugins/grants' ? new Promise(resolve => { first = resolve; }) : {});
+  const props = { ...hyperGrantTestProps(), server: doubled }; let tree = render(HyperPluginGrants, props, hyperGrantStates());
+  find(tree, element => typeof element.props.onClick === 'function' && text(element.props.children).startsWith('Grant every read-only action'))!.props.onClick(); await drain(); tree = render(HyperPluginGrants, props);
+  let dialog = find(tree, element => element.props['aria-label'] === 'Approve shared app access')!; button(dialog, 'Approve and grant')!.props.onClick(); await drain();
+  dialog = find(render(HyperPluginGrants, props), element => element.props['aria-label'] === 'Approve shared app access')!; button(dialog, 'Cancel')!.props.onClick(); first({}); await drain();
+  expect(f.request.mock.calls.filter(call => call[0] === '/api/plugins/grants')).toHaveLength(1);
+  expect(f.request.mock.calls.some(call => call[1] === 'DELETE')).toBe(false);
+});
+it.each(['2026-11-15T01:00:00Z', 'invalid-instant'])('does not infer reconnection from an equal or invalid timestamp %s', async connectedAt => {
+  f.request.mockResolvedValue({ app: { ...botAppAccess('bot', 'app').app, state: 'ready', request: null, requestKind: null, connectedAt } });
+  const props = { agentId: 'bot', app: 'app', refusal: 'reconnect', refusalAt: '2026-11-15T01:00:00Z', onOpenConnection: vi.fn() };
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const tree = render(HyperAppAccessAction, props);
+  expect(button(tree, 'Open app setup and connection')).toBeDefined();
 });

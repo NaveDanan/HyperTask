@@ -97,6 +97,13 @@ export type HyperAppAccessInbox = {
   requests: HyperAppAccessRequest[];
   counts: { total: number; byApp: Record<string, number> };
 };
+/** Only vendor reconnect/shared refusals can outrank a live ready state. */
+export function hyperAppAccessAsRefused(live: HyperAppAccess, refusal?: 'connect' | 'reconnect' | 'shared', at?: string): HyperAppAccess {
+  if (live.state !== 'ready' || at && live.connectedAt && Date.parse(live.connectedAt) > Date.parse(at)) return live;
+  if (refusal === 'reconnect') return { ...live, state: 'reconnect' };
+  if (refusal === 'shared') return { ...live, state: 'shared_not_connected', request: null, requestKind: null };
+  return live;
+}
 
 
 export const hyperLoadAppAccess = (agentId: string, app: string) => hyperOpenBotRequest<{ app: HyperAppAccess }>(`/api/plugins/for/${encodeURIComponent(agentId)}/apps/${encodeURIComponent(app)}`);

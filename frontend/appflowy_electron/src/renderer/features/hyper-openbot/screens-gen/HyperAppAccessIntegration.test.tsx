@@ -3,6 +3,7 @@ vi.mock('./HyperGalleryRuntime', () => ({ useHyperGalleryCall: () => undefined, 
 vi.mock('./HyperGalleryRegistry', () => ({ hyperGalleryComponent: () => undefined }));
 vi.mock('./HyperGenerativeActivity', () => ({ HyperGenerativeActivity: () => null }));
 vi.mock('./HyperInteractiveResult', () => ({ HyperInteractiveResult: () => null }));
+vi.mock('../routines/HyperRoutineNavigation', async original => ({ ...await original<typeof import('../routines/HyperRoutineNavigation')>(), useHyperRoutineNavigation: () => undefined }));
 import { HyperConversationResult } from './HyperConversationResult';
 import { HyperAppAccessAction } from '../connections';
 const tool = { id: 'call', label: 'show_app_access', status: 'complete' as const, result: '[connect-app]{"serverId":"mail","title":"Mail","agentId":"bot-1","reason":"access"}' };

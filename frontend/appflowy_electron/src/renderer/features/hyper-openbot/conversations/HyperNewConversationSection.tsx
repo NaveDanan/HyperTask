@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { HyperListBots, HyperAgentPath, type HyperBotProfile } from '../bots/HyperBotsApi';
 import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { hyperRequestModelPick, type HyperModelCatalogue } from '../HyperModelSelection';
+import { HyperRoutingText } from '../onboarding/HyperHomeApi';
 export default function HyperNewConversationSection({ context }: { context: HyperOpenBotSectionContext }) {
   const [commands, setCommands] = useState<{ id: string; label: string }[]>([]);
   const [files, setFiles] = useState<{ file: File; attachment: HyperComposerAttachment }[]>([]);
@@ -64,7 +65,7 @@ export default function HyperNewConversationSection({ context }: { context: Hype
   }, [revision, incomingKey]);
   return <div className="space-y-4 overflow-y-auto p-6"><h2 className="text-lg font-semibold">New conversation</h2><p className="text-sm text-muted-foreground">Choose Bots in the order they should answer.</p>{error && <div role="alert">{error}<Button onClick={() => setRevision(value => value + 1)}>Retry</Button></div>}{!bots && !error && <p role="status">Loading Bots…</p>}{bots && selected.length > 0 && !knownRecipients.current && !error && <p role="status">Loading selected Bot…</p>}{bots?.length === 0 && selected.length === 0 && <p>No Bots available. Create one in Bots.</p>}
     <div className="space-y-2">{bots?.map(bot => <label key={bot.id} className="flex items-center gap-3 rounded-lg border p-3"><input type="checkbox" disabled={files.length > 0 && selected.length > 0 && !selected.includes(bot.id)} checked={selected.includes(bot.id)} onChange={event => { setError(undefined); setSelected(value => { const known = value.filter(id => bots.some(bot => bot.id === id)); return event.target.checked ? [...new Set([...known, bot.id])] : known.filter(id => id !== bot.id); }); }} /><span>{bot.name} <span className="text-muted-foreground">{bot.title}</span></span>{selected.includes(bot.id) && <span>{selected.indexOf(bot.id) + 1}</span>}</label>)}</div>
-    <HyperComposer allowQueue={false} commands={commands} disabled={!knownRecipients.current || context.isCurrentNavigation?.() === false} placeholder="Write the first message" attachments={files.map(item => item.attachment)}
+    <HyperComposer allowQueue={false} commands={commands} disabled={context.isCurrentNavigation?.() === false} submitDisabled={!knownRecipients.current} placeholder="Write the first message" attachments={files.map(item => item.attachment)}
       onFiles={selected.length === 1 ? async added => { if (valid()) setFiles(files => [...files, ...added.map(file => ({ file, attachment: { id: crypto.randomUUID(), name: file.name, status: 'ready' as const } }))]); } : undefined}
       onRemoveAttachment={id => { if (valid()) setFiles(files => files.filter(item => item.attachment.id !== id)); }}
       onConsumeAttachments={ids => { if (valid()) setFiles(files => files.filter(item => !ids.includes(item.attachment.id))); }}
@@ -74,7 +75,7 @@ export default function HyperNewConversationSection({ context }: { context: Hype
         if (!knownRecipients.current) throw new Error('Choose an available Bot before sending.');
         const requested = pickable && owner.ready && owner.catalogue ? hyperRequestModelPick(owner.pick, owner.catalogue) : undefined;
         const modelPick = requested && (requested.model !== null || requested.effort !== null) ? requested : undefined;
-        if (selected.length === 1) void hyperOpenBotRequest('/api/route', 'POST', { text: draft.text, agentId: selected[0], skillSlugs: draft.commandIds ?? [] }).catch(() => {});
+        if (selected.length === 1) void hyperOpenBotRequest('/api/route', 'POST', { text: HyperRoutingText(draft.text), agentId: selected[0], skillSlugs: draft.commandIds ?? [] }).catch(() => {});
         await context.startConversation(selected, { text: draft.text, files: files.filter(item => draft.attachments.some(attachment => attachment.id === item.attachment.id)).map(item => item.file), commandIds: draft.commandIds ?? [], submit: true, ...(modelPick ? { modelPick } : {}) });
       }} />
     <Button variant="outline" onClick={() => context.navigate?.('bots')}>Create a Bot</Button></div>;

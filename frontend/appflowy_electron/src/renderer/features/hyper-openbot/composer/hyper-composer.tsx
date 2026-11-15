@@ -60,6 +60,8 @@ export interface HyperComposerProps {
   stoppable?: boolean;
   disabled?: boolean;
   autoFocus?: boolean;
+  /** Allow drafting while the integration waits for a valid recipient. */
+  submitDisabled?: boolean;
   initialValue?: string;
   /** Optional owner-managed draft for native navigation. Uncontrolled usage remains supported. */
   value?: string;
@@ -74,7 +76,7 @@ export interface HyperComposerProps {
 }
 const EMPTY_ATTACHMENTS: readonly HyperComposerAttachment[] = [];
 export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, activeAttachmentIds = [], getAttachmentCount, onRemoveAttachment,
-  onConsumeAttachments, onDiscardAttachment, onRestoreQueued, commands = [], agents = [], commandIds, onCommandIdsChange, onStop, pending = false, allowQueue = true, stoppable = pending, disabled = false, autoFocus = false,
+  onConsumeAttachments, onDiscardAttachment, onRestoreQueued, commands = [], agents = [], commandIds, onCommandIdsChange, onStop, pending = false, allowQueue = true, stoppable = pending, disabled = false, autoFocus = false, submitDisabled = false,
   initialValue = '', value, onTextChange, recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
   const [localCommands, setLocalCommands] = useState<readonly string[]>([]);
   const selectedCommands = commandIds ?? localCommands;
@@ -122,7 +124,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   };
   const protectedAttachments = new Set([...activeAttachmentIds, ...activeAttachments.current]);
   const availableAttachments = attachments.filter(file => !protectedAttachments.has(file.id));
-  const sendable = !!(text.trim() || availableAttachments.length || selectedCommands.length) && !staging &&
+  const sendable = !submitDisabled && !!(text.trim() || availableAttachments.length || selectedCommands.length) && !staging &&
     availableAttachments.every((file) => file.status === 'ready') &&
     attachments.length + queuedAttachmentCount <= HyperMAX_ATTACHMENTS_PER_MESSAGE;
   const [queued, setQueued] = useState<readonly HyperQueuedMessage[]>([]);
