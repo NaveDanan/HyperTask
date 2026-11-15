@@ -92,6 +92,19 @@ describe('Hyper cell codec', () => {
   });
 });
 describe('Hyper database controller', () => {
+  it('opens the native database before metadata can initialize competing editors', async () => {
+    const { controller, backend, database } = fixture();
+    let release!: () => void;
+    const opened = new Promise<void>(resolve => { release = resolve; });
+    backend.DatabaseEventGetDatabase.mockImplementation(async () => { await opened; return ok(database); });
+    const opening = controller.open();
+    await Promise.resolve();
+    const earlyReads = [backend.DatabaseEventGetFields.mock.calls.length, backend.DatabaseEventGetDatabaseSetting.mock.calls.length, backend.DatabaseEventGetGroups.mock.calls.length];
+    release(); await opening;
+    expect(earlyReads).toEqual([0, 0, 0]);
+    expect(controller.state.status).toBe('ready');
+    expect(backend.DatabaseEventGetFields).toHaveBeenCalledOnce();
+  });
   it('patches insert/delete/reorder notifications without waiting for a full reload', async () => {
     vi.useFakeTimers(); const { controller, open } = fixture(); await open();
     notify(controller, N.DidUpdateRow, toBinary(RowsChangePBSchema, create(RowsChangePBSchema, { deletedRows: ['s'], insertedRows: [{ rowMeta: { id: 'new' }, oneOfIndex: { case: 'index', value: 0 } }] })));

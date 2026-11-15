@@ -91,8 +91,11 @@ export class HyperDatabaseController {
         this.rowOrderPatches = orderPatches;
         const extraVersion = this.extraVersion;
         try {
-          const [database, fields, settings, groups, view] = await Promise.all([
-            this.backend.DatabaseEventGetDatabase({ value: this.viewId }).then(unwrap),
+          // Cold metadata calls can initialize competing native editors. Open the
+          // database first so all remaining reads use its initialized row cache.
+          const database = unwrap(await this.backend.DatabaseEventGetDatabase({ value: this.viewId }));
+          if (epoch !== this.epoch) return;
+          const [fields, settings, groups, view] = await Promise.all([
             this.backend.DatabaseEventGetFields({ viewId: this.viewId }).then(unwrap),
             this.backend.DatabaseEventGetDatabaseSetting({ value: this.viewId }).then(unwrap),
             this.backend.DatabaseEventGetGroups({ value: this.viewId }).then(unwrap),

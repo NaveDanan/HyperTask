@@ -3,10 +3,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fromBinary } from '@bufbuild/protobuf';
 import { CoreProcess } from '../../src/main/core/process';
-import { UserEventSignUp } from '@/backend/events/flowy-user';
+import { UserEventSignUp, UserEventInitUser } from '@/backend/events/flowy-user';
 import { FolderEventCreateView, FolderEventGetCurrentWorkspaceSetting, FolderEventGetView, FolderEventUpdateView } from '@/backend/events/flowy-folder';
 import { AuthTypePB } from '@shared/protobuf/flowy-user/workspace_pb';
 import { unwrap } from '@/backend/dispatch';
+import { FieldType } from '@shared/protobuf/flowy-database2/field_entities_pb';
 import { SubscribeObjectSchema } from '@shared/protobuf/flowy-notification/subject_pb';
 import { hyperDatabaseBackend } from '@/features/hyper-database/HyperDatabaseBackend';
 import { HyperDatabaseController, hyperCoreLayout, hyperLayout } from '@/features/hyper-database/HyperDatabaseController';
@@ -126,3 +127,51 @@ it('creates page-menu and linked database views on a fresh core and drives four 
     await fs.writeFile(path.join(repo, '.cache/hyper-views/live-smoke.json'), JSON.stringify({ passed: true, binary, support, samples: samples.length, rows: 48, pageMenuLayouts: layouts, nestedPageMenuLayouts: layouts, linkedLayouts: layouts, ganttCreated: true, titleEdited: true, boardMove: true, calendarMove: true, rangePreserved: true }, null, 2));
   } finally { controller?.dispose(); await core.stop(); vi.unstubAllGlobals(); await fs.writeFile(path.join(artifacts, 'live-core.log'), log.join('')); await fs.writeFile(path.join(artifacts, 'live-view-replies.json'), JSON.stringify(replies, null, 2)); }
 }, 240000);
+
+
+it('retains saved checklist cells on the first controller open after native restarts', async () => {
+  const artifacts = path.resolve(process.cwd(), '../../.cache/hyper-views');
+  await fs.mkdir(artifacts, { recursive: true });
+  const support = await fs.mkdtemp(path.join(artifacts, 'cold-open-support-'));
+  const binary = process.env.APPFLOWY_CORE_BINARY ?? path.resolve(process.cwd(), '../rust-lib/target/debug/appflowy_core');
+  const config = { root: support, app_version: '0.11.4', custom_app_path: path.join(support, 'data_dev'), origin_app_path: path.join(support, 'data_dev'), device_id: 'hyper-cold-open-smoke', platform: 'linux', authenticator_type: 0, appflowy_cloud_config: { base_url: '', ws_base_url: '', gotrue_url: '', base_web_domain: '', enable_sync_trace: false }, envs: {} };
+  let core = new CoreProcess(binary), controller: HyperDatabaseController | undefined;
+  const log: string[] = [], rounds: Array<{ round: number; completed: boolean }> = [];
+  const backend = { ...hyperDatabaseBackend, subscribe: (listener: Parameters<typeof hyperDatabaseBackend.subscribe>[0]) => {
+    const process = core;
+    const handle = (bytes: Uint8Array) => listener(fromBinary(SubscribeObjectSchema, bytes));
+    process.on('notification', handle); return () => process.off('notification', handle);
+  } };
+  vi.stubGlobal('window', { appflowy: { core: { request: (event: string, payload: Uint8Array) => core.request(event, payload) } } });
+  async function start() { await core.start(bytes => log.push(bytes.toString())); expect(await core.init(config)).toBe(0); }
+  try {
+    await start();
+    unwrap(await UserEventSignUp({ email: 'anon@appflowy.io', name: 'Hyper cold-open proof', password: 'Guest!@123456', authType: AuthTypePB.Local, deviceId: 'hyper-cold-open-smoke' }));
+    const workspace = unwrap(await FolderEventGetCurrentWorkspaceSetting());
+    const view = unwrap(await FolderEventCreateView({ parentViewId: workspace.workspaceId, name: 'Hyper cold-open checklist', layout: ViewLayoutPB.Grid }));
+    controller = new HyperDatabaseController(view.id, backend); await controller.open();
+    const rowId = controller.state.rowIds[0];
+    const field = await controller.createField('Hyper checklist', FieldType.Checklist);
+    await controller.updateCell(rowId, field.id, { kind: 'checklist', insert: [{ name: 'Hyper persisted completion' }] });
+    const seeded = await controller.loadCell(rowId, field.id);
+    expect(seeded?.kind).toBe('checklist');
+    if (seeded?.kind !== 'checklist') throw new Error('Checklist fixture could not be loaded');
+    const itemId = seeded.items[0].id;
+    await controller.setChecklistItemCompleted(rowId, field.id, itemId, true);
+    controller.dispose(); controller = undefined; await core.stop();
+    for (let round = 0; round < 4; round++) {
+      core = new CoreProcess(binary); await start(); unwrap(await UserEventInitUser());
+      // No database or field read may prewarm the native editor before open().
+      controller = new HyperDatabaseController(view.id, backend); await controller.open();
+      expect(controller.state.status).toBe('ready');
+      const cell = await controller.loadCell(rowId, field.id);
+      expect(cell).toMatchObject({ kind: 'checklist', items: [{ id: itemId, completed: true }], progress: 1 });
+      rounds.push({ round, completed: true });
+      controller.dispose(); controller = undefined; await core.stop();
+    }
+  } finally {
+    controller?.dispose(); await core.stop(); vi.unstubAllGlobals();
+    await fs.writeFile(path.join(artifacts, 'cold-open-core.log'), log.join(''));
+    await fs.writeFile(path.join(artifacts, 'cold-open-rounds.json'), JSON.stringify({ binary, support, rounds }, null, 2));
+  }
+}, 120000);
