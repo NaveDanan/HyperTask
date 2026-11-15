@@ -67,7 +67,8 @@ export function HyperDatabasePage({ view, context }: { view: ViewPB; context: Pl
       </div>
       {(actionError || state.error) && <p role="alert" className="px-6 py-2 text-sm text-destructive">{actionError || state.error}</p>}
       <TabsContent value={view.id} className="min-h-0 flex-1 overflow-auto">
-        {state.rowIds.length === 0 ? <Empty className="h-full"><EmptyHeader><EmptyMedia variant="icon"><HyperLayoutIcon layout={current.layout} hyperLayout={hyperLayout(current)} /></EmptyMedia><EmptyTitle>No records yet</EmptyTitle><EmptyDescription>Add your first record to get started.</EmptyDescription></EmptyHeader><EmptyContent><Button disabled={pending} onClick={() => void run(() => controller.createRow())}><Plus className="size-4" />New record</Button></EmptyContent></Empty> : <HyperDatabaseLayout controller={controller} state={state} view={state.view ?? current} />}
+        {/* Each Hyper view owns its empty state (no rows, no date field, no groups). */}
+        <HyperDatabaseLayout controller={controller} state={state} view={state.view ?? current} />
       </TabsContent>
     </Tabs>
   </div>;

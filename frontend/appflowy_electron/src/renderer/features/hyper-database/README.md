@@ -19,6 +19,10 @@ export function HyperGridView({ controller, state, view }: HyperDatabaseViewProp
 }
 ```
 
+Each view owns its empty states. `HyperDatabasePage` renders the view whenever the database
+opens, even with zero rows, so the view shows its own frame (toolbar, headers, columns or
+timeline) with an in-place empty state and "New record" affordance.
+
 `useHyperDatabase(viewId, backend?)` returns `{ controller, state }`, opens the view, and
 unsubscribes on unmount. `HyperDatabaseController` can also be used without React:
 construct it, `await open()`, read `state` / subscribe to `store`, then `dispose()`.
@@ -107,6 +111,7 @@ Await actions and show errors in the view. Do not report success before the prom
   Duplication keeps this database linked and copies extra keys, field settings, layout,
   group-by configuration, filter trees and sorts; the core assigns new filter/sort IDs.
   `updateViewExtra(patch)` merges per-view custom settings through the existing extra helper.
+  If `UpdateView` returns an empty acknowledgement, the known view with the merged extra is kept.
   `hyperLayout(view)` resolves Grid/Board/Calendar/Gantt; `hyperCoreLayout(layout)` maps
   product layouts to **folder** `ViewLayoutPB` (database `DatabaseLayoutPB` has different
   numeric values). Gantt creation writes its extra marker before announcing the current view.

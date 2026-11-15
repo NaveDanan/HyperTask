@@ -394,7 +394,8 @@ export class HyperDatabaseController {
     const view = this.state.view; if (!view) throw new Error('Open the database first');
     const extra = mergeViewExtra(view, patch);
     const updated = unwrap(await this.backend.views.updateView({ viewId: view.id, extra }));
-    this.patch({ view: updated }); await this.refreshViews();
+    // UpdateView can return an empty acknowledgement; retain the known view and merged extra.
+    this.patch({ view: updated.id ? updated : { ...view, oneOfExtra: { case: 'extra', value: extra } } }); await this.refreshViews();
   }
   async renameView(viewId: string, name: string) { unwrap(await this.backend.views.updateView({ viewId, name })); await this.refreshViews(); }
   /** Duplicate view settings within this database, preserving extra keys (including Gantt). */
