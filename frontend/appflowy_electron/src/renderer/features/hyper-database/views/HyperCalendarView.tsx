@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { addHours, format, setHours, startOfDay } from 'date-fns';
 import { CalendarDays, CalendarX2, TriangleAlert } from 'lucide-react';
 import { FieldType } from '@shared/protobuf/flowy-database2/field_entities_pb';
-import { EventCalendar, type EventCalendarClassNames } from '@/components/reui/event-calendar/event-calendar';
+import { EventCalendar, type EventCalendarClassNames, type EventCalendarRenderEventProps } from '@/components/reui/event-calendar/event-calendar';
 import { EventCalendarContent } from '@/components/reui/event-calendar/event-calendar-content';
 import type { CalendarView, EventCalendarOccurrence } from '@/components/reui/event-calendar/event-calendar-types';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { floatingSurfaceClass } from '@/components/app/menu-row';
 import { showToast } from '@/ui';
 import type { HyperDatabaseViewProps } from '../HyperDatabaseTypes';
 import { HyperCalendarDragBridge } from './calendar/HyperCalendarDragBridge';
+import { hyperCalendarRenderEvent } from './calendar/HyperCalendarEventContent';
 import { HyperCalendarMoreContent } from './calendar/HyperCalendarMoreContent';
 import { HyperCalendarToolbar } from './calendar/HyperCalendarToolbar';
 import { HyperCalendarSettingsPopover } from './calendar/HyperCalendarSettingsPopover';
@@ -20,15 +21,26 @@ import { hyperCalendarDate, hyperCalendarDraft, hyperCalendarError, type HyperCa
 import { useHyperCalendarEvents } from './calendar/useHyperCalendarEvents';
 
 const HyperCalendarViews: CalendarView[] = ['month', 'week', 'day', 'agenda'];
+// Composite the user-data tint onto an opaque token surface so month bars
+// cover the underlying day borders while retaining ReUI's state recipe.
+const HyperCalendarMonthChipClasses = [
+  'data-[view=month]:bg-[color-mix(in_oklab,var(--ec-event-color)_15%,var(--color-background))]',
+  'data-[view=month]:hover:bg-[color-mix(in_oklab,var(--ec-event-color)_25%,var(--color-background))]',
+  'dark:data-[view=month]:bg-[color-mix(in_oklab,var(--ec-event-color)_20%,var(--color-background))]',
+  'dark:data-[view=month]:hover:bg-[color-mix(in_oklab,var(--ec-event-color)_30%,var(--color-background))]',
+  'data-[view=month]:data-selected:bg-[color-mix(in_oklab,var(--ec-event-color)_30%,var(--color-background))]',
+  'dark:data-[view=month]:data-selected:bg-[color-mix(in_oklab,var(--ec-event-color)_30%,var(--color-background))]',
+].join(' ');
 const HyperCalendarClasses: EventCalendarClassNames = {
   viewSwitcherContent: `${floatingSurfaceClass} w-44`, viewShortcut: 'text-2xs',
-  monthView: 'border-t-0 overflow-y-auto', monthBody: 'min-h-[48rem] shrink-0',
+  monthView: 'border-t-0 overflow-y-auto [--ec-month-bar-h:1.5rem]', monthBody: 'min-h-[36rem] shrink-0',
   monthHeader: 'h-8 shrink-0', monthDayHeader: 'text-xs font-medium',
-  monthCell: 'data-weekend:bg-muted/25 data-outside:bg-muted/25 data-today:bg-primary/3 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+  monthCell: 'data-weekend:bg-muted/50 data-outside:bg-muted/50 data-today:bg-primary/3 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
   monthDayNumber: 'rounded-sm text-xs font-normal tabular-nums group-data-outside/ec-cell:text-muted-foreground/50',
   monthCellFooter: 'order-first pt-1.5 pb-1', monthBarOverlay: 'top-8!',
-  monthCellContent: 'max-h-[calc(100%-3rem)]', moreIndicator: 'absolute inset-x-1 bottom-1 h-4 py-0 text-2xs',
-  event: 'text-2xs data-[view=week]:text-sm data-[view=day]:text-sm data-[view=agenda]:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+  monthCellContent: 'pb-5', moreIndicator: 'absolute inset-x-1 bottom-1 h-4 py-0 text-2xs',
+  event: `text-2xs data-[view=month]:py-0.5 data-[view=agenda]:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${HyperCalendarMonthChipClasses}`,
+  timedChip: 'text-xs',
   timeGrid: '[--ec-hour-height:3rem]!', timeGutter: 'text-xs',
   morePopover: floatingSurfaceClass, agendaDayHeader: 'bg-muted/60', agendaItem: 'px-4 py-2.5 text-sm',
 };
@@ -40,6 +52,7 @@ function HyperCalendarViewContent(props: HyperDatabaseViewProps) {
   const { controller, state } = props;
   const [timeZone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
   const calendar = useHyperCalendarEvents(props, timeZone);
+  const renderEvent = useCallback((event: EventCalendarRenderEventProps<HyperCalendarEventData>) => hyperCalendarRenderEvent(event, timeZone), [timeZone]);
   const [draft, setDraft] = useState<HyperCalendarDraft | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [addingField, setAddingField] = useState(false);
@@ -76,9 +89,9 @@ function HyperCalendarViewContent(props: HyperDatabaseViewProps) {
   return <div data-hyper-calendar className="flex h-full min-h-0 flex-col bg-background">
     <EventCalendar<HyperCalendarEventData> className="min-h-0 flex-1" views={HyperCalendarViews} defaultView="month" events={calendar.events} onEventsChange={() => calendar.refetch()}
       timeZone={timeZone} weekStartsOn={calendar.setting?.firstDayOfWeek === 1 ? 1 : 0} viewSettings={{ weekends: calendar.setting?.showWeekends ?? true }}
-      fixedWeeks snapDuration={15} slotDuration={60} scrollToHour={7} maxEventsPerCell="auto" showDayAddButton nowIndicator enableShortcuts
+      fixedWeeks snapDuration={15} slotDuration={60} scrollToHour={7} maxEventsPerCell={2} showDayAddButton nowIndicator enableShortcuts
       navButtonVariant="ghost" navButtonSize="sm" interactions={{ drag: true, resize: true, selectSlot: true }} eventTooltip={false}
-      loading={calendar.loading} classNames={HyperCalendarClasses} selection={selection} onRangeChange={calendar.onRangeChange} onEventUpdate={calendar.onEventUpdate}
+      loading={calendar.loading} classNames={HyperCalendarClasses} todayClassName="border-b-0!" renderEvent={renderEvent} selection={selection} onRangeChange={calendar.onRangeChange} onEventUpdate={calendar.onEventUpdate}
       renderMoreContent={({ day, close }) => <HyperCalendarMoreContent day={day} close={close} />} renderNoEvents={HyperCalendarNoEvents} onEventClick={(occurrence, event) => { event.preventDefault(); void openRow(occurrence.eventId, occurrence); }}
       onSlotClick={slot => { setSelectedKey(null); setDraft(hyperCalendarDraft(slot.date, slot.end, slot.allDay, timeZone)); }}
       onSelectSlot={slot => { setSelectedKey(null); setDraft(hyperCalendarDraft(slot.start, slot.end, slot.allDay, timeZone)); }}>
