@@ -37,6 +37,8 @@ All upstream paths below are relative to `app/src/`.
 
 ## API contracts
 
+The parent integration keeps check-in Focus and How often in one local draft until Save changes. This deliberately replaces immediate interval PATCH/remount behavior, which could erase an unsaved focus edit. Saving sends both values through the original PATCH contract; navigation without saving remains discardable local editor state.
+
 Verified against `server/src/routines/routes.ts`, `responsibilities/routes.ts`, `proactive/routes.ts`, `tasks/routes.ts`, channel routes, settings routes, shared-use approval routes and `/api/me`.
 
 - `GET/POST /api/routines`; `PUT /api/routines/:id/enabled`; `POST /api/routines/:id/run`; `DELETE /api/routines/:id`; `GET /api/routines/:id/runs`.

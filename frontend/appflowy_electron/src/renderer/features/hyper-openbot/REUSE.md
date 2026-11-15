@@ -18,6 +18,8 @@ Exact direct dependencies: @copilotkit/react-core 1.85.0 matches original runtim
 
 Native UI, action/recovery and VM lifecycle integration are merged in PRs #11, #12 and #13. The original server policy and Intelligence runtime remain unchanged. Current acceptance and limits are recorded in [HYPER_OPENBOT_ACCEPTANCE.md](../../../../docs/HYPER_OPENBOT_ACCEPTANCE.md); owner confirmation and issue #8's final PR gate remain pending. Earlier enhancement notes below describe the assembly sequence; current lifecycle and identity restrictions supersede their planned-work wording.
 
+Parent lifecycle adapters include `src/main/HyperBrowserReturnQueue.ts`, which retains only the credential-free return intent from pinned `app/src/components/desktop/desktop-return.tsx` until AI readiness. The existing main handler still checks identity and asks for native confirmation; ordinary AppFlowy protocols remain unchanged. Main-owned voice sockets enforce a one-MiB outbound queue limit and close unusably slow calls without forwarding provider credentials or changing the original gateway's limits. These are source-tested native adaptations, not new live acceptance.
+
 HyperConversationActions.tsx adapts app/src/lib/approvals.ts and app/src/components/approvals/question-notice.tsx for thread-scoped durable approval/question reads and responses. shared/hyper-openbot-policy.ts is new restricted transport validation, including encoded traversal refusal.
 
 ## Enhancement integration, November 14

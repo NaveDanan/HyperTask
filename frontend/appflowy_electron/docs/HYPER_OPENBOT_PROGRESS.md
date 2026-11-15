@@ -213,6 +213,12 @@ The single-file rechecks at `0cb1cc4` confirmed mounted recovery and deletion ro
 
 Six regressions failed before these fixes and pass afterward, with a broker-capability transport case. Source validation is 1113 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The disposable app runs `877a354` with stores retained. A fresh SSH check still requires human Tailscale authentication. No live consent, native smoke or owner acceptance is claimed; full coverage and exact-head review remain required.
 
+### Remaining Codex lifecycle and network corrections
+
+Seven later Codex threads were checked against current code. Late queued failure restoration was already fixed in `993d9a1`, and the rejected group-send loss is superseded by `ffdb5fd`; a new production GroupChat/Composer regression confirms the failed message merges with the reopened owner draft. `816e874` fixes the other five findings: check-in focus and interval save together instead of an interval refresh erasing focus; allowlist classification uses actual IPv4/IPv6/CIDR syntax; main-owned voice buffering is bounded at one MiB and a slow call closes; launch browser returns remain queued until AI readiness and native confirmation; active attachment IDs belong to the channel send and survive composer remounts without reuse/deletion.
+
+Six regressions failed before these five corrections and pass afterward. Ownership, queue serialization, gateway compatibility and identity guards also pass. Source validation: 1127 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The owned disposable app runs `816e874` with stores retained. No new native/owner acceptance is claimed. Exact-head reviews, remaining Spec coverage and account-holder Tailscale authentication still precede merge.
+
 ## Queue
 
 | Issue | Deliverable | State |

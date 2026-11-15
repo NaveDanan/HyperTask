@@ -30,3 +30,5 @@ Native Chat supplies `onRestoreQueued` to transfer unsent queued text, command I
 If a submitted send rejects after unmount, the callback also restores its complete queued/live snapshot in `failed-send` mode. A matching failed retry identity remains available rather than creating a duplicate user message. Newer content still merges into the owner draft, and stale identity leases refuse both restoration modes. No retry or model run is started automatically while the page is absent.
 
 Mounted and uncontrolled send failures follow pinned upstream recovery: failed text is restored before newer text, and earlier/newer selected skill IDs are merged. Attachment-only failures do not erase newly typed words. Neither draft is silently dropped while the send is pending.
+
+Native Chat also supplies channel-owned active attachment IDs. A remounted composer hides/excludes those refs from subsequent snapshots and cleanup until the owning send settles; ownership cleanup is tied to its submission ID and trusted draft lease. No File bytes or credentials enter the channel cache.
