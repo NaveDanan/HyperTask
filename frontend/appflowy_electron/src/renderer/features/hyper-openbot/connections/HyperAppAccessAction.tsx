@@ -15,6 +15,7 @@ export function HyperAppAccessAction({ agentId, app, refusal, admin = false, onO
   const busy = result?.scope === scope && result.busy;
   const error = result?.scope === scope ? result.error : '';
   const isCurrent = () => current.current === scope && scope.active;
+  const canRead = () => isCurrent() && !scope.busy;
   const canAct = () => isCurrent() && !scope.busy && !!access && scope.access === access;
   function publish(error = '') {
     if (isCurrent()) { scope.error = error; setResult({ scope, access: scope.access, busy: scope.busy, error }); }
@@ -22,6 +23,7 @@ export function HyperAppAccessAction({ agentId, app, refusal, admin = false, onO
   async function load(actionError = '') {
     if (!isCurrent()) return;
     const sequence = ++scope.sequence;
+    publish(actionError);
     try {
       const response = await api.hyperLoadAppAccess(agentId, app);
       if (!isCurrent() || sequence !== scope.sequence) return;
@@ -47,9 +49,9 @@ export function HyperAppAccessAction({ agentId, app, refusal, admin = false, onO
     finally { await load(failure); scope.busy = false; publish(scope.error); }
   }
   const sentences = access ? { ready: access.accountHolder === 'owner' ? 'Ready using the Bot owner’s account.' : access.asksFirst ? 'Ready using your account. You will be asked before first use.' : 'Ready to use.', not_connected: 'Connect your own account.', reconnect: access.accountHolder === 'owner' ? 'The Bot owner must reconnect their account.' : 'Your account needs reconnecting.', shared_not_connected: 'An admin must connect the team account.', shared_not_approved: 'An admin must approve this Bot’s audience for the team account.', disabled: access.unavailable === 'absent' ? 'This app has not been enabled.' : 'This app needs setup before it can be used.', not_granted: 'An admin must give this app to the Bot.', owner_grantable: access.needsConnect ? 'Connect your own account before giving it to your Bot.' : 'Let your Bot use this app?' } : undefined;
-  return <div className="space-y-2 rounded-lg border border-border p-3">{error && <p role="alert" className="text-destructive">{error}</p>}{!access ? <p role="status">Loading app access…</p> : <><p>{access.displayName} · {access.state === 'ready' && refusal ? 'This call was refused. Refresh the connection and retry the task.' : sentences?.[access.state]}</p>{access.request ? <><p>Requested</p><Button disabled={busy} variant="outline" onClick={() => void run(() => api.hyperCancelAppAccess(access.request!.id))}>Withdraw request</Button></> : access.requestKind && !admin ? <Button disabled={busy} onClick={() => void run(() => api.hyperRequestAppAccess(agentId, app))}>Request access</Button> : null}
+  return <div className="space-y-2 rounded-lg border border-border p-3">{error && <p role="alert" className="text-destructive">{error}</p>}{!access ? error ? <Button disabled={busy} variant="outline" onClick={() => { if (canRead()) void load(); }}>Retry access</Button> : <p role="status">Loading app access…</p> : <><p>{access.displayName} · {access.state === 'ready' && refusal ? 'This call was refused. Refresh the connection and retry the task.' : sentences?.[access.state]}</p>{access.request ? <><p>Requested</p><Button disabled={busy} variant="outline" onClick={() => void run(() => api.hyperCancelAppAccess(access.request!.id))}>Withdraw request</Button></> : access.requestKind && !admin ? <Button disabled={busy} onClick={() => void run(() => api.hyperRequestAppAccess(agentId, app))}>Request access</Button> : null}
     {access.state === 'owner_grantable' && !access.needsConnect && <Button disabled={busy} onClick={() => void run(() => api.hyperGiveApp(agentId, app))}>Let it use your app</Button>}{access.givenByOwner && <Button disabled={busy} variant="outline" onClick={() => void run(() => api.hyperGiveApp(agentId, app, false))}>Take back what you gave</Button>}
-    {admin && ['disabled', 'not_granted'].includes(access.state) && <Button disabled={busy} onClick={() => void run(() => api.hyperApproveBotApp(agentId, app))}>Enable and grant read-only access</Button>}{onOpenConnection && access.state !== 'ready' && access.accountHolder !== 'owner' && <Button variant="outline" disabled={busy} onClick={() => { if (canAct()) onOpenConnection(access.key); }}>Open app setup and connection</Button>}<Button variant="ghost" disabled={busy} onClick={() => { if (canAct()) void load(); }}>Refresh access</Button></>}
+    {admin && ['disabled', 'not_granted'].includes(access.state) && <Button disabled={busy} onClick={() => void run(() => api.hyperApproveBotApp(agentId, app))}>Enable and grant read-only access</Button>}{onOpenConnection && access.state !== 'ready' && access.accountHolder !== 'owner' && <Button variant="outline" disabled={busy} onClick={() => { if (canAct()) onOpenConnection(access.key); }}>Open app setup and connection</Button>}<Button variant="ghost" disabled={busy} onClick={() => { if (canRead()) void load(); }}>Refresh access</Button></>}
   </div>;
 }
 export function HyperAppAccessRequests({ app, busy, run }: { app: string; busy: boolean; run(action: () => Promise<void>): Promise<void> }) {

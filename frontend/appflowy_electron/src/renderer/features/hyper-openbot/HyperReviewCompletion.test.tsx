@@ -13,7 +13,11 @@ import { HyperComposer } from './composer';
 import { HyperConversationDraftCache } from './HyperConversationDraft';
 import { HyperInteractiveResult } from './screens-gen/HyperInteractiveResult';
 import { FormCardArgs, HyperFormCard } from './screens-gen/form';
-import HyperRoutinesSection, { HyperCheckInEditor } from './routines/HyperRoutinesSection';
+import HyperRoutinesSection, { HyperCheckInEditor, HyperGoalEditor } from './routines/HyperRoutinesSection';
+import { HyperRead } from './routines/HyperRoutineControls';
+import HyperLearningSection from './memory/HyperLearningSection';
+import { HyperLearningConfiguration } from './memory/HyperLearningConfiguration';
+import HyperNewConversationSection from './conversations/HyperNewConversationSection';
 import { HyperGroupChat } from './conversations/HyperGroupChat';
 import { hyperAcquireConversationDraft } from './useHyperConversationDraft';
 import { HyperAppAccessAction, HyperAppAccessRequests } from './connections/HyperAppAccessAction';
@@ -665,7 +669,7 @@ function hyperModelTestChat(agentId = 'model-bot') {
   render(component, chat.props);
   return { component, props: chat.props, metadataEffect: h.effects[2] };
 }
-const hyperModelCatalogue = { models: [{ id: 'openbot-model', name: 'OpenBot model', provider: 'openbot', efforts: ['high'] }], default: 'openbot-model' };
+const hyperModelCatalogue = { models: [{ id: 'openbot-model', label: 'OpenBot model', efforts: ['high'] }], default: 'openbot-model', choosable: true };
 it.each([false, undefined])('does not fetch or offer OpenBot model choices for Bot capability %s', async capability => {
   f.request.mockImplementation(async (path: string) => path.startsWith('/api/agents/') ? { agent: { id: 'model-bot', runsOnOpenBotModel: capability } } : path === '/api/models' ? hyperModelCatalogue : path.endsWith('/model') ? { model: 'openbot-model', effort: 'high' } : { skills: [] });
   const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
@@ -698,7 +702,7 @@ it('keeps model choices for a managed harness even when builtIn is false', async
   const picker = find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker;
   expect(picker.value).toEqual({ model: 'openbot-model', effort: null });
   picker.onChange({ model: 'openbot-model', effort: 'high' }); await drain();
-  expect(f.request).toHaveBeenCalledWith('/api/channels/model-channel/model', 'PUT', { model: 'openbot-model', effort: 'high' });
+  expect(f.request).toHaveBeenCalledWith('/api/channels/model-channel/model', 'PUT', { model: null, effort: 'high' });
   expect(find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker.value).toEqual({ model: 'openbot-model', effort: 'high' });
 });
 it.each(['wrong Bot', 'nonboolean flag', 'read failure'])('does not infer a model capability from %s', async mode => {
@@ -776,4 +780,209 @@ it.each([
   const read = find(tree, element => element.props.path === '/api/routines')!;
   const rows = read.props.children({ sweep: { working: true }, routines: [{ id: 'routine', title: 'Routine', enabled: true, channel: { gone: true }, lastRun: test.lastRun }] });
   expect(find(rows, element => element.type === 'p' && text(element.props.children) === `Last run: ${test.label}`)).toBeDefined();
+});
+function hyperLearningTestEditor() {
+  const settings = { enabled: true, defaultTarget: { containerId: 'submitted-container', revision: 'revision-a' }, agents: { 'learning-bot': null }, personalReview: 'people' };
+  const resource = (path: string, key: string | undefined, data: unknown) => [data, '', false, 0, `${path}:${key ?? ''}`];
+  const outer = render(HyperLearningSection, {}, resource('/api/capabilities', undefined, { edition: 'team' })) as ReactElement<any>;
+  const states = ['configuration', '', ...resource('/api/admin/learning/settings', 'settings', settings), settings,
+    ...resource('/api/admin/learning/proposals', undefined, { proposals: [] }), ...resource('/api/admin/learning/runs', undefined, { runs: [] }),
+    ...resource('/api/admin/learning/skills', undefined, { skills: [] }), ...resource('', undefined, undefined), '', false, ''];
+  h.refs = [];
+  const component = outer.type as (props: any) => ReactNode;
+  render(component, outer.props, states);
+  return { component, props: outer.props, settings, states };
+}
+it.each([
+  { name: 'container', change: (tree: ReactNode) => find(tree, element => element.props.maxLength === 64)!.props.onChange({ target: { value: 'newer-container' } }), expected: { defaultTarget: { containerId: 'newer-container', revision: 'revision-a' } } },
+  { name: 'revision', change: (tree: ReactNode) => find(tree, element => element.props.maxLength === 256)!.props.onChange({ target: { value: 'revision-b' } }), expected: { defaultTarget: { containerId: 'submitted-container', revision: 'revision-b' } } },
+  { name: 'enablement', change: (tree: ReactNode) => find(tree, element => typeof element.props.onCheckedChange === 'function')!.props.onCheckedChange(false), expected: { enabled: false } },
+  { name: 'Bot participation', change: (tree: ReactNode) => { const editor = find(tree, element => element.type === HyperLearningConfiguration)!; editor.props.onChange({ ...editor.props.value, agents: { 'learning-bot': { containerId: 'newer-bot-container' } } }); }, expected: { agents: { 'learning-bot': { containerId: 'newer-bot-container' } } } },
+])('preserves newer Learning $name edits after an older configuration save succeeds', async test => {
+  let finish!: (value: unknown) => void; f.request.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  const editor = hyperLearningTestEditor();
+  find(render(editor.component, editor.props), element => element.type === 'form')!.props.onSubmit({ preventDefault() {} }); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/admin/learning/settings', 'PUT', { enabled: editor.settings.enabled, defaultTarget: editor.settings.defaultTarget, agents: editor.settings.agents });
+  test.change(render(editor.component, editor.props));
+  expect(find(render(editor.component, editor.props), element => element.type === HyperLearningConfiguration)!.props.value).toMatchObject(test.expected);
+  finish({ settings: editor.settings }); await drain();
+  expect(find(render(editor.component, editor.props), element => element.type === HyperLearningConfiguration)!.props.value).toMatchObject(test.expected);
+});
+it('offers read-only retry when the first Bot app-access read fails', async () => {
+  const props = { agentId: 'A', app: 'mail' };
+  f.request.mockRejectedValueOnce(new Error('synthetic-transient-read')).mockResolvedValue(botAppAccess(props.agentId, props.app));
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); let tree = render(HyperAppAccessAction, props);
+  const retry = button(tree, 'Retry access'); expect(retry).toBeDefined();
+  expect(find(tree, element => element.props.role === 'status')).toBeUndefined();
+  retry!.props.onClick(); await drain(); tree = render(HyperAppAccessAction, props);
+  expect(button(tree, 'Withdraw request')).toBeDefined(); expect(find(tree, element => element.props.role === 'alert')).toBeUndefined();
+  expect(f.request.mock.calls.some(call => call[1])).toBe(false);
+});
+it.each([
+  { name: 'check-in', component: HyperCheckInEditor, props: () => ({ setting: { id: 'check', subject: 'Check', focus: 'original focus', intervalMinutes: 60 }, refresh: vi.fn() }) },
+  { name: 'goal', component: HyperGoalEditor, props: () => ({ goal: { id: 'goal', title: 'Goal', instruction: 'Original instruction', successCriteria: 'Done', endsWhenMet: true }, refresh: vi.fn() }) },
+])('locks $name draft controls while Save changes is pending', async editor => {
+  let finish!: (value: unknown) => void; f.request.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  const props = editor.props();
+  const pending = find(render(editor.component, props), element => element.props.label === 'Save changes')!.props.run(); await drain();
+  try { expect(find(render(editor.component, props), element => element.type === 'fieldset')?.props.disabled).toBe(true); }
+  finally { finish({}); await pending; await drain(); }
+  expect(find(render(editor.component, props), element => element.type === 'fieldset')!.props.disabled).toBe(false);
+});
+it('retains the mounted routine editor and unsaved draft through a failed settings poll', async () => {
+  const setting = { id: 'check', subject: 'Check', focus: 'saved focus', intervalMinutes: 60 };
+  const props = { path: '/api/proactive/settings', field: 'settings', children: (settings: any[]) => <HyperCheckInEditor setting={settings[0]} refresh={vi.fn()} /> };
+  f.request.mockResolvedValueOnce({ settings: [setting] }).mockRejectedValueOnce(new Error('synthetic-poll-failure'));
+  render(HyperRead, props); mountEffects(); await drain();
+  const readState = h.states, readRefs = h.refs;
+  const first = find(render(HyperRead, props), element => element.type === HyperCheckInEditor)!;
+  h.states = []; h.refs = []; let editor = render(HyperCheckInEditor, first.props);
+  find(editor, element => element.props.maxLength === 1000)!.props.onChange({ target: { value: 'unsaved focus' } });
+  editor = render(HyperCheckInEditor, first.props); find(editor, element => element.props.label === 'How often')!.props.onChange('240');
+  const draftState = h.states, draftRefs = h.refs;
+  await vi.advanceTimersByTimeAsync(10000); h.states = readState; h.refs = readRefs;
+  const refreshed = render(HyperRead, props), held = find(refreshed, element => element.type === HyperCheckInEditor);
+  expect(held).toBeDefined(); expect(find(refreshed, element => element.props.role === 'alert')).toBeDefined();
+  h.states = draftState; h.refs = draftRefs; editor = render(HyperCheckInEditor, held!.props);
+  expect(find(editor, element => element.props.maxLength === 1000)!.props.value).toBe('unsaved focus');
+  expect(find(editor, element => element.props.label === 'How often')!.props.value).toBe('240');
+});
+it.each([false, undefined])('new conversation does not offer model choices for Bot capability %s', async capability => {
+  const bot = { id: 'new-bot', name: 'Bot', title: '', runsOnOpenBotModel: capability };
+  f.request.mockImplementation(async (path: string) => path === '/api/models' ? hyperModelCatalogue : path === '/api/agents' ? { agents: [bot] } : { skills: [] });
+  const context = { initialAgentIds: [bot.id], startConversation: vi.fn(), openConversation: vi.fn() };
+  const states = [[], [], [], { model: '', effort: null }, [bot], [bot.id], undefined, 0];
+  render(HyperNewConversationSection, { context }, states); mountEffects(); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/models')).toBe(false);
+  expect(find(render(HyperNewConversationSection, { context }), element => element.type === HyperComposer)!.props.modelPicker).toBeUndefined();
+});
+it('does not make an explicit model save for a new conversation using both defaults', async () => {
+  const bot = { id: 'new-bot', name: 'Bot', title: '', runsOnOpenBotModel: true };
+  f.request.mockImplementation(async (path: string) => path === '/api/models' ? hyperModelCatalogue : path === '/api/agents' ? { agents: [bot] } : { skills: [] });
+  const start = vi.fn(async (_ids: string[], draft: any) => { if (draft.modelPick) throw new Error('Model choice disabled'); });
+  const context = { initialAgentIds: [bot.id], startConversation: start, openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }, [[], [], [], { model: '', effort: null }, [bot], [bot.id], undefined, 0]); mountEffects(); await drain();
+  const composer = find(render(HyperNewConversationSection, { context }), element => element.type === HyperComposer)!;
+  await expect(composer.props.onSubmit({ text: 'First message', attachments: [], commandIds: [] })).resolves.toBeUndefined();
+  expect(start).toHaveBeenCalledWith([bot.id], { text: 'First message', files: [], commandIds: [], submit: true });
+});
+const hyperComposition = (tree: ReactNode) => find(tree, element => typeof element.key === 'string' && element.key.startsWith('hyper-new-conversation-'));
+it('repeated native New conversation arrivals clear old recipients and receive a fresh composition key', () => {
+  const props = { viewId: 'new-arrival', serviceReady: true };
+  let tree = render(HyperOpenBotWorkspace, props, ['new-conversation', ['earlier-bot'], false, '', [], 'thread', 0, 0, undefined, [], undefined]);
+  const earlier = hyperComposition(tree)?.key; button(tree, 'New conversation')!.props.onClick(); tree = render(HyperOpenBotWorkspace, props);
+  const section = find(tree, element => 'path' in element.props && element.props.context?.initialDraftSupported)!;
+  expect(section.props.context.initialAgentIds).toEqual([]); expect(hyperComposition(tree)?.key).not.toBe(earlier);
+});
+it('repeated native Bot start requests remount the new composition even for the same recipient', async () => {
+  const props = { viewId: 'new-preselection', serviceReady: true };
+  let tree = render(HyperOpenBotWorkspace, props, ['new-conversation', ['chosen-bot'], false, '', [], 'thread', 0, 0, undefined, [], undefined]);
+  const earlier = hyperComposition(tree)?.key;
+  const section = find(tree, element => 'path' in element.props && element.props.context?.initialDraftSupported)!;
+  await section.props.context.startConversation(['chosen-bot']); tree = render(HyperOpenBotWorkspace, props);
+  expect(hyperComposition(tree)?.key).not.toBe(earlier);
+});
+it('does not read or expose saved model choices when the native catalogue is not choosable', async () => {
+  f.request.mockImplementation(async (path: string) => path.startsWith('/api/agents/') ? { agent: { id: 'model-bot', runsOnOpenBotModel: true } } : path === '/api/models' ? { ...hyperModelCatalogue, choosable: false } : path.endsWith('/model') ? { model: null, effort: null } : { skills: [] });
+  const chat = hyperModelTestChat(); const cleanup = chat.metadataEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/channels/model-channel/model')).toBe(false);
+  expect(find(render(chat.component, chat.props), element => element.type === HyperComposer)!.props.modelPicker).toBeUndefined();
+});
+it('clears the Learning draft after an unchanged submitted snapshot succeeds', async () => {
+  f.request.mockResolvedValue({}); const editor = hyperLearningTestEditor();
+  find(render(editor.component, editor.props), element => element.type === 'form')!.props.onSubmit({ preventDefault() {} }); await drain();
+  expect(editor.states[7]).toBeUndefined();
+});
+it('keeps the current Learning draft and generic guidance after a failed save', async () => {
+  f.request.mockRejectedValue(new Error('synthetic-save-failure')); const editor = hyperLearningTestEditor();
+  find(render(editor.component, editor.props), element => element.type === 'form')!.props.onSubmit({ preventDefault() {} }); await drain();
+  expect(editor.states[7]).toBe(editor.settings);
+  const tree = render(editor.component, editor.props);
+  expect(find(tree, element => element.props.role === 'alert')).toBeDefined();
+  expect(find(tree, element => text(element.props.children) === 'Save settings')!.props.disabled).toBe(false);
+});
+it.each(['unmount', 'Bot change'])('read-only access retry rejects a cached callback after $0', async change => {
+  const props = { agentId: 'A', app: 'mail' }; f.request.mockRejectedValue(new Error('synthetic-read-failure'));
+  render(HyperAppAccessAction, props); mountEffects(); await drain(); const retry = button(render(HyperAppAccessAction, props), 'Retry access')!;
+  if (change === 'unmount') { for (const cleanup of h.cleanups) cleanup(); h.cleanups = []; }
+  else render(HyperAppAccessAction, { ...props, agentId: 'B' });
+  retry.props.onClick(); await drain(); expect(f.request).toHaveBeenCalledOnce();
+});
+it.each([
+  { name: 'check-in', component: HyperCheckInEditor, props: () => ({ setting: { id: 'check', subject: 'Check', focus: 'draft focus', intervalMinutes: 240 }, refresh: vi.fn() }) },
+  { name: 'goal', component: HyperGoalEditor, props: () => ({ goal: { id: 'goal', title: 'Draft goal', instruction: 'Draft instruction', successCriteria: 'Done', endsWhenMet: true }, refresh: vi.fn() }) },
+])('$name save failure unlocks the existing draft without refreshing it away', async editor => {
+  f.request.mockRejectedValue(new Error('synthetic-save-failure')); const props = editor.props();
+  const save = find(render(editor.component, props), element => element.props.label === 'Save changes')!;
+  await expect(save.props.run()).rejects.toThrow('synthetic-save-failure'); await drain();
+  expect(find(render(editor.component, props), element => element.type === 'fieldset')!.props.disabled).toBe(false);
+  expect(props.refresh).not.toHaveBeenCalled();
+});
+it.each([
+  { name: 'check-in', component: HyperCheckInEditor, props: () => ({ setting: { id: 'check', subject: 'Check', focus: 'draft focus', intervalMinutes: 60 }, refresh: vi.fn() }) },
+  { name: 'goal', component: HyperGoalEditor, props: () => ({ goal: { id: 'goal', title: 'Draft goal', instruction: 'Draft instruction', successCriteria: 'Done', endsWhenMet: true }, refresh: vi.fn() }) },
+])('$name save rejects duplicate submission and obsolete post-unmount refresh', async editor => {
+  let finish!: (value: unknown) => void; f.request.mockImplementation(() => new Promise(resolve => { finish = resolve; })); const props = editor.props();
+  render(editor.component, props); mountEffects(); const save = find(render(editor.component, props), element => element.props.label === 'Save changes')!;
+  const pending = save.props.run(); await expect(save.props.run()).rejects.toThrow('already saving');
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = []; finish({}); await pending; save.props.done();
+  expect(f.request).toHaveBeenCalledOnce(); expect(props.refresh).not.toHaveBeenCalled();
+});
+it('same-query routine retry keeps cached children in place while reloading', async () => {
+  const props = { path: '/api/routines', field: 'routines', children: (rows: any[]) => <p data-testid="cached-routine">{rows[0].title}</p> };
+  f.request.mockResolvedValueOnce({ routines: [{ title: 'Cached' }] }).mockRejectedValueOnce(new Error('synthetic-poll-failure')).mockImplementation(() => new Promise(() => {}));
+  render(HyperRead, props); mountEffects(); await drain(); await vi.advanceTimersByTimeAsync(10000);
+  let tree = render(HyperRead, props); button(tree, 'Retry')!.props.onClick();
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = []; render(HyperRead, props); mountEffects(); await drain(); tree = render(HyperRead, props);
+  expect(find(tree, element => element.props['data-testid'] === 'cached-routine')).toBeDefined();
+});
+it('routine read scope hides another query immediately and rejects its late response', async () => {
+  let old!: (value: unknown) => void;
+  f.request.mockImplementationOnce(() => new Promise(resolve => { old = resolve; })).mockResolvedValue({ settings: [{ title: 'New query' }] });
+  const props = (path: string) => ({ path, field: 'settings', children: (rows: any[]) => <p data-testid="query-title">{rows[0].title}</p> });
+  render(HyperRead, props('/api/one')); mountEffects();
+  expect(find(render(HyperRead, props('/api/two')), element => element.props['data-testid'] === 'query-title')).toBeUndefined(); mountEffects(); await drain();
+  old({ settings: [{ title: 'Old query' }] }); await drain();
+  expect(text(find(render(HyperRead, props('/api/two')), element => element.props['data-testid'] === 'query-title')!.props.children)).toBe('New query');
+});
+it.each([
+  { model: 'openbot-model', effort: 'high', expected: { model: null, effort: 'high' } },
+  { model: 'other-model', effort: 'high', expected: { model: 'other-model', effort: 'high' } },
+])('new composition preserves an explicit choice as $expected', async test => {
+  const bot = { id: 'new-bot', name: 'Bot', runsOnOpenBotModel: true, builtIn: false };
+  const catalogue = { ...hyperModelCatalogue, models: [...hyperModelCatalogue.models, { id: 'other-model', label: 'Other', efforts: ['high'] }] };
+  f.request.mockImplementation(async (path: string) => path === '/api/models' ? catalogue : path === '/api/agents' ? { agents: [bot] } : { skills: [] });
+  const context = { initialAgentIds: [bot.id], startConversation: vi.fn(async () => {}), openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }, [[], [], [], { model: '', effort: null }, [bot], [bot.id], undefined, 0]); mountEffects(); await drain();
+  const composer = find(render(HyperNewConversationSection, { context }), element => element.type === HyperComposer)!;
+  composer.props.modelPicker.onChange({ model: test.model, effort: test.effort });
+  await composer.props.onSubmit({ text: 'First', attachments: [], commandIds: [] });
+  expect(context.startConversation).toHaveBeenCalledWith([bot.id], { text: 'First', files: [], commandIds: [], submit: true, modelPick: test.expected });
+});
+it('new composition keeps both defaults when catalogue choices are disabled', async () => {
+  const bot = { id: 'new-bot', name: 'Bot', runsOnOpenBotModel: true };
+  f.request.mockImplementation(async (path: string) => path === '/api/models' ? { ...hyperModelCatalogue, choosable: false } : path === '/api/agents' ? { agents: [bot] } : { skills: [] });
+  const context = { initialAgentIds: [bot.id], startConversation: vi.fn(async () => {}), openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }, [[], [], [], { model: '', effort: null }, [bot], [bot.id], undefined, 0]); mountEffects(); await drain();
+  const composer = find(render(HyperNewConversationSection, { context }), element => element.type === HyperComposer)!;
+  expect(composer.props.modelPicker).toBeUndefined(); await composer.props.onSubmit({ text: 'First', attachments: [], commandIds: [] });
+  expect(context.startConversation).toHaveBeenCalledWith([bot.id], { text: 'First', files: [], commandIds: [], submit: true });
+});
+it('new composition rejects a cached submit when its navigation is no longer current', async () => {
+  let active = true;
+  const bot = { id: 'new-bot', name: 'Bot', runsOnOpenBotModel: false };
+  f.request.mockResolvedValue({ agents: [bot], skills: [] });
+  const context = { initialAgentIds: [bot.id], isCurrentNavigation: () => active, startConversation: vi.fn(), openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }, [[], [], [], { model: '', effort: null }, [bot], [bot.id], undefined, 0]); mountEffects(); await drain();
+  const composer = find(render(HyperNewConversationSection, { context }), element => element.type === HyperComposer)!;
+  active = false; await expect(composer.props.onSubmit({ text: 'Old', attachments: [], commandIds: [] })).rejects.toThrow('setup changed');
+  expect(context.startConversation).not.toHaveBeenCalled(); expect(f.request.mock.calls.some(call => call[0] === '/api/route')).toBe(false);
+});
+it('same-view native new-conversation navigation also resets its composition and preselection', () => {
+  const props = { viewId: 'new-navigation', serviceReady: true };
+  let tree = render(HyperOpenBotWorkspace, props, ['new-conversation', ['previous-bot'], false, '', [], 'thread', 0, 0, undefined, [], undefined]);
+  const before = hyperComposition(tree)!.key, section = find(tree, element => 'path' in element.props && element.props.context?.initialDraftSupported)!;
+  section.props.context.navigate('new-conversation'); tree = render(HyperOpenBotWorkspace, props);
+  expect(hyperComposition(tree)!.key).not.toBe(before);
+  expect(find(tree, element => 'path' in element.props && element.props.context?.initialDraftSupported)!.props.context.initialAgentIds).toEqual([]);
 });

@@ -1,6 +1,7 @@
 import type { HyperInitialDraft as HyperHomeInitialDraft } from '../onboarding/HyperHomeApi';
 import { HyperScreenPickedFiles } from '../composer/hyper-files';
-export type HyperInitialDraft = HyperHomeInitialDraft & { modelPick?: { model: string; effort: string | null } };
+import type { HyperConversationModel } from '../HyperModelSelection';
+export type HyperInitialDraft = HyperHomeInitialDraft & { modelPick?: HyperConversationModel };
 /** One memory-only start transaction, retained after refusal so retry reuses its server channel. */
 export class HyperInitialDraftTransfer<T> {
   private active?: AbortController;
