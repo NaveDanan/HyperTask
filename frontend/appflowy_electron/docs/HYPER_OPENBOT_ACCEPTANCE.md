@@ -1,12 +1,14 @@
 # Native OpenBot acceptance
 
-[Issue #8](https://github.com/NaveDanan/HyperTask/issues/8) validates the original OpenBot and CopilotKit Intelligence inside HyperTask. The automated/native checks below passed. On 2026-11-14 the owner reviewed the running native demo, its known limits and the upstream differences below, and requested native parity with the upstream OpenBot app before acceptance. Parity work is in progress on this branch; this report does not declare phase 1 complete.
+[Issue #8](https://github.com/NaveDanan/HyperTask/issues/8) tracks the original OpenBot/CopilotKit integration inside HyperTask. Final source `5b94256` implements the reported parity corrections and passes 1614 automated tests, one optional skip, four real-core tests, typecheck/build and 23 smoke safeguards. The owner explicitly authorized merge after fixing the reports, requested the final comment `fixed all the issues`, waived another Codex review and skipped native verification. Native verification of this final source is **unverified, not passed**. Merge status is tracked in [PR #14](https://github.com/NaveDanan/HyperTask/pull/14).
+
+The native observations below are historical baseline evidence, captured before the owner requested the expanded parity work. They must not be read as a live acceptance receipt for the final source. Tailscale authentication and the retained disposable app were not bypassed or reset. No new agreement, vendor consent or native acceptance was performed for this delivery.
 
 HyperTask is the only application UI used in these checks. Electron and the existing Rust core run on the desktop; the existing authorized personal MMEMS VM runs OpenBot, the model agent, computer, PostgreSQL and original Intelligence. There is no iframe or separate OpenBot shell. ChatGPT OAuth supplies model access; no API key was added. The account holder personally completed the required agreement.
 
 The source pin remains `f8af37ab73e96784f174a11104505a965e722cab`. The desktop runtime capture is `3eb5d6a4e50ac096b9e6b0f7472522b471b0754c`; action/tool/Stop captures are `6d9ea32530bacb5f5e199aca8e17b1c624004cb4`. The changes between those captures retain navigation drafts and add core regression tests. [The machine-readable record](HYPER_OPENBOT_ACCEPTANCE.runtime.json) identifies each private evidence file, capture commit and SHA-256. Full synthetic conversations and screenshots stay in the private evidence directory, outside Git.
 
-## Results
+## Historical native baseline results
 
 | Requirement | Observation and limits |
 | --- | --- |
@@ -133,7 +135,7 @@ The voice broker preserves the configured x.ai model query in main, permits only
 
 Protected native key creation/rotation/revocation and browser returns are now integrated. Key bytes stay in main-owned dialogs; Copy key writes the OS clipboard only after an explicit native choice and another owner check. Generic renderer key-creation HTTP remains blocked. The pinned browser return is credential-free `openbot://open`; native navigation refreshes authoritative connection state and does not claim success based on return alone. No OS protocol association was changed. Most nested selections/access components and versioned Home ownership are integrated; standalone Memory-source and deeper admin destinations remain pending.
 
-Standalone Memory-source and remaining admin destination consumers are mounted. Current source `ec3a22f`, Node 24.18.1: typecheck, production build and 1325 tests pass. One opt-in simulated-IPC live test is skipped; the four real-core tests ran. All 23 smoke safeguards pass. The upstream terminal packages `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0 remain locked; existing package versions were unchanged. Review-06 found genuine missing/incorrect workflows despite source integration. The following matrix describes mounted code and remaining corrections, not full parity or native acceptance.
+All thirteen source branches and six substantive correction scopes are integrated. Final source `5b94256`, Node 24.18.1: typecheck, production build and 1614 tests pass, with one optional simulated-IPC skip and four real-core tests. All 23 smoke safeguards pass. The two pinned terminal dependencies remain unchanged. The matrix below records implemented code under the owner's explicit native-verification waiver; it does not claim final-source native acceptance.
 
 The current native attempt launched the real app from `8789875` using the retained test profile and private pipes, but failed the AI-readiness deadline with no renderer exceptions. The fixed backend check then reported Tailscale SSH's additional human authentication requirement. That attempt is not a pass. No network-policy bypass, identity reset or alternate credential route was used. The owned app was subsequently relaunched on `cd8dc33`, then `7a3b91b`, with its stores retained. A fresh secure sign-in request timed out, and an independent SSH recheck still requires the account-holder check. Native acceptance remains blocked until that check succeeds. Sign-in URLs and private diagnostic artifacts are not committed.
 
@@ -198,26 +200,26 @@ The complete original OpenBot backend and Intelligence run on the VM. HyperTask 
 | Upstream feature | HyperTask native support |
 | --- | --- |
 | Single-Bot conversations: create, reopen, pin, delete | Available |
-| Composer: model, effort, attachments, Send, Stop | Mounted; queue/dictation/follow-up upload corrections remain |
+| Composer: model, effort, attachments, Send, Stop | Implemented with readiness/dictation/queue and independent follow-up upload protections |
 | Streaming transcript and authoritative saved history | Available |
 | In-conversation approvals: Allow once, Allow for this conversation, Always allow here, Deny, I did it myself | Available |
 | Bot questions | Available |
 | Bots: roster, create, profile editing, Pause/Resume, notifications, hidden Bots | Available |
 | Skills: create, edit, delete, grant to Bots | Available |
-| Connections: directory, Add app, MCP server by URL, start external sign-in | Mounted; personal connect/grant, carry-on, peer refresh and shared-admin setup corrections remain; live consent verification pending |
-| Bot computer | Mounted status/live/terminal/files/narration/recording; holder identity, browser reset and narration corrections remain; native verification pending |
+| Connections: directory, Add app, MCP server by URL, start external sign-in | Implemented personal/owner transactions, explicit shared exposure, peer refresh, admin setup and current-channel carry-on; live consent unverified |
+| Bot computer | Implemented current-holder guards, status/live/terminal/files, private handoffs, personal clear lifecycle, narration and recording; native verification skipped |
 | Original computer tools (navigate, read, snapshot, type, click, key, list/read/write files, run command, scroll) | Available through the original approval gate |
-| Group conversations with several Bots | Integrated; native verification pending |
-| Routines: schedules, goals, check-ins | Mounted with protected trigger-key delivery; creation lifetime, open-run and trigger-overview corrections remain; native verification pending |
-| Memory and Automatic Learning | Mounted facts/sources/review/sharing; grouped-learning failure continuation remains to correct; native verification pending |
-| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Mounted with protected callback keys; first grant, hidden handoff targets, profile freshness and attention corrections remain; native verification pending |
-| Cross-conversation approvals inbox | Integrated with decisions/questions, standing rules, history and routing; native verification pending |
-| Vault and passwords | Integrated with key/login management and private sign-in forms; native verification pending |
-| Bot browser page | Integrated with recorder pairing/history and live controls; native verification pending |
-| Generated interactive screens opened as pages | Fifteen tools mounted; SDK expressions/progressive/gallery preview corrections remain; native verification pending |
-| Personal settings: notifications, learning, browsers, this computer, connected accounts | Mounted; roster adapter, destinations and repository read-order corrections remain; native verification pending; Tauri-only local controls remain unavailable |
-| Administration: people, permissions, boundaries, audit, providers, credentials, plugins (Arcade/Composio), computers, playground, what-if | Mounted with protected returns; MCP allowlist is missing and provider/audit corrections remain; native verification pending |
-| Onboarding wizard and starter tour | Integrated with Home drafts and native destinations; native verification pending |
+| Group conversations with several Bots | Implemented; native verification skipped |
+| Routines: schedules, goals, check-ins | Implemented with protected trigger keys, creation lifetime, open-run and trigger-aware overview |
+| Memory and Automatic Learning | Implemented facts/sources/review/sharing, with per-container failure continuation and safe errors |
+| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Implemented first grants, held hidden targets/revocation, current profile saves, live tasks, SMS and scoped external-editor completion |
+| Cross-conversation approvals inbox | Implemented decisions/questions, standing rules, history, requested settings tabs and needs-you notification replacement |
+| Vault and passwords | Implemented key/login management and computer-guarded private sign-in forms |
+| Bot browser page | Implemented recorder pairing/history, current-owner controls and address-draft reset |
+| Generated interactive screens opened as pages | Fifteen tools implemented with SDK expressions, progressive settled arguments, per-call decisions and published sample previews |
+| Personal settings: notifications, learning, browsers, this computer, connected accounts | Implemented pinned roster adapter, actual destinations and ordered repository readback; Tauri-only local controls remain unavailable |
+| Administration: people, permissions, boundaries, audit, providers, credentials, plugins (Arcade/Composio), computers, playground, what-if | Implemented MCP allowlist, available catalogue despite optional usage failure, intent-safe boundaries and narrowed audit/CSV views |
+| Onboarding wizard and starter tour | Implemented Home drafts, current composer focus and claimed-conversation starter tasks |
 
 This table supersedes the earlier owner's-demo difference list. It separates source integration from actual native acceptance. The owner requested completing these workflows before merge; that gate remains open.
 
@@ -234,6 +236,16 @@ Eleven tests failed against the previous code; two timestamp regressions caught 
 `ec3a22f` adds one further red/green initial-receiver regression. Initial composition now waits for the approval read to become current before receiving/sending its first draft; it does not fail a valid start behind the new continuation gate. The full suite is 1325 passing with one optional skip, four real-core tests and typecheck/build; the 23 unchanged smoke safeguards remain passing. The same twenty new/changed/incomplete paths remain due at this source checkpoint.
 
 The substantial scopes cover shared computer/browser ownership and recovery, personal app access/grants/carry-on, saved voice/recovery, composer input/queues/uploads, MCP allowlist administration and generative SDK/gallery behavior. The owner requested Codex GPT-6.1 Sol high effort and Fast priority. No source correction, passing test, clean historical receipt or completed inventory clears the remaining exact-head Code/Security, complete contract/doc review, account-holder authentication, real native/vendor and owner gates.
+
+## Final source delivery and owner-authorized merge scope
+
+The six high/Fast Codex implementations are integrated, and their required parent wiring is complete: current upload group captured once per batch, recipient/creation focus tokens, progressive argument/turn facts with captured decision wait, computer-guarded Vault mutations, Bot peer-read generations and administrator-capable setup intent. The 55 review-06 reports, including duplicate symptoms, are corrected in source. The final GitHub thread audit additionally reproduced and corrected pending phone edits, external-editor completion and the asynchronous question-read continuation gap. Other open thread descriptions matched corrections already covered by the tests.
+
+Final source `5b94256f3ded2cf1356c8df07a04c419a024c9f1` passes 1614 tests with one optional skip, four real-core tests, typecheck/build and 23 safeguards. Automated and focused red/green evidence is not a live native or vendor receipt. No further Codex review was requested after the owner's instruction. Existing reviews, skipped checks and historical receipts are retained as history, not misrepresented as approval of this head. The owner accepted this automated-only validation scope and authorized merge after the final fixed-all-issues comment.
+
+Independent inspection provenance still matters: at this source checkpoint 331 byte-identical files carry prior inspection in a 444-file diff; 113 changed/new or incompletely inspected paths were not independently re-reviewed. The owner waived another review. This is not exhaustive independent final-head clearance. Older incomplete/blocked checkpoints above remain historical; they do not mean those reported source corrections remain unfinished.
+
+Known baseline/environment limits still apply: original Intelligence and its license/authentication, fixed personal VM/native owner, original data/protocol paths, pre-existing editor placeholders, Linux development packaging and unsupported Tauri-local controls. MCP policy uses the pinned whole-list PUT without conditional revision, so external concurrent policy writes remain non-atomic. No Intelligence replacement, Knowledge Graph or next-stage implementation has begun.
 
 ## Offline boundary, dependencies and notices
 

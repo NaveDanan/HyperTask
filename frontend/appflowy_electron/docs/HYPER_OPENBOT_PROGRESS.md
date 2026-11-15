@@ -3,6 +3,8 @@
 Tracking epic: [#2](https://github.com/NaveDanan/HyperTask/issues/2).
 Updated: 2026-11-15.
 
+Final delivery checkpoint: all reported source corrections and six substantive implementations are integrated in `5b94256`, with 1614 tests, one optional skip, four real-core cases, typecheck/build and 23 safeguards passing. The owner authorized merge after the comment `fixed all the issues`, waived another Codex review and explicitly skipped native verification. Final native behavior is unverified, not passed. [PR #14](https://github.com/NaveDanan/HyperTask/pull/14) is the authoritative merge-status record; older open/blocked checkpoints below are historical.
+
 ## Delivery rules
 
 - Merge issues #3, #4, #5, #6, #7 and #8 in order. On 2026-11-14 the user explicitly authorized parallel native UI implementation while #4 acceptance continues. UI work remains on separate branches and does not bypass review or acceptance gates.
@@ -289,6 +291,12 @@ Full validation passes 1324 tests, one optional skip, four real-core tests, type
 
 Follow-up `ec3a22f06ce36163ebcc4d75435be2ac0caf4bd3` fixes a first-composition receiver race introduced by the new continuation gate: registration waits for a current approval read instead of immediately handing the initial draft to a blocked sender. One production-effect case was red before correction and is green now. Full validation passes 1325 tests with one optional skip, four real-core tests and typecheck/build. The 23 smoke safeguards are unchanged and passing. Other parity corrections and all native/owner gates remain open.
 
+### Final source corrections and accepted validation scope
+
+Integrated all six prepared correction commits, followed by current upload/focus/progressive/Vault/Bot-host wiring and the remaining reported Bot, delivery, subagent, learning, settings, audit, provider, routine and notice corrections. The final GitHub-thread audit found two older unhandled reports and an awaited continuation gap; all three have actual-handler red/green regressions in `5b94256`, and the other descriptions match already corrected source.
+
+All 55 Spec reports, including duplicate symptoms, are addressed in source. The reported radius breach is corrected; the shared-suite concern remains an advisory, with new feature-local suites and cross-component integration cases preserved. All 1614 automated tests pass with one optional simulated-IPC skip; four real-core cases, typecheck/build and 23 safeguards pass. Final code has not received another independent Codex/native review. The owner explicitly waived those checks and authorized merge after the exact final comment. This waiver is not a native test pass or an authentication bypass. Original Intelligence, stores, owner binding, protocol/data paths, dependencies and review billing/ignores are unchanged. No next-stage implementation started.
+
 ## Queue
 
 | Issue | Deliverable | State |
@@ -298,7 +306,7 @@ Follow-up `ec3a22f06ce36163ebcc4d75435be2ac0caf4bd3` fixes a first-composition r
 | [#5](https://github.com/NaveDanan/HyperTask/issues/5) | Native chat UI integration | PR #11 merged as d026839; issue closed |
 | [#6](https://github.com/NaveDanan/HyperTask/issues/6) | Conversations, agents, actions, approvals and streaming | PR #12 merged as bb158354; issue closed |
 | [#7](https://github.com/NaveDanan/HyperTask/issues/7) | Background-service lifecycle | PR #13 merged as 98f0b912; issue closed |
-| [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Native checks/report ready; owner requested upstream parity before acceptance |
+| [#8](https://github.com/NaveDanan/HyperTask/issues/8) | End-to-end and regression acceptance | Source corrections complete, automated validation passed; owner authorized PR #14 merge with final native/repeat-Codex verification waived |
 
 ## Working-copy note
 
