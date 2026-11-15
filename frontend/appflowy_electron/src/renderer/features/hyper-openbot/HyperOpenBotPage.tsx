@@ -214,7 +214,10 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
           if (!result.continueHere) { setHistoryRevision(value => value + 1); return; }
         }
       }
-      const sent = answerMessage ? { id: answerMessage.id, text: draft.text, files: '' } : prepareSubmission(draft.text, draft.attachments.map(file => file.id).join(','));
+       // Question lookups/responses can await while the server takes ownership.
+       // A committed answer stays sent once; an uncommitted draft remains retryable.
+       if (turns.current.size || agent.isRunning || serverWorking()) { if (answerMessage) { setHistoryRevision(value => value + 1); return; } throw new Error('This Bot is still working. Wait or stop it first.'); }
+       const sent = answerMessage ? { id: answerMessage.id, text: draft.text, files: '' } : prepareSubmission(draft.text, draft.attachments.map(file => file.id).join(','));
       if (answerMessage) updateDraft(current => ({ ...current, retry: sent }));
       const turn = {}; turns.current.add(turn);
       const activity = (text: string, agentId: string | null) => { void request(`/api/channels/${encodeURIComponent(channel.id)}/activity`, 'POST', { text, agentId, at: new Date().toISOString() }).catch(() => {}); };

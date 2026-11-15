@@ -39,6 +39,7 @@ import { HyperToolMessage } from './transcript/HyperTranscript';
 import { HyperPersonalLearningSection } from './memory/HyperPersonalLearningSection';
 import { HyperConversationsScreen } from './screens/HyperScreens';
 import { useHyperBotNames } from './screens-gen/HyperReportContext';
+import { HyperExternalAgents } from './bot-tabs/HyperExternalAgents';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
 const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0, context: undefined as any }));
@@ -1565,4 +1566,31 @@ it('historical reports resolve permitted hidden Bot names without broadening act
   f.request.mockImplementation(async (path: string) => ({ agents: path.includes('hidden=true') ? [{ id: 'hidden', name: 'Hidden Bot' }] : [] }));
   let resolve!: (id: string) => string; const probe = () => { resolve = useHyperBotNames(); return null; };
   render(probe, {}); mountEffects(); await drain(); render(probe, {}); expect(resolve('hidden')).toBe('Hidden Bot');
+});
+it('SMS issuance locks the phone field so a pending completion cannot erase a newer edit', async () => {
+  let finish!: (value: any) => void;
+  f.request.mockImplementation(async (path: string) => path === '/api/delivery' ? { bindings: [], devices: [], deliveries: [], available: { sms: true } } : path === '/api/channels' ? { channels: [{ id: 'channel', active: true, name: 'Channel', agentIds: ['bot'] }] } : path === '/api/delivery/sms/start' ? new Promise(resolve => { finish = resolve; }) : { agents: [] });
+  render(HyperReachability, { agentId: 'bot' }); mountEffects(); await drain(); let tree = render(HyperReachability, { agentId: 'bot' });
+  find(tree, element => element.type === 'select')!.props.onChange({ target: { value: 'channel' } }); render(HyperReachability, { agentId: 'bot' }); mountEffects(); await drain(); tree = render(HyperReachability, { agentId: 'bot' });
+  find(tree, element => element.props.type === 'tel')!.props.onChange({ target: { value: '+15551234567' } }); tree = render(HyperReachability, { agentId: 'bot' });
+  const form = find(tree, element => element.type === 'form' && !!find(element.props.children, child => child.props.type === 'tel'))!; form.props.onSubmit({ preventDefault() {} });
+  try { expect(find(render(HyperReachability, { agentId: 'bot' }), element => element.props.type === 'tel')!.props.disabled).toBe(true); } finally { finish({ challengeId: 'challenge' }); await drain(); }
+});
+it('external editor A completion cannot clear a later editor B selection', async () => {
+  const external = [{ id: 'a', name: 'A', endpoint: 'https://a.example', canManage: true }, { id: 'b', name: 'B', endpoint: 'https://b.example', canManage: true }];
+  f.request.mockResolvedValue({ agents: external }); render(HyperExternalAgents, { onChat: vi.fn() }); mountEffects(); await drain(); let tree = render(HyperExternalAgents, { onChat: vi.fn() });
+  const article = (node: ReactNode, name: string) => find(node, element => element.type === 'article' && !!find(element.props.children, child => child.type === 'h3' && child.props.children === name))!;
+  button(article(tree, 'A'), 'Edit connection')!.props.onClick(); tree = render(HyperExternalAgents, { onChat: vi.fn() }); const old = find(tree, element => typeof element.type === 'function' && element.type.name === 'HyperExternalAgentForm')!;
+  button(article(tree, 'B'), 'Edit connection')!.props.onClick(); render(HyperExternalAgents, { onChat: vi.fn() }); old.props.onSaved(); tree = render(HyperExternalAgents, { onChat: vi.fn() });
+  const current = find(tree, element => typeof element.type === 'function' && element.type.name === 'HyperExternalAgentForm'); expect(current).toBeDefined(); expect(current!.props.bot.id).toBe('b');
+});
+it('a continuation arriving during question lookup is rechecked before starting a local run', async () => {
+  const chat = await hyperReviewedChatFixture(); h.states = []; h.refs = [];
+  f.agent = { agentId: 'channel:reviewed-channel', runtimeAgentId: 'bot', threadId: 'reviewed-thread', messages: [{ id: 'user', role: 'user', content: 'Start' }, { id: 'ask', role: 'assistant', content: '', toolCalls: [{ id: 'q', type: 'function', function: { name: 'ask_person', arguments: '{}' } }] }], isRunning: false, pendingInterrupts: [], addMessage: vi.fn(), subscribe: vi.fn(observer => { observer.onRunInitialized?.({ input: {}, messages: [] }); return { unsubscribe() {} }; }) };
+  f.core = { runAgent: vi.fn(async () => {}), stopAgent: vi.fn() }; let finish!: (value: any) => void;
+  f.request.mockImplementation(async (path: string) => path === '/api/approvals' ? new Promise(resolve => { finish = resolve; }) : {});
+  const tree = render(chat.type as any, chat.props), composer = find(tree, element => element.type === HyperComposer)!, actions = find(tree, element => element.type === HyperConversationActions)!;
+  const send = composer.props.onSubmit({ text: 'Reply', attachments: [] }); void send.catch(() => {});
+  actions.props.onCarryOnChange(true); finish({ requests: [], questions: [] });
+  await expect(send).rejects.toThrow('still working'); expect(f.core.runAgent).not.toHaveBeenCalled();
 });

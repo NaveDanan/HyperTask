@@ -12,11 +12,14 @@ import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 export function HyperExternalAgents({ onChat }: { onChat: (id: string) => void }) {
   const state = useHyperBotResource(() => HyperListBots(false), 'external');
   const [selected, setSelected] = useState<HyperBotProfile | 'new'>();
-  return <section className="grid gap-4"><header className="flex gap-3"><h2 className="font-semibold">External agents</h2><Button onClick={() => setSelected('new')}>Connect agent</Button><Button variant="outline" disabled={state.pending} onClick={state.refresh}>Refresh</Button></header>
+  const arrival = useRef<object | undefined>(undefined), refresh = useRef(state.refresh); refresh.current = state.refresh;
+  const open = (selection: HyperBotProfile | 'new') => { arrival.current = {}; setSelected(selection); };
+  const editor = arrival.current;
+  return <section className="grid gap-4"><header className="flex gap-3"><h2 className="font-semibold">External agents</h2><Button onClick={() => open('new')}>Connect agent</Button><Button variant="outline" disabled={state.pending} onClick={state.refresh}>Refresh</Button></header>
     {state.pending && <p role="status">Loading…</p>}{state.error && <p role="alert" className="text-destructive">{state.error}</p>}
-    {state.data?.filter(bot => bot.endpoint && !bot.builtIn).map(bot => <article key={bot.id} className="flex items-center gap-3 rounded-lg border border-border p-3"><div className="flex-1"><h3>{bot.name}</h3><p>{bot.title}</p></div><Button variant="outline" onClick={() => onChat(bot.id)}>Chat</Button>{bot.canManage && <Button onClick={() => setSelected(bot)}>Edit connection</Button>}</article>)}
+    {state.data?.filter(bot => bot.endpoint && !bot.builtIn).map(bot => <article key={bot.id} className="flex items-center gap-3 rounded-lg border border-border p-3"><div className="flex-1"><h3>{bot.name}</h3><p>{bot.title}</p></div><Button variant="outline" onClick={() => onChat(bot.id)}>Chat</Button>{bot.canManage && <Button onClick={() => open(bot)}>Edit connection</Button>}</article>)}
     {state.data && !state.data.some(bot => bot.endpoint && !bot.builtIn) && <p>No external agents connected.</p>}
-    {selected && <HyperExternalAgentForm key={selected === 'new' ? 'new' : selected.id} bot={selected === 'new' ? undefined : selected} onClose={() => setSelected(undefined)} onSaved={() => { setSelected(undefined); state.refresh(); }} />}
+    {selected && <HyperExternalAgentForm key={selected === 'new' ? 'new' : selected.id} bot={selected === 'new' ? undefined : selected} onClose={() => { if (arrival.current === editor) { arrival.current = undefined; setSelected(undefined); } }} onSaved={() => { if (arrival.current === editor) { arrival.current = undefined; setSelected(undefined); } refresh.current(); }} />}
   </section>;
 }
 function HyperExternalAgentForm({ bot, onSaved, onClose }: { bot?: HyperBotProfile; onSaved: () => void; onClose: () => void }) {
