@@ -1,5 +1,6 @@
 import type { HyperComposerAttachment } from './composer';
 import type { HyperOpenBotServiceState } from '@shared/HyperOpenBotService';
+import type { HyperQueuedMessage } from './composer/HyperQueue';
 
 export type HyperDraftAttachment = HyperComposerAttachment & { mimeType: string };
 export interface HyperConversationDraft {
@@ -38,6 +39,22 @@ export class HyperConversationDraftCache {
       assertCurrent,
       subscribe: (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; },
       update,
+      /** Navigation restores unsent queued intent; only this still-current owner can retain it. */
+      restoreQueued: (messages: readonly HyperQueuedMessage[]) => {
+        if (generation !== this.generation) return false;
+        if (!messages.length) return true;
+        return update(current => {
+          const attachments = new Map<string, HyperDraftAttachment>();
+          for (const file of messages.flatMap(message => message.attachments)) attachments.set(file.id, {
+            id: file.id, name: file.name, status: file.status,
+            mimeType: 'mimeType' in file && typeof file.mimeType === 'string' ? file.mimeType : 'application/octet-stream',
+            ...(file.error ? { error: file.error } : {}),
+          });
+          for (const file of current.attachments) attachments.set(file.id, file);
+          return { ...current, text: [...messages.map(message => message.text), current.text].filter(line => line.trim()).join('\n'),
+            attachments: [...attachments.values()], commandIds: [...new Set([...messages.flatMap(message => message.commandIds), ...(current.commandIds ?? [])])], retry: undefined };
+        });
+      },
       prepareSubmission: (text: string, files: string) => {
         assertCurrent();
         // Another page may have completed and cleared this retry since this page mounted.
@@ -50,7 +67,7 @@ export class HyperConversationDraftCache {
   }
 }
 
-export function hyperObserveDraftIdentity(cache: HyperConversationDraftCache, subscribe: (listener: (state: HyperOpenBotServiceState) => void) => () => void) {
+export function hyperObserveDraftIdentity(cache: Pick<HyperConversationDraftCache, 'invalidate'>, subscribe: (listener: (state: HyperOpenBotServiceState) => void) => () => void) {
   return subscribe(state => { if (['signed_out', 'profile_required', 'unsupported'].includes(state.problem)) cache.invalidate(); });
 }
 

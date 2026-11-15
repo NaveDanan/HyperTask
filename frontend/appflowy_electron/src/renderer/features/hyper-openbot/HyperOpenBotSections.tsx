@@ -11,6 +11,8 @@ export interface HyperOpenBotSectionContext {
   navigate?(destinationId: string, intent?: { path: string }): void;
   initialAgentIds?: readonly string[];
   navigationIntent?: { path: string };
+  /** Async Home routing must stop if the parent has abandoned this navigation generation. */
+  isCurrentNavigation?(): boolean;
 }
 export interface HyperOpenBotSection {
   readonly id: string;

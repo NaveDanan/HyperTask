@@ -38,12 +38,17 @@ export function HyperSkillsPanel({ admin = false, selection: initialSelection, o
     setBusy(true); setError(''); setNotice('');
     try { await action(); setNotice(success); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { try { setData(await hyperLoadSkills(admin)); } catch { setError('Could not reload skills. Refresh before making another change.'); } mutating.current = false; setBusy(false); }
   }
-  function open(skill?: HyperSkill) {
-    onSelectionChange?.(skill ? { page: 'skill', slug: skill.slug } : { page: 'new' });
+  function applySkill(skill?: HyperSkill) {
     setSelection(skill?.slug ?? ''); setDraft(skill ? { slug: skill.slug, title: skill.title, summary: skill.summary ?? '', instructions: skill.instructions, tools: skill.tools ?? [], ...(admin && skill.ownerUserId === null ? { global: true } : {}) } : { ...hyperEmptyDraft(), ...(admin ? { global: true } : {}) });
     setDeleting(false); setError(''); setNotice('');
   }
-  useEffect(() => { if (!initialSelection || !data) return; if (initialSelection.page === 'list') setSelection(null); else if (initialSelection.page === 'new') open(); else { const current = data.catalogue.skills.find(s => s.slug === initialSelection.slug); if (current) open(current); else setSelection(initialSelection.slug); } }, [initialSelection, !!data]);
+  function open(skill?: HyperSkill) {
+    applySkill(skill);
+    onSelectionChange?.(skill ? { page: 'skill', slug: skill.slug } : { page: 'new' });
+  }
+  // Incoming routes are state, not another user navigation event.
+  const routeKey = initialSelection?.page === 'skill' ? `skill:${initialSelection.slug}` : initialSelection?.page;
+  useEffect(() => { if (!initialSelection || !data) return; if (initialSelection.page === 'list') setSelection(null); else if (initialSelection.page === 'new') applySkill(); else { const current = data.catalogue.skills.find(s => s.slug === initialSelection.slug); if (current) applySkill(current); else setSelection(initialSelection.slug); } }, [routeKey, !!data]);
   const skill = data?.catalogue.skills.find(item => item.slug === selection);
   const research = [{ ref: '@research/search', name: 'Search the web', description: 'Find public web sources using the configured research provider.', effect: 'read', server: 'Web research' }, { ref: '@research/fetch', name: 'Read a web page', description: 'Read public web pages using the configured research provider.', effect: 'read', server: 'Web research' }];
   const tools = [...research, ...(data?.catalogue.servers.flatMap(server => server.tools.map(tool => ({ ...tool, server: server.title }))) ?? [])];

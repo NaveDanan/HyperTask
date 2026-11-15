@@ -26,6 +26,24 @@ it('falls back on unavailable routing and transfers the exact draft and files', 
   expect(startConversation).toHaveBeenCalledWith(['picked-harness'], draft);
   expect(startConversation.mock.calls[0][1].files[0]).toBe(draft.files[0]);
 });
+it('rejects a late route before creation when the navigation scope is abandoned', async () => {
+  let finish!: (response: Response) => void; let current = true;
+  vi.mocked(hyperOpenBotFetch).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  const startConversation = vi.fn();
+  const context = { startConversation, openConversation: vi.fn(), initialDraftSupported: true, isCurrentNavigation: () => current };
+  const sending = HyperStartHomeDraft(context, bots, { text: 'abandoned task', files: [], commandIds: [], submit: true });
+  const refused = expect(sending).rejects.toThrow(/navigation|cancelled/i);
+  current = false; finish(new Response(JSON.stringify({ agentId: 'chosen' })));
+  await refused; expect(startConversation).not.toHaveBeenCalled();
+});
+it('forwards route cancellation and never falls back after an aborted request fails', async () => {
+  let fail!: (error: Error) => void;
+  vi.mocked(hyperOpenBotFetch).mockImplementation(() => new Promise((_, reject) => { fail = reject; }));
+  const controller = new AbortController(), startConversation = vi.fn();
+  const sending = HyperStartHomeDraft({ startConversation, openConversation: vi.fn(), initialDraftSupported: true }, bots, { text: 'abandoned task', files: [], commandIds: [], submit: true }, 'chosen', controller.signal);
+  const refused = expect(sending).rejects.toThrow(); controller.abort(); fail(new Error('offline')); await refused;
+  expect(vi.mocked(hyperOpenBotFetch).mock.calls[0][1]?.signal).toBe(controller.signal); expect(startConversation).not.toHaveBeenCalled();
+});
 it('refuses to discard a draft when shared navigation has not implemented transfer', async () => {
   await expect(HyperStartHomeDraft({ startConversation: vi.fn(), openConversation: vi.fn() }, bots, { text: 'task', files: [], commandIds: [], submit: true })).rejects.toThrow('draft transfer');
 });

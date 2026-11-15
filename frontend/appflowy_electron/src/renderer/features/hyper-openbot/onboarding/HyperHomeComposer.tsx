@@ -12,7 +12,8 @@ export function HyperHomeComposer({ context, bots, userId, initialText = '' }: {
   const hyperHeldDraft = hyperHomeDraftStore.read(userId);
   const lease = useRef(0);
   const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const routing = useRef(new AbortController());
+  useEffect(() => { mounted.current = true; const controller = new AbortController(); routing.current = controller; return () => { mounted.current = false; controller.abort(); }; }, [userId]);
   const [text, setText] = useState(() => hyperHeldDraft?.text ?? initialText.slice(0, 2000));
   const [files, setFiles] = useState<File[]>(() => hyperHeldDraft?.files ?? []);
   const [commands, setCommands] = useState<string[]>(() => hyperHeldDraft?.commandIds ?? []);
@@ -36,7 +37,7 @@ export function HyperHomeComposer({ context, bots, userId, initialText = '' }: {
     const draft = { text: [...(consumeDraft ? commands.map(slug => `/${slug}`) : []), message].join(' '), files: consumeDraft ? [...files] : [], commandIds: consumeDraft ? [...commands] : [], submit: true };
     const submittedLease = lease.current;
     try {
-      await HyperStartHomeDraft(context, bots, draft, bot || undefined);
+      await HyperStartHomeDraft(context, bots, draft, bot || undefined, routing.current.signal);
       if (consumeDraft && hyperHomeDraftStore.consume(userId, submittedLease) && mounted.current) {
         setText(current => current === message ? '' : current);
         setFiles(current => current.filter(file => !draft.files.includes(file)));

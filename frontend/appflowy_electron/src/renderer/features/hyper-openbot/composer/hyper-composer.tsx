@@ -46,6 +46,8 @@ export interface HyperComposerProps {
   /** Called after success with exactly the attachments consumed by this send. */
   onConsumeAttachments?: (ids: readonly string[]) => void;
   onDiscardAttachment?: (id: string) => void;
+  /** Synchronously restore unsent queued intent to the channel's owner-held draft on navigation. */
+  onRestoreQueued?: (messages: readonly HyperQueuedMessage[]) => void;
   commandIds?: readonly string[];
   onCommandIdsChange?: (ids: readonly string[]) => void;
   commands?: readonly { id: string; label: string }[];
@@ -70,7 +72,7 @@ export interface HyperComposerProps {
 }
 const EMPTY_ATTACHMENTS: readonly HyperComposerAttachment[] = [];
 export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMENTS, getAttachmentCount, onRemoveAttachment,
-  onConsumeAttachments, onDiscardAttachment, commands = [], agents = [], commandIds, onCommandIdsChange, onStop, pending = false, allowQueue = true, stoppable = pending, disabled = false, autoFocus = false,
+  onConsumeAttachments, onDiscardAttachment, onRestoreQueued, commands = [], agents = [], commandIds, onCommandIdsChange, onStop, pending = false, allowQueue = true, stoppable = pending, disabled = false, autoFocus = false,
   initialValue = '', value, onTextChange, recoveryVersion = 0, placeholder = 'Ask anything', queuedAttachmentCount = 0, modelPicker, textareaRef, className }: HyperComposerProps) {
   const [localCommands, setLocalCommands] = useState<readonly string[]>([]);
   const selectedCommands = commandIds ?? localCommands;
@@ -124,7 +126,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   const previousPending = useRef(pending);
   const activeAttachments = useRef<readonly string[]>([]);
   const activeSnapshot = useRef<string | undefined>(undefined);
-  const latest = useRef({ onSubmit, onDiscardAttachment }); latest.current = { onSubmit, onDiscardAttachment };
+  const latest = useRef({ onSubmit, onDiscardAttachment, onRestoreQueued }); latest.current = { onSubmit, onDiscardAttachment, onRestoreQueued };
   const [selectedAgent, setSelectedAgent] = useState('');
   function transition(action: Parameters<typeof hyperReduceQueue>[1]) {
     const next = hyperReduceQueue(queue.current, action); queue.current = next.queue; setQueued(next.queue);
@@ -145,7 +147,11 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     if (inFlight.current || queueHeldAfterFailure.current || !queue.current.length) return;
     void runQueued(transition({ type: 'settle' })).catch(() => {});
   }, [pending, submitting]);
-  useEffect(() => () => { for (const message of queue.current) for (const file of message.attachments) latest.current.onDiscardAttachment?.(file.id); }, []);
+  useEffect(() => () => {
+    if (queue.current.length && latest.current.onRestoreQueued) latest.current.onRestoreQueued(queue.current);
+    else for (const message of queue.current) for (const file of message.attachments) latest.current.onDiscardAttachment?.(file.id);
+    queue.current = [];
+  }, []);
   const submit = async () => {
     if (disabled || !sendable || (!allowQueue && (pending || inFlight.current))) return;
     const prefix = selectedCommands.filter(id => !text.trimStart().split(/\s+/).includes(`/${id}`)).map(id => `/${id}`).join(' ');

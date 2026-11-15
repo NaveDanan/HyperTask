@@ -60,6 +60,22 @@ it('retains failed-send identity on reopening and cannot clear a newer submissio
   original.update(current => current.retry?.id === sent.id ? { ...current, retry: undefined } : current);
   expect(reopened.get().retry?.id).toBe('new-user-id');
 });
+it('restores queued intent ahead of newer drafts without losing refs or reusing an active retry identity', () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one');
+  const active = lease.prepareSubmission('queued', '');
+  const file = { id: 'file', name: 'queued.txt', mimeType: 'text/plain', status: 'ready' as const, previewUrl: 'blob:discard', bytes: new Uint8Array([1]) };
+  lease.update(current => ({ ...current, text: 'newer draft', commandIds: ['later'], attachments: [{ id: 'newer', name: 'newer.txt', mimeType: 'text/plain', status: 'ready' }] }));
+  expect(lease.restoreQueued([{ id: 'queued', text: 'queued', commandIds: ['first'], attachments: [file] }])).toBe(true);
+  const reopened = cache.acquire('one');
+  expect(reopened.get()).toMatchObject({ text: 'queued\nnewer draft', uploadGroup: 'group', commandIds: ['first', 'later'], attachments: [{ id: 'file', name: 'queued.txt', mimeType: 'text/plain', status: 'ready' }, { id: 'newer', name: 'newer.txt', mimeType: 'text/plain', status: 'ready' }] });
+  expect(reopened.get().attachments[0]).not.toHaveProperty('previewUrl'); expect(reopened.get().attachments[0]).not.toHaveProperty('bytes');
+  expect(reopened.prepareSubmission('queued', '').id).not.toBe(active.id);
+});
+it('does not restore queued content through a stale identity lease', () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one'); cache.invalidate();
+  expect(lease.restoreQueued([{ id: 'queued', text: 'private queued text', commandIds: [], attachments: [] }])).toBe(false);
+  expect(cache.acquire('one').get().text).toBe('');
+});
 it('selects a fresh identity after an older page completes a reopened page pending send', () => {
   const cache = new HyperConversationDraftCache(() => 'group'), original = cache.acquire('one');
   const pending = original.prepareSubmission('Same text', 'file-id');

@@ -37,7 +37,8 @@ export function HyperInteractiveResult({name, agentId, args, complete = true, re
   if (!agentId) return <p role="alert">The calling Bot is required to check component permission.</p>;
   if (!complete || !state || state.key !== permissionKey) return <p role="status">Drawing {name}…</p>;
   if (!state.allowed) return <p role="alert">{state.reason ?? 'This component is not available to this Bot.'}</p>;
-  if (spec) {
+  // Decision widgets own their invalid-input response/retry path, including InvalidForm.
+  if (spec && spec.kind !== 'decision') {
     const verdict = spec.parameters?.['~standard']?.validate(args);
     if (verdict && !(verdict instanceof Promise) && verdict.issues) return <p role="alert">This component received unreadable arguments.</p>;
   }

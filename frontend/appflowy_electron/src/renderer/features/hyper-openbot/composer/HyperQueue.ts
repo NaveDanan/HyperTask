@@ -20,17 +20,11 @@ export type HyperQueueDraft = { text: string; agentId: string | null; commandIds
  * correction, press Stop, and the correction is what runs next. Nothing here special-cases the stop
  * button, and that is the point — a path with its own branch is a path that can be forgotten.
  *
- * THE QUEUE IS MEMORY IN ONE MOUNT AND NOTHING HERE PRETENDS OTHERWISE. The turn is driven from the
- * browser, so the browser is the only place that knows one is in flight, and this state lives and
- * dies with the component holding it. A reload loses the intent to run these words later, and so
- * does walking to another channel: the channel view is keyed on the channel, so switching unmounts
- * the conversation and takes anything parked in it with it, after the person has watched their
- * words land on screen. Neither is worth a persistence layer for words that only mean anything
- * inside a turn that is already over by the time you come back, but both are worth saying out loud.
- * The words are the person's own and sit on screen for as long as they wait, so nothing is being
- * kept from anybody; but a queue is not an outbox and must not be read as one. It is drawn only
- * while a turn is in flight, so a reload finds no queue and shows none, which is better than a list
- * of messages quietly promising to run and never running.
+ * The reducer holds its queue in one composer mount. Native HyperTask restores unsent queued text,
+ * command IDs and staged references to the owner-bound channel draft when navigation unmounts the
+ * composer. Returning shows that content as a draft for explicit sending, not a background outbox.
+ * The renderer exiting still loses this memory-only intent. Callers without a draft-restoration
+ * callback keep the original mount-scoped behavior.
  *
  * A DRAIN THAT DOES NOT LAND PUTS EVERYTHING BACK. Settling is keyed on the turn ending, not on the
  * turn succeeding, and the same is true one level down: the send the drain starts can fail, and for
@@ -43,13 +37,10 @@ export type HyperQueueDraft = { text: string; agentId: string | null; commandIds
  * `conversation-view.tsx` — because a queue that re-sent itself would spin against a server that is
  * refusing every request.
  *
- * THE FILES UNDER THOSE WORDS ARE NOT COVERED BY THAT PARAGRAPH, and reading them into it was a
- * leak. Words a person watched land on screen can be retyped; a staged attachment is a row on the
- * server that the parked entry holds the only reference to, and letting it die with the mount left
- * it sitting with `attachedAt IS NULL` until the next day's sweep. So the mount going away releases
- * them — see `conversation-view.tsx`'s teardown, which walks the queue on the way out for exactly
- * this. A tab CLOSING is still the sweeper's, and honestly so: nothing in a page that is going can
- * be relied on to finish a request.
+ * Native teardown transfers queued attachment references back to that same draft instead of
+ * deleting files the restored words still need. An invalidated identity lease refuses restoration.
+ * Other callers release their unreferenced queued attachments as upstream does. Renderer exit
+ * remains the server sweeper's responsibility because an exiting page cannot finish cleanup.
  */
 
 /** One message waiting for the Bot to finish, in the words the person typed. */
