@@ -19,8 +19,8 @@ export function HyperConnectionsPanel({ admin = false, selection, onSelectionCha
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [selected, setSelected] = useState<string | null>(() => selection && 'key' in selection ? selection.key : null);
+  const [adding, setAdding] = useState(selection?.page === 'new');
   const [title, setTitle] = useState('');
   const [address, setAddress] = useState('');
   const [addRefusal, setAddRefusal] = useState<import('./HyperConnectionsApi').HyperAddServerRefusal>();
@@ -34,34 +34,79 @@ export function HyperConnectionsPanel({ admin = false, selection, onSelectionCha
   const [provider, setProvider] = useState<'arcade' | 'composio'>('composio');
   const [fields, setFields] = useState<{ id: string; fields: details.HyperBrokerField[]; guide?: { steps: string; url: string | null } }>();
   const [accounts, setAccounts] = useState<Awaited<ReturnType<typeof details.hyperLoadAccounts>>>();
-  const [mode, setMode] = useState<details.HyperModePreview>();
+  const [modeState, setModeState] = useState<details.HyperModePreview & { serverId: string; epoch: number }>();
   const [siblings, setSiblings] = useState<{ siblings: string[]; unanswered: number }>();
   const [disconnectAccount, setDisconnectAccount] = useState<string>();
-  function navigate(value: details.HyperConnectionSelection) {
-    setNested(value); onSelectionChange?.(value); setAdding(value.page === 'new'); setSelected('key' in value ? value.key : null); setFields(undefined); setMode(undefined); setConfigureCurated(false); setRemoving(false); setDisconnecting(null); setError('');
+  const modeEpoch = useRef(0);
+  const modeTarget = useRef<string | null>(selected);
+  const selectionKey = JSON.stringify([admin, selection ?? { page: 'list' }]);
+  const previousSelection = useRef(selectionKey);
+  if (previousSelection.current !== selectionKey) {
+    previousSelection.current = selectionKey; modeEpoch.current++;
+    modeTarget.current = selection && 'key' in selection ? selection.key : null;
   }
-  useEffect(() => { if (selection) { setNested(selection); setAdding(selection.page === 'new'); setSelected('key' in selection ? selection.key : null); } }, [selection]);
+  const frameEpoch = modeEpoch.current, frameTarget = modeTarget.current;
+  const setMode = (next: details.HyperModePreview | undefined) => {
+    if (modeEpoch.current !== frameEpoch || modeTarget.current !== frameTarget) return;
+    setModeState(next && frameTarget ? { ...next, serverId: frameTarget, epoch: frameEpoch } : undefined);
+  };
+  useEffect(() => () => { modeEpoch.current++; }, []);
+  function navigate(value: details.HyperConnectionSelection) {
+    modeEpoch.current++; modeTarget.current = 'key' in value ? value.key : null;
+    setNested(value); onSelectionChange?.(value); setAdding(value.page === 'new'); setSelected('key' in value ? value.key : null); setFields(undefined); setModeState(undefined); setConfigureCurated(false); setRemoving(false); setDisconnecting(null); setDisconnectAccount(undefined); setSiblings(undefined); setError('');
+  }
+  useEffect(() => {
+    const next = selection ?? { page: 'list' as const }, key = 'key' in next ? next.key : null;
+    setNested(next); setAdding(next.page === 'new'); setSelected(key);
+    setModeState(undefined); setConfigureCurated(false); setRemoving(false); setDisconnecting(null); setDisconnectAccount(undefined); setSiblings(undefined);
+    setFields(current => current?.id === key ? current : undefined);
+  }, [selectionKey]);
   useEffect(() => { let active = true; if (nested.page === 'browse') { setDirectory(undefined); hyperOpenBotRequest<{ provider?: 'arcade' | 'composio' }>('/api/plugins').then(page => { if (active) setProvider(page.provider ?? 'composio'); }).catch(() => {}); const timer = setTimeout(() => { void details.hyperBrowseApps(search).then(result => { if (active) setDirectory(result.apps); }).catch(() => { if (active) setError('Could not load the app directory. Retry or check the broker configuration.'); }); }, 250); return () => { active = false; clearTimeout(timer); }; } return () => { active = false; }; }, [nested.page, search]);
   useEffect(() => { let active = true; setAccounts(undefined); if (selected) details.hyperLoadAccounts(selected).then(result => { if (active) setAccounts(result); }).catch(() => {}); return () => { active = false; }; }, [selected, rows]);
   const sequence = useRef(0);
-  const load = useCallback(async () => {
+  const reconcileWanted = useRef(false);
+  const pendingReturn = useRef(false);
+  const load = useCallback(async (confirm = true) => {
+    if (confirm) reconcileWanted.current = true;
     const request = ++sequence.current;
     setLoading(true);
-    try { const next = await hyperLoadConnections(); if (request === sequence.current) { setRows(next); setError(''); } }
+    try {
+      let next = await hyperLoadConnections();
+      if (request !== sequence.current) return;
+      let confirmationFailed = false, asked = false;
+      if (reconcileWanted.current) {
+        for (const row of next) {
+          const server = row.server;
+          if (!server || !row.brokerConfigured || !['composio', 'arcade'].includes(server.provenance ?? '') || server.authScheme === 'NO_AUTH' || (!admin && (server.accountMode === 'shared' || server.sharedOnly))) continue;
+          if (request !== sequence.current) return;
+          asked = true;
+          try { const result = await details.hyperConfirmConnection(row.key); if (typeof result?.connected !== 'boolean') throw new Error('Invalid confirmation'); }
+          catch { confirmationFailed = true; }
+        }
+        if (request !== sequence.current) return;
+        if (asked) next = await hyperLoadConnections();
+      }
+      if (request === sequence.current) {
+        reconcileWanted.current = false; setRows(next);
+        setError(confirmationFailed ? 'Could not confirm the provider connection. Last recorded state is shown. Refresh to retry.' : '');
+      }
+    }
     catch (e) { if (request === sequence.current) setError('Could not load connections. Check your permissions and retry.'); }
     finally { if (request === sequence.current) setLoading(false); }
-  }, []);
+  }, [admin]);
   useEffect(() => { void load(); return () => { sequence.current++; }; }, [load]);
-  useEffect(() => { const refresh = () => { void load(); }; window.addEventListener('focus', refresh); return () => window.removeEventListener('focus', refresh); }, [load]);
+  useEffect(() => { const refresh = () => { const confirm = pendingReturn.current; pendingReturn.current = false; void load(confirm); }; window.addEventListener('focus', refresh); return () => window.removeEventListener('focus', refresh); }, [load]);
   async function action(run: () => Promise<void>) {
+    if (modeEpoch.current !== frameEpoch || modeTarget.current !== frameTarget) return;
     setBusy(true); setError(''); setNotice('');
     let failure = '';
     try { await run(); } catch (e) { failure = 'The connection request failed or was refused. Current server state has been reloaded. Retype any secret to retry.'; }
-    finally { await load(); if (failure) setError(failure); setBusy(false); }
+    finally { await load(false); if (failure) setError(failure); setBusy(false); }
   }
   async function connect(id: string, another = false) {
     const result = await hyperStartConnection(id, admin, another);
     if (result.authorizationUrl) {
+      pendingReturn.current = true;
       onConnectionStarted?.(id);
       await window.appflowy.shell.openExternal(hyperAuthorizationUrl(result.authorizationUrl));
       setNotice('Finish signing in in your browser, then refresh to check the connection.');
@@ -70,6 +115,7 @@ export function HyperConnectionsPanel({ admin = false, selection, onSelectionCha
     else throw new Error('The service did not return a sign-in URL or connection status.');
   }
   const row = rows.find(r => r.key === selected);
+  const mode = modeState?.serverId === row?.key && modeState?.epoch === modeEpoch.current ? modeState : undefined;
   const disabled = busy || loading;
   return <section className="mx-auto flex h-full w-full max-w-6xl flex-col gap-5 overflow-y-auto px-8 py-6 text-foreground" aria-label="Connections">
     <header className="flex flex-wrap items-center gap-3">
@@ -86,7 +132,7 @@ export function HyperConnectionsPanel({ admin = false, selection, onSelectionCha
     {nested.page === 'browse' ? <div className="space-y-3"><Button variant="outline" onClick={() => navigate({ page: 'list' })}>All connections</Button><Input aria-label="Search app directory" value={search} onChange={e => setSearch(e.target.value)} />{!directory ? <p role="status">Loading directory…</p> : !directory.length ? <p>No apps match.</p> : directory.map(app => <div key={app.slug} className="space-y-2 rounded-lg border border-border p-4"><h2>{app.name}</h2><p>{app.description}</p><p>{app.categories.join(', ')} · {app.actionCount} actions · {app.connection.kind}</p>{app.classifiedCount !== null && app.classifiedCount < app.actionCount && <p>Some actions are not classified. Unknown actions count as writes.</p>}{app.permissionCount !== null && <p>{app.permissionCount} permissions · {app.scopedActionCount} scoped actions</p>}<Button disabled={disabled || app.connection.kind === 'unsupported'} onClick={() => void action(async () => { const existing = rows.find(row => row.server?.url === `${provider}://${app.slug}`); const id = existing?.key ?? (await details.hyperEnableBrokerApp(app.slug)).server.id; navigate({ page: 'app', key: id }); await connect(id); })}>{app.enabled ? 'Open and connect' : 'Add and connect'}</Button></div>)}</div> : adding ? <form className="flex max-w-xl flex-col gap-4 rounded-lg border border-border bg-card p-4" onSubmit={e => { e.preventDefault(); const values = new FormData(e.currentTarget); const token = String(values.get('token') ?? ''); e.currentTarget.reset(); void action(async () => {
       const result = await hyperAddServerOutcome(title, address, token);
       if (!result.ok || !result.server) { setAddRefusal(result); setNeedsToken(result.code === 'needs-key'); if (result.serverId) { navigate({ page: 'app', key: result.serverId }); setNotice('This server was already added.'); } else setNotice(result.code === 'needs-key' ? 'This server needs a key. An administrator can provide it below.' : result.code === 'not-approved' ? 'This server address is not approved.' : 'Server could not be added. Refresh and retry.'); return; }
-      setAdding(false); setSelected(result.server.id); setTitle(''); setAddress('');
+      navigate({ page: 'app', key: result.server.id }); setTitle(''); setAddress('');
       if (result.signIn) await connect(result.server.id);
     }); }}>
       <label className="flex flex-col gap-2 text-sm font-medium">Name<Input required value={title} onChange={e => setTitle(e.target.value)} disabled={busy} /></label>

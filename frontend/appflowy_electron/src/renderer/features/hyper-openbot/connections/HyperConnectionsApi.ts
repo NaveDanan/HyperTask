@@ -16,6 +16,7 @@ export interface HyperConnectionServer {
   lastError?: string | null; signIn?: boolean; dynamicClient?: boolean;
   hasCredential?: boolean; authScheme?: string | null; accountMode?: 'personal' | 'shared' | null;
   sharedOnly?: boolean; sharedVendorConnected?: boolean;
+  provenance?: 'composio' | 'arcade' | string;
   ownerGrants?: 'any' | 'admin'; withdrawn?: { ref: string; name: string; grantedTo: string[] }[]; skippedTools?: string[];
   tools: { name: string; description: string; effect?: string; ref?: string; destructive?: boolean; grantedTo?: string[]; inputSchema?: Record<string, unknown> }[];
 }
@@ -25,6 +26,8 @@ export interface HyperConnectionDirectory {
 export interface HyperConnectionRow {
   key: string; title: string; summary: string; server?: HyperConnectionServer;
   app?: HyperConnectionApp; callbackAllowed?: boolean; connections: HyperConnection[]; state: string;
+  /** Original active-broker capability, not evidence that a vendor consent completed. */
+  brokerConfigured?: boolean;
 }
 export function hyperConnectionRows(directory: HyperConnectionDirectory, connections: HyperConnection[]): HyperConnectionRow[] {
   const keys = new Set([...directory.servers.map(s => s.id), ...directory.catalogue.map(a => a.key), ...connections.map(c => c.serverId)]);
@@ -38,7 +41,7 @@ export function hyperConnectionRows(directory: HyperConnectionDirectory, connect
       : server.accountMode === 'shared' ? (server.sharedVendorConnected || shared.some(c => c.connected) ? 'Team account connected' : 'Team account not connected')
       : own.some(c => !c.revoked) ? (own.some(c => !c.revoked && c.verified === false) ? 'Connection needs checking' : 'Connected')
       : own.length ? 'Reconnect required' : noAccount ? 'On' : 'Not connected';
-    return { key, title: server?.title ?? app?.title ?? key, summary: server?.summary ?? app?.summary ?? '', server, app, callbackAllowed: directory.botsMayCallBack === true, connections: [...own, ...shared], state };
+    return { key, title: server?.title ?? app?.title ?? key, summary: server?.summary ?? app?.summary ?? '', server, app, callbackAllowed: directory.botsMayCallBack === true, brokerConfigured: directory.composioConfigured === true, connections: [...own, ...shared], state };
   }).sort((a, b) => a.title.localeCompare(b.title));
 }
 export async function hyperLoadConnections() {

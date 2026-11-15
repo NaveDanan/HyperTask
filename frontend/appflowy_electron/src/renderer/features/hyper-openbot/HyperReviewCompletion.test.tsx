@@ -42,7 +42,7 @@ vi.mock('./connections/HyperConnectionsApi', async original => ({ ...await origi
 
 beforeEach(() => {
   vi.useFakeTimers(); vi.clearAllMocks(); h.active = false; h.states = []; h.refs = []; h.effects = []; h.deps = []; h.cleanups = [];
-  hyperHomeDraftStore.clear(); f.lookup.mockReset(); f.request.mockReset().mockImplementation(async (path: string) => path.startsWith('/api/plugins/for/') ? { skills: [] } : {}); f.fetch.mockReset();
+  hyperHomeDraftStore.clear(); f.lookup.mockReset(); f.request.mockReset().mockImplementation(async (path: string) => path.startsWith('/api/plugins/for/') ? { skills: [] } : {}); f.fetch.mockReset(); f.connections.mockReset().mockResolvedValue([]);
   f.stateListener = undefined;
   vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(), appflowy: { hyperOpenBot: { service: { onState: (listener: (state: any) => void) => { f.stateListener = listener; return () => { if (f.stateListener === listener) f.stateListener = undefined; }; } } }, shell: { openExternal: vi.fn() } } });
 });
@@ -270,4 +270,57 @@ it('offers the authoritative shared-account completion check to admins after ven
   const tree = render(HyperConnectionsPanel, props); button(tree, 'Check sign-in completion')?.props.onClick(); await drain();
   expect(f.request).toHaveBeenCalledWith('/api/plugins/servers/server/connection/confirm', 'POST');
   expect(button(render(HyperConnectionsPanel, { ...props, admin: false }), 'Check sign-in completion')).toBeUndefined();
+});
+it('does not display or apply one app account-mode preview after an incoming route selects another app', async () => {
+  const preview = { mode: 'personal', wouldRevoke: { holder: 'deployment', count: 1 }, bots: [{ botId: 'bot-a', exposure: approval }] };
+  const rows = [{ key: 'server', title: 'Mail', summary: '', state: 'Team account connected', server, connections: [] }, { key: 'second', title: 'Second', summary: '', state: 'Team account connected', server: { ...server, id: 'second', url: 'composio://second' }, connections: [] }];
+  f.connections.mockResolvedValue(rows); f.request.mockResolvedValue({ preview, accounts: [] });
+  const props = { admin: true, selection: { page: 'app', key: 'server' } };
+  render(HyperConnectionsPanel, props); mountEffects(); await drain();
+  let tree = render(HyperConnectionsPanel, props); button(tree, 'Switch to personal account')!.props.onClick(); await drain();
+  tree = render(HyperConnectionsPanel, props); const oldConfirm = button(tree, 'Confirm switch')!;
+  const next = { ...props, selection: { page: 'app', key: 'second' } }; render(HyperConnectionsPanel, next); mountEffects(); await drain();
+  tree = render(HyperConnectionsPanel, next);
+  expect(find(tree, element => element.props['aria-label'] === 'Switch account mode')).toBeUndefined();
+  oldConfirm.props.onClick(); await drain();
+  expect(f.request.mock.calls.some(call => call[2]?.confirm === true)).toBe(false);
+});
+it('rejects an account-mode preview that arrives after its app target changes', async () => {
+  let finish!: (value: unknown) => void;
+  const rows = [{ key: 'server', title: 'Mail', summary: '', state: 'Team account connected', server, connections: [] }, { key: 'second', title: 'Second', summary: '', state: 'Team account connected', server: { ...server, id: 'second', url: 'composio://second' }, connections: [] }];
+  f.connections.mockResolvedValue(rows);
+  f.request.mockImplementation((path: string) => path.endsWith('/account-mode') ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({ accounts: [] }));
+  const props = { admin: true, selection: { page: 'app', key: 'server' } };
+  render(HyperConnectionsPanel, props); mountEffects(); await drain();
+  button(render(HyperConnectionsPanel, props), 'Switch to personal account')!.props.onClick();
+  const next = { ...props, selection: { page: 'app', key: 'second' } }; render(HyperConnectionsPanel, next); mountEffects(); await drain();
+  finish({ preview: { mode: 'personal', wouldRevoke: { holder: 'deployment', count: 1 }, bots: [] } }); await drain();
+  expect(find(render(HyperConnectionsPanel, next), element => element.props['aria-label'] === 'Switch account mode')).toBeUndefined();
+});
+it.each([false, true])('reconciles configured broker consent on arrival while respecting shared admin authority %s', async admin => {
+  const rows = [{ key: 'personal', title: 'Personal', summary: '', state: 'Not connected', brokerConfigured: true, server: { ...server, id: 'personal', accountMode: 'personal', provenance: 'composio' }, connections: [] }, { key: 'shared', title: 'Shared', summary: '', state: 'Team account not connected', brokerConfigured: true, server: { ...server, id: 'shared', provenance: 'composio' }, connections: [] }];
+  f.connections.mockResolvedValue(rows); f.request.mockResolvedValue({ connected: true, accounts: [] });
+  render(HyperConnectionsPanel, { admin, selection: { page: 'list' } }); mountEffects(); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/plugins/servers/personal/connection/confirm', 'POST');
+  expect(f.request.mock.calls.some(call => call[0] === '/api/plugins/servers/shared/connection/confirm')).toBe(admin);
+  expect(f.connections.mock.calls.length).toBeGreaterThanOrEqual(2);
+});
+it('asks the provider again on native window focus rather than only reloading stored consent', async () => {
+  const row = { key: 'server', title: 'Mail', summary: '', state: 'Team account not connected', brokerConfigured: true, server: { ...server, provenance: 'composio' }, connections: [] };
+  f.connections.mockResolvedValue([row]); f.request.mockImplementation(async (path: string) => path.includes('/connect?') ? { authorizationUrl: 'https://vendor.example/consent' } : { connected: true, accounts: [] });
+  const props = { admin: true, selection: { page: 'app', key: 'server' } };
+  render(HyperConnectionsPanel, props); mountEffects(); await drain();
+  const before = f.request.mock.calls.filter(call => call[0].endsWith('/connection/confirm')).length;
+  const focus = vi.mocked(window.addEventListener).mock.calls.find(call => call[0] === 'focus')![1] as () => void;
+  focus(); await drain(); expect(f.request.mock.calls.filter(call => call[0].endsWith('/connection/confirm'))).toHaveLength(before);
+  button(render(HyperConnectionsPanel, props), 'Connect account')!.props.onClick(); await drain();
+  focus(); await drain();
+  expect(f.request.mock.calls.filter(call => call[0].endsWith('/connection/confirm'))).toHaveLength(before + 1);
+  expect(f.request.mock.calls.some(call => call[0].endsWith('/connection/recheck'))).toBe(false);
+});
+it('keeps recorded connection state and a generic error when provider reconciliation fails', async () => {
+  const row = { key: 'server', title: 'Mail', summary: '', state: 'Connected', brokerConfigured: true, server: { ...server, accountMode: 'personal', provenance: 'composio' }, connections: [] };
+  f.connections.mockResolvedValue([row]); f.request.mockRejectedValue(new Error('synthetic-signing-secret'));
+  render(HyperConnectionsPanel, { selection: { page: 'list' } }); mountEffects(); await drain();
+  expect(h.states[0][0].state).toBe('Connected'); expect(h.states[3]).toMatch(/confirm|provider/i); expect(h.states[3]).not.toContain('synthetic-signing-secret');
 });
