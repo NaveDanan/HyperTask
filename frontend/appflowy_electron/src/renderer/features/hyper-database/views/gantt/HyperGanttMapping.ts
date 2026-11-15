@@ -134,9 +134,9 @@ export function hyperGanttDateWrites(config: HyperGanttConfig, cells: Record<str
   const lastDay = move && includeTime && oldStart && oldDue
     ? addDays(first, differenceInCalendarDays(oldDue, oldStart))
     : includeTime ? end : addDays(startOfDay(end), -1);
-  const last = end.getTime() === start.getTime() && !includeTime ? first : atDay(lastDay, config.end_field_id ? oldEnd?.timestamp : old?.endTimestamp, oldEnd?.includeTime ?? includeTime);
+  const last = end.getTime() === start.getTime() && !includeTime ? first : atDay(lastDay, config.end_field_id ? oldEnd?.timestamp : old?.endTimestamp ?? old?.timestamp, oldEnd?.includeTime ?? includeTime);
   if (last < first) throw new Error('End date must follow start date');
-  const value: HyperCellMutation = { kind: 'date', timestamp: hyperGanttSeconds(first), endTimestamp: hyperGanttSeconds(last), isRange: true, includeTime, reminderId: old?.reminderId };
+  const value: HyperCellMutation = { kind: 'date', timestamp: hyperGanttSeconds(first), endTimestamp: hyperGanttSeconds(last), isRange: old?.isRange === true || last.getTime() !== first.getTime(), includeTime, reminderId: old?.reminderId };
   if (!config.end_field_id || config.end_field_id === config.start_field_id) return [{ fieldId: config.start_field_id, value }];
   return [
     { fieldId: config.start_field_id, value: { kind: 'date', timestamp: hyperGanttSeconds(first), isRange: false, includeTime, reminderId: old?.reminderId } },

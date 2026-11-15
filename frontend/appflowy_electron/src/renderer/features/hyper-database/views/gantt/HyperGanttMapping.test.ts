@@ -11,7 +11,7 @@ import { hyperGanttClearDates, hyperGanttCommitDates } from './HyperGanttMutatio
 
 const field = (id: string, name: string, type: FieldType, isPrimary = false): HyperField => ({ id, name, type, isPrimary, settings: create(FieldSettingsPBSchema), options: [], proto: create(FieldPBSchema, { id, name, fieldType: type, isPrimary }) });
 const day = (offset = 0) => addDays(startOfDay(new Date(2026, 10, 15)), offset);
-const dateCell = (start: Date | null, end: Date | null = start, includeTime = false): HyperCell => ({ kind: 'date', timestamp: start ? hyperGanttSeconds(start) : null, endTimestamp: end ? hyperGanttSeconds(end) : null, isRange: true, includeTime, reminderId: 'reminder', display: '' });
+const dateCell = (start: Date | null, end: Date | null = start, includeTime = false): Extract<HyperCell, { kind: 'date' }> => ({ kind: 'date', timestamp: start ? hyperGanttSeconds(start) : null, endTimestamp: end ? hyperGanttSeconds(end) : null, isRange: true, includeTime, reminderId: 'reminder', display: '' });
 const view = create(ViewPBSchema, { id: 'gantt', oneOfExtra: { case: 'extra', value: '{"hyper_layout":"gantt","other":"keep"}' } });
 function fixture(): HyperDatabaseState {
   return { status: 'ready', error: null, databaseId: 'db', viewId: view.id, view, views: [view], settings: null, groups: [], revision: 1, dataRevision: 0, rows: {}, rowIds: ['b', 'a', 'c'], fields: [field('title', 'Name', FieldType.RichText, true), field('schedule', 'Schedule', FieldType.DateTime), field('status', 'Status', FieldType.SingleSelect), field('progress', 'Progress', FieldType.Number), field('assignee', 'Assignee', FieldType.MultiSelect)], cells: {
@@ -163,4 +163,12 @@ describe('Hyper Gantt timed move regressions', () => {
     const writes = hyperGanttDateWrites(cfg, state.cells.a, proposedStart, proposedEnd, true);
     expect(hyperGanttWrittenTiming(writes)).toMatchObject({ start: addDays(start, 1), end: addDays(end, 1) });
   });
+});
+it.each([false, true])('moves a timed single-date milestone without an end (drag=%s)', drag => {
+  const state = fixture(); const start = new Date(2026, 10, 15, 9);
+  state.cells.a.schedule = { ...dateCell(start, null, true), isRange: false };
+  const proposed = drag ? day(1) : addDays(start, 1);
+  const writes = hyperGanttDateWrites(config(state), state.cells.a, proposed, proposed, drag);
+  expect(writes[0].value).toMatchObject({ timestamp: hyperGanttSeconds(addDays(start, 1)), endTimestamp: hyperGanttSeconds(addDays(start, 1)), includeTime: true, isRange: false });
+  expect(hyperGanttWrittenTiming(writes)).toMatchObject({ start: addDays(start, 1), end: addDays(start, 1), allDay: false });
 });
