@@ -259,6 +259,12 @@ The notified `b2f403d` checks were both skipped: CodeRabbit exceeded its 100-fil
 
 Eight regressions were red before correction; fourteen additional guards pass. Full validation: 1254 tests, one optional skip, four real-core tests, typecheck/build and thirteen safeguards. The owned disposable app runs `64901f2` with stores retained. The latest three ledgers fully verified five of eight files and left three broad contract inspections incomplete, finding four Spec defects now source-fixed. Current carried coverage is 90 byte-identical inspected files of 409, with 319 remaining. Fresh exact-head reviews, full contract inspection, human Tailscale authentication, native workflows and owner acceptance remain required before merge or next-stage work.
 
+### Destination-scoped SMS, proposed grants and refusal recovery
+
+The notified check-in finding/review belonged to older `b2f403d` and was already resolved. Current Code review at `6624f9c` found the separate Reaching you SMS scope issue `4577201746`. `cd4c7aa` binds its challenge and pending responses to selected channel/Bot/availability and mount generations. It also corrects five Spec gaps: editable new-message drafts before choosing a Bot, surrogate-safe routing opening limits without clipping the sent message, grant arrival/Cancel epochs, each Bot's server-proposed bulk/batch exposure, and refusal timestamp/connected-since recovery with native setup navigation. Original endpoints, permissions, notices, owner binding and Intelligence remain compatible.
+
+Twelve regressions were red before correction; fourteen further guards pass. Full validation: 1280 tests, one optional skip, four real-core tests, typecheck/build and thirteen safeguards. Existing direct-call transcript fixtures were extended for the new navigation hook without removing identity checks. The owned app runs `cd4c7aa` with stores retained, not a native acceptance pass. Latest ledgers fully verified four of nine assigned files; five remain incomplete and eight known incomplete contracts are retained. Coverage carries 93 byte-identical inspected files of 409, leaving 316. Fresh exact-head reviews, complete contract coverage, account-holder Tailscale authentication, native workflows and owner acceptance still block merge and next-stage work.
+
 ## Queue
 
 | Issue | Deliverable | State |
