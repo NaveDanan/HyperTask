@@ -12,6 +12,9 @@ import { HyperComposer } from './composer';
 import { HyperConversationDraftCache } from './HyperConversationDraft';
 import { HyperInteractiveResult } from './screens-gen/HyperInteractiveResult';
 import { FormCardArgs, HyperFormCard } from './screens-gen/form';
+import { HyperCheckInEditor } from './routines/HyperRoutinesSection';
+import { HyperGroupChat } from './conversations/HyperGroupChat';
+import { hyperAcquireConversationDraft } from './useHyperConversationDraft';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
 const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0 }));
@@ -22,13 +25,14 @@ vi.mock('react', async original => {
   return { ...react,
     useState: (initial: any) => {
       if (!h.active) return react.useState(initial);
-      const index = h.stateIndex++; if (!(index in h.states)) h.states[index] = typeof initial === 'function' ? initial() : initial;
-      return [h.states[index], (next: any) => { h.states[index] = typeof next === 'function' ? next(h.states[index]) : next; }];
+      const index = h.stateIndex++, state = h.states; if (!(index in state)) state[index] = typeof initial === 'function' ? initial() : initial;
+      return [state[index], (next: any) => { state[index] = typeof next === 'function' ? next(state[index]) : next; }];
     },
     useRef: (initial: any) => { if (!h.active) return react.useRef(initial); const index = h.refIndex++; return h.refs[index] ?? (h.refs[index] = { current: initial }); },
     useEffect: effect, useLayoutEffect: effect,
     useCallback: (callback: any, deps: unknown[]) => h.active ? callback : react.useCallback(callback, deps),
     useMemo: (create: () => unknown, deps: unknown[]) => h.active ? create() : react.useMemo(create, deps),
+    useSyncExternalStore: (...args: Parameters<typeof react.useSyncExternalStore>) => h.active ? args[1]() : react.useSyncExternalStore(...args),
   };
 });
 vi.mock('./transport', async original => ({ ...await original<typeof import('./transport')>(), hyperOpenBotRequest: f.request, hyperOpenBotFetch: f.fetch }));
@@ -323,4 +327,43 @@ it('keeps recorded connection state and a generic error when provider reconcilia
   f.connections.mockResolvedValue([row]); f.request.mockRejectedValue(new Error('synthetic-signing-secret'));
   render(HyperConnectionsPanel, { selection: { page: 'list' } }); mountEffects(); await drain();
   expect(h.states[0][0].state).toBe('Connected'); expect(h.states[3]).toMatch(/confirm|provider/i); expect(h.states[3]).not.toContain('synthetic-signing-secret');
+});
+it('keeps check-in focus and interval in the same draft until Save changes', async () => {
+  const setting = { id: 'check', focus: 'original focus', intervalMinutes: 60, subject: 'Check' }, refresh = vi.fn();
+  const props = { setting, refresh };
+  let tree = render(HyperCheckInEditor, props);
+  find(tree, element => element.props.maxLength === 1000)!.props.onChange({ target: { value: 'unsaved focus' } });
+  tree = render(HyperCheckInEditor, props);
+  find(tree, element => element.props.label === 'How often')!.props.onChange('240'); await drain();
+  expect(f.request).not.toHaveBeenCalled(); expect(refresh).not.toHaveBeenCalled();
+  tree = render(HyperCheckInEditor, props);
+  await find(tree, element => element.props.label === 'Save changes')!.props.run();
+  expect(f.request).toHaveBeenCalledWith('/api/proactive/settings/check', 'PATCH', { focus: 'unsaved focus', intervalMinutes: 240 });
+});
+it('does not borrow a remounted composer active-send attachment for a queued follow-up', () => {
+  const consume = vi.fn(), discard = vi.fn();
+  const props = { value: 'follow-up', pending: true, attachments: [{ id: 'first-send-file', name: 'sent.txt', status: 'ready' }], activeAttachmentIds: ['first-send-file'], onSubmit: vi.fn(), onConsumeAttachments: consume, onDiscardAttachment: discard };
+  let tree = render(HyperComposer, props); find(tree, element => element.type === 'form')!.props.onSubmit({ preventDefault() {} });
+  expect(consume).toHaveBeenCalledWith([]);
+  tree = render(HyperComposer, props); button(tree, 'Remove queued message')!.props.onClick();
+  expect(discard).not.toHaveBeenCalled();
+});
+it('already merges an older rejected group send into the reopened owner draft instead of losing it', async () => {
+  const id = 'group-rejection-current', lease = hyperAcquireConversationDraft(id);
+  lease.update(current => ({ ...current, text: 'A', attachments: [], commandIds: [] }));
+  let fail!: (error: Error) => void;
+  f.request.mockImplementation((path: string, method?: string) => path === `/api/groups/${id}` && method === 'POST' ? new Promise((_, reject) => { fail = reject; }) : Promise.resolve({ user: { id: 'owner' } }));
+  const data = { people: [], bots: [{ id: 'bot-a', name: 'A' }, { id: 'bot-b', name: 'B' }], messages: [] };
+  let group = render(HyperGroupChat, { channelId: id, serviceReady: true }, [[], false, data]);
+  const first = find(group, element => element.type === HyperComposer)!;
+  h.states = []; h.refs = [];
+  find(render(HyperComposer, first.props), element => element.type === 'form')!.props.onSubmit({ preventDefault() {} });
+  mountEffects(); for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  h.states = []; h.refs = [];
+  group = render(HyperGroupChat, { channelId: id, serviceReady: true }, [[], false, data]);
+  const reopened = find(group, element => element.type === HyperComposer)!; h.states = []; h.refs = [];
+  const tree = render(HyperComposer, reopened.props);
+  find(tree, element => element.props['data-slot'] === 'composer-input')!.props.onChange({ target: { value: 'B' } });
+  fail(new Error('refused')); await drain();
+  expect(lease.get().text).toBe('A B');
 });

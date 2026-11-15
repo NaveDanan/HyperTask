@@ -11,6 +11,13 @@ it('preserves network ports, CIDRs and ordered entries', async () => {
   await hyperSaveNetwork(policy, 'test description');
   expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/admin/enterprise/network', 'PUT', { ...policy, authoring: { source: 'english', text: 'test description' } });
 });
+it('does not mistake hexadecimal DNS names containing digits for CIDRs', () => {
+  expect(hyperNetworkRules('db1.ad 5432\nc0ffee.de 443')).toEqual([{ type: 'domain', value: 'db1.ad', ports: '5432' }, { type: 'domain', value: 'c0ffee.de', ports: '443' }]);
+});
+it('recognizes actual IPv4/IPv6 addresses and valid prefix ranges rather than a character heuristic', () => {
+  expect(hyperNetworkRules('::\nfe::\n192.168.1.1\n2001:db8::/32').map(rule => rule.type)).toEqual(['cidr', 'cidr', 'cidr', 'cidr']);
+  expect(hyperNetworkRules('2001:db8::/129\n10.0.0.1/33').some(rule => rule.type === 'cidr')).toBe(false);
+});
 it('targets the listed computer and shared seat, and validates idle days', async () => {
   await hyperChangeComputer({ computer: 'person:test', botId: 'seat', kind: 'person', running: true, startedAt: null }, 'reset');
   expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/computers/fleet', 'POST', { computer: 'person:test', botId: 'seat', action: 'reset' });

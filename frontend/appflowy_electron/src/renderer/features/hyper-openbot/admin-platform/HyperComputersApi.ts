@@ -22,9 +22,22 @@ export function hyperSetInactiveDays(value: number) {
 export function hyperNetworkRules(text: string): HyperNetworkRule[] {
   return text.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
     const [value = '', ports] = line.split(/\s+/, 2);
-    const type = /^[\d.:a-fA-F]+(\/\d+)?$/.test(value) && /\d/.test(value) && /[.:]/.test(value) ? 'cidr' as const : 'domain' as const;
+    const type = hyperIsNetworkAddress(value) ? 'cidr' as const : 'domain' as const;
     return { type, value, ...(ports ? { ports } : {}) };
   });
+}
+function hyperIsNetworkAddress(value: string): boolean {
+  const [address, prefix, extra] = value.split('/');
+  if (extra !== undefined || !address) return false;
+  const octets = address.split('.');
+  let bits: number;
+  if (octets.length === 4 && octets.every(part => /^(?:0|[1-9]\d{0,2})$/.test(part) && Number(part) <= 255)) bits = 32;
+  else {
+    if (!address.includes(':') || !/^[\da-fA-F:.]+$/.test(address)) return false;
+    try { new URL(`http://[${address}]/`); } catch { return false; }
+    bits = 128;
+  }
+  return prefix === undefined || (/^\d+$/.test(prefix) && Number(prefix) <= bits);
 }
 export const hyperSaveNetwork = (policy: HyperNetworkPolicy, text?: string) => hyperOpenBotRequest('/api/admin/enterprise/network', 'PUT', { ...policy, ...(text ? { authoring: { source: 'english', text } } : {}) });
 export const hyperRemoveNetwork = (policy: HyperNetworkPolicy) => hyperOpenBotRequest(`/api/admin/enterprise/network/${policy.scopeKind}${policy.scopeKind === 'group' ? `?group=${encodeURIComponent(policy.scopeId)}` : ''}`, 'DELETE');

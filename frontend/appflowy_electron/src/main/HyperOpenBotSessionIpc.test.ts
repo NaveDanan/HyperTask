@@ -7,7 +7,7 @@ import { IpcChannel as C } from '@shared/api';
 const ipc = vi.hoisted(() => ({ handlers: new Map<string, (...args: any[]) => any>(), events: new Map<string, (...args: any[]) => any>(), fetch: vi.fn(), path: vi.fn(async () => '/private/gateway.sock'), close: vi.fn(), sockets: [] as any[], dialog: vi.fn(), copy: vi.fn() }));
 vi.mock('electron', () => ({ ipcMain: { handle: (name: string, fn: (...args: any[]) => any) => ipc.handlers.set(name, fn), on: (name: string, fn: (...args: any[]) => any) => ipc.events.set(name, fn) }, dialog: { showMessageBox: ipc.dialog }, clipboard: { writeText: ipc.copy } }));
 vi.mock('./HyperOpenBotTunnel', () => ({ hyperTunnelFetch: ipc.fetch, hyperOpenBotSocketPath: ipc.path, closeHyperOpenBotTunnel: ipc.close, hyperOpenBotCookieHeader: async (lease: { assertCurrent(): void }) => { lease.assertCurrent(); return ''; } }));
-vi.mock('ws', async () => { const { EventEmitter } = await import('node:events'); return { default: class extends EventEmitter { static OPEN = 1; readyState = 1; terminate = vi.fn(() => { this.readyState = 3; this.emit('close', 1006, Buffer.from('')); }); close = this.terminate; constructor() { super(); ipc.sockets.push(this); } } }; });
+vi.mock('ws', async () => { const { EventEmitter } = await import('node:events'); return { default: class extends EventEmitter { static OPEN = 1; readyState = 1; bufferedAmount = 0; send = vi.fn((data: string | Uint8Array) => { this.bufferedAmount += typeof data === 'string' ? Buffer.byteLength(data) : data.byteLength; }); terminate = vi.fn(() => { this.readyState = 3; this.emit('close', 1006, Buffer.from('')); }); close = this.terminate; constructor() { super(); ipc.sockets.push(this); } } }; });
 import { HyperOpenBotSession, hyperNativeCoreRequest, type HyperOpenBotSessionDependencies } from './HyperOpenBotSession';
 import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
 beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.fetch.mockReset(); ipc.dialog.mockReset().mockResolvedValue({ response: 0 }); ipc.path.mockReset().mockResolvedValue('/private/gateway.sock'); });
@@ -80,6 +80,24 @@ it.each(['/api/voice/calls?nonce=test', '/api/voice/%63alls?nonce=test'])('appli
   expect(payload).not.toContain(secret);
   expect(JSON.parse(payload).url).toMatch(/^wss:\/\/hyper-openbot\.invalid\/api\/voice\/socket\/[a-f0-9-]{36}$/);
   await h.manager.beginNativeTransition().cleared;
+});
+it('closes a non-draining main-owned voice socket before speech queues exceed one MiB', async () => {
+  const h = setup(); ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ transport: 'websocket', url: 'wss://api.x.ai/v1/realtime', clientSecret: 'synthetic-voice-secret', session: {} })));
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'voice-limit-open', path: '/api/voice/calls', method: 'POST' });
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'voice-limit-open', done: true })));
+  const payload = JSON.parse(h.sender.send.mock.calls.filter(([, value]) => value.id === 'voice-limit-open' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString()).join(''));
+  await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'voice-limit', new URL(payload.url).pathname, []);
+  const socket = ipc.sockets[0];
+  for (let n = 0; n < 40; n++) ipc.events.get('hyper-openbot:socket-send')!(h.event, 'voice-limit', new Uint8Array(65536));
+  expect(socket.bufferedAmount).toBeLessThanOrEqual(1024 * 1024); expect(socket.terminate).toHaveBeenCalledOnce();
+  expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:socket', expect.objectContaining({ id: 'voice-limit', type: 'error' }));
+});
+it('does not apply the voice-only backpressure cap to the original gateway socket', async () => {
+  const h = setup();
+  await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'gateway-size', '/api/intelligence/client/websocket?token=synthetic', []);
+  for (let n = 0; n < 20; n++) ipc.events.get('hyper-openbot:socket-send')!(h.event, 'gateway-size', new Uint8Array(65536));
+  expect(ipc.sockets[0].send).toHaveBeenCalledTimes(20); expect(ipc.sockets[0].terminate).not.toHaveBeenCalled();
+  h.bridge.disconnect();
 });
 it.each(['/api/agents/bot/callback-token', '/api/agents/bot/callback-token?nonce=test', '/api/agents/%62ot/callback%2Dtoken?nonce=test', '/api/agents/bot/callback%2Dtoken?nonce=test'])('refuses raw callback-key creation through generic renderer HTTP at %s', async route => {
   const h = setup();

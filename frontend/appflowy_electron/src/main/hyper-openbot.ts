@@ -62,6 +62,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
   const voiceBroker = new HyperVoiceBroker();
   const running = new Map<string, AbortController>();
   const sockets = new Map<string, WebSocket>();
+  const voiceSockets = new Set<string>();
   const openingSockets = new Map<string, { cancelled: boolean }>();
   const owners = new WeakSet<object>();
   const disconnect = () => { for (const controller of running.values()) controller.abort(); for (const socket of sockets.values()) socket.terminate(); for (const opening of openingSockets.values()) opening.cancelled = true; closeHyperOpenBotTunnel(); };
@@ -139,6 +140,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
      const voice = path.startsWith('/api/voice/socket/') ? voiceBroker.take(path, event.sender.id) : undefined;
      const socket = new WebSocket(voice ? voice.destination : `ws+unix://${socketPath}:${path}`, voice ? [`xai-client-secret.${voice.secret}`] : protocols, { origin: ORIGIN, headers: voice ? {} : { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
     sockets.set(id, socket);
+    if (voice) voiceSockets.add(id);
     const abort = () => socket.terminate();
     lease.signal.addEventListener('abort', abort, { once: true });
     lease.assertCurrent();
@@ -147,13 +149,20 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     socket.on('open', () => send({ type: 'open' }));
     socket.on('message', (data, binary) => send({ type: 'message', data: binary ? new Uint8Array(data as Buffer) : data.toString() }));
     socket.on('error', () => send({ type: 'error' }));
-    socket.on('close', (code, reason) => { clearTimeout(deadline); lease.signal.removeEventListener('abort', abort); sockets.delete(id); send({ type: 'close', code, reason: reason.toString() }); });
+    socket.on('close', (code, reason) => { clearTimeout(deadline); lease.signal.removeEventListener('abort', abort); sockets.delete(id); voiceSockets.delete(id); send({ type: 'close', code, reason: reason.toString() }); });
     } finally { openingSockets.delete(id); }
   });
   ipcMain.on('hyper-openbot:socket-send', (event, id: unknown, data: unknown) => {
     if (!trusted(event) || !safeId(id) || (typeof data !== 'string' && !(data instanceof Uint8Array))) return;
     if ((typeof data === 'string' ? Buffer.byteLength(data) : data.byteLength) > MAX_BYTES) return;
-    const socket = sockets.get(id); if (socket?.readyState === WebSocket.OPEN) socket.send(data);
+    const socket = sockets.get(id);
+    if (socket?.readyState !== WebSocket.OPEN) return;
+    const bytes = typeof data === 'string' ? Buffer.byteLength(data) : data.byteLength;
+    if (voiceSockets.has(id) && socket.bufferedAmount + bytes > 1024 * 1024) {
+      if (!event.sender.isDestroyed()) event.sender.send('hyper-openbot:socket', { id, type: 'error', reason: 'Voice connection is too slow. Restart the call when the connection recovers.' });
+      socket.terminate(); return;
+    }
+    socket.send(data);
   });
   ipcMain.on('hyper-openbot:socket-close', (event, id: unknown, code: unknown, reason: unknown) => {
     if (!trusted(event) || !safeId(id)) return;

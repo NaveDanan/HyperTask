@@ -9,11 +9,12 @@ export interface HyperConversationDraft {
   readonly attachments: readonly HyperDraftAttachment[];
   readonly uploadGroup: string;
   readonly retry?: { readonly id: string; readonly text: string; readonly files: string };
+  readonly activeAttachments?: { readonly submissionId: string; readonly ids: readonly string[] };
 }
 const EMPTY: HyperConversationDraft = Object.freeze({ text: '', attachments: Object.freeze([]), uploadGroup: '' });
 function snapshot(value: HyperConversationDraft): HyperConversationDraft {
   // Retain server references and display metadata, never File objects, bytes or credentials.
-  return Object.freeze({ text: value.text, ...(value.commandIds ? { commandIds: Object.freeze([...value.commandIds]) } : {}), uploadGroup: value.uploadGroup, attachments: Object.freeze(value.attachments.map(file => Object.freeze({ id: file.id, name: file.name, mimeType: file.mimeType, status: file.status, ...(file.error ? { error: file.error } : {}) }))), ...(value.retry ? { retry: Object.freeze({ id: value.retry.id, text: value.retry.text, files: value.retry.files }) } : {}) });
+  return Object.freeze({ text: value.text, ...(value.commandIds ? { commandIds: Object.freeze([...value.commandIds]) } : {}), uploadGroup: value.uploadGroup, attachments: Object.freeze(value.attachments.map(file => Object.freeze({ id: file.id, name: file.name, mimeType: file.mimeType, status: file.status, ...(file.error ? { error: file.error } : {}) }))), ...(value.retry ? { retry: Object.freeze({ id: value.retry.id, text: value.retry.text, files: value.retry.files }) } : {}), ...(value.activeAttachments ? { activeAttachments: Object.freeze({ submissionId: value.activeAttachments.submissionId, ids: Object.freeze([...value.activeAttachments.ids]) }) } : {}) });
 }
 
 /** Renderer-session drafts survive native page navigation and expire at the main auth boundary. */
@@ -39,6 +40,15 @@ export class HyperConversationDraftCache {
       assertCurrent,
       subscribe: (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; },
       update,
+      /** A remounted composer must not reuse or discard files still owned by this send. */
+      beginAttachmentSend: (submissionId: string, ids: readonly string[]) => {
+        assertCurrent();
+        if (!ids.length) return () => {};
+        const current = get().activeAttachments;
+        if (current && current.submissionId !== submissionId) throw new Error('An attachment send is still pending. Wait or stop it before sending more files.');
+        update(current => ({ ...current, activeAttachments: { submissionId, ids } }));
+        return () => { update(current => current.activeAttachments?.submissionId === submissionId ? { ...current, activeAttachments: undefined } : current); };
+      },
       /** Navigation restores unsent queued intent; only this still-current owner can retain it. */
       restoreQueued: (messages: readonly HyperQueuedMessage[], mode?: 'failed-send') => {
         if (generation !== this.generation) return false;

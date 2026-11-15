@@ -60,6 +60,26 @@ it('retains failed-send identity on reopening and cannot clear a newer submissio
   original.update(current => current.retry?.id === sent.id ? { ...current, retry: undefined } : current);
   expect(reopened.get().retry?.id).toBe('new-user-id');
 });
+it('retains active file ownership across composer leases without mixing channels or caller arrays', () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one'), ids = ['file-a'];
+  const finish = lease.beginAttachmentSend('send-a', ids); ids.push('mutated');
+  expect(cache.acquire('one').get().activeAttachments).toEqual({ submissionId: 'send-a', ids: ['file-a'] });
+  expect(cache.acquire('two').get().activeAttachments).toBeUndefined();
+  expect(() => cache.acquire('one').beginAttachmentSend('send-b', ['file-b'])).toThrow('pending');
+  finish(); expect(cache.acquire('one').get().activeAttachments).toBeUndefined();
+});
+it('a finished old attachment send cannot clear newer ownership', () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one');
+  const finishA = lease.beginAttachmentSend('a', ['file-a']); finishA();
+  lease.beginAttachmentSend('b', ['file-b']); finishA();
+  expect(lease.get().activeAttachments).toEqual({ submissionId: 'b', ids: ['file-b'] });
+});
+it('does not reintroduce active attachment ownership after identity invalidation', () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one');
+  const finish = lease.beginAttachmentSend('a', ['file-a']); cache.invalidate(); finish();
+  expect(() => lease.beginAttachmentSend('b', ['file-b'])).toThrow('identity');
+  expect(cache.acquire('one').get().activeAttachments).toBeUndefined();
+});
 it('restores queued intent ahead of newer drafts without losing refs or reusing an active retry identity', () => {
   const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one');
   const active = lease.prepareSubmission('queued', '');

@@ -1,4 +1,5 @@
 import { hyperClassifyBrowserReturn } from './HyperBrowserReturn';
+import { HyperBrowserReturnQueue } from './HyperBrowserReturnQueue';
 import type { HyperOpenBotService } from './HyperOpenBotService';
 import { createHyperOpenBotService } from './HyperOpenBotBackend';
 import { registerHyperOpenBotServiceIpc } from './HyperOpenBotServiceIpc';
@@ -39,15 +40,17 @@ const core = new CoreProcess(coreBinaryPath(appRoot, app.isPackaged));
 let coreStarted: Promise<void> | null = null;
 let mainWindow: BrowserWindow | null = null;
 let launchDeepLink: string | null = findDeepLink(process.argv);
-let pendingBrowserReturn = launchDeepLink !== null && hyperClassifyBrowserReturn(launchDeepLink) === 'return';
+const initialBrowserReturn = launchDeepLink !== null && hyperClassifyBrowserReturn(launchDeepLink) === 'return';
 if (launchDeepLink && hyperClassifyBrowserReturn(launchDeepLink) !== 'ordinary') launchDeepLink = null;
 let handleBrowserReturn: (() => Promise<void>) | undefined;
+let browserReturnReady = () => false;
+const browserReturns = new HyperBrowserReturnQueue(() => browserReturnReady(), async () => { await handleBrowserReturn?.(); });
+if (initialBrowserReturn) browserReturns.request();
 function deliverDeepLink(url: string) {
   const kind = hyperClassifyBrowserReturn(url);
   if (kind === 'reject') return;
   if (kind === 'return') {
-    if (handleBrowserReturn && mainWindow) void handleBrowserReturn();
-    else pendingBrowserReturn = true;
+    browserReturns.request();
     return;
   }
   if (mainWindow) mainWindow.webContents.send(C.AppDeepLink, url);
@@ -161,6 +164,8 @@ function registerIpc() {
     } catch { /* Sensitive callback and native failures never enter renderer error strings. */ }
     finally { returnBusy = false; unsubscribe(); owner.webContents.removeListener('destroyed', stop); owner.webContents.removeListener('did-start-navigation', stop); }
   };
+  browserReturnReady = () => !!mainWindow && !mainWindow.isDestroyed() && !!openBotService?.snapshot().ready && !!handleBrowserReturn;
+  openBotService.subscribe(() => { void browserReturns.flush(); });
   core.on('exit', () => { void openBotSessions.beginNativeTransition().cleared.catch(() => {}); });
   ipcMain.handle(C.CoreInit, async (_, config: CoreInitConfig) => {
     const transition = openBotSessions.beginNativeTransition(false);
@@ -202,7 +207,7 @@ function registerIpc() {
   });
   ipcMain.handle(C.AppTakeLaunchDeepLink, (event) => {
     if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) return null;
-    if (pendingBrowserReturn) { pendingBrowserReturn = false; void handleBrowserReturn?.(); }
+    void browserReturns.flush();
     const link = launchDeepLink;
     launchDeepLink = null;
     return link;
