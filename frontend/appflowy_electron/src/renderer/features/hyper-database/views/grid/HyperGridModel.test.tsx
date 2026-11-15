@@ -122,6 +122,7 @@ describe('HyperGrid search and visibility', () => {
   it('searches hidden fields, ignores case, and preserves the core order', () => {
     const controller = fixture();
     expect(HyperGridFilterRows(controller.state, 'release')).toEqual(['b', 'a']);
+    expect(controller.state.rowIds).toEqual(['b', 'a', 'c']);
   });
 
   it('combines the option filter with search using AND', () => {
