@@ -8,22 +8,23 @@ export interface HyperConversationDraft {
   readonly text: string;
   readonly attachments: readonly HyperDraftAttachment[];
   readonly uploadGroup: string;
-  readonly retry?: { readonly id: string; readonly text: string; readonly files: string };
+  readonly retry?: { readonly id: string; readonly text: string; readonly files: string; readonly uploadGroup?: string };
   readonly activeAttachments?: { readonly submissionId: string; readonly ids: readonly string[] };
 }
 const EMPTY: HyperConversationDraft = Object.freeze({ text: '', attachments: Object.freeze([]), uploadGroup: '' });
 function snapshot(value: HyperConversationDraft): HyperConversationDraft {
   // Retain server references and display metadata, never File objects, bytes or credentials.
-  return Object.freeze({ text: value.text, ...(value.commandIds ? { commandIds: Object.freeze([...value.commandIds]) } : {}), uploadGroup: value.uploadGroup, attachments: Object.freeze(value.attachments.map(file => Object.freeze({ id: file.id, name: file.name, mimeType: file.mimeType, status: file.status, ...(file.error ? { error: file.error } : {}) }))), ...(value.retry ? { retry: Object.freeze({ id: value.retry.id, text: value.retry.text, files: value.retry.files }) } : {}), ...(value.activeAttachments ? { activeAttachments: Object.freeze({ submissionId: value.activeAttachments.submissionId, ids: Object.freeze([...value.activeAttachments.ids]) }) } : {}) });
+  return Object.freeze({ text: value.text, ...(value.commandIds ? { commandIds: Object.freeze([...value.commandIds]) } : {}), uploadGroup: value.uploadGroup, attachments: Object.freeze(value.attachments.map(file => Object.freeze({ id: file.id, name: file.name, mimeType: file.mimeType, status: file.status, ...(file.error ? { error: file.error } : {}) }))), ...(value.retry ? { retry: Object.freeze({ id: value.retry.id, text: value.retry.text, files: value.retry.files, ...(value.retry.uploadGroup ? { uploadGroup: value.retry.uploadGroup } : {}) }) } : {}), ...(value.activeAttachments ? { activeAttachments: Object.freeze({ submissionId: value.activeAttachments.submissionId, ids: Object.freeze([...value.activeAttachments.ids]) }) } : {}) });
 }
 
 /** Renderer-session drafts survive native page navigation and expire at the main auth boundary. */
 export class HyperConversationDraftCache {
   private generation = 0;
   private entries = new Map<string, HyperConversationDraft>();
+  private attachmentSends = new Map<string, { submissionId: string }>();
   private listeners = new Set<() => void>();
   constructor(private readonly groupId: () => string = () => crypto.randomUUID()) {}
-  invalidate() { this.generation++; this.entries.clear(); for (const listener of this.listeners) listener(); }
+  invalidate() { this.generation++; this.entries.clear(); this.attachmentSends.clear(); for (const listener of this.listeners) listener(); }
   acquire(channelId: string) {
     const generation = this.generation;
     if (!this.entries.has(channelId)) this.entries.set(channelId, snapshot({ text: '', attachments: [], uploadGroup: this.groupId() }));
@@ -43,11 +44,23 @@ export class HyperConversationDraftCache {
       /** A remounted composer must not reuse or discard files still owned by this send. */
       beginAttachmentSend: (submissionId: string, ids: readonly string[]) => {
         assertCurrent();
-        if (!ids.length) return () => {};
         const current = get().activeAttachments;
-        if (current && current.submissionId !== submissionId) throw new Error('An attachment send is still pending. Wait or stop it before sending more files.');
-        update(current => ({ ...current, activeAttachments: { submissionId, ids } }));
-        return () => { update(current => current.activeAttachments?.submissionId === submissionId ? { ...current, activeAttachments: undefined } : current); };
+        const held = this.attachmentSends.get(channelId);
+        if ((current && current.submissionId !== submissionId) || (held && held.submissionId !== submissionId)) throw new Error('An attachment send is still pending. Wait or stop it before sending more files.');
+        const ownership = { submissionId }; this.attachmentSends.set(channelId, ownership);
+        if (ids.length) update(current => {
+          // The server counts unattached rows per uploadGroup. Reserve the next
+          // draft's bucket now, even when the active run has not stamped its rows.
+          // A retry keeps its old rows and identity, without rotating a newer bucket.
+          const sendingGroup = current.retry?.id === submissionId ? current.retry.uploadGroup : undefined;
+          const rotate = !current.activeAttachments && (!sendingGroup || sendingGroup === current.uploadGroup);
+          return { ...current, uploadGroup: rotate ? this.groupId() : current.uploadGroup, activeAttachments: { submissionId, ids } };
+        });
+        return () => {
+          if (generation !== this.generation || this.attachmentSends.get(channelId) !== ownership) return;
+          this.attachmentSends.delete(channelId);
+          update(current => current.activeAttachments?.submissionId === submissionId ? { ...current, activeAttachments: undefined } : current);
+        };
       },
       /** Navigation restores unsent queued intent; only this still-current owner can retain it. */
       restoreQueued: (messages: readonly HyperQueuedMessage[], mode?: 'failed-send') => {
@@ -62,14 +75,17 @@ export class HyperConversationDraftCache {
           });
           for (const file of current.attachments) attachments.set(file.id, file);
           return { ...current, text: [...messages.map(message => message.text), current.text].filter(line => line.trim()).join('\n'),
-            attachments: [...attachments.values()], commandIds: [...new Set([...messages.flatMap(message => message.commandIds), ...(current.commandIds ?? [])])], retry: mode === 'failed-send' ? current.retry : undefined };
+            attachments: [...attachments.values()], commandIds: [...new Set([...messages.flatMap(message => message.commandIds), ...(current.commandIds ?? [])])],
+            // A navigation transfer must not erase the pending run's retry before
+            // its failure arrives. Matching is still by complete text/file snapshot.
+            retry: mode === 'failed-send' || (current.retry && this.attachmentSends.get(channelId)?.submissionId === current.retry.id) ? current.retry : undefined };
         });
       },
       prepareSubmission: (text: string, files: string) => {
         assertCurrent();
         // Another page may have completed and cleared this retry since this page mounted.
         const previous = get().retry;
-        const sent = previous?.text === text && previous.files === files ? previous : { id: crypto.randomUUID(), text, files };
+        const sent = previous?.text === text && previous.files === files ? previous : { id: crypto.randomUUID(), text, files, uploadGroup: get().uploadGroup };
         update(current => ({ ...current, retry: sent }));
         return sent;
       },
