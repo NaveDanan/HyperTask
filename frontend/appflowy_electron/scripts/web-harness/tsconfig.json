@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "es2022", "module": "node16", "moduleResolution": "node16",
+    "types": ["node", "electron"], "skipLibCheck": true, "esModuleInterop": true,
+    "strict": true, "outDir": "../../.cache/harness", "rootDir": "../../src"
+  },
+  "include": ["../../src/main/core/process.ts", "../../src/main/core/protocol.ts", "../../src/main/core/binary.ts", "../../src/main/prefs.ts", "../../src/main/device-id.ts"]
+}

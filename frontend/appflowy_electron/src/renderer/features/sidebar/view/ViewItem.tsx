@@ -11,10 +11,11 @@ import {
   isReferencedDatabaseView,
   isViewLocked,
   nameOrDefault,
+  viewExtra,
   viewIconData,
   type EmojiIconData,
 } from '@/features/view/view-ext';
-import { CalendarDays, FileText, Lock, MessageSquareText, MoreHorizontal, SquareKanban, Table2 } from 'lucide-react';
+import { CalendarDays, ChartGantt, FileText, Lock, MessageSquareText, MoreHorizontal, SquareKanban, Table2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavIconButton, TreeDisclosure, TreeRowActions, treeIndent, treeRowClass } from '@/components/app/nav';
 import { ViewBackendService } from '@/features/view/view-service';
@@ -250,10 +251,10 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
             parentViewId={view.id}
             tooltip={tr('menuAppHeader.addPageTooltip')}
             onEditing={(value) => bloc.setIsEditing(value)}
-            onSelected={(layout) => {
+            onSelected={(layout, _createNewView, hyperLayout) => {
               // The new document/chat name is empty, other layouts are "Untitled".
               const name = layout === ViewLayoutPB.Document || layout === ViewLayoutPB.Chat ? '' : tr('menuAppHeader.defaultNewPageName');
-              void bloc.createView(name, layout, { openAfterCreated: true, section: toViewSectionPB(spaceType) });
+              void bloc.createView(name, layout, { openAfterCreated: true, section: toViewSectionPB(spaceType), hyperLayout });
               void bloc.setIsExpanded(true);
             }}
           />
@@ -364,7 +365,7 @@ function ViewIconButton({ view }: { view: ViewPB }) {
     iconData.emoji !== '' ? (
       <ViewIcon icon={iconData} size={16} lineHeight={18} />
     ) : (
-      <HyperLayoutIcon layout={view.layout} />
+      <HyperLayoutIcon layout={view.layout} gantt={viewExtra(view)?.hyper_layout === 'gantt'} />
     );
   const button = (
     <AppFlowyPopover
@@ -406,8 +407,8 @@ function ViewIconButton({ view }: { view: ViewPB }) {
   return button;
 }
 
-function HyperLayoutIcon({ layout }: { layout: ViewLayoutPB }) {
-  const Icon = layout === ViewLayoutPB.Grid ? Table2 : layout === ViewLayoutPB.Board ? SquareKanban : layout === ViewLayoutPB.Calendar ? CalendarDays : layout === ViewLayoutPB.Chat ? MessageSquareText : FileText;
+function HyperLayoutIcon({ layout, gantt }: { layout: ViewLayoutPB; gantt?: boolean }) {
+  const Icon = gantt ? ChartGantt : layout === ViewLayoutPB.Grid ? Table2 : layout === ViewLayoutPB.Board ? SquareKanban : layout === ViewLayoutPB.Calendar ? CalendarDays : layout === ViewLayoutPB.Chat ? MessageSquareText : FileText;
   return <Icon className="size-4 text-sidebar-foreground/70" />;
 }
 

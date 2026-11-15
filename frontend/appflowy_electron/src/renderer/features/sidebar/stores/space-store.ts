@@ -270,16 +270,18 @@ function spaceActionsFor(store: StoreApi<SpaceState>) {
       layout,
       index,
       openAfterCreate,
+      hyperLayout,
     }: {
       name: string;
       layout: ViewLayoutPB;
       index?: number;
       openAfterCreate: boolean;
+      hyperLayout?: 'gantt';
     }) {
       const parentViewId = get().currentSpace?.id;
       if (!parentViewId) return;
       const gen = generation;
-      const result = await ViewBackendService.createView({ name, layoutType: layout, parentViewId, index, openAfterCreate });
+      const result = await ViewBackendService.createView({ name, layoutType: layout, parentViewId, index, openAfterCreate, hyperLayout });
       if (gen !== generation) return;
       if (result.ok) set({ lastCreatedPage: openAfterCreate ? result.value : null, createPageResult: result });
       else set({ createPageResult: result });

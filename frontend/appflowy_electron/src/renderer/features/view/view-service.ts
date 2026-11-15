@@ -10,6 +10,7 @@ import {
   FolderEventGetView,
   FolderEventGetViewAncestors,
   FolderEventMoveNestedView,
+  FolderEventSetLatestView,
   FolderEventToggleFavorite,
   FolderEventUnpublishViews,
   FolderEventUpdateView,
@@ -17,10 +18,11 @@ import {
   FolderEventUpdateViewVisibilityStatus,
 } from '@/backend/events';
 import type { FlowyResult } from '@/backend/dispatch';
-import { iconTypeToProto, viewIconData, type EmojiIconData } from './view-ext';
+import { iconTypeToProto, viewIconData, mergeViewExtra, type EmojiIconData } from './view-ext';
 
 export interface CreateViewOptions {
   layoutType: ViewLayoutPB;
+  hyperLayout?: 'gantt';
   parentViewId: string;
   name: string;
   /** Opens and sets the view as the workspace's current view (set_as_current). */
@@ -35,8 +37,9 @@ export interface CreateViewOptions {
 }
 
 export const ViewBackendService = {
-  createView({
+  async createView({
     layoutType,
+    hyperLayout,
     parentViewId,
     name,
     openAfterCreate = false,
@@ -46,17 +49,26 @@ export const ViewBackendService = {
     section,
     viewId,
   }: CreateViewOptions): Promise<FlowyResult<ViewPB>> {
-    return FolderEventCreateView({
+    const result = await FolderEventCreateView({
       parentViewId,
-      name,
+      name: hyperLayout === 'gantt' && !name ? 'Gantt' : name,
       layout: layoutType,
-      setAsCurrent: openAfterCreate,
+      setAsCurrent: openAfterCreate && hyperLayout !== 'gantt',
       initialData: initialDataBytes ?? new Uint8Array(),
       meta: ext,
       ...(index !== undefined ? { oneOfIndex: { case: 'index', value: index } } : null),
       ...(section !== undefined ? { oneOfSection: { case: 'section', value: section } } : null),
       ...(viewId !== undefined ? { oneOfViewId: { case: 'viewId', value: viewId } } : null),
     });
+    if (!result.ok || hyperLayout !== 'gantt') return result;
+    const extra = mergeViewExtra(result.value, { hyper_layout: 'gantt' });
+    const updated = await FolderEventUpdateView({ viewId: result.value.id, oneOfExtra: { case: 'extra', value: extra } });
+    if (!updated.ok) return updated;
+    if (openAfterCreate) {
+      const opened = await FolderEventSetLatestView({ value: result.value.id });
+      if (!opened.ok) return opened;
+    }
+    return updated;
   },
 
   /** The direct children of a view ([] for an empty id). */

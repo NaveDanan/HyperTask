@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
-import { CalendarDays, FileText, LayoutTemplate, MessageSquareText, SquareCheckBig, SquareKanban, Table2 } from 'lucide-react';
+import { CalendarDays, ChartGantt, FileText, LayoutTemplate, MessageSquareText, SquareCheckBig, SquareKanban, Table2 } from 'lucide-react';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
 import { nameOrDefault } from '../view/view-ext';
@@ -25,8 +25,8 @@ export function PlaceholderMessage({ icon, name }: { icon: ReactNode; name: stri
 }
 
 /** Default page chrome; user-content icons retain their existing renderer. */
-export function HyperLayoutIcon({ layout, className }: { layout: ViewLayoutPB; className?: string }) {
-  const Icon = layout === ViewLayoutPB.Grid ? Table2 : layout === ViewLayoutPB.Board ? SquareKanban : layout === ViewLayoutPB.Calendar ? CalendarDays : layout === ViewLayoutPB.Chat ? MessageSquareText : FileText;
+export function HyperLayoutIcon({ layout, hyperLayout, className }: { layout: ViewLayoutPB; hyperLayout?: 'grid' | 'board' | 'calendar' | 'gantt'; className?: string }) {
+  const Icon = hyperLayout === 'gantt' ? ChartGantt : layout === ViewLayoutPB.Grid ? Table2 : layout === ViewLayoutPB.Board ? SquareKanban : layout === ViewLayoutPB.Calendar ? CalendarDays : layout === ViewLayoutPB.Chat ? MessageSquareText : FileText;
   return <Icon className={cn('size-4 text-muted-foreground', className)} />;
 }
 
