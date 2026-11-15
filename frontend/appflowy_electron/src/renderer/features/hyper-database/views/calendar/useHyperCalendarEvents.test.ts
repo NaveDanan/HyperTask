@@ -51,7 +51,7 @@ beforeEach(() => {
   controller = new HyperDatabaseController('calendar');
   const field = create(FieldPBSchema, { id: 'date', name: 'Date', fieldType: FieldType.DateTime });
   controller.store.setState({ status: 'ready', fields: [{ id: field.id, name: field.name, type: FieldType.DateTime, isPrimary: false, settings: create(FieldSettingsPBSchema), options: [], proto: field }], rowIds: ['row'] });
-  vi.spyOn(controller, 'loadRows').mockResolvedValue();
+  vi.spyOn(controller, 'scanRows').mockResolvedValue({});
   vi.spyOn(controller, 'getCalendarEvents').mockResolvedValue([HyperCalendarRow]);
 });
 afterEach(() => { for (const effect of hooks.effects) effect?.cleanup?.(); controller.dispose(); vi.restoreAllMocks(); });
@@ -64,7 +64,7 @@ it('surfaces failed default Date-field configuration and retries it before fetch
   expect(toast).toHaveBeenCalledWith({ type: 'error', message: 'Settings unavailable' });
   render().refetch(); render(); await settle(); render(); await settle();
   expect(settings).toHaveBeenCalledTimes(2);
-  expect(controller.getCalendarEvents).toHaveBeenCalledWith(1793491200n, 1796083200n);
+  expect(controller.getCalendarEvents).toHaveBeenCalledWith(1793491200n, 1796083200n, {});
   expect(render()).toMatchObject({ error: null, loading: false, events: [{ id: 'row' }] });
 });
 
@@ -79,4 +79,19 @@ it('keeps previous events during refetch and ignores a late response for the old
   render().onRangeChange({ ...HyperCalendarRange, range: { start: new Date('2026-11-02T00:00:00Z'), end: HyperCalendarRange.range.end } });
   render(); await settle(); finishOld([{ ...HyperCalendarRow, title: 'Stale period' }]); await settle();
   expect(render().events[0]?.title).toBe('New period');
+});
+
+
+it('settles after a failed cell scan and cache revisions, and retries only on explicit/live invalidation', async () => {
+  configure();
+  vi.mocked(controller.scanRows).mockImplementation(async () => {
+    controller.store.setState({ revision: controller.state.revision + 1 });
+    return { row: { date: { kind: 'date', timestamp: null, endTimestamp: null, isRange: false, includeTime: false, reminderId: '', display: '', error: 'Read failed' } } };
+  });
+  render().onRangeChange(HyperCalendarRange); render(); await settle();
+  for (let i=0;i<20;i++) { render(); await settle(); }
+  expect(controller.scanRows).toHaveBeenCalledTimes(1); expect(render().error).toBe('Read failed'); expect(render().loading).toBe(false);
+  render().refetch(); render(); await settle(); expect(controller.scanRows).toHaveBeenCalledTimes(2);
+  controller.store.setState({ dataRevision: controller.state.dataRevision + 1 }); render(); await settle();
+  expect(controller.scanRows).toHaveBeenCalledTimes(3);
 });

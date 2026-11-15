@@ -54,6 +54,8 @@ export interface HyperDatabaseState {
   cells: Record<string, Record<string, HyperCell>>;
   groups: HyperGroup[]; settings: DatabaseViewSettingPB | null;
   revision: number;
+  /** Changes to authoritative cell data, excluding reads/cache eviction. */
+  dataRevision: number;
 }
 /** Stable seam owned by the foundation. View agents own only their view and subfolder. */
 export interface HyperDatabaseViewProps {

@@ -24,4 +24,7 @@ Registry dependencies without versions were resolved to current stable versions;
 requests react-day-picker@latest. ReUI now targets TanStack Table v9 and date-fns v4.
 The full source-import icon swap list and approved strict-TypeScript unused-declaration
 cleanup are recorded in [the controller README](../../features/hyper-database/README.md).
-All remaining vendor contents match the downloaded registry files.
+A focused Kanban item-drop correction commits the order already previewed during dragOver;
+applying arrayMove a second time previously reversed the move and skipped persistence.
+HyperKanbanReorder.test.tsx reproduces the old failure and verifies one commit.
+All other vendor contents match the downloaded registry files.

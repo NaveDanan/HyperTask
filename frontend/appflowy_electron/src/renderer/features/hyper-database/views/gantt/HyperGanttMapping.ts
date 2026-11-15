@@ -1,4 +1,4 @@
-import { addDays, startOfDay } from 'date-fns';
+import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
 import type { GanttEvent, GanttResource, GanttScale } from '@/components/reui/gantt/gantt-types';
 import { viewExtra } from '@/features/view/view-ext';
 import { FieldType } from '@shared/protobuf/flowy-database2/field_entities_pb';
@@ -104,7 +104,7 @@ export function hyperGanttMap(state: HyperDatabaseState, config: HyperGanttConfi
     if (start) {
       const last = due && due >= start ? due : start;
       // The database's end day is inclusive; ReUI's end is exclusive. Equal days stay milestones.
-      const milestone = startOfDay(last).getTime() === startOfDay(start).getTime();
+      const milestone = date?.includeTime ? last.getTime() === start.getTime() : startOfDay(last).getTime() === startOfDay(start).getTime();
       task.event = { id: rowId, resourceId: rowId, title, start, end: milestone ? start : date?.includeTime ? last : addDays(startOfDay(last), 1), allDay: !date?.includeTime, color, progress };
       events.push(task.event);
     }
@@ -114,7 +114,7 @@ export function hyperGanttMap(state: HyperDatabaseState, config: HyperGanttConfi
   return { tasks, events, resources, fraction };
 }
 export interface HyperGanttDateWrite { fieldId: string; value: HyperCellMutation }
-export function hyperGanttDateWrites(config: HyperGanttConfig, cells: Record<string, HyperCell>, start: Date, end: Date): HyperGanttDateWrite[] {
+export function hyperGanttDateWrites(config: HyperGanttConfig, cells: Record<string, HyperCell>, start: Date, end: Date, move = false): HyperGanttDateWrite[] {
   if (!config.start_field_id) throw new Error('Choose a start date field');
   if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end < start) throw new Error('End date must follow start date');
   const old = hyperGanttDateCell(cells[config.start_field_id]);
@@ -127,8 +127,14 @@ export function hyperGanttDateWrites(config: HyperGanttConfig, cells: Record<str
   };
   const first = atDay(start, old?.timestamp, includeTime);
   const oldEnd = config.end_field_id ? hyperGanttDateCell(cells[config.end_field_id]) : old;
-  const lastDay = includeTime ? end : addDays(startOfDay(end), -1);
-  const last = end.getTime() === start.getTime() ? first : atDay(lastDay, config.end_field_id ? oldEnd?.timestamp : old?.endTimestamp, oldEnd?.includeTime ?? includeTime);
+  const oldStart = hyperGanttDate(old?.timestamp ?? null);
+  const oldDue = hyperGanttDate((config.end_field_id ? oldEnd?.timestamp : old?.endTimestamp) ?? old?.timestamp ?? null);
+  // ReUI snaps the proposed start to a day and shifts its end by elapsed time.
+  // Restore both clocks on the original calendar-day offset for a move.
+  const lastDay = move && includeTime && oldStart && oldDue
+    ? addDays(first, differenceInCalendarDays(oldDue, oldStart))
+    : includeTime ? end : addDays(startOfDay(end), -1);
+  const last = end.getTime() === start.getTime() && !includeTime ? first : atDay(lastDay, config.end_field_id ? oldEnd?.timestamp : old?.endTimestamp, oldEnd?.includeTime ?? includeTime);
   if (last < first) throw new Error('End date must follow start date');
   const value: HyperCellMutation = { kind: 'date', timestamp: hyperGanttSeconds(first), endTimestamp: hyperGanttSeconds(last), isRange: true, includeTime, reminderId: old?.reminderId };
   if (!config.end_field_id || config.end_field_id === config.start_field_id) return [{ fieldId: config.start_field_id, value }];
@@ -150,7 +156,7 @@ export function hyperGanttWrittenTiming(writes: HyperGanttDateWrite[]) {
   const start = hyperGanttDate(first.timestamp)!;
   const due = hyperGanttDate((writes.length === 1 ? first.endTimestamp : last.timestamp) ?? first.timestamp)!;
   const allDay = !first.includeTime;
-  const milestone = startOfDay(start).getTime() === startOfDay(due).getTime();
+  const milestone = allDay ? startOfDay(start).getTime() === startOfDay(due).getTime() : start.getTime() === due.getTime();
   return { start, end: milestone ? start : allDay ? addDays(startOfDay(due), 1) : due, allDay };
 }
 

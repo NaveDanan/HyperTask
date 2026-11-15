@@ -11,7 +11,7 @@ import { HyperBoardView } from '../HyperBoardView';
 
 function hyperBoardEmptyState(): HyperDatabaseState {
   const field = (id: string, type: FieldType, isPrimary = false): HyperField => ({ id, name: id, type, isPrimary, options: [], settings: create(FieldSettingsPBSchema), proto: create(FieldPBSchema, { id, fieldType: type, isPrimary }) });
-  return { status: 'ready', error: null, databaseId: 'db', viewId: 'board', view: create(ViewPBSchema, { id: 'board', layout: ViewLayoutPB.Board }), views: [], settings: null, rowIds: [], rows: {}, cells: {}, revision: 0,
+  return { status: 'ready', error: null, databaseId: 'db', viewId: 'board', view: create(ViewPBSchema, { id: 'board', layout: ViewLayoutPB.Board }), views: [], settings: null, rowIds: [], rows: {}, cells: {}, revision: 0, dataRevision: 0,
     fields: [field('Task', FieldType.RichText, true), field('Status', FieldType.SingleSelect)],
     groups: [{ ...create(GroupPBSchema, { fieldId: 'Status', groupId: 'none', isDefault: true, isVisible: true }), name: 'No status' }, { ...create(GroupPBSchema, { fieldId: 'Status', groupId: 'todo', isVisible: true }), name: 'To do' }] };
 }

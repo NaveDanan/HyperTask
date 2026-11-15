@@ -28,7 +28,7 @@ Allowed new runtime dependencies: `@tanstack/react-table` (9.3.1), `@tanstack/re
 `@dnd-kit/modifiers` (9.0.0), `date-fns` (4.4.0), `@date-fns/tz` (1.5.0), and `react-day-picker`
 (10.0.2). These are pinned exactly. View executors must not add further dependencies.
 The foundation's documented lucide IconPlaceholder replacements and approved unused-declaration
-cleanup are the only ReUI vendor changes. The supporting calendar's internal button import
+cleanup and the documented Kanban item-drop correctness fix are the only ReUI vendor changes. The supporting calendar's internal button import
 resolves to the existing Base UI primitive. See `features/hyper-database/README.md`.
 
 Available shadcn components (import from `@/components/ui/<name>`): alert-dialog, avatar,

@@ -13,6 +13,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useHyperDatabaseScan } from '../useHyperDatabaseScan';
 import type { HyperDatabaseViewProps } from '../HyperDatabaseTypes';
 import { HyperBoardToolbar } from './board/HyperBoardToolbar';
 import { HyperBoardColumn } from './board/HyperBoardColumn';
@@ -45,7 +46,8 @@ export function HyperBoardView({ controller, state }: HyperDatabaseViewProps) {
   const groupField = hyperBoardGroupField(state);
   const fields = useMemo(() => hyperBoardVisibleFields(state), [state.fields, state.view]);
   const groups = useMemo(() => hyperBoardOrderedGroups(state.groups), [state.groups]);
-  const authoritative = useMemo(() => hyperBoardValue(state, query, excluded, hideEmpty), [state.groups, state.rowIds, state.cells, query, excluded, hideEmpty]);
+  const scan = useHyperDatabaseScan(controller, state, state.rowIds, state.fields.filter(f => f.isPrimary || f.type === FieldType.SingleSelect || f.type === FieldType.MultiSelect).map(f => f.id), Boolean(query.trim()));
+  const authoritative = useMemo(() => hyperBoardValue(query.trim() ? { ...state, cells: scan.cells } : state, query, excluded, hideEmpty), [state.groups, state.rowIds, scan.cells, query, excluded, hideEmpty]);
   const closeDetail = useCallback(() => setDetail(null), []);
   const openDetail = useCallback((rowId: string, element: HTMLElement) => { focusReturn.current = element; setDetail(rowId); }, []);
 
@@ -53,11 +55,11 @@ export function HyperBoardView({ controller, state }: HyperDatabaseViewProps) {
   useEffect(() => { if (!active && !moving) setValue(authoritative); }, [state.revision, authoritative, active, moving]);
   useEffect(() => {
     if (state.status !== 'ready') return;
-    // Load search fields for all visible groups, even when search has hidden their cards.
-    const rows = [...new Set(groups.filter(group => group.isVisible).flatMap(group => (query ? group.rows : group.rows.slice(0, 20)).map(row => row.id)))];
+    // Preload a small card viewport; search uses the retained scan above.
+    const rows = [...new Set(groups.filter(group => group.isVisible).flatMap(group => group.rows.slice(0, 20).map(row => row.id)))];
     const wanted = [...new Set([...fields.map(field => field.id), ...state.fields.filter(field => field.type === FieldType.SingleSelect || field.type === FieldType.MultiSelect).map(field => field.id)])];
     void controller.loadRows(rows, wanted).catch(() => toast.error('Could not load cards'));
-  }, [controller, groups, fields, state.status, state.fields, query]);
+  }, [controller, groups, fields, state.status, state.fields]);
   useEffect(() => {
     if (state.status !== 'ready' || groupField || grouping.current) return;
     const candidate = hyperBoardGroupFields(state.fields)[0];

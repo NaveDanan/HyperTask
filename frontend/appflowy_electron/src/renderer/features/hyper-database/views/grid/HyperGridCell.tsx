@@ -189,6 +189,7 @@ function HyperGridSelectEditor(
     const selected = cell.selected.some(option => option.id === id);
     const next = selected ? cell.selected.filter(option => option.id !== id) : cell.kind === 'singleSelect' ? field.options.filter(option => option.id === id) : [...cell.selected, ...field.options.filter(option => option.id === id)];
 
+    if (cell.kind === 'singleSelect') grid.edit(null);
     await grid.write(rowId, field.id, {
       kind: cell.kind,
       insertOptionIds: selected ? [] : [id],
@@ -201,8 +202,6 @@ function HyperGridSelectEditor(
 
     setBusy(false);
 
-    if (cell.kind === 'singleSelect')
-      grid.edit(null);
   };
 
   return (
@@ -241,12 +240,11 @@ function HyperGridSelectEditor(
                 disabled={busy}
                 onSelect={async () => {
                   setBusy(true);
+                  if (cell.kind === 'singleSelect') grid.edit(null);
                   const success = await grid.run(() => grid.controller.createSelectOption(field.id, query.trim(), rowId));
                   setBusy(false);
 
-                  if (success && cell.kind === 'singleSelect')
-                    grid.edit(null);
-                  else if (success)
+                  if (success && cell.kind !== 'singleSelect')
                     setQuery('');
                 }}>
                 <Plus className='size-4' />Create “{query.trim()}”</CommandItem> : null}</CommandGroup>
@@ -284,6 +282,7 @@ function HyperGridDateEditor(
       return;
     }
 
+    grid.edit(null);
     await grid.write(rowId, field.id, {
       kind: 'date',
       timestamp,
@@ -298,7 +297,6 @@ function HyperGridDateEditor(
       isRange: range,
     });
 
-    grid.edit(null);
   };
 
   return (

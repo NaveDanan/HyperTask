@@ -53,7 +53,7 @@ export function hyperCalendarDraft(start: Date, end: Date | undefined, allDay: b
   const to = end ? new TZDate(end, timeZone) : addHours(from, 1);
   const inclusiveEnd = allDay && end ? addDays(to, -1) : to;
   return { title: '', allDay, startDate: format(from, 'yyyy-MM-dd'), startTime: allDay ? '09:00' : format(from, 'HH:mm'),
-    isRange: allDay ? Boolean(end && inclusiveEnd > startOfDay(from)) : Boolean(end && to.getTime() - from.getTime() > 3600000),
+    isRange: allDay ? Boolean(end && inclusiveEnd > startOfDay(from)) : Boolean(end && to.getTime() > from.getTime()),
     endDate: format(inclusiveEnd, 'yyyy-MM-dd'), endTime: allDay ? '10:00' : format(to, 'HH:mm'), optionId: '' };
 }
 function hyperCalendarInputDate(date: string, time: string, timeZone: string) {
@@ -74,12 +74,12 @@ export function hyperCalendarUpdateMutation(update: EventCalendarProposedUpdate<
   const resizing = update.source === 'resize-start' || update.source === 'resize-end';
   const isRange = resizing || (previous?.kind === 'date' && previous.isRange);
   return { kind: 'date', timestamp: hyperCalendarSeconds(update.start), includeTime: !update.allDay, isRange,
-    ...(isRange ? { endTimestamp: hyperCalendarSeconds(update.allDay ? addDays(startOfDay(update.end), -1) : update.end) } : {}) };
+    ...(isRange ? { endTimestamp: hyperCalendarSeconds(update.allDay ? addDays(startOfDay(new TZDate(update.end, update.event.start instanceof TZDate ? update.event.start.timeZone : Intl.DateTimeFormat().resolvedOptions().timeZone)), -1) : update.end) } : {}) };
 }
 export async function hyperCalendarWriteUpdate(controller: Pick<HyperDatabaseController, 'moveCalendarEvent' | 'updateCell'>, update: EventCalendarProposedUpdate<HyperCalendarEventData>, previous: HyperCell | undefined) {
   const fieldId = update.event.data?.dateFieldId;
   if (!fieldId || update.event.readOnly || previous?.error) throw new Error('This event cannot be changed.');
-  if (update.source === 'drag' && update.allDay === Boolean(update.event.allDay)) {
+  if (update.source === 'drag' && !update.allDay && update.allDay === Boolean(update.event.allDay)) {
     await controller.moveCalendarEvent(update.event.id, fieldId, hyperCalendarSeconds(update.start));
   } else await controller.updateCell(update.event.id, fieldId, hyperCalendarUpdateMutation(update, previous));
 }

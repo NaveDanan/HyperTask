@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { addDays, format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { CalendarDays, Trash2 } from 'lucide-react';
@@ -16,6 +16,7 @@ import { FieldType } from '@shared/protobuf/flowy-database2/field_entities_pb';
 import type { HyperDatabaseController } from '../../HyperDatabaseController';
 import type { HyperCellMutation, HyperDatabaseState } from '../../HyperDatabaseTypes';
 import { HyperGanttNone, hyperGanttDateCell, type HyperGanttConfig, type HyperGanttTask } from './HyperGanttMapping';
+import { hyperGanttSetChecklistProgress } from './HyperGanttMutations';
 import { HyperGanttAvatars } from './HyperGanttAvatars';
 
 export function HyperGanttRowDetail({ rowId, state, controller, config, task, fraction, close, setDates, remove }: {
@@ -36,12 +37,16 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
   const [progress, setProgress] = useState(task.progress ?? 0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const run = async (work: () => Promise<unknown>) => {
-    if (busy) return;
+  const inFlight = useRef<Promise<boolean> | null>(null);
+  const run = (work: () => Promise<unknown>) => {
+    if (inFlight.current) return inFlight.current;
     setBusy(true); setError(null);
-    try { await work(); }
-    catch (e) { setError(e instanceof Error ? e.message : (e as { msg?: string }).msg ?? 'Could not save task'); }
-    finally { setBusy(false); }
+    const pending = Promise.resolve().then(work).then(() => true, e => {
+      setError(e instanceof Error ? e.message : (e as { msg?: string }).msg ?? 'Could not save task');
+      return false;
+    }).finally(() => { inFlight.current = null; setBusy(false); });
+    inFlight.current = pending;
+    return pending;
   };
   const update = (fieldId: string, mutation: HyperCellMutation) => { void run(() => controller.updateCell(rowId, fieldId, mutation)); };
   const primaryDisplay = primary ? cells[primary.id]?.display ?? '' : '';
@@ -49,7 +54,7 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
   const saveTitle = async () => {
     if (primary && titleDirty) { await controller.updateCell(rowId, primary.id, { kind: 'text', text: title }); setTitleDirty(false); }
   };
-  const closeDetail = () => { if (titleDirty) void run(async () => { await saveTitle(); close(); }); else close(); };
+  const closeDetail = () => { if (titleDirty || inFlight.current) void run(saveTitle).then(saved => { if (saved) close(); }); else close(); };
   const statusItems = [{ value: HyperGanttNone, label: 'No status' }, ...(statusField?.options.map(o => ({ value: o.id, label: o.name })) ?? [])];
   const selectedAssignees = assigneeCell?.kind === 'singleSelect' || assigneeCell?.kind === 'multiSelect' ? assigneeCell.selected.map(o => o.id) : [];
   return <Sheet open onOpenChange={open => { if (!open) closeDetail(); }}>
@@ -162,11 +167,8 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
             onValueCommitted={value => {
           const percentage = Array.isArray(value) ? value[0] : value;
           void run(async () => {
-            const cell = controller.state.cells[rowId]?.[progressField.id];
-            if (cell?.kind === 'checklist') {
-              const count = Math.round(cell.items.length * percentage / 100);
-              for (const [index, item] of cell.items.entries()) await controller.setChecklistItemCompleted(rowId, progressField.id, item.id, index < count);
-              setProgress(cell.items.length ? count / cell.items.length * 100 : 0);
+            if (progressField.type === FieldType.Checklist) {
+              setProgress(await hyperGanttSetChecklistProgress(controller, rowId, progressField.id, percentage));
             } else await controller.updateCell(rowId, progressField.id, { kind: 'number', value: fraction ? percentage / 100 : percentage });
           });
         }}

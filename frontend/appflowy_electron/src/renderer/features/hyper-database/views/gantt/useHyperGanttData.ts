@@ -4,6 +4,7 @@ import type { GanttEvent, GanttProposedUpdate } from '@/components/reui/gantt/ga
 import { viewExtra } from '@/features/view/view-ext';
 import { showToast } from '@/ui/toast';
 import { FieldType } from '@shared/protobuf/flowy-database2/field_entities_pb';
+import { useHyperDatabaseScan } from '../../useHyperDatabaseScan';
 import type { HyperDatabaseViewProps } from '../../HyperDatabaseTypes';
 import { hyperGanttDateWrites, hyperGanttWrittenTiming, hyperGanttMap, hyperGanttReadConfig, type HyperGanttConfig } from './HyperGanttMapping';
 import { hyperGanttClearDates, hyperGanttCommitDates } from './HyperGanttMutations';
@@ -12,25 +13,33 @@ export function useHyperGanttData({ controller, state, view }: HyperDatabaseView
   const [config, setConfig] = useState(() => hyperGanttReadConfig(view, state));
   const configRef = useRef(config);
   const configVersion = useRef(0);
+  const persistedConfig = useRef(config);
   const saveQueue = useRef(Promise.resolve());
   const [initialized, setInitialized] = useState(false);
   const [pending, setPending] = useState(new Map<string, GanttEvent>());
   const writing = useRef(new Set<string>());
-  const rowKey = state.rowIds.join(',');
   const dateKey = state.fields.filter(f => f.type === FieldType.DateTime).map(f => f.id).join(',');
   const fieldKey = [...new Set([state.fields.find(f => f.isPrimary)?.id, config.start_field_id, config.end_field_id, config.color_field_id, config.progress_field_id, config.assignee_field_id].filter((id): id is string => !!id))].join(',');
 
+  const scan = useHyperDatabaseScan(controller, state, state.rowIds, [...new Set([...(dateKey ? dateKey.split(',') : []), ...fieldKey.split(',')].filter(Boolean))]);
+  const indexedState = useMemo(() => ({ ...state, cells: scan.cells }), [state, scan.cells]);
+
   const saveConfig = useCallback((patch: Partial<HyperGanttConfig>) => {
-    configVersion.current++;
-    const previous = configRef.current;
-    const next = { ...previous, ...patch };
+    const version = ++configVersion.current;
+    const next = { ...configRef.current, ...patch };
     if (next.end_field_id === next.start_field_id) next.end_field_id = null;
     configRef.current = next;
     setConfig(next);
-    const save = saveQueue.current.then(() => controller.updateViewExtra({ hyper_gantt: next }));
+    const save = saveQueue.current.then(async () => {
+      const rebased = { ...persistedConfig.current, ...patch };
+      if (rebased.end_field_id === rebased.start_field_id) rebased.end_field_id = null;
+      await controller.updateViewExtra({ hyper_gantt: rebased });
+      persistedConfig.current = rebased;
+      if (version === configVersion.current) { configRef.current = rebased; setConfig(rebased); }
+    });
     saveQueue.current = save.catch(() => {});
     return save.catch(error => {
-      if (configRef.current === next) { configRef.current = previous; setConfig(previous); }
+      if (version === configVersion.current) { configRef.current = persistedConfig.current; setConfig(persistedConfig.current); }
       showToast({ type: 'error', message: "Couldn't save Gantt settings" });
       throw error;
     });
@@ -40,59 +49,46 @@ export function useHyperGanttData({ controller, state, view }: HyperDatabaseView
     if (state.status !== 'ready') return;
     let active = true;
     const version = configVersion.current;
-    void Promise.all([controller.loadRows(controller.state.rowIds, [...(dateKey ? dateKey.split(',') : []), ...controller.state.fields.filter(f => f.isPrimary).map(f => f.id)]), controller.loadRows(controller.state.rowIds.slice(0, 50), fieldKey.split(','))]).then(() => {
+    void controller.scanRows(controller.state.rowIds, [...(dateKey ? dateKey.split(',') : []), ...controller.state.fields.filter(f => f.isPrimary).map(f => f.id)], () => active).then(cells => {
       if (!active) return;
       setInitialized(true);
       if (version !== configVersion.current) return;
-      const next = hyperGanttReadConfig(controller.state.view ?? view, controller.state);
-      configRef.current = next; setConfig(next);
+      const next = hyperGanttReadConfig(controller.state.view ?? view, { ...controller.state, cells });
+      configRef.current = next; persistedConfig.current = next; setConfig(next);
       if (!viewExtra(controller.state.view ?? view)?.hyper_gantt) void saveConfig(next).catch(() => {});
     });
     return () => { active = false; };
     // Hydrate field choices only on schema changes; cell changes must not reset edits.
-  }, [controller, dateKey, state.status, saveConfig, view.id]);
-  useEffect(() => {
-    if (state.status === 'ready') void controller.loadRows(state.rowIds, [...(dateKey ? dateKey.split(',') : []), ...state.fields.filter(f => f.isPrimary).map(f => f.id)]);
-  }, [controller, rowKey, dateKey, state.status]);
-
-  useEffect(() => {
-    if (state.status === 'ready' && fieldKey) void controller.loadRows(state.rowIds.slice(0, 50), fieldKey.split(','));
-  }, [controller, rowKey, fieldKey, state.status]);
-
-  useEffect(() => {
-    if (state.status === 'ready' && state.fields.some(f => f.id === config.progress_field_id && f.type === FieldType.Number)) {
-      void controller.loadRows(state.rowIds, [config.progress_field_id!]);
-    }
-  }, [controller, rowKey, config.progress_field_id, state.status]);
-
-  const mapped = useMemo(() => hyperGanttMap(state, config), [state.cells, state.rowIds, state.fields, config]);
+  }, [controller, dateKey, state.fields, state.status, saveConfig, view.id]);
+  const mapped = useMemo(() => hyperGanttMap(indexedState, config), [indexedState, config]);
   const events = useMemo(() => mapped.events.map(event => pending.get(event.id) ?? event).concat([...pending.values()].filter(event => !mapped.tasks.get(event.id)?.event)), [mapped, pending]);
-  const setDates = useCallback(async (rowId: string, start: Date, end: Date) => {
+  const setDates = useCallback(async (rowId: string, start: Date, end: Date, move = false) => {
     if (writing.current.has(rowId)) throw new Error('Dates are still saving');
     const currentConfig = configRef.current;
-    const cells = controller.state.cells[rowId] ?? {};
-    const writes = hyperGanttDateWrites(currentConfig, cells, start, end);
+    const cells = scan.cells[rowId] ?? controller.state.cells[rowId] ?? {};
+    const writes = hyperGanttDateWrites(currentConfig, cells, start, end, move);
     const event = { ...(mapped.tasks.get(rowId)?.event ?? { id: rowId, resourceId: rowId, title: mapped.tasks.get(rowId)?.title ?? 'Untitled' }), ...hyperGanttWrittenTiming(writes) };
     writing.current.add(rowId);
     setPending(old => new Map(old).set(rowId, event));
-    try { await hyperGanttCommitDates(controller, rowId, currentConfig, cells, start, end); }
+    try { await hyperGanttCommitDates(controller, rowId, currentConfig, cells, start, end, move); }
     finally {
       writing.current.delete(rowId);
       setPending(old => { const next = new Map(old); next.delete(rowId); return next; });
     }
-  }, [controller, mapped.tasks]);
+  }, [controller, mapped.tasks, scan.cells]);
   const commit = useCallback((update: GanttProposedUpdate) => {
     if (update.end < update.start || writing.current.has(update.event.id)) return false;
+    const move = update.source === 'drag' || (update.source === 'keyboard' && update.start.getTime() !== update.event.start.getTime());
     let timing;
-    try { timing = hyperGanttWrittenTiming(hyperGanttDateWrites(configRef.current, controller.state.cells[update.event.id] ?? {}, update.start, update.end)); }
+    try { timing = hyperGanttWrittenTiming(hyperGanttDateWrites(configRef.current, scan.cells[update.event.id] ?? controller.state.cells[update.event.id] ?? {}, update.start, update.end, move)); }
     catch { return false; }
-    void setDates(update.event.id, update.start, update.end).catch(error => showToast({ type: 'error', message: error instanceof Error && error.message.includes('check both') ? error.message : "Couldn't update dates" }));
+    void setDates(update.event.id, update.start, update.end, move).catch(error => showToast({ type: 'error', message: error instanceof Error && error.message.includes('check both') ? error.message : "Couldn't update dates" }));
     return timing;
-  }, [controller, setDates]);
+  }, [controller, setDates, scan.cells]);
   const clearDates = async (rowId: string) => {
     if (writing.current.has(rowId)) throw new Error('Dates are still saving');
     writing.current.add(rowId);
-    try { await hyperGanttClearDates(controller, rowId, configRef.current, controller.state.cells[rowId] ?? {}); }
+    try { await hyperGanttClearDates(controller, rowId, configRef.current, scan.cells[rowId] ?? controller.state.cells[rowId] ?? {}); }
     finally { writing.current.delete(rowId); }
   };
   const createTask = async () => {
