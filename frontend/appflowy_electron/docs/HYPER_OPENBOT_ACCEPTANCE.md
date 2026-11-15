@@ -133,7 +133,7 @@ The voice broker preserves the configured x.ai model query in main, permits only
 
 Protected native key creation/rotation/revocation and browser returns are now integrated. Key bytes stay in main-owned dialogs; Copy key writes the OS clipboard only after an explicit native choice and another owner check. Generic renderer key-creation HTTP remains blocked. The pinned browser return is credential-free `openbot://open`; native navigation refreshes authoritative connection state and does not claim success based on return alone. No OS protocol association was changed. Most nested selections/access components and versioned Home ownership are integrated; standalone Memory-source and deeper admin destinations remain pending.
 
-Standalone Memory-source and remaining admin destination consumers are now integrated. Last full frontend validation on source head `6150f94`, Node 24.18.1: typecheck, production build and 1299 tests pass. One opt-in simulated-IPC live test is skipped; the four real-core tests ran. Frontend source is unchanged by the later smoke-runner correction. Runner source `ac64406` passes all 23 smoke safeguards, syntax and diff checks. The upstream terminal packages `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0 are locked; existing package versions were unchanged. Review regressions cover receiver remount/upload deduplication and recording outage/recovery page boundaries. The following matrix describes integrated code, not a claim that every new screen passed native acceptance.
+Standalone Memory-source and remaining admin destination consumers are mounted. Current source `ec3a22f`, Node 24.18.1: typecheck, production build and 1325 tests pass. One opt-in simulated-IPC live test is skipped; the four real-core tests ran. All 23 smoke safeguards pass. The upstream terminal packages `@xterm/xterm` 6.0.0 and `@xterm/addon-fit` 0.11.0 remain locked; existing package versions were unchanged. Review-06 found genuine missing/incorrect workflows despite source integration. The following matrix describes mounted code and remaining corrections, not full parity or native acceptance.
 
 The current native attempt launched the real app from `8789875` using the retained test profile and private pipes, but failed the AI-readiness deadline with no renderer exceptions. The fixed backend check then reported Tailscale SSH's additional human authentication requirement. That attempt is not a pass. No network-policy bypass, identity reset or alternate credential route was used. The owned app was subsequently relaunched on `cd8dc33`, then `7a3b91b`, with its stores retained. A fresh secure sign-in request timed out, and an independent SSH recheck still requires the account-holder check. Native acceptance remains blocked until that check succeeds. Sign-in URLs and private diagnostic artifacts are not committed.
 
@@ -198,28 +198,42 @@ The complete original OpenBot backend and Intelligence run on the VM. HyperTask 
 | Upstream feature | HyperTask native support |
 | --- | --- |
 | Single-Bot conversations: create, reopen, pin, delete | Available |
-| Composer: model, effort, attachments, Send, Stop | Available |
+| Composer: model, effort, attachments, Send, Stop | Mounted; queue/dictation/follow-up upload corrections remain |
 | Streaming transcript and authoritative saved history | Available |
 | In-conversation approvals: Allow once, Allow for this conversation, Always allow here, Deny, I did it myself | Available |
 | Bot questions | Available |
 | Bots: roster, create, profile editing, Pause/Resume, notifications, hidden Bots | Available |
 | Skills: create, edit, delete, grant to Bots | Available |
-| Connections: directory, Add app, MCP server by URL, start external sign-in | Accounts, grants, setup, native return and typed nested selections integrated; live consent verification pending |
-| Bot computer | Integrated status, screenshots, live input/takeover, terminal, files/folders, narration and recording; native verification pending |
+| Connections: directory, Add app, MCP server by URL, start external sign-in | Mounted; personal connect/grant, carry-on, peer refresh and shared-admin setup corrections remain; live consent verification pending |
+| Bot computer | Mounted status/live/terminal/files/narration/recording; holder identity, browser reset and narration corrections remain; native verification pending |
 | Original computer tools (navigate, read, snapshot, type, click, key, list/read/write files, run command, scroll) | Available through the original approval gate |
 | Group conversations with several Bots | Integrated; native verification pending |
-| Routines: schedules, goals, check-ins | Integrated, including Bot routine/responsibility tabs and protected native trigger-key delivery; native verification pending |
-| Memory and Automatic Learning | Integrated facts, sources, review, sharing, participation and capability controls; native verification pending |
-| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Integrated with protected native callback-key actions; native verification pending |
+| Routines: schedules, goals, check-ins | Mounted with protected trigger-key delivery; creation lifetime, open-run and trigger-overview corrections remain; native verification pending |
+| Memory and Automatic Learning | Mounted facts/sources/review/sharing; grouped-learning failure continuation remains to correct; native verification pending |
+| Per-Bot access, sharing, reach, responsibilities, apps and activity tabs | Mounted with protected callback keys; first grant, hidden handoff targets, profile freshness and attention corrections remain; native verification pending |
 | Cross-conversation approvals inbox | Integrated with decisions/questions, standing rules, history and routing; native verification pending |
 | Vault and passwords | Integrated with key/login management and private sign-in forms; native verification pending |
 | Bot browser page | Integrated with recorder pairing/history and live controls; native verification pending |
-| Generated interactive screens opened as pages | Fifteen tools, SDK registration, decision lifecycle, grant checks and sandboxed screens integrated; native verification pending |
-| Personal settings: notifications, learning, browsers, this computer, connected accounts | Integrated with nested destinations for the remote backend; native verification pending; Tauri-only local controls remain unavailable |
-| Administration: people, permissions, boundaries, audit, providers, credentials, plugins (Arcade/Composio), computers, playground, what-if | Integrated with protected callback return and nested destinations; native verification pending |
+| Generated interactive screens opened as pages | Fifteen tools mounted; SDK expressions/progressive/gallery preview corrections remain; native verification pending |
+| Personal settings: notifications, learning, browsers, this computer, connected accounts | Mounted; roster adapter, destinations and repository read-order corrections remain; native verification pending; Tauri-only local controls remain unavailable |
+| Administration: people, permissions, boundaries, audit, providers, credentials, plugins (Arcade/Composio), computers, playground, what-if | Mounted with protected returns; MCP allowlist is missing and provider/audit corrections remain; native verification pending |
 | Onboarding wizard and starter tour | Integrated with Home drafts and native destinations; native verification pending |
 
 This table supersedes the earlier owner's-demo difference list. It separates source integration from actual native acceptance. The owner requested completing these workflows before merge; that gate remains open.
+
+## Complete review-06 results and first priority corrections
+
+All seventeen bounded Spec tasks returned: 317 assigned, 315 source-inspected, two reuse documents incomplete, and 55 reported findings. Some reports describe the same underlying defect; this is not a count of 55 unique bugs. Standards separately inspected 75 corrective diffs and found one radius-token violation plus an advisory about the shared positional regression suite. Its other 334 fixed-base files were not re-reviewed. Neither axis establishes native or owner acceptance.
+
+The smoke correction has an independent 2/2 recheck at `1250e37`, with no remaining findings and both regressions reproduced red against the old functions. Its eighteen assigned-file tests passed with a non-network `ws` import stub; the combined 23 safeguards were not rerun there. The parent independently reran all 23 with installed dependencies. No native/vendor run occurred.
+
+`c1dbbe2` corrects four P1 report families: an allow translation cannot populate a deny boundary; Enter on an unrelated control cannot approve a card; bounded server-owned approved/denied/consumed continuations block stale sends, replay detachment and model callbacks; transient false-busy cannot erase stamped work or authoritative roster work. PostgreSQL work clocks retain microsecond ordering. Initial approval reads and decision writes stay closed until a current inbox confirms the state. Failed-check rule translations retain editable invalid behaviour strings while successful rows remain strict. The ranked-bar radius now uses the prescribed token.
+
+Eleven tests failed against the previous code; two timestamp regressions caught precision loss during implementation. All 25 added cases now pass. Full validation is 1324 tests, one optional skip, four real-core tests, typecheck/build and 23 safeguards. Reconciled coverage at `c1dbbe2` carries 394 byte-identical inspected files of 414, leaving twenty new/changed or incompletely inspected paths. This is inspection coverage, not correction/review clearance. Five parent-fixed Spec reports need independent recheck; 25 reported defects belong to six substantial workflow correction scopes and 22 smaller reports remain with the parent. The two native-runner reports are independently source-rechecked, and their duplicate documentation symptom still needs document reconciliation.
+
+`ec3a22f` adds one further red/green initial-receiver regression. Initial composition now waits for the approval read to become current before receiving/sending its first draft; it does not fail a valid start behind the new continuation gate. The full suite is 1325 passing with one optional skip, four real-core tests and typecheck/build; the 23 unchanged smoke safeguards remain passing. The same twenty new/changed/incomplete paths remain due at this source checkpoint.
+
+The substantial scopes cover shared computer/browser ownership and recovery, personal app access/grants/carry-on, saved voice/recovery, composer input/queues/uploads, MCP allowlist administration and generative SDK/gallery behavior. The owner requested Codex GPT-6.1 Sol high effort and Fast priority. No source correction, passing test, clean historical receipt or completed inventory clears the remaining exact-head Code/Security, complete contract/doc review, account-holder authentication, real native/vendor and owner gates.
 
 ## Offline boundary, dependencies and notices
 
