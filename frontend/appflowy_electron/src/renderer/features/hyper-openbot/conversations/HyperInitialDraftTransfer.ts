@@ -7,6 +7,8 @@ export class HyperInitialDraftTransfer<T> {
   private active?: AbortController;
   private held?: { ids: string[]; draft?: HyperInitialDraft; channel?: T; uploaded: Map<File, HyperDraftAttachment> };
   cancel() { this.active?.abort(); }
+  /** A fresh arrival owns a different transaction; ordinary cancel/retry retains it. */
+  resetComposition() { const active = this.active; this.active = undefined; this.held = undefined; active?.abort(); }
   forget(channel: T) { if (this.held?.channel === channel) this.held = undefined; }
   async start(ids: string[], draft: HyperInitialDraft | undefined, deps: {
     create(ids: string[]): Promise<T>;
@@ -24,8 +26,8 @@ export class HyperInitialDraftTransfer<T> {
       controller.signal.throwIfAborted();
       if (draft) await deps.receive(held.channel, draft, controller.signal, held.uploaded);
       controller.signal.throwIfAborted();
-      deps.navigate(held.channel); this.held = undefined;
-    } finally { this.active = undefined; }
+      deps.navigate(held.channel); if (this.held === held) this.held = undefined;
+    } finally { if (this.active === controller) this.active = undefined; }
   }
 }
 export type HyperInitialDraftReceiver = (draft: HyperInitialDraft, signal: AbortSignal, uploaded: Map<File, HyperDraftAttachment>) => Promise<void>;

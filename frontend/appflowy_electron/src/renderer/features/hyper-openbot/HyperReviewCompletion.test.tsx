@@ -25,10 +25,12 @@ import { HyperSharedAccessRequests } from './connections/HyperSharedAccessReques
 import { HyperBotsPanel, HyperBotEditor } from './bots/HyperBotsPanel';
 import { HyperBotAttentionBoard } from './bot-tabs/HyperBotAttentionBoard';
 import { HyperVoiceControls } from './conversations/HyperVoiceControls';
+import { HyperInitialDraftTransfer } from './conversations/HyperInitialDraftTransfer';
+import { hyperRoutineSelectionFromPath } from './routines/HyperRoutineNavigation';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
 const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0 }));
-const f = vi.hoisted(() => ({ request: vi.fn(), fetch: vi.fn(), lookup: vi.fn(), decision: vi.fn(), connections: vi.fn(), stateListener: undefined as undefined | ((state: any) => void) }));
+const f = vi.hoisted(() => ({ request: vi.fn(), fetch: vi.fn(), lookup: vi.fn(), decision: vi.fn(), connections: vi.fn(), stateListener: undefined as undefined | ((state: any) => void), agent: undefined as any, core: undefined as any }));
 vi.mock('react', async original => {
   const react = await original<typeof import('react')>();
   const effect = (...args: Parameters<typeof react.useEffect>) => { if (h.active) { h.effects.push(args[0]); h.deps.push(args[1]); } else react.useEffect(...args); };
@@ -47,7 +49,7 @@ vi.mock('react', async original => {
   };
 });
 vi.mock('./transport', async original => ({ ...await original<typeof import('./transport')>(), hyperOpenBotRequest: f.request, hyperOpenBotFetch: f.fetch }));
-vi.mock('@copilotkit/react-core/v2', () => ({ useFrontendTool: vi.fn(), useCopilotKit: () => ({ copilotkit: {} }), useAgent: () => ({ agent: { messages: [], isRunning: false }, isReady: true }), OpenGenerativeUIActivityRenderer: () => null }));
+vi.mock('@copilotkit/react-core/v2', () => ({ useFrontendTool: vi.fn(), useCopilotKit: () => ({ copilotkit: f.core ?? {} }), useAgent: () => ({ agent: f.agent ?? { messages: [], isRunning: false }, isReady: true }), OpenGenerativeUIActivityRenderer: () => null }));
 vi.mock('./provider', () => ({ HyperOpenBotProvider: () => null }));
 vi.mock('./HyperServiceStatus', () => ({ HyperServiceStatus: () => null, useHyperOpenBotService: () => ({ state: { ready: false, problem: 'stopped' } }) }));
 vi.mock('./HyperComputerPanel', () => ({ HyperComputerPanel: () => null }));
@@ -59,6 +61,7 @@ beforeEach(() => {
   vi.useFakeTimers(); vi.clearAllMocks(); h.active = false; h.states = []; h.refs = []; h.effects = []; h.deps = []; h.cleanups = [];
   hyperHomeDraftStore.clear(); f.lookup.mockReset(); f.request.mockReset().mockImplementation(async (path: string) => path.startsWith('/api/plugins/for/') ? { skills: [] } : {}); f.fetch.mockReset(); f.connections.mockReset().mockResolvedValue([]);
   f.stateListener = undefined;
+  f.agent = undefined; f.core = undefined;
   vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(), appflowy: { hyperOpenBot: { service: { onState: (listener: (state: any) => void) => { f.stateListener = listener; return () => { if (f.stateListener === listener) f.stateListener = undefined; }; } } }, shell: { openExternal: vi.fn() } } });
 });
 afterEach(() => { for (const cleanup of h.cleanups) cleanup(); vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
@@ -996,4 +999,126 @@ it('locks source-creation fields while the submitted source is being added', asy
   const tree = render(component, tab.props, states); find(tree, element => element.type === 'form')!.props.onSubmit({ preventDefault() {} }); await drain();
   try { expect(find(render(component, tab.props), element => element.type === 'fieldset')?.props.disabled).toBe(true); }
   finally { finish({}); await drain(); }
+});
+it('an explicit fresh composition does not reuse a retained failed channel for identical text and Bot', async () => {
+  const tree = render(HyperOpenBotWorkspace, { viewId: 'fresh-transfer', serviceReady: true }, ['new-conversation', ['bot'], false, '', [], 'thread', 0, 0, undefined, [], undefined]);
+  const transfer = h.states[13] as HyperInitialDraftTransfer<string>;
+  const draft = { text: 'Hello', files: [], commandIds: [], submit: true };
+  const create = vi.fn().mockResolvedValueOnce('first-channel').mockResolvedValueOnce('fresh-channel');
+  const receive = vi.fn().mockRejectedValueOnce(new Error('initial send failed')).mockResolvedValueOnce(undefined), navigate = vi.fn();
+  await expect(transfer.start(['bot'], draft, { create, receive, navigate })).rejects.toThrow('initial send failed');
+  button(tree, 'New conversation')!.props.onClick();
+  await transfer.start(['bot'], { ...draft }, { create, receive, navigate });
+  expect(create).toHaveBeenCalledTimes(2);
+  expect(receive.mock.calls.map(call => call[0])).toEqual(['first-channel', 'fresh-channel']);
+  expect(navigate).toHaveBeenCalledWith('fresh-channel');
+});
+it.each([
+  { path: '/routines/goals/goal-id', family: 'responsibilities', id: 'goal-id' },
+  { path: '/routines/schedules/schedule-id', family: 'routines', id: 'schedule-id' },
+  { path: '/routines/check-ins/check-id', family: 'proactive/settings', id: 'check-id' },
+])('opens the pinned routine destination $path using its entity ID rather than the family segment', test => {
+  const tree = render(HyperRoutinesSection, { path: test.path });
+  const detail = find(tree, element => typeof element.props.family === 'string' && typeof element.props.id === 'string')!;
+  expect(detail.props.family).toBe(test.family); expect(detail.props.id).toBe(test.id);
+});
+function hyperRuntimeTestChat() {
+  const listeners = new Set<any>(); let connect!: () => void;
+  const agent = { agentId: 'channel:model-channel', runtimeAgentId: 'model-bot', threadId: 'model-thread', messages: [] as any[], pendingInterrupts: [] as any[], isRunning: false,
+    use: vi.fn(), detachActiveRun: vi.fn(), addMessage: (message: any) => agent.messages.push(message),
+    subscribe: (listener: any) => { listeners.add(listener); return { unsubscribe: () => listeners.delete(listener) }; } };
+  const core = { subscribe: () => ({ unsubscribe: vi.fn() }), connectAgent: vi.fn(() => new Promise<void>(resolve => { connect = resolve; })), runAgent: vi.fn(), stopAgent: vi.fn(async () => {}), addContext: vi.fn(() => 'context'), removeContext: vi.fn() };
+  f.agent = agent; f.core = core;
+  const chat = hyperModelTestChat();
+  return { ...chat, agent, core, listeners, joinEffect: h.effects[3], finishConnect: () => connect() };
+}
+it.each(['channel busy', 'live roster hint'])('retains a delayed replay join when the server reports $0', async mode => {
+  const chat = hyperRuntimeTestChat(); let working = mode === 'channel busy';
+  const props = { ...chat.props, channel: { ...chat.props.channel, busy: mode === 'channel busy' }, ...(mode === 'live roster hint' ? { rosterSaysWorking: () => working } : {}) };
+  render(chat.component, props); const cleanup = h.effects[3](); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void);
+  await vi.advanceTimersByTimeAsync(3000); working = true; await vi.advanceTimersByTimeAsync(2000);
+  expect(chat.agent.detachActiveRun).not.toHaveBeenCalled(); chat.finishConnect(); await drain();
+});
+it('does not publish partial stopped work as a successful delegated voice answer', async () => {
+  const chat = hyperRuntimeTestChat(); let finish!: () => void;
+  chat.core.runAgent.mockImplementation(() => {
+    for (const listener of chat.listeners) listener.onRunInitialized?.({ input: { threadId: 'model-thread', runId: 'voice-run' }, messages: chat.agent.messages });
+    return new Promise<void>(resolve => { finish = () => { chat.agent.messages.push({ id: 'voice-partial', role: 'assistant', content: 'Partial answer' }); resolve(); }; });
+  });
+  const tree = render(chat.component, chat.props), controls = find(tree, element => element.type === HyperVoiceControls)!;
+  const answer = controls.props.askAgent('Work', new AbortController().signal); await drain();
+  await find(tree, element => element.type === HyperComposer)!.props.onStop();
+  const rejected = expect(answer).rejects.toThrow('stopped'); finish(); await rejected;
+});
+it('loads a permission-filtered absent preselected Bot before offering its recipient row and models', async () => {
+  const bot = { id: 'hidden-bot', name: 'Hidden Bot', title: '', runsOnOpenBotModel: true, hidden: true };
+  f.request.mockImplementation(async (path: string) => path === '/api/agents' ? { agents: [] } : path === '/api/agents/hidden-bot' ? { agent: bot } : path === '/api/models' ? hyperModelCatalogue : { skills: [] });
+  const context = { initialAgentIds: [bot.id], startConversation: vi.fn(), openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }); mountEffects(); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/agents/hidden-bot');
+  let tree = render(HyperNewConversationSection, { context }); h.effects[1](); await drain(); tree = render(HyperNewConversationSection, { context });
+  expect(find(tree, element => element.type === 'input' && element.props.type === 'checkbox' && element.props.checked)).toBeDefined();
+  expect(find(tree, element => element.type === HyperComposer)!.props.modelPicker).toBeDefined();
+});
+it.each([
+  { path: '/routines/legacy-id', selected: { family: 'routines', id: 'legacy-id' } },
+  { path: '/responsibilities/goal-id', selected: { family: 'responsibilities', id: 'goal-id' } },
+  { path: '/routines/goals/goal%2Fid?ignored=1#part', selected: { family: 'responsibilities', id: 'goal/id' } },
+  { path: '/routines/check-ins/check%20id/', selected: { family: 'proactive/settings', id: 'check id' } },
+])('retains compatible opaque-ID routine routing for $path', test => {
+  expect(hyperRoutineSelectionFromPath(test.path).selected).toEqual(test.selected);
+});
+it('preserves the default overview and separates list/new/invalid routine paths from entity IDs', () => {
+  expect(hyperRoutineSelectionFromPath('/routines')).toEqual({});
+  expect(hyperRoutineSelectionFromPath('/routines/goals')).toEqual({ tab: 'goals' });
+  expect(hyperRoutineSelectionFromPath('/routines/schedules')).toEqual({ tab: 'routines' });
+  expect(hyperRoutineSelectionFromPath('/routines/check-ins')).toEqual({ tab: 'check-ins' });
+  expect(hyperRoutineSelectionFromPath('/routines/new')).toEqual({ tab: 'new' });
+  expect(hyperRoutineSelectionFromPath('/routines/goals/%broken').selected).toBeUndefined();
+});
+it.each(['refused', 'wrong ID'])('never offers or submits a preselected Bot detail that is $0', async mode => {
+  f.request.mockImplementation(async (path: string) => {
+    if (path === '/api/agents') return { agents: [] };
+    if (path === '/api/agents/hidden-bot') { if (mode === 'refused') throw new Error('not shared'); return { agent: { id: 'other-bot', name: 'Other', runsOnOpenBotModel: true } }; }
+    return { skills: [] };
+  });
+  const context = { initialAgentIds: ['hidden-bot'], startConversation: vi.fn(), openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }); mountEffects(); await drain();
+  const tree = render(HyperNewConversationSection, { context }), composer = find(tree, element => element.type === HyperComposer)!;
+  expect(composer.props.disabled).toBe(true); expect(composer.props.modelPicker).toBeUndefined();
+  expect(find(tree, element => element.type === 'input' && element.props.type === 'checkbox')).toBeUndefined();
+  await expect(composer.props.onSubmit({ text: 'Task', attachments: [], commandIds: [] })).rejects.toThrow('available Bot');
+  expect(context.startConversation).not.toHaveBeenCalled(); expect(f.request.mock.calls.some(call => call[0] === '/api/models')).toBe(false);
+});
+it('does not append a hidden Bot detail after its composition unmounts', async () => {
+  let finish!: (value: unknown) => void;
+  f.request.mockImplementation(async (path: string) => path === '/api/agents' ? { agents: [] } : path === '/api/agents/hidden-bot' ? new Promise(resolve => { finish = resolve; }) : { skills: [] });
+  const context = { initialAgentIds: ['hidden-bot'], startConversation: vi.fn(), openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }); mountEffects(); await drain();
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  finish({ agent: { id: 'hidden-bot', name: 'Hidden', runsOnOpenBotModel: true } }); await drain();
+  expect(h.states[4]).toEqual([]); expect(f.request.mock.calls.some(call => call[0] === '/api/models')).toBe(false);
+});
+it('uses the listed Bot without redundant detail lookup and keeps an external hidden Bot model-free', async () => {
+  const visible = { id: 'visible', name: 'Visible', runsOnOpenBotModel: false }, hidden = { id: 'hidden', name: 'Hidden', runsOnOpenBotModel: false };
+  f.request.mockImplementation(async (path: string) => path === '/api/agents' ? { agents: [visible] } : path === '/api/agents/hidden' ? { agent: hidden } : { skills: [] });
+  const context = { initialAgentIds: ['visible', 'hidden'], startConversation: vi.fn(), openConversation: vi.fn() };
+  render(HyperNewConversationSection, { context }); mountEffects(); await drain();
+  const tree = render(HyperNewConversationSection, { context });
+  expect(f.request.mock.calls.some(call => call[0] === '/api/agents/visible')).toBe(false);
+  expect(h.states[4].map((bot: any) => bot.id)).toEqual(['visible', 'hidden']);
+  expect(find(tree, element => element.type === HyperComposer)!.props.modelPicker).toBeUndefined();
+});
+it('still releases an idle unconfirmed join at the normal deadline', async () => {
+  const chat = hyperRuntimeTestChat(); const cleanup = chat.joinEffect(); if (typeof cleanup === 'function') h.cleanups.push(cleanup as () => void);
+  await vi.advanceTimersByTimeAsync(5000); expect(chat.agent.detachActiveRun).toHaveBeenCalledOnce(); chat.finishConnect(); await drain();
+});
+it('returns a successful delegated voice answer when no Stop occurred', async () => {
+  const chat = hyperRuntimeTestChat();
+  chat.core.runAgent.mockImplementation(async () => {
+    for (const listener of chat.listeners) listener.onRunInitialized?.({ input: { threadId: 'model-thread', runId: 'voice-success' }, messages: chat.agent.messages });
+    chat.agent.messages.push({ id: 'voice-complete', role: 'assistant', content: 'Complete answer' });
+  });
+  const controls = find(render(chat.component, chat.props), element => element.type === HyperVoiceControls)!;
+  await expect(controls.props.askAgent('Do the task', new AbortController().signal)).resolves.toBe('Complete answer');
 });
