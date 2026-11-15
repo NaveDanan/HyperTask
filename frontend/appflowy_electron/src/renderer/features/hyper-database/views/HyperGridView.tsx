@@ -77,7 +77,7 @@ export function HyperGridView(
 
   const [pinning, setPinning] = useState<ColumnPinningState>({
     start: ['hyper-expand', 'hyper-select', ...(primary ? [primary.id] : [])],
-    end: ['hyper-add-field'],
+    end: [],
   });
 
   const run = useCallback(async (action: () => Promise<unknown>) => {
@@ -135,6 +135,9 @@ export function HyperGridView(
   }, [query]);
 
   const firstSelect = state.fields.find(field => field.type === FieldType.SingleSelect);
+
+  // Local search filters rowIds below; the header always counts the core's full loaded row list.
+  const databaseRowCount = state.rowIds.length;
 
   const rowIds = useMemo(
     () => search.trim() || option ? HyperGridFilterRows(state, search, firstSelect?.id, option) : state.rowIds,
@@ -502,7 +505,7 @@ export function HyperGridView(
             <div className='flex flex-wrap items-center justify-between gap-3'>
               <div>
                 <FrameTitle>{view.name}</FrameTitle>
-                <FrameDescription className='text-xs'>{`${state.rowIds.length} rows · ${fields.length} fields`}</FrameDescription>
+                <FrameDescription className='text-xs'>{`${databaseRowCount} ${databaseRowCount === 1 ? 'row' : 'rows'} · ${fields.length} ${fields.length === 1 ? 'field' : 'fields'}`}</FrameDescription>
               </div>
               <Button className='h-8' disabled={creating || state.status !== 'ready'} onClick={() => void createRow()}>
                 <Plus className='size-4' />New row</Button>
@@ -534,7 +537,7 @@ export function HyperGridView(
             loadingMode='skeleton'
             emptyMessage={empty}
             rowCreateLabel='New row'
-            onRowCreate={() => void createRow()}
+            onRowCreate={databaseRowCount ? () => void createRow() : undefined}
             onCellSelectionChange={snapshot => {
               focused.current = snapshot.focused;
             }}
@@ -566,7 +569,7 @@ export function HyperGridView(
             }}
             tableClassNames={{
               headerRow: 'h-10',
-              bodyRow: 'h-10 has-[button[aria-expanded=true]]:bg-muted/40',
+              bodyRow: 'h-10 has-[button[aria-expanded=true]]:bg-muted/40 has-[button[aria-expanded=true]]:[&>td]:bg-muted/40 has-[button[aria-expanded=true]]:[&>td[data-pinned]]:bg-[color-mix(in_oklab,var(--muted)_64%,var(--background))]!',
               body: '[&>tr>td:has([data-hyper-grid-expanded])]:bg-muted/20 [&>tr>td[data-cell-focused]]:ring-2 [&>tr>td[data-cell-focused]]:ring-inset [&>tr>td[data-cell-focused]]:ring-ring/50 [&>tr>td[data-cell-focused]]:before:hidden [&>tr>td[data-col-id]:has([data-hyper-grid-editor])]:relative [&>tr>td[data-col-id]:has([data-hyper-grid-editor])]:ring-ring [&>tr>td[data-col-id]:has([data-hyper-grid-editor])]:bg-background [&>tr>td:has([aria-invalid=true])]:ring-destructive',
               rowCreate: 'h-9',
             }}
@@ -582,7 +585,7 @@ export function HyperGridView(
                   <DataGridContainer className='h-full min-h-0 border-0 [&>div]:h-full'>
                     <DataGridScrollArea orientation='both' className='h-full'>
                       <DataGridTableDnd
-                        footerContent={<tr>
+                        footerContent={databaseRowCount ? <tr>
                           <td colSpan={fields.length + 4} className='h-9 p-0'>
                             <Button
                               variant='ghost'
@@ -591,7 +594,7 @@ export function HyperGridView(
                               disabled={creating}>
                               <Plus className='size-4' />New row</Button>
                           </td>
-                        </tr>}
+                        </tr> : null}
                         handleDragEnd={event => {
                           const from = String(event.active.id);
                           const to = event.over ? String(event.over.id) : '';
@@ -613,7 +616,7 @@ export function HyperGridView(
                   </> : <ContextMenuItem onClick={() => void createRow()}>
                     <Plus />New row</ContextMenuItem>}</ContextMenuContent>
               </ContextMenu>
-            </FramePanel>{state.rowIds.length ? <FrameFooter className='py-1.5 pr-2 pl-2.5'>
+            </FramePanel>{state.rowIds.length ? <FrameFooter className='py-1.5 pl-2.5 pr-12'>
               <DataGridPagination
                 sizes={[10, 25, 50, 100]}
                 info={rowIds.length ? '{from} - {to} of {count}' : `0 of ${state.rowIds.length}`} />

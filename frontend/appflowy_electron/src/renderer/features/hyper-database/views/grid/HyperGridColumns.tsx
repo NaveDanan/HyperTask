@@ -15,6 +15,9 @@ export interface HyperGridRow {
   id: string;
 }
 
+// ReUI's DnD header reads this consumer flag for fixed utility columns.
+type HyperGridColumn = ColumnDef<DataGridFeatures, HyperGridRow> & { enableColumnOrdering?: boolean };
+
 function HyperGridPrimaryCell(
   {
     rowId,
@@ -38,7 +41,7 @@ export function HyperGridColumns(
   fields: HyperField[],
   selectRange: (row: Row<DataGridFeatures, HyperGridRow>, shift: boolean) => void,
   fieldCreated: (id: string) => void,
-): ColumnDef<DataGridFeatures, HyperGridRow>[] {
+): HyperGridColumn[] {
   return [{
     id: 'hyper-expand',
     size: 36,
@@ -127,6 +130,7 @@ export function HyperGridColumns(
     },
   })), {
     id: 'hyper-add-field',
+    enableColumnOrdering: false,
     size: 40,
     minSize: 40,
     maxSize: 40,
