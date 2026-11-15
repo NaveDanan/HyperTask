@@ -1,4 +1,4 @@
-import { create, fromBinary, type MessageInitShape } from '@bufbuild/protobuf';
+import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf';
 import { createStore } from 'zustand/vanilla';
 import { unwrap } from '@/backend/dispatch';
 import { NotificationSource } from '@/backend/notifications';
@@ -12,20 +12,23 @@ import { RowsChangePBSchema, RowsVisibilityChangePBSchema, DidFetchRowPBSchema }
 import { ReorderAllRowsPBSchema, ReorderSingleRowPBSchema } from '@shared/protobuf/flowy-database2/sort_entities_pb';
 import { DatabaseLayoutPB, DatabaseSettingChangesetPBSchema, LayoutSettingChangesetPBSchema } from '@shared/protobuf/flowy-database2/setting_entities_pb';
 import { CalendarLayoutSettingPBSchema, type CalendarLayoutSettingPB } from '@shared/protobuf/flowy-database2/calendar_entities_pb';
-import { type SelectOptionPB } from '@shared/protobuf/flowy-database2/select_option_entities_pb';
+import { SingleSelectTypeOptionPBSchema, type SelectOptionPB } from '@shared/protobuf/flowy-database2/select_option_entities_pb';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/flowy-folder/view_pb';
 import { mergeViewExtra, viewExtra, isDatabaseLayout } from '@/features/view/view-ext';
 import { copyHyperFilters } from './HyperFilterCopy';
 import { decodeHyperCell, hyperFieldOptions } from './HyperCellCodec';
 import { hyperDatabaseBackend, type HyperDatabaseBackend } from './HyperDatabaseBackend';
-import type { HyperCellMutation, HyperDatabaseState, HyperField, HyperLayout, HyperCalendarEvent, HyperRow } from './HyperDatabaseTypes';
+import type { HyperCell, HyperCellMutation, HyperDatabaseState, HyperField, HyperLayout, HyperCalendarEvent, HyperRow } from './HyperDatabaseTypes';
 
 export const hyperLayout = (view: Pick<ViewPB, 'layout' | 'oneOfExtra'>): HyperLayout =>
   view.layout === ViewLayoutPB.Grid && viewExtra(view)?.hyper_layout === 'gantt' ? 'gantt' : view.layout === ViewLayoutPB.Board ? 'board' : view.layout === ViewLayoutPB.Calendar ? 'calendar' : 'grid';
 export const hyperCoreLayout = (layout: HyperLayout) => layout === 'board' ? ViewLayoutPB.Board : layout === 'calendar' ? ViewLayoutPB.Calendar : ViewLayoutPB.Grid;
 const message = (error: unknown) => error instanceof Error ? error.message : error && typeof error === 'object' && 'msg' in error ? String(error.msg) : String(error);
 const normalizeRow = (meta: RowMetaPB): HyperRow => ({ id: meta.id, icon: meta.oneOfIcon.value ?? null, cover: meta.oneOfCover.value ?? null, documentId: meta.oneOfDocumentId.value ?? null, isDocumentEmpty: meta.oneOfIsDocumentEmpty.value ?? true, meta });
-const initial = (viewId: string): HyperDatabaseState => ({ status: 'idle', error: null, databaseId: '', viewId, view: null, views: [], fields: [], rowIds: [], rows: {}, cells: {}, groups: [], settings: null, revision: 0 });
+// ID-only RowOrder snapshots must not clear hydrated metadata. Full notifications can clear it.
+const snapshotRow = (meta: RowMetaPB, previous?: HyperRow): HyperRow =>
+  previous && meta.oneOfDocumentId.case === undefined && meta.oneOfIsDocumentEmpty.case === undefined ? previous : normalizeRow(meta);
+const initial = (viewId: string): HyperDatabaseState => ({ status: 'idle', error: null, databaseId: '', viewId, view: null, views: [], fields: [], rowIds: [], rows: {}, cells: {}, groups: [], settings: null, revision: 0, dataRevision: 0 });
 
 /** One controller per mounted database page. Dispose it when the page closes. */
 export class HyperDatabaseController {
@@ -39,7 +42,10 @@ export class HyperDatabaseController {
   private viewRefreshAgain = false;
   private dirtyCells = new Set<string>();
   private versions = new Map<string, number>();
-  private pendingCells = new Map<string, Promise<void>>();
+  private pendingCells = new Map<string, { epoch: number; version: number; promise: Promise<HyperCell | undefined> }>();
+  private rowOrderPatches?: Array<(ids: string[]) => string[]>;
+  private extraQueue: Promise<unknown> = Promise.resolve();
+  private extraVersion = 0;
   private queue: Array<() => void> = [];
   private active = 0;
   private viewIds = new Map<string, string>();
@@ -78,6 +84,9 @@ export class HyperDatabaseController {
     const work = async () => {
       do {
         this.refreshAgain = false;
+        const orderPatches: Array<(ids: string[]) => string[]> = [];
+        this.rowOrderPatches = orderPatches;
+        const extraVersion = this.extraVersion;
         try {
           const [database, fields, settings, groups, view] = await Promise.all([
             this.backend.DatabaseEventGetDatabase({ value: this.viewId }).then(unwrap),
@@ -101,7 +110,10 @@ export class HyperDatabaseController {
               for (const key of this.pendingCells.keys()) if (key.endsWith(`:${f.id}`)) this.versions.set(key, (this.versions.get(key) ?? 0) + 1);
             }
           }
-          const rows = Object.fromEntries(database.rows.map(meta => [meta.id, normalizeRow(meta)]));
+          const rows = Object.fromEntries(database.rows.map(meta => [meta.id, snapshotRow(meta, previous.rows[meta.id])]));
+          // Replay ordering and visibility notifications received during the snapshot request.
+          if (orderPatches.length) Object.assign(rows, previous.rows);
+          const rowIds = orderPatches.reduce((ids, apply) => apply(ids), database.rows.map(r => r.id));
           const cells: HyperDatabaseState['cells'] = {};
           for (const meta of database.rows) {
             const cached = previous.cells[meta.id]; if (!cached) continue;
@@ -113,8 +125,9 @@ export class HyperDatabaseController {
             if (Object.keys(retained).length) cells[meta.id] = retained;
           }
           const optionMap = new Map(orderedFields.flatMap(f => f.options.map(o => [o.id, o] as const)));
-          this.patch({ status: 'ready', error: null, databaseId: database.id, fields: orderedFields, rowIds: database.rows.map(r => r.id), rows, cells, settings, view, groups: groups.items.map(g => ({ ...g, option: optionMap.get(g.groupId), name: optionMap.get(g.groupId)?.name ?? (g.isDefault ? 'No status' : g.groupId) })) });
+          this.patch({ status: 'ready', error: null, databaseId: database.id, fields: orderedFields, rowIds, rows, cells, settings, view: extraVersion === this.extraVersion ? view : previous.view, groups: groups.items.map(g => ({ ...g, option: optionMap.get(g.groupId), name: optionMap.get(g.groupId)?.name ?? (g.isDefault ? 'No status' : g.groupId) })) });
         } catch (error) { if (epoch === this.epoch) this.patch({ status: 'error', error: message(error) }); }
+        finally { if (this.rowOrderPatches === orderPatches) this.rowOrderPatches = undefined; }
       } while (this.refreshAgain && epoch === this.epoch);
       if (epoch === this.epoch && this.state.status === 'ready') void this.loadRows(this.state.rowIds.slice(0, this.options.batchSize));
     };
@@ -159,13 +172,41 @@ export class HyperDatabaseController {
       await Promise.all(rowIds.slice(index, index + this.options.batchSize).flatMap(row => fieldIds.map(field => this.loadCell(row, field))));
     }
   }
-  async loadCell(rowId: string, fieldId: string, force = false): Promise<void> {
+  /** Finite scans retain requested values independently of the bounded viewport cache. */
+  async scanRows(rowIds: readonly string[], fieldIds: readonly string[], active: () => boolean = () => true): Promise<HyperDatabaseState['cells']> {
+    const cells: HyperDatabaseState['cells'] = {};
+    for (let index = 0; index < rowIds.length && active(); index += this.options.batchSize) {
+      await Promise.all(rowIds.slice(index, index + this.options.batchSize).map(async rowId => {
+        const values = await Promise.all(fieldIds.map(async fieldId => [fieldId, await this.loadCell(rowId, fieldId)] as const));
+        if (active()) cells[rowId] = Object.fromEntries(values.filter((entry): entry is readonly [string, HyperCell] => entry[1] !== undefined));
+      }));
+    }
+    return cells;
+  }
+  async loadRowMeta(rowId: string) {
+    const epoch = this.epoch;
+    const meta = unwrap(await this.backend.DatabaseEventGetRowMeta({ viewId: this.viewId, rowId }));
+    if (epoch === this.epoch && this.state.rows[rowId]) this.patch({ rows: { ...this.state.rows, [rowId]: normalizeRow(meta) } });
+  }
+  async loadCell(rowId: string, fieldId: string, force = false): Promise<HyperCell | undefined> {
     const key = `${rowId}:${fieldId}`;
-    if (force) this.versions.set(key, (this.versions.get(key) ?? 0) + 1);
+    const epoch = this.epoch;
+    if (force) {
+      this.versions.set(key, (this.versions.get(key) ?? 0) + 1);
+      if (this.state.cells[rowId]?.[fieldId]) {
+        const cells = { ...this.state.cells, [rowId]: { ...this.state.cells[rowId] } };
+        delete cells[rowId][fieldId]; this.cachedKeys.delete(key); this.patch({ cells });
+      }
+    }
     const pending = this.pendingCells.get(key);
-    if (pending) { await pending; if (force) return this.loadCell(rowId, fieldId, true); return; }
-    if (!force && this.state.cells[rowId]?.[fieldId] && !this.state.cells[rowId][fieldId].error) return;
-    const epoch = this.epoch; const version = this.versions.get(key) ?? 0;
+    if (pending) {
+      const cell = await pending.promise;
+      if (epoch !== this.epoch) return;
+      if (pending.epoch !== epoch || pending.version !== (this.versions.get(key) ?? 0)) return this.loadCell(rowId, fieldId);
+      return cell;
+    }
+    if (!force && this.state.cells[rowId]?.[fieldId] && !this.state.cells[rowId][fieldId].error) return this.state.cells[rowId][fieldId];
+    const version = this.versions.get(key) ?? 0;
     const promise = this.limited(async () => {
       const field = this.state.fields.find(f => f.id === fieldId);
       if (!field || !this.state.rows[rowId] || epoch !== this.epoch) return;
@@ -180,18 +221,30 @@ export class HyperDatabaseController {
         if (cells[row]) { cells[row] = { ...cells[row] }; delete cells[row][f]; }
       }
       this.patch({ cells });
+      return cell;
     });
-    this.pendingCells.set(key, promise);
-    try { await promise; } finally { this.pendingCells.delete(key); }
+    const request = { epoch, version, promise };
+    this.pendingCells.set(key, request);
+    let cell: HyperCell | undefined;
+    try { cell = await promise; } finally { if (this.pendingCells.get(key) === request) this.pendingCells.delete(key); }
+    // A live invalidation may reject this generation while a scan is awaiting it.
+    // Retry that generation, but never retry errors or work invalidated by disposal.
+    if (epoch === this.epoch && version !== (this.versions.get(key) ?? 0) && this.state.rows[rowId] && this.state.fields.some(f => f.id === fieldId)) return this.loadCell(rowId, fieldId);
+    return cell;
   }
   private scheduleRefresh() {
     if (this.timer) return;
     this.timer = setTimeout(() => { this.timer = undefined; void this.refresh(); }, 24);
   }
   private invalidateCell(rowId: string, fieldId: string) {
+    if (!this.state.rows[rowId] || !this.state.fields.some(f => f.id === fieldId)) return;
     const key = `${rowId}:${fieldId}`;
     this.versions.set(key, (this.versions.get(key) ?? 0) + 1);
-    if (!this.state.cells[rowId]?.[fieldId] && !this.pendingCells.has(key)) return;
+    const hadCell = Boolean(this.state.cells[rowId]?.[fieldId] || this.pendingCells.has(key));
+    const cells = { ...this.state.cells, [rowId]: { ...this.state.cells[rowId] } };
+    delete cells[rowId][fieldId]; this.cachedKeys.delete(key);
+    this.patch({ cells, dataRevision: this.state.dataRevision + 1 });
+    if (!hadCell) return;
     this.dirtyCells.add(key);
     queueMicrotask(() => {
       if (!this.dirtyCells.delete(key)) return;
@@ -234,19 +287,25 @@ export class HyperDatabaseController {
             const meta = entry.rowMeta; if (!meta || entry.isHiddenInView) continue;
             rowIds = rowIds.filter(id => id !== meta.id); rowIds.splice(entry.oneOfIndex.value ?? rowIds.length, 0, meta.id); rows[meta.id] = normalizeRow(meta);
           }
+          const invalidated: Array<[string, string]> = [];
           for (const entry of update.updatedRows) {
             if (entry.oneOfRowMeta.case === 'rowMeta') rows[entry.rowId] = normalizeRow(entry.oneOfRowMeta.value);
-            for (const fieldId of entry.fieldIds) this.invalidateCell(entry.rowId, fieldId);
+            for (const fieldId of entry.fieldIds) invalidated.push([entry.rowId, fieldId]);
           }
-          this.patch({ rows, rowIds, cells }); this.scheduleRefresh(); break;
+          this.patch({ rows, rowIds, cells });
+          for (const [rowId, fieldId] of invalidated) this.invalidateCell(rowId, fieldId);
+          this.scheduleRefresh(); break;
         }
         case N.DidReorderRows: {
           const ids = fromBinary(ReorderAllRowsPBSchema, bytes).rowOrders;
+          this.rowOrderPatches?.push(() => ids.filter(id => !!this.state.rows[id]));
           this.patch({ rowIds: ids.filter(id => !!state.rows[id]) }); break;
         }
         case N.DidReorderSingleRow: {
           const change = fromBinary(ReorderSingleRowPBSchema, bytes); const ids = state.rowIds.filter(id => id !== change.rowId);
-          if (state.rows[change.rowId]) ids.splice(change.newIndex, 0, change.rowId); this.patch({ rowIds: ids }); break;
+          if (state.rows[change.rowId]) ids.splice(change.newIndex, 0, change.rowId);
+          this.rowOrderPatches?.push(order => { const next = order.filter(id => id !== change.rowId); if (this.state.rows[change.rowId]) next.splice(change.newIndex, 0, change.rowId); return next; });
+          this.patch({ rowIds: ids }); break;
         }
         case N.DidFetchRow: {
           const row = fromBinary(DidFetchRowPBSchema, bytes); if (row.meta) this.patch({ rows: { ...state.rows, [row.rowId]: normalizeRow(row.meta) } }); break;
@@ -254,8 +313,13 @@ export class HyperDatabaseController {
         case N.DidUpdateViewRowsVisibility: {
           const change = fromBinary(RowsVisibilityChangePBSchema, bytes); const hidden = new Set(change.invisibleRows);
           const ids = state.rowIds.filter(id => !hidden.has(id)); const rows = { ...state.rows };
-          for (const item of change.visibleRows) if (item.rowMeta) { const id = item.rowMeta.id; if (!ids.includes(id)) ids.splice(item.oneOfIndex.value ?? ids.length, 0, id); rows[id] = normalizeRow(item.rowMeta); }
-          this.patch({ rowIds: ids, rows }); this.scheduleRefresh(); break;
+          for (const item of change.visibleRows) if (item.rowMeta) { const id = item.rowMeta.id; if (!ids.includes(id)) ids.splice(item.oneOfIndex.value ?? ids.length, 0, id); rows[id] = snapshotRow(item.rowMeta, rows[id]); }
+          this.rowOrderPatches?.push(order => {
+            const next = order.filter(id => !hidden.has(id));
+            for (const item of change.visibleRows) if (item.rowMeta && !next.includes(item.rowMeta.id)) next.splice(item.oneOfIndex.value ?? next.length, 0, item.rowMeta.id);
+            return next;
+          });
+          this.patch({ rowIds: ids, rows }); break;
         }
         case N.DidUpdateFields: case N.DidUpdateNumOfGroups: case N.DidGroupByField:
         case N.DidUpdateFilter: case N.DidUpdateSort: case N.DidUpdateSettings:
@@ -293,8 +357,7 @@ export class HyperDatabaseController {
     if (field.type !== kinds[value.kind]) throw new Error(`Cannot write ${value.kind} to ${FieldType[field.type]}`);
     switch (value.kind) {
       case 'date': {
-        await this.loadCell(rowId, fieldId);
-        const previous = this.state.cells[rowId]?.[fieldId];
+        const previous = await this.loadCell(rowId, fieldId);
         const range = value.isRange ?? (previous?.kind === 'date' && previous.isRange);
         const changesDate = value.timestamp !== undefined || value.endTimestamp !== undefined;
         const timestamp = value.timestamp ?? (range && changesDate && previous?.kind === 'date' ? previous.timestamp ?? value.endTimestamp : undefined);
@@ -318,10 +381,10 @@ export class HyperDatabaseController {
       }
     }
     await this.loadCell(rowId, fieldId, true);
+    this.patch({ dataRevision: this.state.dataRevision + 1 });
   }
   async setChecklistItemCompleted(rowId: string, fieldId: string, itemId: string, completed: boolean) {
-    await this.loadCell(rowId, fieldId);
-    const cell = this.state.cells[rowId]?.[fieldId];
+    const cell = await this.loadCell(rowId, fieldId);
     if (cell?.kind !== 'checklist' || cell.error) throw new Error('Checklist could not be loaded');
     const item = cell.items.find(item => item.id === itemId); if (!item) throw new Error('Checklist item was deleted');
     if (item.completed !== completed) await this.updateCell(rowId, fieldId, { kind: 'checklist', completedIds: [itemId] });
@@ -344,7 +407,17 @@ export class HyperDatabaseController {
   createGroup(name: string) { const groupConfigId = this.state.settings?.groupSettings?.items[0]?.id ?? ''; return this.mutate(this.backend.DatabaseEventCreateGroup({ viewId: this.viewId, groupConfigId, name }).then(unwrap)); }
   renameGroup(groupId: string, name: string) { return this.mutate(this.backend.DatabaseEventUpdateGroup({ viewId: this.viewId, groupId, oneOfName: { case: 'name', value: name } }).then(unwrap)); }
   hideGroup(groupId: string, hidden = true) { return this.mutate(this.backend.DatabaseEventUpdateGroup({ viewId: this.viewId, groupId, oneOfVisible: { case: 'visible', value: !hidden } }).then(unwrap)); }
-  deleteGroup(groupId: string) { return this.mutate(this.backend.DatabaseEventDeleteGroup({ viewId: this.viewId, groupId }).then(unwrap)); }
+  async deleteGroup(groupId: string) {
+    const group = this.state.groups.find(g => g.groupId === groupId);
+    const field = this.state.fields.find(f => f.id === group?.fieldId);
+    const option = field?.options.find(o => o.id === groupId);
+    if (!group || group.isDefault || field?.type !== FieldType.SingleSelect || !option) throw new Error('Choose a status option group');
+    // Rust DeleteGroup deletes its rows. Removing the option schema instead clears
+    // decoded selections across linked views while preserving every card.
+    const options = fromBinary(SingleSelectTypeOptionPBSchema, field.proto.typeOptionData);
+    options.options = options.options.filter(o => o.id !== groupId);
+    await this.updateFieldTypeOptions(field.id, toBinary(SingleSelectTypeOptionPBSchema, options));
+  }
   updateSettings(patch: Omit<MessageInitShape<typeof DatabaseSettingChangesetPBSchema>, 'viewId' | '$typeName'>) { return this.mutate(this.backend.DatabaseEventUpdateDatabaseSetting(create(DatabaseSettingChangesetPBSchema, { ...patch, viewId: this.viewId })).then(unwrap)); }
   updateLayoutSettings(patch: Omit<MessageInitShape<typeof LayoutSettingChangesetPBSchema>, 'viewId' | '$typeName'>) { return this.mutate(this.backend.DatabaseEventSetLayoutSetting(create(LayoutSettingChangesetPBSchema, { ...patch, viewId: this.viewId })).then(unwrap)); }
   updateCalendarSettings(patch: Partial<Omit<CalendarLayoutSettingPB, '$typeName'>>) {
@@ -352,21 +425,20 @@ export class HyperDatabaseController {
     return this.updateLayoutSettings({ layoutType: DatabaseLayoutPB.Calendar, oneOfCalendar: { case: 'calendar', value: create(CalendarLayoutSettingPBSchema, { ...create(CalendarLayoutSettingPBSchema), ...setting, ...patch }) } });
   }
   /** Seconds since epoch; overlapping ranges included. The backend has no range endpoint. */
-  async getCalendarEvents(start: bigint, end: bigint): Promise<HyperCalendarEvent[]> {
+  async getCalendarEvents(start: bigint, end: bigint, retained?: HyperDatabaseState['cells']): Promise<HyperCalendarEvent[]> {
     const events = unwrap(await this.backend.DatabaseEventGetAllCalendarEvents({ viewId: this.viewId })).items;
     const dateFields = [...new Set(events.map(e => e.dateFieldId))];
-    await this.loadRows(events.flatMap(e => e.rowMeta ? [e.rowMeta.id] : []), dateFields);
+    const cells = retained ?? await this.scanRows(events.flatMap(e => e.rowMeta ? [e.rowMeta.id] : []), dateFields);
     return events.flatMap(e => {
       if (!e.rowMeta || e.oneOfTimestamp.case !== 'timestamp') return [];
-      const date = this.state.cells[e.rowMeta.id]?.[e.dateFieldId];
+      const date = cells[e.rowMeta.id]?.[e.dateFieldId];
       const timestamp = e.oneOfTimestamp.value;
       const endTimestamp = date?.kind === 'date' && date.isRange ? date.endTimestamp : null;
       return timestamp < end && (endTimestamp ?? timestamp) >= start ? [{ rowId: e.rowMeta.id, title: e.title, dateFieldId: e.dateFieldId, timestamp, endTimestamp, includeTime: date?.kind === 'date' && date.includeTime, meta: e.rowMeta }] : [];
     });
   }
   async moveCalendarEvent(rowId: string, dateFieldId: string, timestamp: bigint) {
-    await this.loadCell(rowId, dateFieldId);
-    const previous = this.state.cells[rowId]?.[dateFieldId];
+    const previous = await this.loadCell(rowId, dateFieldId);
     if (previous?.kind === 'date' && previous.timestamp !== null && previous.endTimestamp !== null && previous.isRange) {
       // The core's MoveCalendarEvent supplies only a start and silently ignores ranges.
       await this.updateCell(rowId, dateFieldId, { kind: 'date', timestamp, endTimestamp: previous.endTimestamp + timestamp - previous.timestamp, isRange: true });
@@ -381,7 +453,7 @@ export class HyperDatabaseController {
       ...(patch.icon !== undefined ? { oneOfIconUrl: { case: 'iconUrl', value: patch.icon } as const } : {}),
       ...(patch.cover ? { oneOfCover: { case: 'cover', value: patch.cover } as const } : {}),
       ...(patch.isDocumentEmpty !== undefined ? { oneOfIsDocumentEmpty: { case: 'isDocumentEmpty', value: patch.isDocumentEmpty } as const } : {}),
-    })); await this.refresh();
+    })); await this.loadRowMeta(rowId); await this.refresh();
   }
   async addView(layout: HyperLayout, name: string) {
     const current = this.state.view; if (!current) throw new Error('Open the database first');
@@ -390,12 +462,17 @@ export class HyperDatabaseController {
     if (layout === 'gantt') { const extra = mergeViewExtra(view, { hyper_layout: 'gantt' }); unwrap(await this.backend.views.updateView({ viewId: view.id, extra })); view = { ...view, oneOfExtra: { case: 'extra', value: extra } }; }
     this.viewIds.set(view.id, this.state.databaseId); await this.refreshViews(); return view;
   }
-  async updateViewExtra(patch: Record<string, unknown>) {
-    const view = this.state.view; if (!view) throw new Error('Open the database first');
-    const extra = mergeViewExtra(view, patch);
-    const updated = unwrap(await this.backend.views.updateView({ viewId: view.id, extra }));
-    // UpdateView can return an empty acknowledgement; retain the known view and merged extra.
-    this.patch({ view: updated.id ? updated : { ...view, oneOfExtra: { case: 'extra', value: extra } } }); await this.refreshViews();
+  updateViewExtra(patch: Record<string, unknown>) {
+    const run = this.extraQueue.then(async () => {
+      const view = this.state.view; if (!view) throw new Error('Open the database first');
+      const extra = mergeViewExtra(view, patch);
+      const updated = unwrap(await this.backend.views.updateView({ viewId: view.id, extra }));
+      // UpdateView can return an empty acknowledgement; retain the known view and merged extra.
+      this.extraVersion++;
+      this.patch({ view: updated.id ? updated : { ...view, oneOfExtra: { case: 'extra', value: extra } } }); await this.refreshViews();
+    });
+    this.extraQueue = run.catch(() => undefined);
+    return run;
   }
   async renameView(viewId: string, name: string) { unwrap(await this.backend.views.updateView({ viewId, name })); await this.refreshViews(); }
   /** Duplicate view settings within this database, preserving extra keys (including Gantt). */

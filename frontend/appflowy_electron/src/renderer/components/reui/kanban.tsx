@@ -558,38 +558,8 @@ function Kanban<T>({
         return
       }
 
-      const activeContainer = findContainer(active.id)
-      const overContainer = findContainer(over.id)
-
-      // Handle item reordering within the same column
-      if (
-        activeContainer &&
-        overContainer &&
-        activeContainer === overContainer
-      ) {
-        const container = activeContainer
-        const activeIndex = columns[container].findIndex(
-          (item: T) => getItemValue(item) === active.id
-        )
-        const overIndex = columns[container].findIndex(
-          (item: T) => getItemValue(item) === over.id
-        )
-
-        if (activeIndex !== overIndex) {
-          const newColumns = {
-            ...columns,
-            [container]: arrayMove(columns[container], activeIndex, overIndex),
-          }
-          setColumns(newColumns)
-          commitChange(newColumns, event, "item")
-        } else {
-          // Cross-column moves are applied during dragOver, so the current
-          // value is already final.
-          commitChange(columns, event, "item")
-        }
-      } else {
-        commitChange(columns, event, "item")
-      }
+      // dragOver already applied the previewed item order, including same-column moves.
+      commitChange(valueRef.current, event, "item")
       dragOriginRef.current = null
     },
     [

@@ -14,11 +14,12 @@ import { RelationCellDataPBSchema } from '@shared/protobuf/flowy-database2/relat
 import { TimeCellDataPBSchema } from '@shared/protobuf/flowy-database2/time_entities_pb';
 import { URLCellDataPBSchema } from '@shared/protobuf/flowy-database2/url_entities_pb';
 import { MediaCellDataPBSchema } from '@shared/protobuf/flowy-database2/media_entities_pb';
+import { CalendarEventPBSchema, RepeatedCalendarEventPBSchema } from '@shared/protobuf/flowy-database2/calendar_entities_pb';
 import { DatabasePBSchema, DatabaseIdPBSchema } from '@shared/protobuf/flowy-database2/database_entities_pb';
 import { RowMetaPBSchema } from '@shared/protobuf/flowy-database2/row_entities_pb';
 import { DatabaseViewSettingPBSchema } from '@shared/protobuf/flowy-database2/setting_entities_pb';
-import { RepeatedGroupPBSchema } from '@shared/protobuf/flowy-database2/group_pb';
-import { RowsChangePBSchema } from '@shared/protobuf/flowy-database2/view_entities_pb';
+import { GroupPBSchema, RepeatedGroupPBSchema } from '@shared/protobuf/flowy-database2/group_pb';
+import { RowsVisibilityChangePBSchema, RowsChangePBSchema } from '@shared/protobuf/flowy-database2/view_entities_pb';
 import { ReorderAllRowsPBSchema, ReorderSingleRowPBSchema } from '@shared/protobuf/flowy-database2/sort_entities_pb';
 import { DatabaseNotification as N } from '@shared/protobuf/flowy-database2/notification_pb';
 import { SubscribeObjectSchema } from '@shared/protobuf/flowy-notification/subject_pb';
@@ -41,7 +42,7 @@ function fixture(rows = ['r', 's']) {
     DatabaseEventGetGroups: vi.fn(async () => ok(create(RepeatedGroupPBSchema))),
     DatabaseEventGetCell: vi.fn(async ({ rowId, fieldId }: { rowId?: string; fieldId?: string }) => ok(create(CellPBSchema, { rowId, fieldId, data: utf8('A task') }))),
     allViews: vi.fn(async () => ok(create(RepeatedViewPBSchema, { items: [view] }))),
-    views: { ...hyperDatabaseBackend.views, getView: vi.fn(async () => ok(view)), createView: vi.fn(async () => ok(create(ViewPBSchema, { id: 'new', name: 'Timeline', layout: ViewLayoutPB.Grid, oneOfExtra: { case: 'extra', value: '{"font":"Geist"}' } }))), updateView: vi.fn(async () => ok(view)) },
+    views: { ...hyperDatabaseBackend.views, getView: vi.fn(async () => ok(view)), createView: vi.fn(async () => ok(create(ViewPBSchema, { id: 'new', name: 'Timeline', layout: ViewLayoutPB.Grid, oneOfExtra: { case: 'extra', value: '{"font":"Geist"}' } }))), updateView: vi.fn(async (_payload: Parameters<typeof hyperDatabaseBackend.views.updateView>[0]) => ok(view)) },
     DatabaseEventUpdateCell: vi.fn(async () => ok(undefined)), DatabaseEventUpdateDateCell: vi.fn(async (_payload: Parameters<typeof hyperDatabaseBackend.DatabaseEventUpdateDateCell>[0]) => ok(undefined)),
     DatabaseEventUpdateChecklistCell: vi.fn(async () => ok(undefined)), DatabaseEventUpdateSelectOptionCell: vi.fn(async () => ok(undefined)),
     DatabaseEventMoveGroupRow: vi.fn(async () => ok(undefined)), DatabaseEventMoveCalendarEvent: vi.fn(async () => ok(undefined)),
@@ -186,4 +187,112 @@ describe('Hyper database controller', () => {
     expect(backend.views.createView).toHaveBeenCalledWith(expect.objectContaining({ ext: { database_id: 'db' }, layoutType: ViewLayoutPB.Grid }));
     expect(hyperLayout(view)).toBe('gantt'); expect(JSON.parse(view.oneOfExtra.value!)).toEqual({ font: 'Geist', hyper_layout: 'gantt' });
   });
+});
+
+
+describe('Hyper review regressions', () => {
+  it('applies visibility notifications without reopening the notifying database', async () => {
+    vi.useFakeTimers(); const { controller, backend, open } = fixture(); await open();
+    const before = backend.DatabaseEventGetDatabase.mock.calls.length;
+    backend.DatabaseEventGetDatabase.mockImplementation(async () => {
+      notify(controller, N.DidUpdateViewRowsVisibility, toBinary(RowsVisibilityChangePBSchema, create(RowsVisibilityChangePBSchema, { invisibleRows: ['s'] })));
+      return ok(create(DatabasePBSchema, { id: 'db', rows: [{ id: 'r' }, { id: 's' }] }));
+    });
+    notify(controller, N.DidUpdateViewRowsVisibility, toBinary(RowsVisibilityChangePBSchema, create(RowsVisibilityChangePBSchema, { invisibleRows: ['s'] })));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(controller.state.rowIds).toEqual(['r']);
+    expect(backend.DatabaseEventGetDatabase).toHaveBeenCalledTimes(before);
+  });
+  it('retains hydrated metadata through ID-only refreshes but accepts full clears', async () => {
+    const { controller, open } = fixture(); await open();
+    const full = create(RowMetaPBSchema, { id: 'r', oneOfIcon: { case: 'icon', value: 'icon' }, oneOfDocumentId: { case: 'documentId', value: 'document' }, oneOfIsDocumentEmpty: { case: 'isDocumentEmpty', value: false }, oneOfCover: { case: 'cover', value: { data: 'cover' } } });
+    notify(controller, N.DidUpdateRowMeta, toBinary(RowMetaPBSchema, full), 'r'); await controller.refresh();
+    expect(controller.state.rows.r).toMatchObject({ icon: 'icon', documentId: 'document', isDocumentEmpty: false, cover: { data: 'cover' } });
+    notify(controller, N.DidUpdateRowMeta, toBinary(RowMetaPBSchema, create(RowMetaPBSchema, { id: 'r', oneOfDocumentId: { case: 'documentId', value: 'document' }, oneOfIsDocumentEmpty: { case: 'isDocumentEmpty', value: true } })), 'r');
+    await controller.refresh(); expect(controller.state.rows.r).toMatchObject({ icon: null, cover: null, isDocumentEmpty: true });
+  });
+  it.each([N.DidReorderRows, N.DidReorderSingleRow])('keeps a live reorder over an older pending snapshot (%s)', async type => {
+    const { controller, backend, database, open } = fixture(); await open();
+    let finish!: (value: ReturnType<typeof ok<typeof database>>) => void;
+    backend.DatabaseEventGetDatabase.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const refreshing = controller.refresh();
+    notify(controller, type, type === N.DidReorderRows ? toBinary(ReorderAllRowsPBSchema, create(ReorderAllRowsPBSchema, { rowOrders: ['s', 'r'] })) : toBinary(ReorderSingleRowPBSchema, create(ReorderSingleRowPBSchema, { rowId: 's', newIndex: 0 })));
+    finish(ok(database)); await refreshing; expect(controller.state.rowIds).toEqual(['s', 'r']);
+  });
+  it('serializes extra patches and ignores a snapshot predating their writes', async () => {
+    const { controller, backend, view, open } = fixture(); await open();
+    let finish!: (value: ReturnType<typeof ok<typeof view>>) => void;
+    backend.views.getView.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const refreshing = controller.refresh();
+    backend.views.updateView.mockImplementation(async payload => ok(create(ViewPBSchema, { ...view, oneOfExtra: { case: 'extra', value: payload.extra! } })));
+    await Promise.all([controller.updateViewExtra({ a: 1 }), controller.updateViewExtra({ b: 2 })]);
+    finish(ok(view)); await refreshing;
+    expect(JSON.parse(controller.state.view!.oneOfExtra.value!)).toMatchObject({ a: 1, b: 2 });
+    await controller.updateViewExtra({ c: 3 });
+    expect(JSON.parse(controller.state.view!.oneOfExtra.value!)).toMatchObject({ a: 1, b: 2, c: 3 });
+  });
+  it('retains scan values even when a batch and result exceed the display cache', async () => {
+    const { controller, backend, open } = fixture(Array.from({ length: 25 }, (_, i) => 'row-' + i)); await open();
+    const values = await controller.scanRows(controller.state.rowIds, ['f']);
+    expect(Object.keys(values)).toHaveLength(25); expect(values['row-0'].f.display).toBe('A task');
+    expect(Object.values(controller.state.cells).reduce((n, row) => n + Object.keys(row).length, 0)).toBeLessThanOrEqual(10);
+    expect(backend.DatabaseEventGetCell).toHaveBeenCalledTimes(25);
+  });
+});
+
+
+it('keeps calendar overlap/end flags when events exceed cache capacity inside one batch', async () => {
+  const { controller, backend, f, open } = fixture(['r', 's', 't']); await open();
+  f.fieldType = FieldType.DateTime; controller.store.setState({ fields: [{ ...controller.state.fields[0], type: f.fieldType }] });
+  const events = create(RepeatedCalendarEventPBSchema, { items: ['r', 's', 't'].map((id, index) => create(CalendarEventPBSchema, { rowMeta: { id }, dateFieldId: 'f', title: id, oneOfTimestamp: { case: 'timestamp', value: index ? 150n : 50n } })) });
+  const small = new HyperDatabaseController('v', { ...backend, DatabaseEventGetAllCalendarEvents: vi.fn(async () => ok(events)) }, { batchSize: 10, concurrency: 2, maxCachedCells: 2 });
+  small.store.setState(controller.state); disposals.push(() => small.dispose());
+  backend.DatabaseEventGetCell.mockImplementation(async ({ rowId }) => ok(create(CellPBSchema, { rowId, fieldId: 'f', data: toBinary(DateCellDataPBSchema, create(DateCellDataPBSchema, { oneOfTimestamp: { case: 'timestamp', value: rowId === 'r' ? 50n : 150n }, oneOfEndTimestamp: { case: 'endTimestamp', value: 200n }, isRange: true, includeTime: true })) })));
+  expect(await small.getCalendarEvents(100n, 300n)).toMatchObject([{ rowId: 'r', endTimestamp: 200n, includeTime: true }, { rowId: 's' }, { rowId: 't' }]);
+  expect(small.state.cells.r?.f).toBeUndefined();
+});
+
+it('removes a status option without invoking the destructive group/row API', async () => {
+  const { controller, backend, f, database, open } = fixture(); await open();
+  f.fieldType = FieldType.SingleSelect;
+  const todo = create(SelectOptionPBSchema, { id: 'todo', name: 'To do' }); const done = create(SelectOptionPBSchema, { id: 'done', name: 'Done' });
+  f.typeOptionData = toBinary(SingleSelectTypeOptionPBSchema, create(SingleSelectTypeOptionPBSchema, { options: [todo, done] }));
+  controller.store.setState({ fields: [{ ...controller.state.fields[0], type: f.fieldType, options: [todo, done] }], groups: [{ ...create(GroupPBSchema, { groupId: 'todo', fieldId: 'f', rows: database.rows }), name: 'To do', option: todo }] });
+  const destructive = vi.fn(async () => ok(undefined)); const removeRows = backend.DatabaseEventDeleteRows;
+  backend.DatabaseEventDeleteGroup = destructive;
+  backend.DatabaseEventUpdateFieldTypeOption = vi.fn(async payload => { f.typeOptionData = payload.typeOptionData!; return ok(undefined); });
+  await controller.deleteGroup('todo');
+  expect(destructive).not.toHaveBeenCalled(); expect(removeRows).not.toHaveBeenCalled();
+  expect(controller.state.rowIds).toEqual(['r','s']); expect(controller.state.fields[0].options.map(option => option.id)).toEqual(['done']);
+  // The native selection decoder omits IDs absent from its option schema; see fix ledger.
+  expect(controller.state.rows.r).toBeDefined();
+});
+
+
+it('replays visibility arriving during a refresh without restoring hidden rows', async () => {
+  const { controller, backend, database, open } = fixture(); await open();
+  let finish!: (value: ReturnType<typeof ok<typeof database>>) => void;
+  backend.DatabaseEventGetDatabase.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const refresh = controller.refresh();
+  notify(controller, N.DidUpdateViewRowsVisibility, toBinary(RowsVisibilityChangePBSchema, create(RowsVisibilityChangePBSchema, { invisibleRows: ['s'] })));
+  finish(ok(database)); await refresh; expect(controller.state.rowIds).toEqual(['r']);
+});
+it('hydrates a metadata write explicitly when no full notification was received', async () => {
+  const { controller, backend, open } = fixture(); await open();
+  backend.DatabaseEventUpdateRowMeta = vi.fn(async () => ok(undefined));
+  backend.DatabaseEventGetRowMeta = vi.fn(async () => ok(create(RowMetaPBSchema, { id: 'r', oneOfDocumentId: { case: 'documentId', value: 'doc' }, oneOfIsDocumentEmpty: { case: 'isDocumentEmpty', value: false }, oneOfIcon: { case: 'icon', value: 'saved' } })));
+  await controller.updateRowMeta('r', { icon: 'saved' });
+  expect(controller.state.rows.r).toMatchObject({ icon: 'saved', documentId: 'doc', isDocumentEmpty: false });
+});
+
+
+it('returns current scan data when a cell is invalidated while its first read is pending', async () => {
+  const { controller, backend, open } = fixture(); await open();
+  let finish!: (value: ReturnType<typeof ok<ReturnType<typeof cell>>>) => void;
+  backend.DatabaseEventGetCell.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  backend.DatabaseEventGetCell.mockImplementation(async () => ok(cell(utf8('Current'))));
+  const scan = controller.scanRows(['r'], ['f']);
+  notify(controller, N.DidUpdateCell, new Uint8Array(), 'r:f');
+  finish(ok(cell(utf8('Stale'))));
+  expect((await scan).r.f?.display).toBe('Current');
 });
