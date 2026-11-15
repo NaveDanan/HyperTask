@@ -16,7 +16,7 @@ import { HYPER_BOT_EXTRA_TABS } from './HyperBotExtraTabs';
 import { hyperTeamBotShareLink, HyperBotTabsApi as api, type HyperBotApp, type HyperTeamBots } from './HyperBotTabsApi';
 
 export function HyperBotDetailTabs({ bot, openConversation, initialTab }: { initialTab?: string; bot: HyperBotProfile; openConversation?: (id: string) => void }) {
-  const [tab, setTab] = useState(initialTab ?? 'apps');
+  const [tab, setTab] = useState(initialTab === 'access' ? 'apps' : initialTab ?? 'apps');
   const Extra = HYPER_BOT_EXTRA_TABS.find(item => item.id === tab)?.component;
   return <section className="grid gap-4 border-t border-border pt-4">
     <nav aria-label="Bot details" className="flex flex-wrap gap-2">{[{ id: 'setup', label: 'Setup' }, { id: 'apps', label: 'Apps' }, { id: 'sharing', label: 'Sharing' }, { id: 'approvals', label: 'Approvals' }, { id: 'skills', label: 'Skills' }, { id: 'reach', label: 'Reaching you' }, { id: 'activity', label: 'Activity' }, ...HYPER_BOT_EXTRA_TABS].map(item => <Button key={item.id} variant={tab === item.id ? 'secondary' : 'ghost'} aria-pressed={tab === item.id} onClick={() => setTab(item.id)}>{item.label}</Button>)}</nav>

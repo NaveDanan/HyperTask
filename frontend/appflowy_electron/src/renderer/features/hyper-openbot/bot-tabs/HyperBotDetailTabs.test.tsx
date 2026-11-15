@@ -13,6 +13,11 @@ it('bot-tabs waits for server flags before offering writes', () => {
   for (const label of ['Apps', 'Sharing', 'Setup', 'Approvals', 'Skills', 'Activity', 'Reaching you']) expect(html).toContain(label);
   expect(html).not.toContain('Give app'); expect(html).not.toContain('Publish to specific');
 });
+it('legacy access links select Apps rather than an unimplemented tab', () => {
+  const html = renderToStaticMarkup(<HyperBotDetailTabs bot={{ id: 'desk', canManage: false } as HyperBotProfile} initialTab="access" />);
+  expect(html).toContain('Loading');
+  expect(html).not.toContain('waiting for its area integration');
+});
 it('bot-tabs displays loading without granting handoff, skill or approval permissions', () => {
   for (const element of [<HyperBotHandoffTab agentId="desk" />, <HyperBotApprovalsTab agentId="desk" />, <HyperBotSkillsTab agentId="desk" mine={false} />]) {
     const html = renderToStaticMarkup(element); expect(html).toContain('Loading'); expect(html).not.toContain('type="checkbox"'); expect(html).not.toContain('Add rule');

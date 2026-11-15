@@ -1,5 +1,6 @@
 import { registerHyperNativeCredentials } from './HyperNativeCredentials';
 import { HyperVoiceBroker } from './HyperVoiceBroker';
+import { hyperTriggerSecretRequest, hyperConfirmTriggerSecret, hyperProtectTriggerResponse } from './HyperNativeTriggerSecrets';
 import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath, hyperOpenBotCookieHeader, hyperTunnelFetch } from './HyperOpenBotTunnel';
 import type { HyperOpenBotSession } from './HyperOpenBotSession';
 import { hyperOpenBotPathAllowed } from '@shared/hyper-openbot-policy';
@@ -87,11 +88,23 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     try {
       const lease = await sessions.acquire();
       controller.signal.throwIfAborted();
+      const nativeTrigger = hyperTriggerSecretRequest(requestPathname, request.method);
+      const owner = window();
+      const checkTriggerOwner = async () => {
+        controller.signal.throwIfAborted(); lease.assertCurrent();
+        if (!ready() || !trusted(event) || event.sender.isDestroyed()) throw new Error('Trigger action stopped');
+        await sessions.acquire(); controller.signal.throwIfAborted(); lease.assertCurrent();
+      };
+      if (nativeTrigger) {
+        if (!owner) throw new Error('Trigger window unavailable');
+        await hyperConfirmTriggerSecret(owner, requestPathname, controller.signal, checkTriggerOwner);
+      }
       let response = await hyperTunnelFetch(request.path, {
         method: request.method, body: typeof request.body === 'string' ? request.body : request.body ? Buffer.from(request.body) : undefined,
         signal: controller.signal, lease,
         headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN, ...(requestPathname === '/api/audio/transcriptions' ? { 'x-openbot-dictation': '1' } : {}), ...((requestPathname === '/api/voice/calls' || requestPathname === '/api/voice/sessions') ? { 'x-openbot-voice': '1' } : {}) },
       });
+      if (nativeTrigger && owner) response = await hyperProtectTriggerResponse(response, owner, controller.signal, checkTriggerOwner);
       if (requestPathname === '/api/voice/calls' && response.ok) {
         const value = await response.json();
         response = new Response(JSON.stringify(voiceBroker.sanitize(value, event.sender.id, lease.signal)), { status: response.status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });

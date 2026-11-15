@@ -4,13 +4,13 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { IpcChannel as C } from '@shared/api';
-const ipc = vi.hoisted(() => ({ handlers: new Map<string, (...args: any[]) => any>(), events: new Map<string, (...args: any[]) => any>(), fetch: vi.fn(), path: vi.fn(async () => '/private/gateway.sock'), close: vi.fn(), sockets: [] as any[] }));
-vi.mock('electron', () => ({ ipcMain: { handle: (name: string, fn: (...args: any[]) => any) => ipc.handlers.set(name, fn), on: (name: string, fn: (...args: any[]) => any) => ipc.events.set(name, fn) } }));
+const ipc = vi.hoisted(() => ({ handlers: new Map<string, (...args: any[]) => any>(), events: new Map<string, (...args: any[]) => any>(), fetch: vi.fn(), path: vi.fn(async () => '/private/gateway.sock'), close: vi.fn(), sockets: [] as any[], dialog: vi.fn(), copy: vi.fn() }));
+vi.mock('electron', () => ({ ipcMain: { handle: (name: string, fn: (...args: any[]) => any) => ipc.handlers.set(name, fn), on: (name: string, fn: (...args: any[]) => any) => ipc.events.set(name, fn) }, dialog: { showMessageBox: ipc.dialog }, clipboard: { writeText: ipc.copy } }));
 vi.mock('./HyperOpenBotTunnel', () => ({ hyperTunnelFetch: ipc.fetch, hyperOpenBotSocketPath: ipc.path, closeHyperOpenBotTunnel: ipc.close, hyperOpenBotCookieHeader: async (lease: { assertCurrent(): void }) => { lease.assertCurrent(); return ''; } }));
 vi.mock('ws', async () => { const { EventEmitter } = await import('node:events'); return { default: class extends EventEmitter { static OPEN = 1; readyState = 1; terminate = vi.fn(() => { this.readyState = 3; this.emit('close', 1006, Buffer.from('')); }); close = this.terminate; constructor() { super(); ipc.sockets.push(this); } } }; });
 import { HyperOpenBotSession, hyperNativeCoreRequest, type HyperOpenBotSessionDependencies } from './HyperOpenBotSession';
 import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
-beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.fetch.mockReset(); ipc.path.mockReset().mockResolvedValue('/private/gateway.sock'); });
+beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.fetch.mockReset(); ipc.dialog.mockReset().mockResolvedValue({ response: 0 }); ipc.path.mockReset().mockResolvedValue('/private/gateway.sock'); });
 function setup(identity: string | null = 'a', ready = () => true) {
   let owner: string | null = null;
   const manager = new HyperOpenBotSession({ readIdentity: async () => identity, bindOwner: async (value: string) => { owner ??= value; if (owner !== value) throw new Error('Owner mismatch'); }, readOwner: async () => owner, partition: () => ({ cookies: {}, clearStorageData: async () => {}, clearAuthCache: async () => {} }), clearLegacyCookies: async () => {} } as unknown as HyperOpenBotSessionDependencies);
@@ -23,6 +23,41 @@ it('denies unauthenticated HTTP before touching SSH or the backend', async () =>
   const h = setup(null);
   await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'one', path: '/api/channels', method: 'GET' })).rejects.toThrow('identity is unavailable');
   expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.path).not.toHaveBeenCalled();
+});
+it.each([
+  ['/api/responsibilities/goal/triggers', 'POST'],
+  ['/api/responsibilities/triggers/trigger/secret', 'GET'],
+  ['/api/responsibilities/triggers/trigger/%73ecret?nonce=test', 'POST'],
+])('keeps trigger credentials in native main at %s', async (route, method) => {
+  const h = setup(), secret = 'whsec_' + 'x'.repeat(43) + '=';
+  ipc.dialog.mockResolvedValue({ response: 1 });
+  ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ trigger: { id: 'trigger' }, secret }), { status: method === 'POST' && !route.includes('triggers/trigger') ? 201 : 200 }));
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'trigger-secret', path: route, method });
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'trigger-secret', done: true })));
+  const text = h.sender.send.mock.calls.filter(([, value]) => value.id === 'trigger-secret' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString()).join('');
+  expect(text).not.toContain(secret); expect(JSON.parse(text)).not.toHaveProperty('secret');
+  expect(ipc.dialog).toHaveBeenCalledTimes(2); expect(ipc.copy).toHaveBeenCalledWith(secret);
+});
+it('does not mutate a trigger when native confirmation is cancelled', async () => {
+  const h = setup();
+  ipc.fetch.mockResolvedValueOnce(new Response('{"secret":null}', { status: 201 }));
+  await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'trigger-cancel', path: '/api/responsibilities/goal/triggers', method: 'POST' })).rejects.toThrow('cancelled');
+  expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.copy).not.toHaveBeenCalled();
+});
+it('stops trigger mutation if the native owner signs out during confirmation', async () => {
+  const h = setup();
+  ipc.dialog.mockImplementationOnce(async () => { await h.manager.beginNativeTransition().cleared; return { response: 1 }; });
+  await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'trigger-signout', path: '/api/responsibilities/goal/triggers', method: 'POST' })).rejects.toThrow();
+  expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.copy).not.toHaveBeenCalled();
+});
+it('does not expose trigger error text or user-provided signing values through response bytes', async () => {
+  const h = setup(); ipc.dialog.mockResolvedValue({ response: 1 });
+  ipc.fetch.mockResolvedValueOnce(new Response('{"error":"synthetic-signing-secret"}', { status: 403 }));
+  const result = await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'trigger-error', path: '/api/responsibilities/triggers/trigger/secret', method: 'POST', body: '{"secret":"synthetic-signing-secret"}' });
+  expect(result.status).toBe(403);
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'trigger-error', done: true })));
+  const text = h.sender.send.mock.calls.filter(([, value]) => value.id === 'trigger-error' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString()).join('');
+  expect(text).not.toContain('synthetic-signing-secret'); expect(ipc.copy).not.toHaveBeenCalled();
 });
 it('forwards the audit export row cap without forwarding authentication headers', async () => {
   const h = setup();
