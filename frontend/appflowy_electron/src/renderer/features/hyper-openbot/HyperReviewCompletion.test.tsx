@@ -161,6 +161,65 @@ it('restores an unsent queued follow-up and its attachment instead of deleting t
   expect(cache.acquire('channel').get().text).toContain('queued follow-up'); expect(cache.acquire('channel').get().attachments).toEqual([attachment]);
   expect(discard).not.toHaveBeenCalled();
 });
+it('restores a queued send that fails after navigation through the owner draft and retains its retry identity', async () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('channel');
+  const file = { id: 'file', name: 'queued.txt', mimeType: 'text/plain', status: 'ready' as const };
+  lease.update(current => ({ ...current, text: 'follow-up', attachments: [file], commandIds: ['skill'] }));
+  let fail!: (error: Error) => void; let sentId = ''; let pending = true;
+  const send = vi.fn((draft: any) => { sentId = lease.prepareSubmission(draft.text, 'file').id; return new Promise<void>((_, reject) => { fail = reject; }); });
+  const discard = vi.fn();
+  const props = () => ({ pending, value: lease.get().text, attachments: lease.get().attachments, commandIds: lease.get().commandIds, onSubmit: send, onDiscardAttachment: discard, onRestoreQueued: lease.restoreQueued,
+    onTextChange: (change: any) => lease.update(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })),
+    onCommandIdsChange: (commandIds: string[]) => lease.update(current => ({ ...current, commandIds })),
+    onConsumeAttachments: (ids: string[]) => lease.update(current => ({ ...current, attachments: current.attachments.filter(file => !ids.includes(file.id)) })),
+  });
+  find(render(HyperComposer, props()), element => element.type === 'form')!.props.onSubmit({ preventDefault() {} });
+  pending = false; render(HyperComposer, props()); mountEffects(); expect(send).toHaveBeenCalledOnce();
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  fail(new Error('refused after navigation')); await drain();
+  const reopened = cache.acquire('channel');
+  expect(reopened.get()).toMatchObject({ text: '/skill follow-up', commandIds: ['skill'], attachments: [file] });
+  expect(reopened.prepareSubmission('/skill follow-up', 'file').id).toBe(sentId); expect(discard).not.toHaveBeenCalled();
+});
+it('restores both the queued and live portions of an idle joined send that fails after navigation', async () => {
+  const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('channel');
+  const first = { id: 'first', name: 'first.txt', mimeType: 'text/plain', status: 'ready' as const }, second = { ...first, id: 'second', name: 'second.txt' };
+  lease.update(current => ({ ...current, text: 'queued text', attachments: [first], commandIds: ['a'] }));
+  let pending = true, fail!: (error: Error) => void;
+  const props = () => ({ pending, value: lease.get().text, attachments: lease.get().attachments, commandIds: lease.get().commandIds, onSubmit: () => new Promise<void>((_, reject) => { fail = reject; }), onRestoreQueued: lease.restoreQueued,
+    onTextChange: (change: any) => lease.update(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })),
+    onCommandIdsChange: (commandIds: string[]) => lease.update(current => ({ ...current, commandIds })),
+    onConsumeAttachments: (ids: string[]) => lease.update(current => ({ ...current, attachments: current.attachments.filter(file => !ids.includes(file.id)) })),
+  });
+  find(render(HyperComposer, props()), element => element.type === 'form')!.props.onSubmit({ preventDefault() {} });
+  lease.update(current => ({ ...current, text: 'live text', attachments: [second], commandIds: ['b'] })); pending = false;
+  find(render(HyperComposer, props()), element => element.type === 'form')!.props.onSubmit({ preventDefault() {} });
+  mountEffects(); for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  fail(new Error('refused after navigation')); await drain();
+  expect(lease.get().text).toContain('queued text'); expect(lease.get().text).toContain('live text');
+  expect(lease.get().commandIds).toEqual(['a', 'b']); expect(lease.get().attachments).toEqual([first, second]);
+});
+it('does not post a covered shared grant when its exposure request resolves after unmount', async () => {
+  let finish!: (value: unknown) => void;
+  f.request.mockImplementation((path: string) => path.startsWith('/api/approvals/shared-use/bot/') ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({ agents: bots }));
+  const props = { server, busy: false, selection: { page: 'bot', key: 'server', agentId: 'bot-a' }, navigate: vi.fn(), run: async (action: () => Promise<void>) => action() };
+  const tree = render(HyperPluginGrants, props, [bots, '', '', undefined, approval, false, [], [], true, approval, '']); mountEffects(); await drain();
+  find(tree, element => element.type === 'input' && element.props.type === 'checkbox')!.props.onChange({ target: { checked: true } });
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  finish({ apps: [{ serverId: 'server', covered: true }] }); await drain();
+  expect(f.request.mock.calls.some(call => call[0] === '/api/plugins/grants')).toBe(false);
+});
+it('stops a read-grant loop after unmount without undoing the already accepted first request', async () => {
+  let finish!: (value: unknown) => void;
+  f.request.mockImplementation((path: string) => path === '/api/plugins/grants' ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({ agents: bots }));
+  const personal = { ...server, accountMode: 'personal', tools: [...server.tools, { ...server.tools[0], ref: 'server/second', name: 'second' }] };
+  const props = { server: personal, busy: false, selection: { page: 'bot', key: 'server', agentId: 'bot-a' }, navigate: vi.fn(), run: async (action: () => Promise<void>) => { try { await action(); } catch { /* The parent action reports cancellation and reloads state. */ } } };
+  const tree = render(HyperPluginGrants, props, [bots, '', '', undefined, approval, false, [], [], true, approval, '']); mountEffects(); await drain();
+  find(tree, element => typeof element.props.onClick === 'function' && text(element.props.children).startsWith('Grant every read-only action'))!.props.onClick();
+  for (const cleanup of h.cleanups) cleanup(); h.cleanups = [];
+  finish({}); await drain();
+  expect(f.request.mock.calls.filter(call => call[0] === '/api/plugins/grants')).toHaveLength(1);
+});
 it('returns invalid askForm arguments through the form recovery response instead of suspending the decision', async () => {
   f.lookup.mockReturnValue({ name: 'askForm', kind: 'decision', Component: HyperFormCard, parameters: FormCardArgs });
   const respond = vi.fn().mockResolvedValue(undefined); const args = { title: 'Invalid', fields: [{ id: 'x', label: 'X', type: 'select' }] };

@@ -40,7 +40,7 @@ export class HyperConversationDraftCache {
       subscribe: (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; },
       update,
       /** Navigation restores unsent queued intent; only this still-current owner can retain it. */
-      restoreQueued: (messages: readonly HyperQueuedMessage[]) => {
+      restoreQueued: (messages: readonly HyperQueuedMessage[], mode?: 'failed-send') => {
         if (generation !== this.generation) return false;
         if (!messages.length) return true;
         return update(current => {
@@ -52,7 +52,7 @@ export class HyperConversationDraftCache {
           });
           for (const file of current.attachments) attachments.set(file.id, file);
           return { ...current, text: [...messages.map(message => message.text), current.text].filter(line => line.trim()).join('\n'),
-            attachments: [...attachments.values()], commandIds: [...new Set([...messages.flatMap(message => message.commandIds), ...(current.commandIds ?? [])])], retry: undefined };
+            attachments: [...attachments.values()], commandIds: [...new Set([...messages.flatMap(message => message.commandIds), ...(current.commandIds ?? [])])], retry: mode === 'failed-send' ? current.retry : undefined };
         });
       },
       prepareSubmission: (text: string, files: string) => {

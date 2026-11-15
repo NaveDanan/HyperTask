@@ -71,9 +71,9 @@ it('restores queued intent ahead of newer drafts without losing refs or reusing 
   expect(reopened.get().attachments[0]).not.toHaveProperty('previewUrl'); expect(reopened.get().attachments[0]).not.toHaveProperty('bytes');
   expect(reopened.prepareSubmission('queued', '').id).not.toBe(active.id);
 });
-it('does not restore queued content through a stale identity lease', () => {
+it.each([undefined, 'failed-send'] as const)('does not restore queued content through a stale identity lease in mode %s', mode => {
   const cache = new HyperConversationDraftCache(() => 'group'), lease = cache.acquire('one'); cache.invalidate();
-  expect(lease.restoreQueued([{ id: 'queued', text: 'private queued text', commandIds: [], attachments: [] }])).toBe(false);
+  expect(lease.restoreQueued([{ id: 'queued', text: 'private queued text', commandIds: [], attachments: [] }], mode)).toBe(false);
   expect(cache.acquire('one').get().text).toBe('');
 });
 it('selects a fresh identity after an older page completes a reopened page pending send', () => {

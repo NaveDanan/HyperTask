@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hyperOpenBotRequest } from '../transport';
-import { hyperLoadPluginBots, hyperPluginGrant, type HyperPluginBot, type HyperSharedApproval, type HyperConnectionSelection } from './HyperPluginDetailsApi';
+import { hyperLoadPluginBots, hyperPluginGrant as writeGrant, type HyperPluginBot, type HyperSharedApproval, type HyperConnectionSelection } from './HyperPluginDetailsApi';
 import type { HyperConnectionServer } from './HyperConnectionsApi';
 export function HyperSharedApprovalFields({ value, onChange, disabled = false }: { value: HyperSharedApproval; onChange(value: HyperSharedApproval): void; disabled?: boolean }) {
   const named = value.audience === 'people' || value.members.length > 0;
@@ -31,8 +31,13 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
   const chosenBot = selection?.page === 'bot' ? selection.agentId : undefined;
   const chosenTool = selection?.page === 'tool' ? selection.tool : undefined;
   const scope = JSON.stringify([server.id, server.accountMode, selection?.page, chosenBot, chosenTool]);
-  const currentScope = useRef(scope); currentScope.current = scope;
-  useEffect(() => { setPending(undefined); setBatch(false); setProgress(''); }, [scope]);
+  const currentScope = useRef<string | undefined>(scope); currentScope.current = scope;
+  useEffect(() => { currentScope.current = scope; setPending(undefined); setBatch(false); setProgress(''); return () => { if (currentScope.current === scope) currentScope.current = undefined; }; }, [scope]);
+  // Single, read-only bulk and batch writes all recheck lifetime/target immediately before HTTP.
+  const hyperPluginGrant = (...args: Parameters<typeof writeGrant>) => {
+    if (currentScope.current !== scope) throw new Error('The grant target or page changed. Start the operation again.');
+    return writeGrant(...args);
+  };
   const tools = server.tools.filter(t => !chosenTool || t.name === chosenTool);
   const alwaysOn = server.id === 'routines';
   async function change(ref: string, bot: string, granted: boolean) {

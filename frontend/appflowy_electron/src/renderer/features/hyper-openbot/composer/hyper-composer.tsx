@@ -47,7 +47,7 @@ export interface HyperComposerProps {
   onConsumeAttachments?: (ids: readonly string[]) => void;
   onDiscardAttachment?: (id: string) => void;
   /** Synchronously restore unsent queued intent to the channel's owner-held draft on navigation. */
-  onRestoreQueued?: (messages: readonly HyperQueuedMessage[]) => void;
+  onRestoreQueued?: (messages: readonly HyperQueuedMessage[], mode?: 'failed-send') => void;
   commandIds?: readonly string[];
   onCommandIdsChange?: (ids: readonly string[]) => void;
   commands?: readonly { id: string; label: string }[];
@@ -128,6 +128,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   const activeSnapshot = useRef<string | undefined>(undefined);
   const latest = useRef({ onSubmit, onDiscardAttachment, onRestoreQueued }); latest.current = { onSubmit, onDiscardAttachment, onRestoreQueued };
   const [selectedAgent, setSelectedAgent] = useState('');
+  const mounted = useRef(true);
   function transition(action: Parameters<typeof hyperReduceQueue>[1]) {
     const next = hyperReduceQueue(queue.current, action); queue.current = next.queue; setQueued(next.queue);
     if (next.droppedAttachments.length) { setError('Only eight files can be sent together. Extra queued files were released.'); onConsumeAttachments?.(next.droppedAttachments.map(file => file.id)); }
@@ -137,8 +138,17 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     if (!next.run) return;
     inFlight.current = true; setSubmitting(true); setError(undefined); activeSnapshot.current = next.run.text; activeAttachments.current = next.run.attachments.map(file => file.id);
     try { await latest.current.onSubmit(next.run); }
-    catch (cause) { queueHeldAfterFailure.current = true; transition({ type: 'restore', messages: next.restoreIfRunFails }); setError(cause instanceof Error ? cause.message : 'Message could not be sent. Try again.'); throw cause; }
-    finally { inFlight.current = false; activeSnapshot.current = undefined; activeAttachments.current = []; setSubmitting(false); }
+    catch (cause) {
+      queueHeldAfterFailure.current = true;
+      if (!mounted.current && latest.current.onRestoreQueued) {
+        // The local queue was drained before this request. Restore its whole submitted snapshot,
+        // including any live draft joined to it, through the still-current owner lease.
+        latest.current.onRestoreQueued([{ id: crypto.randomUUID(), text: next.run.text, commandIds: [...next.run.commandIds], attachments: [...next.run.attachments] }], 'failed-send');
+      } else transition({ type: 'restore', messages: next.restoreIfRunFails });
+      if (mounted.current) setError(cause instanceof Error ? cause.message : 'Message could not be sent. Try again.');
+      throw cause;
+    }
+    finally { inFlight.current = false; activeSnapshot.current = undefined; activeAttachments.current = []; if (mounted.current) setSubmitting(false); }
   }
   useEffect(() => {
     if (pending && !previousPending.current) queueHeldAfterFailure.current = false;
@@ -147,10 +157,14 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     if (inFlight.current || queueHeldAfterFailure.current || !queue.current.length) return;
     void runQueued(transition({ type: 'settle' })).catch(() => {});
   }, [pending, submitting]);
-  useEffect(() => () => {
-    if (queue.current.length && latest.current.onRestoreQueued) latest.current.onRestoreQueued(queue.current);
-    else for (const message of queue.current) for (const file of message.attachments) latest.current.onDiscardAttachment?.(file.id);
-    queue.current = [];
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (queue.current.length && latest.current.onRestoreQueued) latest.current.onRestoreQueued(queue.current);
+      else for (const message of queue.current) for (const file of message.attachments) latest.current.onDiscardAttachment?.(file.id);
+      queue.current = [];
+    };
   }, []);
   const submit = async () => {
     if (disabled || !sendable || (!allowQueue && (pending || inFlight.current))) return;
@@ -165,7 +179,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     try {
       queueHeldAfterFailure.current = false; await runQueued(next);
       onConsumeAttachments?.(snapshot.attachments.map(file => file.id)); input.current?.focus();
-    } catch { setText(current => current || originalText); if (!commandsRef.current.length) setSelectedCommands(snapshot.commandIds); /* Stable retry identity remains available. */ }
+    } catch { if (mounted.current || !latest.current.onRestoreQueued) { setText(current => current || originalText); if (!commandsRef.current.length) setSelectedCommands(snapshot.commandIds); } /* Stable retry identity remains available. */ }
   };
   const stop = async () => {
     if (!onStop || stoppingRef.current) return;
