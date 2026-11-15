@@ -16,6 +16,8 @@ interface HyperBoardCardProps {
   fields: HyperField[];
   groupFieldId?: string;
   overlay?: boolean;
+  columnOverlay?: boolean;
+  dragging?: boolean;
   disabled?: boolean;
   onOpen?: (rowId: string, element: HTMLElement) => void;
 }
@@ -39,7 +41,7 @@ function HyperBoardMeta({ cell }: { cell: HyperCell }) {
   if (cell.kind === 'relation') return cell.rowIds.length ? <span className="flex items-center gap-1"><Link className={iconClass} />{cell.rowIds.length}</span> : null;
   return <span className="max-w-32 truncate">{cell.display}</span>;
 }
-export function HyperBoardCard({ controller, state, rowId, fields, groupFieldId, overlay = false, disabled, onOpen }: HyperBoardCardProps) {
+export function HyperBoardCard({ controller, state, rowId, fields, groupFieldId, overlay = false, columnOverlay = false, dragging = false, disabled, onOpen }: HyperBoardCardProps) {
   const node = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!controller || overlay || !node.current) return;
@@ -61,8 +63,12 @@ export function HyperBoardCard({ controller, state, rowId, fields, groupFieldId,
   const badges = cells.flatMap(({ field, cell }) => cell.kind === 'singleSelect' || cell.kind === 'multiSelect' ? cell.selected.map(option => ({ key: `${field.id}:${option.id}`, option })) : []);
   const metadata = cells.filter(({ cell }) => cell.kind !== 'singleSelect' && cell.kind !== 'multiSelect' && (cell.display || cell.kind === 'media' && cell.files.length || cell.kind === 'relation' && cell.rowIds.length || cell.kind === 'checklist' && cell.items.length));
   const checklist = cells.find(({ cell }) => cell.kind === 'checklist' && cell.items.length)?.cell;
-  const className = cn('rounded-lg border border-border bg-card p-3 text-left shadow-xs transition-colors flex flex-col gap-2 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', overlay && 'w-68 rotate-2 cursor-grabbing shadow-lg ring-1 ring-foreground/10');
-  const content = <>
+  const className = cn(
+    'rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+    dragging ? 'border-dashed border-muted-foreground/40 bg-transparent shadow-none hover:bg-transparent' : 'border-border bg-card shadow-xs hover:bg-accent/50',
+    overlay && !columnOverlay && 'w-68 rotate-2 cursor-grabbing shadow-lg ring-1 ring-foreground/10',
+  );
+  const content = <div className={cn("flex flex-col gap-2", dragging && "opacity-40")}>
     <div className={cn('text-sm font-medium line-clamp-2', title && !title.display && 'text-muted-foreground')}>
       {state.rows[rowId]?.icon ? <span className="mr-1 text-sm">{state.rows[rowId].icon}</span> : null}
       {title ? title.display || 'Untitled' : <Skeleton className="h-4 w-3/4" />}
@@ -70,9 +76,9 @@ export function HyperBoardCard({ controller, state, rowId, fields, groupFieldId,
     {badges.length ? <div className="flex flex-wrap gap-1">{badges.slice(0, 3).map(({ key, option }) => <Badge key={key} size="sm" className={hyperBoardOptionColor(option.color).badge}>{option.name}</Badge>)}{badges.length > 3 ? <Badge variant="secondary" size="sm">+{badges.length - 3}</Badge> : null}</div> : null}
     {metadata.length ? <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">{metadata.map(({ field, cell }) => <HyperBoardMeta key={field.id} cell={cell} />)}</div> : null}
     {checklist?.kind === 'checklist' ? <Progress aria-label="Checklist progress" className="h-1.5 [&_[data-slot=progress-track]]:h-1.5" value={Math.min(100, Math.max(0, checklist.progress * 100))} /> : null}
-  </>;
+  </div>;
   if (overlay) return <div className={className}>{content}</div>;
-  return <KanbanItem value={rowId} disabled={disabled} role="presentation" tabIndex={-1} className="data-[dragging=true]:opacity-40 data-[dragging=true]:[&>[data-slot=kanban-item-handle]]:border-dashed">
+  return <KanbanItem value={rowId} disabled={disabled} role="presentation" tabIndex={-1} className={cn('shrink-0', dragging && 'opacity-100!')}>
     <KanbanItemHandle ref={node} role="button" tabIndex={0} aria-label={title?.display || 'Untitled card'} aria-roledescription="draggable card" className={className}
       onClick={event => onOpen?.(rowId, event.currentTarget)}
       onKeyDownCapture={event => { if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); onOpen?.(rowId, event.currentTarget); } }}>
