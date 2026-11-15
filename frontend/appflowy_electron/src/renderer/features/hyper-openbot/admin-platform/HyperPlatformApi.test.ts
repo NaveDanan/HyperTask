@@ -2,6 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { hyperOpenBotRequest } from '../transport';
 import { hyperCreateCredential, hyperLoadCredentials, hyperLoadProvider, hyperRevokeCredential } from './HyperPlatformApi';
 vi.mock('../transport', () => ({ hyperOpenBotRequest: vi.fn() }));
+vi.mock('@copilotkit/react-core/v2', () => ({ OpenGenerativeUIActivityRenderer: () => null }));
 beforeEach(() => vi.clearAllMocks());
 it('uses authoritative credential and provider reads', async () => {
   await hyperLoadCredentials(); await hyperLoadProvider();
@@ -35,6 +36,12 @@ it('validates the daily limit before transport', async () => {
 
 import { hyperSaveModelAllowlist } from './HyperPlatformApi';
 import { hyperParseObject, hyperSaveSandboxed } from './HyperPlaygroundApi';
+import HyperAdminPlayground from './HyperPlaygroundSection';
+import HyperGalleryPlayground from '../screens-gen/HyperPlaygroundSection';
+
+it('uses one Playground editor for both native destination aliases', () => {
+  expect(HyperAdminPlayground).toBe(HyperGalleryPlayground);
+});
 it('validates provider/model allowlist entries', async () => {
   expect(() => hyperSaveModelAllowlist({ enabled: true, models: ['invalid'] })).toThrow();
   await hyperSaveModelAllowlist({ enabled: true, models: ['openai/test'] });

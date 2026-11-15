@@ -105,7 +105,7 @@ function Sources({ basis, sources, asOf: when }: Provenance) {
   return (
     <p className="mt-3 text-xs text-muted-foreground">
       {unchecked ? (
-        <span className="text-amber-700 dark:text-amber-400">
+        <span className="text-warning">
           From the Bot's own knowledge. Not checked against a source.
         </span>
       ) : null}
@@ -213,10 +213,9 @@ function Empty() {
   if (arriving) {
     return (
       <p
-        className="flex items-center justify-center text-sm text-muted-foreground"
+        className="flex h-45 items-center justify-center text-sm text-muted-foreground"
         // `status`, as a running tool line's is: the words say what the shimmer shows.
         role="status"
-        style={{ height: HEIGHT }}
       >
         <span className="tool-line-running">Drawing the chart…</span>
       </p>
@@ -355,9 +354,8 @@ export function HyperBarChartCard({
       ) : (
         // Columns stretch to full row height so percentage bar heights use the chart area.
         <div
-          className="flex items-stretch gap-2"
+          className="flex h-45 items-stretch gap-2"
           ref={setRow}
-          style={{ height: HEIGHT }}
         >
           {HyperbyPosition(points).map(({ item: entry, key }, index) => (
             <HyperFigureLink

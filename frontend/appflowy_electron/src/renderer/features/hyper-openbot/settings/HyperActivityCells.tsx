@@ -999,7 +999,7 @@ export function HyperStartedByCell({
     <span
       className={
         unattended
-          ? "font-medium text-amber-600 dark:text-amber-500"
+          ? "font-medium text-warning"
           : "text-muted-foreground"
       }
     >
@@ -1035,7 +1035,7 @@ export function HyperDecisionCell({
           outcome === "refused"
             ? "font-medium text-destructive"
             : outcome === "did-not-happen"
-              ? "font-medium text-amber-600 dark:text-amber-500"
+              ? "font-medium text-warning"
               : "text-muted-foreground"
         }
       >
