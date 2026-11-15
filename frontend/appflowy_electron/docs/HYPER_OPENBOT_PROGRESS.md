@@ -273,6 +273,12 @@ Eight regressions were red before correction; eleven compatibility guards also p
 
 At this checkpoint the source commit is local and one commit ahead of the remote `192a040`; publication and fresh exact-head reviews follow the evidence commit. The worktree was clean before evidence edits. The retained disposable app still runs `cd4c7aa`. A fresh SSH check again reported the required human Tailscale authentication. The owner requested continued work using Codex GPT-6.1 Sol high effort and Fast mode, exposed by the provider as the priority tier. OpenCode Sol/Terra high are authorized fallbacks only if the Codex workers fail. Original Intelligence, owner binding, protocol/data paths and review billing/ignores remain unchanged. Complete contract review, native/vendor/credential verification and owner acceptance still precede merge.
 
+### Native smoke sequence and default-effort correction
+
+The first batch-06 result fully inspected all eleven assigned native-infrastructure files at `e9b819b`, finding two P2 defects in the runner. `ac64406e5fc202c1441bdd4f8babec721deda79e` fixes both after reproducing them through actual production functions. Bots > Chat only opens a composition; observation now starts before Send and resolves its channel after submission. The first turn uses the composition's selected model/effort, and alternate/target switches still prove server persistence before the second. Model-default effort uses null on the wire, while after-phase checks keep the exact recorded value. Early deliveries, two distinct turns and no-resend restart checks remain required.
+
+Two regressions were red before correction; eight new guards and all 23 runner safeguards now pass, with syntax/diff checks. Frontend source/build are unchanged from the 1299-test validation at `6150f94`; no native or vendor run occurred. The ledger is valid and contributes nine unchanged inspected files after the correction, carrying coverage to 101 of 409 with 308 remaining. The modified runner/test still need independent recheck. Other review-06 assignments remain due. Codex Code completed without major issues for `e9b819b` only; Security was running, both displayed automated checks were skipped, and the two historical advisory threads were verified resolved. Authentication, native and owner acceptance remain separate merge gates.
+
 ## Queue
 
 | Issue | Deliverable | State |
