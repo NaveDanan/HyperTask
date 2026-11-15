@@ -15,7 +15,7 @@ function hyperField(id: string, type: FieldType, primary = false): HyperField {
 }
 function hyperState(): HyperDatabaseState {
   const group = (id: string, rowIds: string[], isDefault = false, isVisible = true) => ({ ...create(GroupPBSchema, { groupId: id, fieldId: 'status', isDefault, isVisible, rows: rowIds.map(id => create(RowMetaPBSchema, { id })) }), name: id });
-  return { status: 'ready', error: null, viewId: 'board', databaseId: 'db', view: create(ViewPBSchema), views: [], settings: null, revision: 0,
+  return { status: 'ready', error: null, viewId: 'board', databaseId: 'db', view: create(ViewPBSchema), views: [], settings: null, revision: 0, dataRevision: 0,
     fields: [hyperField('title', FieldType.RichText, true), hyperField('status', FieldType.SingleSelect), hyperField('labels', FieldType.MultiSelect), hyperField('date', FieldType.DateTime), hyperField('date2', FieldType.DateTime), hyperField('checklist', FieldType.Checklist), hyperField('estimate', FieldType.Number)],
     rowIds: ['a', 'b', 'c'], rows: {}, cells: {
       a: { title: { kind: 'text', text: 'Ship release', display: 'Ship release' } },
