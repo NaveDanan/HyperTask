@@ -227,7 +227,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
       }
   }
   useEffect(() => {
-    if (!registerReceiver || !isReady || !serviceReady || restoring || reconnectRequired || !channel.active) return;
+    if (!registerReceiver || !isReady || !serviceReady || restoring || reconnectRequired || !channel.active || continuation.current) return;
     registerReceiver(async (initial, signal, uploaded) => {
        const abort = () => { void stopRun(); };
       signal.addEventListener('abort', abort, { once: true });
@@ -235,7 +235,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
       finally { signal.removeEventListener('abort', abort); }
     });
     return () => registerReceiver(undefined);
-  }, [registerReceiver, isReady, serviceReady, restoring, reconnectRequired, channel.active]);
+  }, [registerReceiver, isReady, serviceReady, restoring, reconnectRequired, channel.active, carryingOn]);
   // The existing workspace support bubble occupies the bottom-right corner.
   // Keep the composer controls above it, including in the minimum-size window.
   return <div className="flex h-full min-h-0 flex-col pb-12">

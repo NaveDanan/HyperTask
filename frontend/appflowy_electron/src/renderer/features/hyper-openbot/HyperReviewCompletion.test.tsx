@@ -1484,3 +1484,17 @@ it('a busy-false event cannot erase continuing server work or an authoritative b
   const chat = find(tree, element => typeof element.type === 'function' && element.type.name === 'HyperChannelChat')!;
   expect(chat.props.channel.busy).toBe(true); expect(chat.props.rosterSaysWorking('reviewed-channel')).toBe(true);
 });
+it('initial composition waits to register its receiver until the approval read is current', async () => {
+  const chat = await hyperReviewedChatFixture(), registerReceiver = vi.fn();
+  h.states = [undefined, false]; h.refs = [];
+  let tree = render(chat.type as any, { ...chat.props, registerReceiver });
+  const actions = find(tree, element => element.type === HyperConversationActions)!;
+  actions.props.onCarryOnChange(true);
+  tree = render(chat.type as any, { ...chat.props, registerReceiver });
+  h.effects[h.deps.findIndex(deps => deps?.[0] === registerReceiver)]();
+  expect(registerReceiver).not.toHaveBeenCalled();
+  actions.props.onCarryOnChange(false);
+  render(chat.type as any, { ...chat.props, registerReceiver });
+  h.effects[h.deps.findIndex(deps => deps?.[0] === registerReceiver)]();
+  expect(registerReceiver).toHaveBeenCalledOnce(); expect(registerReceiver.mock.calls[0][0]).toBeTypeOf('function');
+});
