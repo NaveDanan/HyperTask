@@ -207,6 +207,12 @@ The bounded rechecks at `7e590c3` completed all eight assigned files. Grant life
 
 Source validation: 1106 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The owned disposable app runs `ffdb5fd` with stores retained, not a new native acceptance pass. Full-diff coverage, exact-head reviews, account-holder Tailscale authentication and owner acceptance remain open.
 
+### Connection preview ownership and consent reconciliation
+
+The single-file rechecks at `0cb1cc4` confirmed mounted recovery and deletion routing. Connections found two issues. `877a354` binds mode previews, setters and destructive actions to the rendered app/navigation epoch; incoming selection changes reset stale confirmations, and late previews cannot switch another app. The broker's configured capability is carried from the server. Arrival/remount and the first focus after browser consent ask the original confirmation endpoint, then reload recorded state. Shared confirmation remains admin-only in the UI and server-resolved in the API; key rechecks are not run automatically.
+
+Six regressions failed before these fixes and pass afterward, with a broker-capability transport case. Source validation is 1113 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The disposable app runs `877a354` with stores retained. A fresh SSH check still requires human Tailscale authentication. No live consent, native smoke or owner acceptance is claimed; full coverage and exact-head review remain required.
+
 ## Queue
 
 | Issue | Deliverable | State |
