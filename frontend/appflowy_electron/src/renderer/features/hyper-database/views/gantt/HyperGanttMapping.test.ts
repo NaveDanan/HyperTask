@@ -14,7 +14,7 @@ const day = (offset = 0) => addDays(startOfDay(new Date(2026, 10, 15)), offset);
 const dateCell = (start: Date | null, end: Date | null = start, includeTime = false): HyperCell => ({ kind: 'date', timestamp: start ? hyperGanttSeconds(start) : null, endTimestamp: end ? hyperGanttSeconds(end) : null, isRange: true, includeTime, reminderId: 'reminder', display: '' });
 const view = create(ViewPBSchema, { id: 'gantt', oneOfExtra: { case: 'extra', value: '{"hyper_layout":"gantt","other":"keep"}' } });
 function fixture(): HyperDatabaseState {
-  return { status: 'ready', error: null, databaseId: 'db', viewId: view.id, view, views: [view], settings: null, groups: [], revision: 1, rows: {}, rowIds: ['b', 'a', 'c'], fields: [field('title', 'Name', FieldType.RichText, true), field('schedule', 'Schedule', FieldType.DateTime), field('status', 'Status', FieldType.SingleSelect), field('progress', 'Progress', FieldType.Number), field('assignee', 'Assignee', FieldType.MultiSelect)], cells: {
+  return { status: 'ready', error: null, databaseId: 'db', viewId: view.id, view, views: [view], settings: null, groups: [], revision: 1, dataRevision: 0, rows: {}, rowIds: ['b', 'a', 'c'], fields: [field('title', 'Name', FieldType.RichText, true), field('schedule', 'Schedule', FieldType.DateTime), field('status', 'Status', FieldType.SingleSelect), field('progress', 'Progress', FieldType.Number), field('assignee', 'Assignee', FieldType.MultiSelect)], cells: {
     a: { title: { kind: 'text', text: 'Build', display: 'Build' }, schedule: dateCell(day(), day(2)), progress: { kind: 'number', value: 0.5, display: '0.5' } },
     b: { title: { kind: 'text', text: '', display: '' }, schedule: dateCell(day(), day()) },
     c: { schedule: dateCell(null) },
@@ -141,5 +141,26 @@ describe('HyperGantt date write boundary', () => {
   it('reports an unsuccessful rollback rather than claiming the pair is restored', async () => {
     const updateCell = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValue(new Error('offline'));
     await expect(hyperGanttCommitDates({ updateCell }, 'a', { ...config(), end_field_id: 'due' }, {}, day(), day(3))).rejects.toThrow('check both date fields');
+  });
+});
+
+
+describe('Hyper Gantt timed move regressions', () => {
+  it('keeps same-day timed tasks as ranges in mapping and round-trips', () => {
+    const state = fixture(); const start = new Date(2026, 10, 15, 9); const end = new Date(2026, 10, 15, 17);
+    state.cells.a.schedule = dateCell(start, end, true);
+    const event = hyperGanttMap(state, config(state)).tasks.get('a')!.event!;
+    expect(event.end).toEqual(end);
+    const writes = hyperGanttDateWrites(config(state), state.cells.a, addDays(event.start, 1), addDays(event.end, 1));
+    expect(hyperGanttWrittenTiming(writes)).toMatchObject({ start: addDays(start, 1), end: addDays(end, 1), allDay: false });
+  });
+  it.each([false, true])('moves day-snapped timed ranges by their original calendar-day span (separate=%s)', separate => {
+    const state = fixture(); const start = new Date(2026, 10, 15, 17); const end = new Date(2026, 10, 18, 9);
+    state.cells.a.schedule = dateCell(start, end, true);
+    state.cells.a.due = dateCell(end, null, true);
+    const cfg = { ...config(state), end_field_id: separate ? 'due' : null };
+    const proposedStart = day(1); const proposedEnd = new Date(proposedStart.getTime() + end.getTime() - start.getTime());
+    const writes = hyperGanttDateWrites(cfg, state.cells.a, proposedStart, proposedEnd, true);
+    expect(hyperGanttWrittenTiming(writes)).toMatchObject({ start: addDays(start, 1), end: addDays(end, 1) });
   });
 });

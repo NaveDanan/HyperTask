@@ -87,7 +87,7 @@ export function HyperGanttView(props: HyperDatabaseViewProps) {
     }, { root: rootRef.current.querySelector('[data-slot=gantt-tree-pane]'), rootMargin: '180px' });
     rootRef.current.querySelectorAll('[data-slot=gantt-row-group]').forEach(row => observer.observe(row));
     return () => observer.disconnect();
-  }, [controller, loading, state.rowIds, data.fieldKey]);
+  }, [controller, loading, state.rowIds, data.fieldKey, state.fields]);
   const weekStartsOn = hyperGanttWeekStartsOn(navigator.language);
   return <Gantt
     ref={rootRef}
