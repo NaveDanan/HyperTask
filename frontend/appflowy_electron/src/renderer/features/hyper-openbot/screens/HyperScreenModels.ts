@@ -3,6 +3,8 @@ export interface HyperConversation {
   id: string;
   name: string;
   summary?: string | null;
+  /** Original conversation title, preserved when list emphasis changes the display lines. */
+  title?: string | null;
   opening?: string | null;
   lastMessage?: string | null;
   pinned?: boolean;
@@ -45,6 +47,7 @@ export function HyperSortConnections(rows: readonly HyperConnection[]): HyperCon
 export function HyperConversationTitle(row: Pick<HyperConversation, 'summary' | 'opening' | 'lastMessage'>): string {
   return (row.summary || row.opening?.trim() || row.lastMessage?.trim() || '').trim();
 }
+export const HyperConversationRenameTitle = (row: HyperConversation) => row.title ?? HyperConversationTitle(row);
 
 export function HyperGrantSummary(held: number, total: number): string {
   if (held === 0) return 'No Bots';

@@ -18,3 +18,7 @@ The design document has no Bot-specific layout. This uses its token-based cards,
 header and two-column list/detail pattern. Native select and checkbox controls provide accessible
 choices without introducing dependencies. Remote endpoint credentials and account authorization
 are intentionally absent from this native creation flow.
+
+`HyperBotsPanel.tsx` now mounts `../bot-tabs/HyperBotDetailTabs` within its selected Bot editor.
+It sorts assigned/pinned Bots before own/shared Bots and distinguishes a search with no matches.
+See `../bot-tabs/REUSE.md` for tab source mapping, exports and explicit remaining parity gaps.

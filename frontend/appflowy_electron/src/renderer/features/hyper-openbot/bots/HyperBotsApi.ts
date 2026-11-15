@@ -4,7 +4,9 @@ export interface HyperBotProfile {
   id: string; name: string; title: string; roleDescription: string;
   visibility: 'private' | 'public'; canManage: boolean; mine: boolean;
   systemOwned: boolean; pinned: boolean; hidden: boolean; assignedToMe?: boolean;
-  instructions?: string; endpoint: string | null;
+  hasCallbackToken?: boolean; keyFromOpenBot?: boolean; isolated?: boolean; isolationActive?: boolean; isolationOffReason?: string | null; builtIn?: boolean; instructions?: string; endpoint: string | null;
+  /** Server-resolved capability; only true permits OpenBot model/effort choices. */
+  runsOnOpenBotModel?: boolean;
 }
 export interface HyperBotInput {
   name: string; title: string; roleDescription: string; visibility: 'private' | 'public'; instructions?: string;
@@ -27,7 +29,7 @@ export function HyperBotValues(input: HyperBotInput): HyperBotInput {
 }
 export async function HyperSaveBot(input: HyperBotInput, bot?: HyperBotProfile) {
   if (bot && !bot.canManage) throw new Error('You cannot edit this Bot.');
-  return (await hyperOpenBotRequest<{ agent: HyperBotProfile }>(bot ? HyperAgentPath(bot.id) : '/api/agents', bot ? 'PATCH' : 'POST', HyperBotValues(input))).agent;
+  return (await hyperOpenBotRequest<{ agent: HyperBotProfile }>(bot ? HyperAgentPath(bot.id) : '/api/agents', bot ? 'PATCH' : 'POST', { ...HyperBotValues(input), endpoint: bot && !bot.builtIn ? bot.endpoint ?? '' : '' })).agent;
 }
 export async function HyperListBots(hidden: boolean) {
   return (await hyperOpenBotRequest<{ agents: HyperBotProfile[] }>(`/api/agents${hidden ? '?hidden=true' : ''}`)).agents;

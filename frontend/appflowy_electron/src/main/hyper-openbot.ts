@@ -1,3 +1,6 @@
+import { registerHyperNativeCredentials } from './HyperNativeCredentials';
+import { HyperVoiceBroker } from './HyperVoiceBroker';
+import { hyperTriggerSecretRequest, hyperConfirmTriggerSecret, hyperProtectTriggerResponse } from './HyperNativeTriggerSecrets';
 import { closeHyperOpenBotTunnel, hyperOpenBotSocketPath, hyperOpenBotCookieHeader, hyperTunnelFetch } from './HyperOpenBotTunnel';
 import type { HyperOpenBotSession } from './HyperOpenBotSession';
 import { hyperOpenBotPathAllowed } from '@shared/hyper-openbot-policy';
@@ -10,6 +13,8 @@ const ORIGIN = 'http://127.0.0.1:3010';
 const MAX_BYTES = 24 * 1024 * 1024;
 const DEADLINE_MS = 10 * 60 * 1000;
 const safeId = (id: unknown): id is string => typeof id === 'string' && /^[\w-]{1,100}$/.test(id);
+// Exact computer socket paths. Aligned with the renderer policy, without importing renderer code.
+const hyperComputerSocketPathAllowed = (path: string) => /^\/api\/computers\/[A-Za-z0-9_-]{1,200}\/(stream|terminal)$/.test(path);
 
 /** Generic renderer file access must not read or replace main-owned identity/cookie state. */
 export function registerHyperOpenBotFileIpc(userData: string) {
@@ -53,8 +58,11 @@ export function registerHyperOpenBotFileIpc(userData: string) {
 }
 
 export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sessions: HyperOpenBotSession, ready: () => boolean = () => true) {
+  registerHyperNativeCredentials(window, sessions, ready);
+  const voiceBroker = new HyperVoiceBroker();
   const running = new Map<string, AbortController>();
   const sockets = new Map<string, WebSocket>();
+  const voiceSockets = new Set<string>();
   const openingSockets = new Map<string, { cancelled: boolean }>();
   const owners = new WeakSet<object>();
   const disconnect = () => { for (const controller of running.values()) controller.abort(); for (const socket of sockets.values()) socket.terminate(); for (const opening of openingSockets.values()) opening.cancelled = true; closeHyperOpenBotTunnel(); };
@@ -67,7 +75,9 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     own(event);
     if (!request || !safeId(request.id) || running.has(request.id)) throw new Error('Invalid request id');
     if (!hyperOpenBotPathAllowed(request.path)) throw new Error('OpenBot route refused');
+    const requestPathname = decodeURIComponent(new URL(request.path, ORIGIN).pathname);
     if (typeof request.method !== 'string' || !['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) throw new Error('OpenBot method refused');
+    if (request.method === 'POST' && /^\/api\/agents\/[^/]+\/callback-token\/?$/.test(requestPathname)) throw new Error('Callback key creation requires a protected native handoff');
     if (request.body !== undefined && typeof request.body !== 'string' && !(request.body instanceof Uint8Array)) throw new Error('Invalid OpenBot body');
     if (request.body && (typeof request.body === 'string' ? Buffer.byteLength(request.body) : request.body.byteLength) > MAX_BYTES) throw new Error('OpenBot request too large');
     if (request.contentType !== undefined && (typeof request.contentType !== 'string' || request.contentType.length > 200)) throw new Error('Invalid content type');
@@ -79,11 +89,27 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     try {
       const lease = await sessions.acquire();
       controller.signal.throwIfAborted();
-      const response = await hyperTunnelFetch(request.path, {
+      const nativeTrigger = hyperTriggerSecretRequest(requestPathname, request.method);
+      const owner = window();
+      const checkTriggerOwner = async () => {
+        controller.signal.throwIfAborted(); lease.assertCurrent();
+        if (!ready() || !trusted(event) || event.sender.isDestroyed()) throw new Error('Trigger action stopped');
+        await sessions.acquire(); controller.signal.throwIfAborted(); lease.assertCurrent();
+      };
+      if (nativeTrigger) {
+        if (!owner) throw new Error('Trigger window unavailable');
+        await hyperConfirmTriggerSecret(owner, requestPathname, controller.signal, checkTriggerOwner);
+      }
+      let response = await hyperTunnelFetch(request.path, {
         method: request.method, body: typeof request.body === 'string' ? request.body : request.body ? Buffer.from(request.body) : undefined,
         signal: controller.signal, lease,
-        headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN },
+        headers: { 'content-type': /^multipart\/form-data; boundary=[\w-]+$/.test(request.contentType ?? '') ? request.contentType! : 'application/json', origin: ORIGIN, ...(requestPathname === '/api/audio/transcriptions' ? { 'x-openbot-dictation': '1' } : {}), ...((requestPathname === '/api/voice/calls' || requestPathname === '/api/voice/sessions') ? { 'x-openbot-voice': '1' } : {}) },
       });
+      if (nativeTrigger && owner) response = await hyperProtectTriggerResponse(response, owner, controller.signal, checkTriggerOwner);
+      if (requestPathname === '/api/voice/calls' && response.ok) {
+        const value = await response.json();
+        response = new Response(JSON.stringify(voiceBroker.sanitize(value, event.sender.id, lease.signal)), { status: response.status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+      }
       setTimeout(() => void (async () => {
         try {
           const reader = response.body?.getReader();
@@ -93,14 +119,14 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
         finally { cleanup(); }
       })(), 0);
       // Only content metadata crosses IPC. Authentication and deployment headers stay in main.
-      return { status: response.status, headers: Object.fromEntries([...response.headers].filter(([key]) => ['content-type', 'content-length', 'content-disposition', 'cache-control'].includes(key))) };
+      return { status: response.status, headers: Object.fromEntries([...response.headers].filter(([key, value]) => ['content-type', 'content-length', 'content-disposition', 'cache-control'].includes(key) || (key === 'x-audit-export-truncated' && /^\d+$/.test(value)))) };
     } catch (error) { cleanup(); throw error; }
   });
   ipcMain.on('hyper-openbot:cancel', (event, id: unknown) => { if (trusted(event) && safeId(id)) running.get(id)?.abort(); });
   ipcMain.handle('hyper-openbot:socket-open', async (event, id: unknown, path: unknown, protocols: unknown) => {
     if (!trusted(event) || !safeId(id) || sockets.has(id) || openingSockets.has(id) || sockets.size + openingSockets.size >= 16) throw new Error('Socket caller refused');
     if (!ready()) throw new Error('AI services are not ready. Check AI service status.');
-    if (typeof path !== 'string' || path.length > 16384 || !/^\/api\/intelligence\/client\/websocket\?[^#\\]*$/.test(path)) throw new Error('Socket route refused');
+    if (typeof path !== 'string' || path.length > 16384 || (!/^\/api\/intelligence\/client\/websocket\?[^#\\]*$/.test(path) && path !== '/api/channels/events' && !/^\/api\/voice\/socket\/[a-f0-9-]{36}$/.test(path) && !hyperComputerSocketPathAllowed(path))) throw new Error('Socket route refused');
     if (!Array.isArray(protocols) || protocols.length > 8 || protocols.some(value => typeof value !== 'string' || value.length > 200)) throw new Error('Socket protocols refused');
     own(event);
     const opening = { cancelled: false }; openingSockets.set(id, opening);
@@ -111,8 +137,10 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     const cookie = await hyperOpenBotCookieHeader(lease);
     lease.assertCurrent();
     if (event.sender.isDestroyed() || opening.cancelled) throw new Error('Renderer closed or socket cancelled');
-    const socket = new WebSocket(`ws+unix://${socketPath}:${path}`, protocols, { origin: ORIGIN, headers: { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
+     const voice = path.startsWith('/api/voice/socket/') ? voiceBroker.take(path, event.sender.id) : undefined;
+     const socket = new WebSocket(voice ? voice.destination : `ws+unix://${socketPath}:${path}`, voice ? [`xai-client-secret.${voice.secret}`] : protocols, { origin: ORIGIN, headers: voice ? {} : { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
     sockets.set(id, socket);
+    if (voice) voiceSockets.add(id);
     const abort = () => socket.terminate();
     lease.signal.addEventListener('abort', abort, { once: true });
     lease.assertCurrent();
@@ -121,13 +149,20 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     socket.on('open', () => send({ type: 'open' }));
     socket.on('message', (data, binary) => send({ type: 'message', data: binary ? new Uint8Array(data as Buffer) : data.toString() }));
     socket.on('error', () => send({ type: 'error' }));
-    socket.on('close', (code, reason) => { clearTimeout(deadline); lease.signal.removeEventListener('abort', abort); sockets.delete(id); send({ type: 'close', code, reason: reason.toString() }); });
+    socket.on('close', (code, reason) => { clearTimeout(deadline); lease.signal.removeEventListener('abort', abort); sockets.delete(id); voiceSockets.delete(id); send({ type: 'close', code, reason: reason.toString() }); });
     } finally { openingSockets.delete(id); }
   });
   ipcMain.on('hyper-openbot:socket-send', (event, id: unknown, data: unknown) => {
     if (!trusted(event) || !safeId(id) || (typeof data !== 'string' && !(data instanceof Uint8Array))) return;
     if ((typeof data === 'string' ? Buffer.byteLength(data) : data.byteLength) > MAX_BYTES) return;
-    const socket = sockets.get(id); if (socket?.readyState === WebSocket.OPEN) socket.send(data);
+    const socket = sockets.get(id);
+    if (socket?.readyState !== WebSocket.OPEN) return;
+    const bytes = typeof data === 'string' ? Buffer.byteLength(data) : data.byteLength;
+    if (voiceSockets.has(id) && socket.bufferedAmount + bytes > 1024 * 1024) {
+      if (!event.sender.isDestroyed()) event.sender.send('hyper-openbot:socket', { id, type: 'error', reason: 'Voice connection is too slow. Restart the call when the connection recovers.' });
+      socket.terminate(); return;
+    }
+    socket.send(data);
   });
   ipcMain.on('hyper-openbot:socket-close', (event, id: unknown, code: unknown, reason: unknown) => {
     if (!trusted(event) || !safeId(id)) return;

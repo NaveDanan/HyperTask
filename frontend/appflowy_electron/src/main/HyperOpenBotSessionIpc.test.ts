@@ -4,13 +4,13 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { IpcChannel as C } from '@shared/api';
-const ipc = vi.hoisted(() => ({ handlers: new Map<string, (...args: any[]) => any>(), events: new Map<string, (...args: any[]) => any>(), fetch: vi.fn(), path: vi.fn(async () => '/private/gateway.sock'), close: vi.fn(), sockets: [] as any[] }));
-vi.mock('electron', () => ({ ipcMain: { handle: (name: string, fn: (...args: any[]) => any) => ipc.handlers.set(name, fn), on: (name: string, fn: (...args: any[]) => any) => ipc.events.set(name, fn) } }));
+const ipc = vi.hoisted(() => ({ handlers: new Map<string, (...args: any[]) => any>(), events: new Map<string, (...args: any[]) => any>(), fetch: vi.fn(), path: vi.fn(async () => '/private/gateway.sock'), close: vi.fn(), sockets: [] as any[], dialog: vi.fn(), copy: vi.fn() }));
+vi.mock('electron', () => ({ ipcMain: { handle: (name: string, fn: (...args: any[]) => any) => ipc.handlers.set(name, fn), on: (name: string, fn: (...args: any[]) => any) => ipc.events.set(name, fn) }, dialog: { showMessageBox: ipc.dialog }, clipboard: { writeText: ipc.copy } }));
 vi.mock('./HyperOpenBotTunnel', () => ({ hyperTunnelFetch: ipc.fetch, hyperOpenBotSocketPath: ipc.path, closeHyperOpenBotTunnel: ipc.close, hyperOpenBotCookieHeader: async (lease: { assertCurrent(): void }) => { lease.assertCurrent(); return ''; } }));
-vi.mock('ws', async () => { const { EventEmitter } = await import('node:events'); return { default: class extends EventEmitter { static OPEN = 1; readyState = 1; terminate = vi.fn(() => { this.readyState = 3; this.emit('close', 1006, Buffer.from('')); }); close = this.terminate; constructor() { super(); ipc.sockets.push(this); } } }; });
+vi.mock('ws', async () => { const { EventEmitter } = await import('node:events'); return { default: class extends EventEmitter { static OPEN = 1; readyState = 1; bufferedAmount = 0; send = vi.fn((data: string | Uint8Array) => { this.bufferedAmount += typeof data === 'string' ? Buffer.byteLength(data) : data.byteLength; }); terminate = vi.fn(() => { this.readyState = 3; this.emit('close', 1006, Buffer.from('')); }); close = this.terminate; constructor() { super(); ipc.sockets.push(this); } } }; });
 import { HyperOpenBotSession, hyperNativeCoreRequest, type HyperOpenBotSessionDependencies } from './HyperOpenBotSession';
 import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
-beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.path.mockResolvedValue('/private/gateway.sock'); });
+beforeEach(() => { ipc.handlers.clear(); ipc.events.clear(); ipc.sockets.length = 0; vi.clearAllMocks(); ipc.fetch.mockReset(); ipc.dialog.mockReset().mockResolvedValue({ response: 0 }); ipc.path.mockReset().mockResolvedValue('/private/gateway.sock'); });
 function setup(identity: string | null = 'a', ready = () => true) {
   let owner: string | null = null;
   const manager = new HyperOpenBotSession({ readIdentity: async () => identity, bindOwner: async (value: string) => { owner ??= value; if (owner !== value) throw new Error('Owner mismatch'); }, readOwner: async () => owner, partition: () => ({ cookies: {}, clearStorageData: async () => {}, clearAuthCache: async () => {} }), clearLegacyCookies: async () => {} } as unknown as HyperOpenBotSessionDependencies);
@@ -23,6 +23,87 @@ it('denies unauthenticated HTTP before touching SSH or the backend', async () =>
   const h = setup(null);
   await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'one', path: '/api/channels', method: 'GET' })).rejects.toThrow('identity is unavailable');
   expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.path).not.toHaveBeenCalled();
+});
+it.each([
+  ['/api/responsibilities/goal/triggers', 'POST'],
+  ['/api/responsibilities/triggers/trigger/secret', 'GET'],
+  ['/api/responsibilities/triggers/trigger/%73ecret?nonce=test', 'POST'],
+])('keeps trigger credentials in native main at %s', async (route, method) => {
+  const h = setup(), secret = 'whsec_' + 'x'.repeat(43) + '=';
+  ipc.dialog.mockResolvedValue({ response: 1 });
+  ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ trigger: { id: 'trigger' }, secret }), { status: method === 'POST' && !route.includes('triggers/trigger') ? 201 : 200 }));
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'trigger-secret', path: route, method });
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'trigger-secret', done: true })));
+  const text = h.sender.send.mock.calls.filter(([, value]) => value.id === 'trigger-secret' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString()).join('');
+  expect(text).not.toContain(secret); expect(JSON.parse(text)).not.toHaveProperty('secret');
+  expect(ipc.dialog).toHaveBeenCalledTimes(2); expect(ipc.copy).toHaveBeenCalledWith(secret);
+});
+it('does not mutate a trigger when native confirmation is cancelled', async () => {
+  const h = setup();
+  ipc.fetch.mockResolvedValueOnce(new Response('{"secret":null}', { status: 201 }));
+  await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'trigger-cancel', path: '/api/responsibilities/goal/triggers', method: 'POST' })).rejects.toThrow('cancelled');
+  expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.copy).not.toHaveBeenCalled();
+});
+it('stops trigger mutation if the native owner signs out during confirmation', async () => {
+  const h = setup();
+  ipc.dialog.mockImplementationOnce(async () => { await h.manager.beginNativeTransition().cleared; return { response: 1 }; });
+  await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'trigger-signout', path: '/api/responsibilities/goal/triggers', method: 'POST' })).rejects.toThrow();
+  expect(ipc.fetch).not.toHaveBeenCalled(); expect(ipc.copy).not.toHaveBeenCalled();
+});
+it('does not expose trigger error text or user-provided signing values through response bytes', async () => {
+  const h = setup(); ipc.dialog.mockResolvedValue({ response: 1 });
+  ipc.fetch.mockResolvedValueOnce(new Response('{"error":"synthetic-signing-secret"}', { status: 403 }));
+  const result = await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'trigger-error', path: '/api/responsibilities/triggers/trigger/secret', method: 'POST', body: '{"secret":"synthetic-signing-secret"}' });
+  expect(result.status).toBe(403);
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'trigger-error', done: true })));
+  const text = h.sender.send.mock.calls.filter(([, value]) => value.id === 'trigger-error' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString()).join('');
+  expect(text).not.toContain('synthetic-signing-secret'); expect(ipc.copy).not.toHaveBeenCalled();
+});
+it('forwards the audit export row cap without forwarding authentication headers', async () => {
+  const h = setup();
+  ipc.fetch.mockResolvedValueOnce(new Response('row\n', { headers: { 'x-audit-export-truncated': '5000', 'set-cookie': 'private', authorization: 'private' } }));
+  const response = await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'audit-export', path: '/api/admin/audit-events?format=csv', method: 'GET' });
+  expect(response.headers['x-audit-export-truncated']).toBe('5000');
+  expect(response.headers).not.toHaveProperty('set-cookie');
+  expect(response.headers).not.toHaveProperty('authorization');
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ done: true })));
+});
+it.each(['/api/voice/calls?nonce=test', '/api/voice/%63alls?nonce=test'])('applies voice guards to canonical route %s', async route => {
+  const h = setup();
+  const secret = 'synthetic-voice-secret';
+  ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ transport: 'websocket', url: 'wss://api.x.ai/v1/realtime', clientSecret: secret, session: { id: 'session' } })));
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'voice-query', path: route, method: 'POST', body: '{}' });
+  expect(ipc.fetch.mock.calls[0][1].headers['x-openbot-voice']).toBe('1');
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'voice-query', done: true })));
+  const chunks = h.sender.send.mock.calls.filter(([, value]) => value.id === 'voice-query' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString());
+  const payload = chunks.join('');
+  expect(payload).not.toContain(secret);
+  expect(JSON.parse(payload).url).toMatch(/^wss:\/\/hyper-openbot\.invalid\/api\/voice\/socket\/[a-f0-9-]{36}$/);
+  await h.manager.beginNativeTransition().cleared;
+});
+it('closes a non-draining main-owned voice socket before speech queues exceed one MiB', async () => {
+  const h = setup(); ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ transport: 'websocket', url: 'wss://api.x.ai/v1/realtime', clientSecret: 'synthetic-voice-secret', session: {} })));
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'voice-limit-open', path: '/api/voice/calls', method: 'POST' });
+  await vi.waitFor(() => expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:chunk', expect.objectContaining({ id: 'voice-limit-open', done: true })));
+  const payload = JSON.parse(h.sender.send.mock.calls.filter(([, value]) => value.id === 'voice-limit-open' && value.chunk).map(([, value]) => Buffer.from(value.chunk).toString()).join(''));
+  await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'voice-limit', new URL(payload.url).pathname, []);
+  const socket = ipc.sockets[0];
+  for (let n = 0; n < 40; n++) ipc.events.get('hyper-openbot:socket-send')!(h.event, 'voice-limit', new Uint8Array(65536));
+  expect(socket.bufferedAmount).toBeLessThanOrEqual(1024 * 1024); expect(socket.terminate).toHaveBeenCalledOnce();
+  expect(h.sender.send).toHaveBeenCalledWith('hyper-openbot:socket', expect.objectContaining({ id: 'voice-limit', type: 'error' }));
+});
+it('does not apply the voice-only backpressure cap to the original gateway socket', async () => {
+  const h = setup();
+  await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'gateway-size', '/api/intelligence/client/websocket?token=synthetic', []);
+  for (let n = 0; n < 20; n++) ipc.events.get('hyper-openbot:socket-send')!(h.event, 'gateway-size', new Uint8Array(65536));
+  expect(ipc.sockets[0].send).toHaveBeenCalledTimes(20); expect(ipc.sockets[0].terminate).not.toHaveBeenCalled();
+  h.bridge.disconnect();
+});
+it.each(['/api/agents/bot/callback-token', '/api/agents/bot/callback-token?nonce=test', '/api/agents/%62ot/callback%2Dtoken?nonce=test', '/api/agents/bot/callback%2Dtoken?nonce=test'])('refuses raw callback-key creation through generic renderer HTTP at %s', async route => {
+  const h = setup();
+  ipc.fetch.mockResolvedValueOnce(new Response('{"token":"synthetic-secret"}'));
+  await expect(ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'callback', path: route, method: 'POST' })).rejects.toThrow('protected native handoff');
+  expect(ipc.fetch).not.toHaveBeenCalled();
 });
 it('terminates a real registered socket on native signout and blocks new opens', async () => {
   const h = setup();
@@ -131,4 +212,16 @@ it('does not restart the private tunnel when Stop interrupts a pending identity 
   ready = false; h.bridge.disconnect(); finish(lease);
   await rejected;
   expect(ipc.path).not.toHaveBeenCalled(); expect(ipc.sockets).toHaveLength(0);
+});
+it('allows only the exact channel events socket and rejects variants', async () => {
+  const h = setup();
+  for (const path of ['/api/channels/events?token=x', '/api/channels/events/extra', '/api/channels/../events', '/api/channels/%65vents', 'wss://evil/api/channels/events']) await expect(ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'events-denied', path, [])).rejects.toThrow('Socket route refused');
+  await ipc.handlers.get('hyper-openbot:socket-open')!(h.event, 'events-allowed', '/api/channels/events', []);
+  expect(ipc.sockets).toHaveLength(1); await h.manager.beginNativeTransition().cleared;
+});
+it('synthesizes the required voice header for transcript saves including query paths', async () => {
+  const h = setup(); ipc.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ session: { id: 'call' } })));
+  await ipc.handlers.get('hyper-openbot:start')!(h.event, { id: 'voice-save', path: '/api/voice/sessions?retry=true', method: 'POST', body: '{}' });
+  expect(ipc.fetch.mock.calls[0][1].headers['x-openbot-voice']).toBe('1');
+  await h.manager.beginNativeTransition().cleared;
 });

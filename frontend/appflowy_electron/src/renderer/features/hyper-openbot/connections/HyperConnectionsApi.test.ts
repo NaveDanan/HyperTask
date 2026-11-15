@@ -17,6 +17,10 @@ describe('Hyper connections contracts', () => {
     request.mockResolvedValueOnce(directory).mockRejectedValueOnce(new Error('Offline'));
     await expect(hyperLoadConnections()).rejects.toThrow('Offline');
   });
+  it('carries only the server-reported active broker configuration to connection rows', () => {
+    expect(hyperConnectionRows({ ...directory, composioConfigured: true }, []).find(row => row.key === 'a')?.brokerConfigured).toBe(true);
+    expect(hyperConnectionRows(directory, []).find(row => row.key === 'a')?.brokerConfigured).toBe(false);
+  });
   it('starts desktop consent with an encoded server id and never confirms it', async () => {
     request.mockResolvedValue({ authorizationUrl: 'https://vendor.example/consent' });
     await hyperStartConnection('a/b');

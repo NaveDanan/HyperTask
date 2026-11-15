@@ -1,6 +1,7 @@
 import { hyperOpenBotRequest } from './transport';
 import type { HyperConversation } from './screens';
-export type HyperChannel = HyperConversation & { threadId: string; agentIds: string[]; active: boolean };
+import type { HyperChannelWorkHint } from './HyperChannelWork';
+export type HyperChannel = HyperConversation & HyperChannelWorkHint & { threadId: string; agentIds: string[]; active: boolean; lastMessageAgentId?: string | null; lastMessageAt?: string | null; lastReadAt?: string | null };
 export async function hyperLoadAllChannels(read: typeof hyperOpenBotRequest = hyperOpenBotRequest) {
   const channels: HyperChannel[] = [];
   const seen = new Set<string>(); let cursor: string | null = null;

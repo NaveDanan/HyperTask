@@ -32,7 +32,7 @@ export const hyperOpenBotFetch: typeof fetch = async (input, init) => {
 };
 
 export async function hyperOpenBotRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const response = await hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
+  const response = await hyperOpenBotFetch(HYPER_OPENBOT_ORIGIN + path, { method, headers: body === undefined ? undefined : { 'content-type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
   if ([204, 205].includes(response.status)) return undefined as T;
   const text = await response.text();
   let value: unknown;

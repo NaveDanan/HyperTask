@@ -8,7 +8,7 @@ describe('Hyper Bot mutations', () => {
   it('creates native bots without leaking extra fields', async () => {
     vi.mocked(hyperOpenBotRequest).mockResolvedValue({ agent: { id: 'desk' } });
     await HyperSaveBot({ ...input, auth: { value: 'never-send' }, endpoint: 'ignored' } as typeof input);
-    expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/agents', 'POST', { name: 'Desk', title: '', roleDescription: 'Help with work', visibility: 'private' });
+    expect(hyperOpenBotRequest).toHaveBeenCalledWith('/api/agents', 'POST', { name: 'Desk', title: '', roleDescription: 'Help with work', visibility: 'private', endpoint: '' });
   });
   it('refuses edits before sending when management is denied', async () => {
     await expect(HyperSaveBot(input, { id: 'shared', canManage: false } as HyperBotProfile)).rejects.toThrow('cannot edit');
