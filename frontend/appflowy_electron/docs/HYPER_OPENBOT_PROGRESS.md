@@ -225,6 +225,14 @@ Six regressions failed before these five corrections and pass afterward. Ownersh
 
 Validation: 1149 tests pass with one optional skip, four real-core tests, typecheck/build and thirteen smoke safeguards. The owned disposable app runs `8408d03` with stores retained. Three completed lifecycle rechecks at `26d4969` inspected all seven assigned files with no confirmed findings; the aggregate now carries 84 byte-identical inspected files in a 408-file diff, leaving 324. Full Spec coverage, fresh exact-head code/security reviews, human Tailscale authentication, native verification and owner acceptance still block merge. Neither skipped checks nor starting the app count as acceptance.
 
+### Bot app-access card lifetime
+
+The request-scope recheck at `08a7e1a` fully inspected its four files. It confirmed the two inbox fixes and found one remaining Spec issue in `HyperAppAccessAction`: a late Bot/app read or old withdrawal settlement could replace the current card, whose cached callbacks could act on the wrong request. `bb9e451` binds rendered snapshots, reads, busy/error feedback and callbacks to the mounted Bot/app/admin selection. Old state hides immediately; stale callbacks and readbacks return before HTTP/state changes; old settlement skips reload. Setup navigation and Refresh have the same guard. Original endpoints and name-or-key lookup stay compatible.
+
+Seven regressions were red before the fix and green afterward. Fourteen more guard cases cover valid withdrawal/request/give/take-back/admin grant, setup/refresh, duplicate-click blocking, generic errors and StrictMode cleanup. Source validation: 1170 tests pass, one optional skip, four real-core tests, typecheck/build and thirteen smoke safeguards. The owned disposable app runs `bb9e451` with stores retained. Fresh exact-head reviews and remaining full-diff coverage are still required. The other two bounded batches remain active on unchanged files. Tailscale authentication, native verification and owner acceptance still block merge and the next stage.
+
+The validated request-scope ledger adds only its two unchanged inbox files to current carried coverage. The card and reuse documentation changed after inspection and remain due for recheck. Current coverage is 86 byte-identical inspected files in a 408-file diff, with 322 remaining; no exhaustive approval is claimed.
+
 ## Queue
 
 | Issue | Deliverable | State |
