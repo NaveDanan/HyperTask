@@ -1,3 +1,5 @@
+import { TZDate } from '@date-fns/tz';
+import { addDays } from 'date-fns';
 import { describe, expect, it, vi } from 'vitest';
 import { create } from '@bufbuild/protobuf';
 import { RowMetaPBSchema } from '@shared/protobuf/flowy-database2/row_entities_pb';
@@ -49,7 +51,7 @@ describe('HyperCalendar live row dates', () => {
     expect(controller.updateCell).toHaveBeenLastCalledWith('row', 'date', { kind: 'date', timestamp: hyperCalendarSeconds(start), includeTime: true, isRange: false });
   });
   it('propagates rejected core writes and blocks cells with errors', async () => {
-    const controller = { moveCalendarEvent: vi.fn(async () => { throw new Error('Core unavailable'); }), updateCell: vi.fn(async () => {}) };
+    const controller = { moveCalendarEvent: vi.fn(async () => { throw new Error('Core unavailable'); }), updateCell: vi.fn(async () => { throw new Error('Core unavailable'); }) };
     await expect(hyperCalendarWriteUpdate(controller, hyperCalendarUpdate(), HyperCalendarDateCell)).rejects.toThrow('Core unavailable');
     await expect(hyperCalendarWriteUpdate(controller, hyperCalendarUpdate(), { ...HyperCalendarDateCell, error: 'Decode failed' })).rejects.toThrow('cannot be changed');
   });
@@ -84,4 +86,22 @@ describe('HyperCalendar all-day conversion bridge', () => {
     expect(hyperCalendarTypeOnlyUpdate({ ...drag, proposedStart: new Date(86400000) })).toBeNull();
     expect(hyperCalendarTypeOnlyUpdate({ ...drag, proposedAllDay: true })).toBeNull();
   });
+});
+
+
+it.each([15, 30, 60])('preserves an explicit %s-minute timed selection through save and mapping', minutes => {
+  const start = new Date('2026-11-15T09:00:00Z'); const end = new Date(start.getTime() + minutes * 60000);
+  const draft = hyperCalendarDraft(start, end, false, 'UTC'); const dates = hyperCalendarDraftDates(draft, 'UTC');
+  expect(draft.isRange).toBe(true); expect(dates.end?.getTime()).toBe(end.getTime());
+  const event = hyperCalendarMapEvent({ ...HyperCalendarSource, timestamp: hyperCalendarSeconds(start), endTimestamp: hyperCalendarSeconds(dates.end!), includeTime: true }, HyperCalendarDateCell, undefined, 'UTC');
+  expect(event.end.getTime() - event.start.getTime()).toBe(minutes * 60000);
+});
+it('moves a two-day all-day range off a DST transition without losing a day', async () => {
+  const start = new TZDate(2026, 2, 8, 0, 0, 0, 'America/New_York'); const due = addDays(start, 1);
+  const previous = { ...HyperCalendarDateCell, timestamp: hyperCalendarSeconds(start), endTimestamp: hyperCalendarSeconds(due), isRange: true };
+  const event = hyperCalendarMapEvent({ ...HyperCalendarSource, timestamp: previous.timestamp, endTimestamp: previous.endTimestamp }, previous, undefined, 'America/New_York');
+  const next = addDays(start, 2); const controller = { moveCalendarEvent: vi.fn(), updateCell: vi.fn(async () => {}) };
+  await hyperCalendarWriteUpdate(controller, { event, occurrence: null, start: new Date(next), end: new Date(addDays(next, 2)), allDay: true, source: 'drag' }, previous);
+  expect(controller.moveCalendarEvent).not.toHaveBeenCalled();
+  expect(controller.updateCell).toHaveBeenCalledWith('row', 'date', expect.objectContaining({ timestamp: hyperCalendarSeconds(next), endTimestamp: hyperCalendarSeconds(addDays(next, 1)), isRange: true }));
 });

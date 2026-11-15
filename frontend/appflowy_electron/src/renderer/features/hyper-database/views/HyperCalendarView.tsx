@@ -61,8 +61,8 @@ function HyperCalendarViewContent(props: HyperDatabaseViewProps) {
   const openRow = async (rowId: string, occurrence?: EventCalendarOccurrence<HyperCalendarEventData>) => {
     if (!calendar.dateField) return;
     try {
-      await controller.loadRows([rowId], [calendar.dateField.id, ...(calendar.primaryField ? [calendar.primaryField.id] : []), ...(calendar.colorField ? [calendar.colorField.id] : [])]);
-      const cells = controller.state.cells[rowId];
+      const loaded = await controller.scanRows([rowId], [calendar.dateField.id, ...(calendar.primaryField ? [calendar.primaryField.id] : []), ...(calendar.colorField ? [calendar.colorField.id] : [])]);
+      const cells = loaded[rowId];
       const date = cells?.[calendar.dateField.id];
       const start = date?.kind === 'date' && date.timestamp !== null ? hyperCalendarDate(date.timestamp, timeZone) : setHours(startOfDay(new Date()), 9);
       const initial = hyperCalendarDraft(start, undefined, date?.kind !== 'date' || !date.includeTime, timeZone);
@@ -71,7 +71,7 @@ function HyperCalendarViewContent(props: HyperDatabaseViewProps) {
       setSelectedKey(occurrence?.key ?? null);
       setDraft({ ...initial, rowId, title: (calendar.primaryField ? cells?.[calendar.primaryField.id]?.display : '') || occurrence?.event.title || '',
         isRange: date?.kind === 'date' && date.isRange, endDate: format(end, 'yyyy-MM-dd'), endTime: format(end, 'HH:mm'),
-        optionId: color?.kind === 'singleSelect' ? color.selected[0]?.id ?? '' : '', readOnly: Boolean(date?.error) });
+        optionId: color?.kind === 'singleSelect' ? color.selected[0]?.id ?? '' : '', readOnly: Boolean(!date || date.error || (calendar.primaryField && (!cells?.[calendar.primaryField.id] || cells[calendar.primaryField.id].error)) || (calendar.colorField && (!color || color.error))) });
     } catch (error) { showToast({ type: 'error', message: hyperCalendarError(error) }); }
   };
   const retry = async () => {

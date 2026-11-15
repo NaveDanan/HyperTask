@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FieldType } from '@shared/protobuf/flowy-database2/field_entities_pb';
 import type { EventCalendarRangeInfo, EventCalendarProposedUpdate } from '@/components/reui/event-calendar/event-calendar-types';
 import { showToast } from '@/ui';
-import type { HyperCalendarEvent, HyperDatabaseViewProps } from '../../HyperDatabaseTypes';
+import type { HyperCalendarEvent, HyperDatabaseState, HyperDatabaseViewProps } from '../../HyperDatabaseTypes';
 import { hyperCalendarError, hyperCalendarMapEvent, hyperCalendarSeconds, hyperCalendarWriteUpdate, type HyperCalendarEventData } from './HyperCalendarData';
 
 export function useHyperCalendarEvents({ controller, state, view }: HyperDatabaseViewProps, timeZone: string) {
@@ -21,6 +21,8 @@ export function useHyperCalendarEvents({ controller, state, view }: HyperDatabas
   }, [view.id]);
   const [range, setRange] = useState<EventCalendarRangeInfo | null>(null);
   const onRangeChange = useCallback((info: EventCalendarRangeInfo) => setRange(previous => previous?.range.start.getTime() === info.range.start.getTime() && previous.range.end.getTime() === info.range.end.getTime() ? previous : info), []);
+  const [rawCells, setRawCells] = useState<HyperDatabaseState['cells']>({});
+  const rowKey = state.rowIds.join(',');
   const [rawEvents, setRawEvents] = useState<HyperCalendarEvent[]>([]);
   const [fetchedField, setFetchedField] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -47,31 +49,31 @@ export function useHyperCalendarEvents({ controller, state, view }: HyperDatabas
     if (!range || !dateField || state.status !== 'ready' || setting?.fieldId !== dateField.id) return;
     const version = ++request.current;
     const fetchEvents = async () => {
-      await controller.loadRows(state.rowIds, [dateField.id, ...(primaryField ? [primaryField.id] : []), ...(colorField ? [colorField.id] : [])]);
-      const events = await controller.getCalendarEvents(hyperCalendarSeconds(range.range.start), hyperCalendarSeconds(range.range.end));
+      const cells = await controller.scanRows(state.rowIds, [dateField.id, ...(primaryField ? [primaryField.id] : []), ...(colorField ? [colorField.id] : [])], () => version === request.current);
+      const events = await controller.getCalendarEvents(hyperCalendarSeconds(range.range.start), hyperCalendarSeconds(range.range.end), cells);
       if (version !== request.current) return;
-      setRawEvents(events); setFetchedField(dateField.id); setError(null);
+      setRawCells(cells); setRawEvents(events); setFetchedField(dateField.id); setError(Object.values(cells).flatMap(row => Object.values(row)).find(cell => cell.error)?.error ?? null);
     };
     void fetchEvents().catch(cause => { if (version === request.current) { setError(hyperCalendarError(cause)); setFetchedField(dateField.id); } });
     return () => { if (request.current === version) request.current++; };
-  }, [controller, range, dateField?.id, primaryField?.id, colorField?.id, state.revision, state.status, state.rowIds, setting?.fieldId, refetchKey]);
+  }, [controller, range, dateField?.id, primaryField?.id, colorField?.id, state.dataRevision, state.fields, state.status, rowKey, setting?.fieldId, refetchKey]);
   const pending = useRef(new Set<string>());
   const rowIds = useMemo(() => new Set(state.rowIds), [state.rowIds]);
-  const events = useMemo(() => rawEvents.filter(event => event.dateFieldId === dateField?.id && rowIds.has(event.rowId)).map(event => hyperCalendarMapEvent(event, state.cells[event.rowId]?.[event.dateFieldId], colorField ? state.cells[event.rowId]?.[colorField.id] : undefined, timeZone)), [rawEvents, state.cells, rowIds, dateField?.id, colorField, timeZone]);
+  const events = useMemo(() => rawEvents.filter(event => event.dateFieldId === dateField?.id && rowIds.has(event.rowId)).map(event => hyperCalendarMapEvent(event, rawCells[event.rowId]?.[event.dateFieldId], colorField ? rawCells[event.rowId]?.[colorField.id] : undefined, timeZone)), [rawEvents, rawCells, rowIds, dateField?.id, colorField, timeZone]);
   const noDateRows = useMemo(() => dateField ? state.rowIds.filter(rowId => {
-    const cell = state.cells[rowId]?.[dateField.id];
+    const cell = rawCells[rowId]?.[dateField.id];
     return cell?.kind === 'date' && cell.timestamp === null && !cell.error;
-  }).map(rowId => ({ rowId, title: (primaryField ? state.cells[rowId]?.[primaryField.id]?.display.trim() : '') || 'Untitled' })) : [], [dateField, state.rowIds, state.cells, primaryField]);
+  }).map(rowId => ({ rowId, title: (primaryField ? rawCells[rowId]?.[primaryField.id]?.display.trim() : '') || 'Untitled' })) : [], [dateField, state.rowIds, rawCells, primaryField]);
   // ReUI's public update contract is synchronous. Reject its local commit and
   // publish only the authoritative events after the asynchronous Rust write.
   const onEventUpdate = useCallback((update: EventCalendarProposedUpdate<HyperCalendarEventData>) => {
     if (pending.current.has(update.event.id)) return false;
     pending.current.add(update.event.id);
-    void hyperCalendarWriteUpdate(controller, update, controller.state.cells[update.event.id]?.[update.event.data?.dateFieldId ?? ''])
+    void hyperCalendarWriteUpdate(controller, update, rawCells[update.event.id]?.[update.event.data?.dateFieldId ?? ''])
       .catch(cause => showToast({ type: 'error', message: hyperCalendarError(cause) }))
       .finally(() => { pending.current.delete(update.event.id); refetch(); });
     return false;
-  }, [controller, refetch]);
+  }, [controller, refetch, rawCells]);
   return { dateField, dateFields, colorField, colorFields, primaryField, changeColorBy, events, noDateRows, onRangeChange, onEventUpdate, refetch,
     loading: state.status !== 'ready' || Boolean(dateField && fetchedField !== dateField.id), error, setting };
 }
