@@ -1,5 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { runInNewContext, createContext, runInContext } from 'node:vm';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import * as smoke from './HyperNativeOpenBotSmoke.mjs';
 import { hyperNativeCdpUrl, hyperNativeRenderedMessage, hyperNativeCompletion, hyperNativeStream, hyperValidateNativeBefore, hyperOwnsNativeCommand, hyperNativeModelId } from './HyperNativeOpenBotSmoke.mjs';
 
 const at = '2026-11-14T00:00:00Z';
@@ -83,4 +88,167 @@ test('rendered proof requires exact text or the same numbered list structure and
   const consecutive = '1. First example.\n2. Second example.';
   assert.equal(hyperNativeRenderedMessage({ text: consecutive, rendered }), true);
   assert.equal(hyperNativeRenderedMessage({ text: consecutive, rendered: { text: 'First example.', lists: [{ start: 1, items: ['First example.'] }] } }), false);
+});
+
+// Execute the actual runner, observer and model waiter with an in-memory UI/IPC
+// fixture. No Electron, private profile, service or vendor operation is performed.
+async function hyperSmokeFixture({ saved, extraSelection, channelMapping, restoredBefore } = {}) {
+  const source = await readFile(new URL('./HyperNativeOpenBotSmoke.mjs', import.meta.url), 'utf8');
+  const slice = (start, end) => source.slice(source.indexOf(start), source.indexOf(end));
+  const models = [{ id: 'grok-4.3', label: 'Grok 4.3', efforts: ['low', 'high'], defaultEffort: 'low' }, { id: 'alternate', label: 'Alternate', efforts: ['high'], defaultEffort: 'high' }];
+  const storage = new Map([['hyper-openbot.channel.native-view', 'old-channel']]);
+  const state = { model: models[0], effort: null, sent: [], sendClicks: 0, writes: [], modelWrites: [], frameListener: undefined, channelCreated: !!restoredBefore, now: 0 };
+  if (restoredBefore) {
+    storage.set('hyper-openbot.channel.native-view', 'new-channel');
+    state.sent = restoredBefore.turns.map(turn => ({ prompt: turn.prompt, answer: turn.answer, runId: turn.runId, userId: turn.messages.user.id, assistantId: turn.messages.assistant.id }));
+  }
+  const localStorage = { getItem: key => storage.get(key) ?? null };
+  const syncStorage = () => { for (const key of Object.keys(localStorage)) if (key.startsWith('hyper-openbot.channel.')) delete localStorage[key]; Object.assign(localStorage, Object.fromEntries(storage)); };
+  syncStorage();
+  const browser = {
+    localStorage, navigator: { userAgent: 'HyperTask Electron/42' }, crypto: { randomUUID: () => 'test-request-id' },
+    document: { querySelector: () => ({ innerText: state.model.label }) },
+    appflowy: { core: { request() {} }, hyperOpenBot: { service: { state: async () => ({ ready: true, phase: 'idle' }) }, onSocket: listener => { state.frameListener = listener; return () => { state.frameListener = undefined; }; } } },
+  };
+  browser.window = browser;
+  const browserContext = createContext(browser);
+  const evaluate = (fn, argument) => { browserContext.__argument = argument; return runInContext(`(${fn.toString()})(__argument)`, browserContext); };
+  const locator = (role, name) => ({
+    async waitFor() {}, async isVisible() { return true; }, async count() { return role === 'article' && name === 'System' ? 0 : 1; },
+    filter() { return this; }, getByRole(nextRole, options) { return locator(nextRole, options?.name); },
+    async fill(text) { state.prompt = text; },
+    async click() {
+      if (role === 'option') {
+        const model = models.find(model => model.label === name);
+        if (model) { state.model = model; if (!model.efforts.includes(state.effort)) state.effort = null; }
+        else { const effort = { Low: 'low', High: 'high', 'Default thinking': null }[name]; assert.notEqual(effort, undefined); state.effort = effort; }
+        if (state.channelCreated) state.modelWrites.push({ model: state.model.id, effort: state.effort === state.model.defaultEffort ? null : state.effort });
+      }
+      if (role !== 'button' || name !== 'Send message') return;
+      assert.equal(typeof state.frameListener, 'function', 'Observe IPC before the first composition submits');
+      state.sendClicks++;
+      state.channelCreated = true; storage.set('hyper-openbot.channel.native-view', 'new-channel'); syncStorage();
+      if (extraSelection) { storage.set('hyper-openbot.channel.other-view', 'other-channel'); syncStorage(); }
+      const n = state.sent.length + 1;
+      const turn = { prompt: state.prompt, answer: 'Hello world.', runId: `run-${n}`, userId: `user-${n}`, assistantId: `message-${n}`, model: state.model.id, effort: state.effort === state.model.defaultEffort ? null : state.effort };
+      state.sent.push(turn);
+      for (const record of records(events(turn.runId, turn.assistantId), 'socket-1')) state.frameListener({ id: record.socketId, type: 'message', data: record.frame });
+    },
+  });
+  const page = {
+    url: () => pathToFileURL('/virtual-app/out/renderer/index.html').href,
+    setDefaultTimeout() {}, setDefaultNavigationTimeout() {}, on() {},
+    getByRole: (role, options) => locator(role, options?.name), locator: () => locator('article'),
+    evaluate: async (fn, argument) => evaluate(fn, argument),
+    async waitForFunction(fn, argument) { assert.ok(await evaluate(fn, argument), 'The actual browser predicate must match'); },
+    async waitForTimeout() { state.now += 10000; },
+  };
+  const jsonFromNative = async (_page, path) => {
+    if (path === '/api/models') return { status: 200, value: { models, default: models[0].id, choosable: true } };
+    if (path.endsWith('/model')) return { status: 200, value: saved ?? { model: state.model.id === models[0].id ? null : state.model.id, effort: state.effort === state.model.defaultEffort ? null : state.effort } };
+    assert.equal(path, '/api/channels/new-channel'); assert.ok(state.channelCreated);
+    return { status: 200, value: { channel: channelMapping ?? { id: 'new-channel', threadId: 'thread-1', agentIds: ['bot-1'] } } };
+  };
+  const context = {
+    ...smoke, resolve, pathToFileURL, appDirectory: '/virtual-app', randomUUID: () => 'test-marker', jsonFromNative,
+    ownedLaunch: async () => ({ debugSocket: '/tmp/hyper-native-smoke-fixture/cdp.sock', buildHead: 'a'.repeat(40), pid: restoredBefore ? 20 : 10, corePid: restoredBefore ? 21 : 11, profileDigest: 'b'.repeat(64) }),
+    readFile: async path => { assert.equal(path, '/virtual-before'); return JSON.stringify(restoredBefore); },
+    open: async () => ({ writeFile: async content => state.writes.push(JSON.parse(content)), close: async () => {} }),
+    createRequire: () => () => ({ chromium: { connectOverCDP: async () => ({ contexts: () => [{ pages: () => [page] }] }) } }),
+    waitForHistoryPair: async (_read, prompt, answer) => { const turn = state.sent.find(turn => turn.prompt === prompt); assert.equal(answer, turn.answer); return { messages: { user: { id: turn.userId, text: prompt }, assistant: { id: turn.assistantId, text: answer } } }; },
+    renderedTurn: async () => {}, process: { stdout: { write() {} } },
+    Date: class extends Date { constructor(...args) { super(...(args.length ? args : [state.now])); } static now() { return state.now; } },
+  };
+  runInNewContext([
+    slice('class HyperSmokeError', 'const appDirectory'),
+    slice('async function waitModel(', 'async function waitReadiness('),
+    slice('async function waitReadiness(', 'async function observeTurn('),
+    slice('async function observeTurn(', 'async function run(args)'),
+    slice('async function run(args)', 'if (process.argv[1]'),
+    'globalThis.runSmoke = run; globalThis.waitSmokeModel = waitModel;',
+  ].join('\n'), context);
+  return { state, page, context, models };
+}
+
+test('before smoke observes the first submission before resolving its newly created native channel', async () => {
+  const fixture = await hyperSmokeFixture();
+  await fixture.context.runSmoke({ phase: 'before', status: '/virtual-status', output: '/virtual-evidence', agent: 'Personal Assistant', 'playwright-module': '/virtual-playwright' });
+  const result = fixture.state.writes.at(-1);
+  assert.equal(result.status, 'passed'); assert.equal(result.channelId, 'new-channel'); assert.equal(result.nativeViewId, 'native-view');
+  assert.equal(fixture.state.sent.length, 2); assert.equal(result.turns.length, 2);
+  assert.deepEqual(result.turns.map(turn => turn.runId), ['run-1', 'run-2']);
+  assert.deepEqual(result.turns.map(turn => turn.messageId), ['message-1', 'message-2']);
+  assert.deepEqual(result.turns.map(turn => turn.textDeliveries), [2, 2]);
+  assert.equal(result.model.model, 'grok-4.3'); assert.equal(result.model.effort, null);
+  assert.ok(fixture.state.modelWrites.some(pick => pick.model === 'alternate'));
+  assert.equal(fixture.state.frameListener, undefined);
+});
+
+test('model persistence compares a requested default effort with its null wire projection', async () => {
+  const fixture = await hyperSmokeFixture({ saved: { model: null, effort: null } });
+  const selected = await fixture.context.waitSmokeModel(fixture.page, 'new-channel', { model: 'grok-4.3', effort: 'low' }, 'grok-4.3', fixture.models[0]);
+  assert.equal(selected.model, 'grok-4.3'); assert.equal(selected.effort, null);
+});
+
+test('nondefault effort remains an exact persisted literal rather than accepting null', async () => {
+  const fixture = await hyperSmokeFixture({ saved: { model: null, effort: 'high' } });
+  const wanted = { model: 'grok-4.3', effort: 'high' };
+  const selected = await fixture.context.waitSmokeModel(fixture.page, 'new-channel', wanted, 'grok-4.3', fixture.models[0]);
+  assert.equal(selected.effort, 'high');
+  const wrong = await hyperSmokeFixture({ saved: { model: null, effort: null } });
+  await assert.rejects(wrong.context.waitSmokeModel(wrong.page, 'new-channel', wanted, 'grok-4.3', wrong.models[0]), /not persisted/);
+});
+
+test('default-effort projection still refuses a missing effort or a pinned default literal', async () => {
+  for (const saved of [{ model: null }, { model: null, effort: 'low' }]) {
+    const fixture = await hyperSmokeFixture({ saved });
+    await assert.rejects(fixture.context.waitSmokeModel(fixture.page, 'new-channel', { model: 'grok-4.3', effort: 'low' }, 'grok-4.3', fixture.models[0]), /not persisted/);
+  }
+});
+
+test('restart model checks retain exact recorded wire effort without reprojecting defaults', async () => {
+  const fixture = await hyperSmokeFixture({ saved: { model: null, effort: null } });
+  await assert.rejects(fixture.context.waitSmokeModel(fixture.page, 'new-channel', { model: 'grok-4.3', effort: 'low' }, 'grok-4.3'), /not persisted/);
+  const selected = await fixture.context.waitSmokeModel(fixture.page, 'new-channel', { model: 'grok-4.3', effort: null }, 'grok-4.3');
+  assert.equal(selected.effort, null);
+});
+
+test('model expectation rejects unsupported efforts and another model option', () => {
+  const wanted = { model: 'grok-4.3', effort: 'low' };
+  assert.throws(() => smoke.hyperNativeModelExpectation(wanted, { id: 'other', efforts: ['low'], defaultEffort: 'low' }), /not supported/);
+  assert.throws(() => smoke.hyperNativeModelExpectation({ ...wanted, effort: 'unknown' }, { id: wanted.model, efforts: ['low'] }), /not supported/);
+  assert.deepEqual(smoke.hyperNativeModelExpectation(wanted, { id: wanted.model, efforts: ['low'] }), wanted);
+});
+
+test('first composition uses an explicitly selected model and its default effort before either turn', async () => {
+  const fixture = await hyperSmokeFixture();
+  await fixture.context.runSmoke({ phase: 'before', status: '/virtual-status', output: '/virtual-evidence', agent: 'Personal Assistant', model: 'alternate', effort: 'high', 'playwright-module': '/virtual-playwright' });
+  assert.equal(fixture.state.sendClicks, 2);
+  assert.ok(fixture.state.sent.every(turn => turn.model === 'alternate' && turn.effort === null));
+  const result = fixture.state.writes.at(-1);
+  assert.equal(result.model.model, 'alternate'); assert.equal(result.model.effort, null);
+});
+
+test('initial submission refuses multiple changed native views and releases its observer', async () => {
+  const fixture = await hyperSmokeFixture({ extraSelection: true });
+  await assert.rejects(fixture.context.runSmoke({ phase: 'before', status: '/virtual-status', output: '/virtual-evidence', agent: 'Personal Assistant', 'playwright-module': '/virtual-playwright' }), /exactly one new conversation/);
+  assert.equal(fixture.state.sendClicks, 1); assert.equal(fixture.state.frameListener, undefined);
+  assert.equal(fixture.state.writes.at(-1).status, 'failed');
+});
+
+test('initial submission still requires an authoritative single-Bot channel mapping', async () => {
+  const fixture = await hyperSmokeFixture({ channelMapping: { id: 'new-channel', threadId: 'thread-1', agentIds: ['bot-1', 'bot-2'] } });
+  await assert.rejects(fixture.context.runSmoke({ phase: 'before', status: '/virtual-status', output: '/virtual-evidence', agent: 'Personal Assistant', 'playwright-module': '/virtual-playwright' }), /authoritative native channel mapping/);
+  assert.equal(fixture.state.sendClicks, 1); assert.equal(fixture.state.frameListener, undefined);
+});
+
+test('after-phase runner verifies saved turns and never sends a replacement composition', async () => {
+  const restoredBefore = before();
+  Object.assign(restoredBefore, { nativeViewId: 'native-view', channelId: 'new-channel', botId: 'bot-1', profileDigest: 'b'.repeat(64), model: { model: 'grok-4.3', effort: null } });
+  const fixture = await hyperSmokeFixture({ restoredBefore });
+  await fixture.context.runSmoke({ phase: 'after', status: '/virtual-status', output: '/virtual-evidence', before: '/virtual-before', 'playwright-module': '/virtual-playwright' });
+  const result = fixture.state.writes.at(-1);
+  assert.equal(result.status, 'passed'); assert.equal(result.noReplacementPromptSent, true);
+  assert.equal(result.sameNativeViewChannelThreadAndMessageIds, true);
+  assert.equal(fixture.state.sendClicks, 0); assert.equal(fixture.state.modelWrites.length, 0);
 });

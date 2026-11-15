@@ -31,6 +31,13 @@ export function hyperNativeModelId(saved, defaultModel) {
   return saved.model ?? defaultModel;
 }
 
+export function hyperNativeModelExpectation(wanted, option) {
+  if (option.id !== wanted.model || !(wanted.effort === null || option.efforts?.includes(wanted.effort))) fail('Requested effort is not supported by the selected model');
+  // Match the native picker and pinned requestFor: explicit model-default effort
+  // follows the provider and is saved as null, not as a pinned literal effort.
+  return { model: wanted.model, effort: wanted.effort === option.defaultEffort ? null : wanted.effort };
+}
+
 /** Self-contained so Playwright can run this predicate against the current browser records. */
 export function hyperNativeCompletion({ records = globalThis.__hyperSmokeFrames ?? [], threadId, previousRunIds = [] }) {
   const rows = records.flatMap(record => {
@@ -197,11 +204,12 @@ async function renderedTurn(page, messages) {
     await page.waitForFunction(hyperNativeRenderedMessage, { id: message.id, text: message.text }, { timeout: 30000 });
 }
 
-async function waitModel(page, channelId, wanted, defaultModel) {
+async function waitModel(page, channelId, wanted, defaultModel, option) {
+  const expected = option ? hyperNativeModelExpectation(wanted, option) : wanted;
   const deadline = Date.now() + 30000;
   do {
     const saved = await jsonFromNative(page, `/api/channels/${encodeURIComponent(channelId)}/model`);
-    if (saved.status === 200 && hyperNativeModelId(saved.value, defaultModel) === wanted.model && saved.value.effort === wanted.effort) return { model: wanted.model, effort: saved.value.effort };
+    if (saved.status === 200 && hyperNativeModelId(saved.value, defaultModel) === expected.model && saved.value.effort === expected.effort) return { model: expected.model, effort: saved.value.effort };
     await page.waitForTimeout(100);
   } while (Date.now() < deadline);
   fail('Native model selection was not persisted');
@@ -222,7 +230,7 @@ async function waitReadiness(page) {
   fail('Native AI readiness did not recover within the smoke deadline');
 }
 
-async function observeTurn(page, channel, prompt, previousRunIds) {
+async function observeTurn(page, selectedChannel, prompt, previousRunIds) {
   await page.evaluate(() => {
     window.__hyperSmokeRelease?.();
     window.__hyperSmokeFrames = [];
@@ -238,6 +246,9 @@ async function observeTurn(page, channel, prompt, previousRunIds) {
   try {
     await page.getByRole('textbox', { name: 'Message', exact: true }).fill(prompt);
     await page.getByRole('button', { name: 'Send message', exact: true }).click();
+    // New composition creates its channel only on Send. Capture from before
+    // submission, including early deliveries, then resolve the authoritative map.
+    const channel = typeof selectedChannel === 'function' ? await selectedChannel() : selectedChannel;
     await page.waitForFunction(hyperNativeCompletion, { threadId: channel.threadId, previousRunIds }, { timeout: 120000 });
     const proof = hyperNativeStream(await page.evaluate(() => window.__hyperSmokeFrames), channel.threadId, previousRunIds);
     await page.getByRole('button', { name: 'Stop generating', exact: true }).waitFor({ state: 'hidden', timeout: 30000 });
@@ -269,31 +280,55 @@ async function run(args) {
     if (!await page.evaluate(() => navigator.userAgent.includes('Electron/') && typeof window.appflowy?.core?.request === 'function')) fail('Expected the native HyperTask app');
     if (!await page.getByRole('navigation', { name: 'OpenBot', exact: true }).isVisible()) await page.locator('button[aria-label="Chat"]').click();
     await waitReadiness(page);
+    let previous;
     if (args.phase === 'before') {
       await page.getByRole('button', { name: 'Bots', exact: true }).click();
-      const previous = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith('hyper-openbot.channel.'))));
+      previous = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage).filter(([key]) => key.startsWith('hyper-openbot.channel.'))));
       const bot = page.locator('article').filter({ has: page.getByRole('button', { name: args.agent, exact: true }) });
       await bot.getByRole('button', { name: 'Chat', exact: true }).click();
       await page.getByRole('textbox', { name: 'Message', exact: true }).waitFor();
-      const selected = await page.evaluate(() => Object.entries(localStorage).filter(([key]) => key.startsWith('hyper-openbot.channel.')));
-      const changed = selected.filter(([key, value]) => previous[key] !== value);
-      if (changed.length !== 1) fail('Expected exactly one new conversation in one native view');
-      result.nativeViewId = changed[0][0].slice('hyper-openbot.channel.'.length); result.channelId = changed[0][1];
     } else { result.nativeViewId = before.nativeViewId; result.channelId = before.channelId; }
-    const selected = await page.evaluate(key => localStorage.getItem(key), `hyper-openbot.channel.${result.nativeViewId}`);
-    if (selected !== result.channelId) fail('Native view lost its saved channel');
-    const response = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}`), channel = response.value.channel;
-    if (response.status !== 200 || channel?.id !== result.channelId || !validId(channel.threadId) || !Array.isArray(channel.agentIds) || channel.agentIds.length !== 1 || !validId(channel.agentIds[0])) fail('Invalid authoritative native channel mapping');
-    result.threadId = channel.threadId; result.botId = channel.agentIds[0];
-    if (before && (before.threadId !== result.threadId || before.botId !== result.botId)) fail('Saved thread or agent changed after app restart');
+    async function readChannel() {
+      if (![result.nativeViewId, result.channelId].every(validId)) fail('Invalid native view or channel identity');
+      const selected = await page.evaluate(key => localStorage.getItem(key), `hyper-openbot.channel.${result.nativeViewId}`);
+      if (selected !== result.channelId) fail('Native view lost its saved channel');
+      const response = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}`), channel = response.value?.channel;
+      if (response.status !== 200 || channel?.id !== result.channelId || !validId(channel.threadId) || !Array.isArray(channel.agentIds) || channel.agentIds.length !== 1 || !validId(channel.agentIds[0])) fail('Invalid authoritative native channel mapping');
+      result.threadId = channel.threadId; result.botId = channel.agentIds[0];
+      if (before && (before.threadId !== result.threadId || before.botId !== result.botId)) fail('Saved thread or agent changed after app restart');
+      return channel;
+    }
     const modelControl = page.getByRole('combobox', { name: 'Model', exact: true }); await modelControl.waitFor();
     if (args.phase === 'before') {
       const catalogue = await jsonFromNative(page, '/api/models');
       const options = catalogue.value.models?.filter(model => !model.disabled);
-      const initial = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}/model`);
-      const wanted = options?.find(model => model.id === (args.model || initial.value.model || catalogue.value.default));
+      const wanted = options?.find(model => model.id === (args.model || catalogue.value.default));
       const alternate = options?.find(model => model.id !== wanted?.id);
-      if (catalogue.status !== 200 || initial.status !== 200 || !wanted || !alternate) fail('Smoke selection requires the target and another available model');
+      if (catalogue.status !== 200 || catalogue.value.choosable !== true || !wanted || !alternate) fail('Smoke selection requires the target and another available model');
+      const effort = args.effort ?? (wanted.efforts?.includes('low') ? 'low' : null);
+      async function chooseEffort() {
+        if (effort === null) return;
+        if (!wanted.efforts?.includes(effort)) fail('Requested effort is not supported by the selected model');
+        const label = ({ xhigh: 'Extra high', none: 'None', low: 'Low', medium: 'Medium', high: 'High', max: 'Max', minimal: 'Minimal' })[effort];
+        if (!label) fail('Unsupported smoke effort label');
+        await page.getByRole('combobox', { name: 'Thinking effort', exact: true }).click(); await page.getByRole('option', { name: label, exact: true }).click();
+      }
+      // Set the initial composition's model before its first send, then verify
+      // that choice and both later model switches against actual saved settings.
+      await modelControl.click(); await page.getByRole('option', { name: wanted.label, exact: true }).click();
+      await waitModelLabel(page, wanted.label); await chooseEffort();
+      const marker = randomUUID(); result.turns = [];
+      let channel;
+      result.turns.push(await observeTurn(page, async () => {
+        await page.waitForFunction(previous => Object.entries(localStorage).some(([key, value]) => key.startsWith('hyper-openbot.channel.') && previous[key] !== value), previous, { timeout: 30000 });
+        const selected = await page.evaluate(() => Object.entries(localStorage).filter(([key]) => key.startsWith('hyper-openbot.channel.')));
+        const changed = selected.filter(([key, value]) => previous[key] !== value);
+        if (changed.length !== 1) fail('Expected exactly one new conversation in one native view');
+        result.nativeViewId = changed[0][0].slice('hyper-openbot.channel.'.length); result.channelId = changed[0][1];
+        channel = await readChannel();
+        await waitModel(page, result.channelId, { model: wanted.id, effort }, catalogue.value.default, wanted);
+        return channel;
+      }, `HyperTask native smoke ${marker}: Write four short plain-text paragraphs about organizing a reading list. Do not use tools.`, []));
       for (const choice of [alternate, wanted]) {
         await modelControl.click(); await page.getByRole('option', { name: choice.label, exact: true }).click();
         const deadline = Date.now() + 30000;
@@ -302,22 +337,14 @@ async function run(args) {
         if (!persisted) fail('An exercised model switch was not persisted');
         await waitModelLabel(page, choice.label);
       }
-      const effort = args.effort ?? (wanted.efforts?.includes('low') ? 'low' : null);
-      if (effort !== null) {
-        if (!wanted.efforts?.includes(effort)) fail('Requested effort is not supported by the selected model');
-        const label = ({ xhigh: 'Extra high', none: 'None', low: 'Low', medium: 'Medium', high: 'High', max: 'Max', minimal: 'Minimal' })[effort];
-        if (!label) fail('Unsupported smoke effort label');
-        await page.getByRole('combobox', { name: 'Thinking effort', exact: true }).click(); await page.getByRole('option', { name: label, exact: true }).click();
-      }
-      const saved = await jsonFromNative(page, `/api/channels/${encodeURIComponent(result.channelId)}/model`);
-      result.model = await waitModel(page, result.channelId, { model: wanted.id, effort: effort ?? saved.value.effort }, catalogue.value.default);
+      await chooseEffort();
+      result.model = await waitModel(page, result.channelId, { model: wanted.id, effort }, catalogue.value.default, wanted);
       await waitModelLabel(page, wanted.label);
       result.defaultModel = catalogue.value.default;
       result.modelSwitchVerified = true;
-      const marker = randomUUID(); result.turns = [];
-      result.turns.push(await observeTurn(page, channel, `HyperTask native smoke ${marker}: Write four short plain-text paragraphs about organizing a reading list. Do not use tools.`, []));
       result.turns.push(await observeTurn(page, channel, `HyperTask follow-up ${marker}: Give two brief practical examples for that same reading list. Use plain text and no tools.`, result.turns.map(turn => turn.runId)));
     } else {
+      await readChannel();
       const catalogue = await jsonFromNative(page, '/api/models');
       result.model = await waitModel(page, result.channelId, before.model, catalogue.value.default); result.turns = before.turns;
       await waitModelLabel(page, catalogue.value.models.find(model => model.id === result.model.model)?.label);
