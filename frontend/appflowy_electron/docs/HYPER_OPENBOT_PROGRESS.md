@@ -177,6 +177,14 @@ Combined validation at `cd8dc33`: 1070 tests pass with one optional skip, four r
 - Seven focused regressions failed before the fixes. Ten focused cases and the full suite now pass: 1080 tests, one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. The disposable native app was relaunched on `7a3b91b` with its profile and stores retained.
 - A fresh secure Tailscale sign-in request timed out. An independent SSH recheck still requires the account-holder check. No native smoke was repeated against that unresolved prerequisite. Native verification, fresh corrected-source Standards/Spec review, exact-head Codex code/security receipts and owner acceptance still block merge.
 
+### Corrected-head review outcomes
+
+Standards rechecked `5dda63a` and retained one rule violation: two chart legend markers still used `rounded-[3px]`. `309d26a` replaces both with `rounded-md`. Two rendered line/area/pie regressions fail before the fix and pass afterward. The prior semantic-colour, checklist-scale, chart-height and Playground findings are corrected; no additional actionable smell was retained.
+
+Spec rechecked the same head and confirmed the three earlier source corrections and the seven later Codex fixes, including upstream group submission without a queue handler. It confirmed no additional defect in the paths inspected, but explicitly could not clear the full 401-file diff because substantial tool output was truncated. This is a limited review, not full Spec clearance. Follow-up reviews must inspect bounded per-file diffs and record coverage of every assigned file.
+
+Source `309d26a` passes 1082 tests with one optional skip, four real-core tests, typecheck/build and 13 smoke safeguards. Native verification and owner acceptance remain blocked. A stale notification described the checks on `ece4710` as passed; GitHub records both as skipped. CodeRabbit exceeded its 100-file limit, and Macroscope exceeded the unchanged $10 cap. Neither result approves the corrected head. No review ignore or billing configuration was changed.
+
 ## Queue
 
 | Issue | Deliverable | State |
