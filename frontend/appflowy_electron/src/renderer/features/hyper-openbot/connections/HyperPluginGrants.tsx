@@ -1,19 +1,20 @@
 // Adapted from OpenBot manage/plugin-{bot,tool}-page.tsx, MIT Copyright (c) 2026 CopilotKit.
 import { HyperAppAccessAction } from './HyperAppAccessAction';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hyperOpenBotRequest } from '../transport';
 import { hyperLoadPluginBots, hyperPluginGrant as writeGrant, type HyperPluginBot, type HyperSharedApproval, type HyperConnectionSelection } from './HyperPluginDetailsApi';
 import type { HyperConnectionServer } from './HyperConnectionsApi';
 export function HyperSharedApprovalFields({ value, onChange, disabled = false }: { value: HyperSharedApproval; onChange(value: HyperSharedApproval): void; disabled?: boolean }) {
+  const audienceId = useId();
   const named = value.audience === 'people' || value.members.length > 0;
   const options: { audience: HyperSharedApproval['audience']; label: string }[] = [
     { audience: 'owner', label: 'Owner only' },
     ...(named ? [{ audience: 'people' as const, label: `Named: ${value.members.map(member => `${member.kind}: ${member.value}`).join(', ')}` }] : []),
     { audience: 'team', label: 'Everyone' },
   ];
-  return <fieldset disabled={disabled} className="space-y-2"><legend className="font-medium">Who can use the shared account through this Bot</legend>{options.map(option => <label key={option.audience} className="flex gap-2"><input type="radio" name="shared-audience" checked={value.audience === option.audience} onChange={() => onChange({ ...value, audience: option.audience, members: option.audience === 'people' ? value.members : [] })} />{option.label}</label>)}<label className="flex gap-2"><input type="checkbox" checked={value.outsideInput} onChange={e => onChange({ ...value, outsideInput: e.target.checked })} />Allow outside input</label></fieldset>;
+  return <fieldset disabled={disabled} className="space-y-2"><legend className="font-medium">Who can use the shared account through this Bot</legend>{options.map(option => <label key={option.audience} className="flex gap-2"><input type="radio" name={`shared-audience-${audienceId}`} checked={value.audience === option.audience} onChange={() => onChange({ ...value, audience: option.audience, members: option.audience === 'people' ? value.members : [] })} />{option.label}</label>)}<label className="flex gap-2"><input type="checkbox" checked={value.outsideInput} onChange={e => onChange({ ...value, outsideInput: e.target.checked })} />Allow outside input</label></fieldset>;
 }
 export function HyperPluginGrants({ server, busy, selection, navigate, run, callbackAllowed, admin = false }: { server: HyperConnectionServer; busy: boolean; callbackAllowed?: boolean; admin?: boolean; selection?: HyperConnectionSelection; navigate(value: HyperConnectionSelection): void; run(action: () => Promise<void>): Promise<void> }) {
   const [bots, setBots] = useState<HyperPluginBot[]>();

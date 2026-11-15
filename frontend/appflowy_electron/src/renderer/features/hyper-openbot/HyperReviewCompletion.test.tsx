@@ -17,6 +17,9 @@ import { HyperGroupChat } from './conversations/HyperGroupChat';
 import { hyperAcquireConversationDraft } from './useHyperConversationDraft';
 import { HyperAppAccessAction, HyperAppAccessRequests } from './connections/HyperAppAccessAction';
 import { HyperSharedAccessRequests } from './connections/HyperSharedAccessRequests';
+import { HyperBotsPanel, HyperBotEditor } from './bots/HyperBotsPanel';
+import { HyperBotAttentionBoard } from './bot-tabs/HyperBotAttentionBoard';
+import { HyperVoiceControls } from './conversations/HyperVoiceControls';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
 const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0 }));
@@ -38,7 +41,7 @@ vi.mock('react', async original => {
   };
 });
 vi.mock('./transport', async original => ({ ...await original<typeof import('./transport')>(), hyperOpenBotRequest: f.request, hyperOpenBotFetch: f.fetch }));
-vi.mock('@copilotkit/react-core/v2', () => ({ useFrontendTool: vi.fn(), useCopilotKit: vi.fn(), OpenGenerativeUIActivityRenderer: () => null }));
+vi.mock('@copilotkit/react-core/v2', () => ({ useFrontendTool: vi.fn(), useCopilotKit: () => ({ copilotkit: {} }), useAgent: () => ({ agent: { messages: [], isRunning: false }, isReady: true }), OpenGenerativeUIActivityRenderer: () => null }));
 vi.mock('./provider', () => ({ HyperOpenBotProvider: () => null }));
 vi.mock('./HyperServiceStatus', () => ({ HyperServiceStatus: () => null, useHyperOpenBotService: () => ({ state: { ready: false, problem: 'stopped' } }) }));
 vi.mock('./HyperComputerPanel', () => ({ HyperComputerPanel: () => null }));
@@ -598,4 +601,56 @@ it('Bot app-access card rejects a read from the previous StrictMode effect lifet
   for (const cleanup of h.cleanups) cleanup(); h.cleanups = []; mountEffects(); await drain();
   older(botAppAccess(props.agentId, props.app)); await drain();
   expect(find(render(HyperAppAccessAction, props), element => element.type === 'p' && text(element.props.children).includes('Fresh mount state'))).toBeDefined();
+});
+it('preserves an active voice call when only starting a new call is disabled during history refresh', async () => {
+  const session = { subscribe: vi.fn(), getSnapshot: () => ({ phase: 'connected', seconds: 1, working: false, muted: false, transcript: '', reply: '' }), end: vi.fn() };
+  f.request.mockImplementation(async (path: string) => path === '/api/me' ? { user: { id: 'owner' } } : path === '/api/capabilities' ? { voice: true } : { sessions: [], nextCursor: null });
+  vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn() } });
+  render(HyperVoiceControls, { channelId: 'voice', disabled: true, canContinue: true, context: () => '', askAgent: vi.fn(), anchorMessageId: () => null }, [true, [], [], undefined, 0, session]);
+  mountEffects(); await drain(); expect(session.end).not.toHaveBeenCalled();
+});
+it('threads native Bots conversation navigation into attention and selected Bot views', async () => {
+  const states = ['bots', [], false, '', [], 'thread', 0, 0, undefined, [], undefined, undefined, false];
+  const workspace = render(HyperOpenBotWorkspace, { viewId: 'bots-navigation', serviceReady: true }, states);
+  const panel = find(workspace, element => element.type === HyperBotsPanel)!;
+  expect(typeof panel.props.onOpenConversation).toBe('function');
+  const bot = { id: 'bot', name: 'Bot', title: '', roleDescription: '', visibility: 'private', mine: true };
+  h.refs = [];
+  const tree = render(HyperBotsPanel, panel.props, [[bot], false, '', bot, true, false, '', 0]);
+  const board = find(tree, element => element.type === HyperBotAttentionBoard)!, editor = find(tree, element => element.type === HyperBotEditor)!;
+  expect(board.props.openConversation).toBe(panel.props.onOpenConversation); expect(editor.props.onOpenConversation).toBe(panel.props.onOpenConversation);
+  f.request.mockResolvedValue({ channel: { id: 'work', name: 'Work', threadId: 'thread', agentIds: ['bot'], active: true } });
+  vi.stubGlobal('localStorage', { getItem: vi.fn(), setItem: vi.fn() });
+  board.props.openConversation('work'); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/channels/work');
+  expect(find(render(HyperOpenBotWorkspace, { viewId: 'bots-navigation', serviceReady: true }, states), element => element.props.channel?.id === 'work')).toBeDefined();
+});
+it.each([
+  { name: 'history restoring', serviceReady: true, active: true, expectedContinue: true },
+  { name: 'service outage', serviceReady: false, active: true, expectedContinue: false },
+  { name: 'inactive channel', serviceReady: true, active: false, expectedContinue: false },
+])('native Chat voice continuation policy distinguishes $name from start readiness', test => {
+  const channel = { id: 'voice-policy', name: 'Voice', threadId: 'thread', agentIds: ['bot'], active: test.active };
+  const workspace = render(HyperOpenBotWorkspace, { viewId: 'voice-policy', serviceReady: test.serviceReady }, ['conversations', [], false, '', [], 'thread', 0, 0, undefined, [channel], channel]);
+  const chat = find(workspace, element => element.props.channel?.id === channel.id)!;
+  h.states = []; h.refs = [];
+  const controls = find(render(chat.type as (props: any) => ReactNode, chat.props), element => element.type === HyperVoiceControls)!;
+  expect(controls.props.disabled).toBe(true); expect(controls.props.canContinue).toBe(test.expectedContinue);
+});
+it('voice continuation denial ends a connected call and blocks a new start', async () => {
+  let phase = 'connected';
+  const session = { subscribe: vi.fn(), getSnapshot: () => ({ phase, seconds: 1 }), end: vi.fn(() => { phase = 'idle'; }), start: vi.fn() };
+  const props = { channelId: 'voice-denied', disabled: false, canContinue: false, context: () => '', askAgent: vi.fn(), anchorMessageId: () => null };
+  vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: vi.fn() } });
+  f.request.mockImplementation(async (path: string) => path === '/api/me' ? { user: { id: 'owner' } } : path === '/api/capabilities' ? { voice: true } : { sessions: [], nextCursor: null });
+  let tree = render(HyperVoiceControls, props, [true, [], [], undefined, 0, session]); mountEffects(); await drain();
+  expect(session.end).toHaveBeenCalledOnce(); tree = render(HyperVoiceControls, props);
+  const start = button(tree, 'Start voice call')!; expect(start.props.disabled).toBe(true); start.props.onClick(); expect(session.start).not.toHaveBeenCalled();
+});
+it('Memory Remember is an explicit submit control for the real form save handler', async () => {
+  const state = [{ page: 'facts' }, { edition: 'team' }, '', false, 0, '/api/capabilities:', [], '', false, 0, '/api/memory:memories', [], '', false, 0, '/api/agents:agents', false, '', 'remember this fact', undefined];
+  f.request.mockResolvedValue({}); const tree = render(HyperMemorySection, {}, state);
+  const form = find(tree, element => element.type === 'form')!, submit = find(form, element => text(element.props.children) === 'Remember')!;
+  expect(submit.props.type).toBe('submit'); form.props.onSubmit({ preventDefault() {} }); await drain();
+  expect(f.request).toHaveBeenCalledWith('/api/memory', 'POST', { content: 'remember this fact' });
 });

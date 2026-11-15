@@ -11,3 +11,13 @@ it('displays server-proposed named members without an arbitrary membership edito
   expect(html).toContain('server-user'); expect(html).toContain('server-group');
   expect(html).not.toContain('comma separated'); expect(html).not.toContain('type="text"');
 });
+it('keeps each Bot audience editor in its own radio group within a shared mode-switch dialog', () => {
+  const markup = renderToStaticMarkup(<>
+    <HyperSharedApprovalFields value={{ audience: 'owner', outsideInput: false, members: [] }} onChange={vi.fn()} />
+    <HyperSharedApprovalFields value={{ audience: 'team', outsideInput: true, members: [] }} onChange={vi.fn()} />
+  </>);
+  const names = [...markup.matchAll(/type="radio"[^>]*name="([^"]+)"/g)].map(match => match[1]);
+  expect(names).toHaveLength(4);
+  expect(names[0]).toBe(names[1]); expect(names[2]).toBe(names[3]); expect(names[0]).not.toBe(names[2]);
+  expect([...markup.matchAll(/type="radio"[^>]*checked=""/g)]).toHaveLength(2);
+});
