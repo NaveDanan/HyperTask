@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 import { hyperReadControl as readControl } from "./HyperComputerApi";
+import { hyperReadBrowser } from "./HyperComputerApi";
+import { hyperComputerPermits, hyperReadComputerActor } from "./HyperComputerControl";
 import { HyperOpenBotSocket } from "../socket";
 import {
   connectScreen,
@@ -120,6 +122,8 @@ type Props = {
   computerId: string;
   /** Whether the user currently holds the wheel. Input is only sent when true. */
   driving: boolean;
+  /** Current caller/owner guard, also checked by deferred input. Omission keeps this viewer passive. */
+  canInput?: () => boolean;
   /** Called with a human-readable reason when the stream cannot be established. */
   onProblem?: (problem: string | null) => void;
   /** Called while a dropped stream is being retried on its own, and again when it is back or gone. */
@@ -144,6 +148,7 @@ type FrameMessage = {
 export function HyperLiveScreen({
   computerId,
   driving,
+  canInput,
   onProblem,
   onReconnecting,
   retryKey = 0,
@@ -151,6 +156,25 @@ export function HyperLiveScreen({
   autoFocus = false,
   ref,
 }: Props) {
+  const inputScope = useRef({ computerId, live: true, driving, canInput });
+  if (inputScope.current.computerId !== computerId) {
+    inputScope.current.live = false;
+    inputScope.current = { computerId, live: true, driving, canInput };
+  }
+  const input = inputScope.current;
+  input.driving = driving; input.canInput = canInput;
+  const mayInput = () => input.live && inputScope.current === input && input.driving && input.canInput?.() === true;
+  async function verifyInput() {
+    const guard = input.canInput;
+    const current = () => mayInput() && guard?.() === true;
+    if (!current()) return false;
+    if (/^person-[0-9a-f]{32}$/.test(computerId)) {
+      const browser = await hyperReadBrowser();
+      return current() && browser.open && browser.computerId === computerId;
+    }
+    const [state, actor] = await Promise.all([readControl(computerId), hyperReadComputerActor()]);
+    return current() && hyperComputerPermits(state, actor, 'drive');
+  }
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const socketRef = useRef<HyperOpenBotSocket | null>(null);
   /** Keys sent down to the remote browser, by code, whose release goes there too, wherever the focus is by then. */
@@ -195,6 +219,7 @@ export function HyperLiveScreen({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: explicit Retry restarts this connection.
   useEffect(() => {
+    input.live = true;
     let closed = false;
     setConnected(false);
     inputReady.current = false;
@@ -407,10 +432,7 @@ export function HyperLiveScreen({
           close: () => socket.close(),
         };
       },
-      verifyOwnership: async () => {
-        const state = await readControl(computerId);
-        return state?.holder === "human" && !state.transitioning;
-      },
+      verifyOwnership: verifyInput,
       onReady: (ready) => {
         inputReady.current = ready;
         setConnected(ready);
@@ -432,6 +454,7 @@ export function HyperLiveScreen({
     });
     document.addEventListener("visibilitychange", drawLatestFrame);
     return () => {
+      input.live = false;
       closed = true;
       // Before the socket goes: a key still down over there would stay held in the remote browser.
       releaseKeys();
@@ -452,10 +475,10 @@ export function HyperLiveScreen({
     )
       return;
     let live = true;
-    void readControl(computerId)
-      .then((state) => {
+    void verifyInput()
+      .then((permitted) => {
         if (!live || socketRef.current?.readyState !== WebSocket.OPEN) return;
-        inputReady.current = state?.holder === "human" && !state.transitioning;
+        inputReady.current = permitted && mayInput();
         setConnected(inputReady.current);
       })
       .catch(() => {
@@ -481,14 +504,14 @@ export function HyperLiveScreen({
     (message: Record<string, unknown>) => {
       const socket = socketRef.current;
       if (
-        !driving ||
+        !mayInput() || canInput?.() !== true ||
         !inputReady.current ||
         socket?.readyState !== WebSocket.OPEN
       )
         return;
       socket.send(JSON.stringify(message));
     },
-    [driving],
+    [computerId, driving, canInput],
   );
 
   /** Send the held move or scroll now, so whatever comes next lands after it. */

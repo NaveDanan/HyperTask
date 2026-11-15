@@ -77,6 +77,8 @@ type Props = {
   computerId: string;
   /** Whether the signed-in person holds the wheel. Typing reaches the shell only then. */
   driving: boolean;
+  /** Checked at dispatch time, including callbacks retained by xterm. Omission disables input. */
+  canInput?: () => boolean;
   /** Why the terminal cannot be shown, when retrying will not change it, or the retries are spent. */
   onProblem?: (problem: string | null) => void;
   onReconnecting?: (reconnecting: boolean) => void;
@@ -88,6 +90,7 @@ type Props = {
 function HyperLiveTerminal({
   computerId,
   driving,
+  canInput,
   onProblem,
   onReconnecting,
   retryKey = 0,
@@ -95,8 +98,15 @@ function HyperLiveTerminal({
 }: Props) {
   const host = useRef<HTMLElement | null>(null);
   const terminalRef = useRef<Terminal | null>(null);
+  const socketRef = useRef<HyperOpenBotSocket | null>(null);
   const drivingRef = useRef(driving);
   drivingRef.current = driving;
+  const inputRef = useRef({ computerId, live: true, canInput });
+  if (inputRef.current.computerId !== computerId) {
+    inputRef.current.live = false;
+    inputRef.current = { computerId, live: true, canInput };
+  }
+  const input = inputRef.current; input.canInput = canInput;
   const problemRef = useRef(onProblem);
   problemRef.current = onProblem;
   const reconnectingRef = useRef(onReconnecting);
@@ -109,6 +119,7 @@ function HyperLiveTerminal({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Retry reconnects by bumping `retryKey`.
   useEffect(() => {
+    input.live = true;
     const element = host.current;
     if (!element) return;
     const terminal = new Terminal({
@@ -164,14 +175,6 @@ function HyperLiveTerminal({
       else ackTimer ??= setTimeout(acknowledge, ACK_AFTER_MS);
     };
 
-    // What the person types, and the mouse reports a program in the terminal asks for.
-    const typing = terminal.onData((data) => {
-      if (drivingRef.current) send({ type: "input", data });
-    });
-    const binary = terminal.onBinary((data) => {
-      if (drivingRef.current) send({ type: "input", data });
-    });
-
     const connection = connectScreen({
       open: () => {
         const opened = new HyperOpenBotSocket(
@@ -181,6 +184,7 @@ function HyperLiveTerminal({
         );
         opened.binaryType = "arraybuffer";
         socket = opened;
+        socketRef.current = opened;
         return {
           set onopen(callback: ScreenSocket["onopen"]) {
             opened.onopen = callback
@@ -236,15 +240,28 @@ function HyperLiveTerminal({
     });
 
     return () => {
+      input.live = false;
       connection.stop();
+      socketRef.current = null;
       observer.disconnect();
-      typing.dispose();
-      binary.dispose();
       clearTimeout(ackTimer);
       terminalRef.current = null;
       terminal.dispose();
     };
   }, [computerId, retryKey]);
+
+  // Rebind typing to the rendered ownership guard without replacing the terminal's output or socket.
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+    const type = (data: string) => {
+      const socket = socketRef.current;
+      if (terminalRef.current === terminal && input.live && inputRef.current === input && drivingRef.current && canInput?.() === true && input.canInput?.() === true && socket?.readyState === WebSocket.OPEN)
+        socket.send(JSON.stringify({ type: 'input', data }));
+    };
+    const typing = terminal.onData(type), binary = terminal.onBinary(type);
+    return () => { typing.dispose(); binary.dispose(); };
+  }, [computerId, retryKey, canInput]);
 
   // The wheel changing hands: the keyboard reaches the shell only while it is the person's.
   useEffect(() => {
@@ -270,13 +287,13 @@ function HyperLiveTerminal({
 }
 
 /** Native recovery controls around the upstream streaming terminal. */
-export function HyperTerminal({ computerId, driving }: { computerId: string; driving: boolean }) {
+export function HyperTerminal({ computerId, driving, canInput }: { computerId: string; driving: boolean; canInput?: () => boolean }) {
   const [problem, setProblem] = useState<string | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
   const [retry, setRetry] = useState(0);
   return <section className="flex h-full flex-col gap-2">
     {problem && <p role="alert">{problem} <Button variant="outline" onClick={() => { setProblem(null); setRetry(value => value + 1); }}>Retry</Button></p>}
     {reconnecting && <p role="status">Reconnecting terminal…</p>}
-    <div className="min-h-0 flex-1"><HyperLiveTerminal computerId={computerId} driving={driving} retryKey={retry} onProblem={setProblem} onReconnecting={setReconnecting} /></div>
+    <div className="min-h-0 flex-1"><HyperLiveTerminal computerId={computerId} driving={driving} canInput={canInput} retryKey={retry} onProblem={setProblem} onReconnecting={setReconnecting} /></div>
   </section>;
 }

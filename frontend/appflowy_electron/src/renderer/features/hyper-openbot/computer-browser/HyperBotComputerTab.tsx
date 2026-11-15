@@ -1,33 +1,34 @@
 // Adapted from OpenBot routes/_authed/bots.$agentId.computer and computer/computer-controls.
 // Copyright (c) 2026 CopilotKit. MIT.
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { hyperReadControl, hyperTakeControl, hyperReleaseControl, type HyperControl } from './HyperComputerApi';
+import { useHyperComputerControl } from './HyperComputerControl';
 import { HyperPrivateHandoffs } from './HyperPrivateHandoffs';
-import { hyperOpenBotRequest } from '../transport';
 import { HyperTerminal } from './HyperTerminal';
 import { HyperFiles } from './HyperFiles';
 import { HyperHostFolders } from './HyperHostFolders';
 import { HyperBrowserView } from './HyperBrowserSection';
 export function HyperBotComputerTab({ agentId }: { agentId: string }) {
   const [tab, setTab] = useState<'browser' | 'terminal' | 'files' | 'folders'>('browser');
-  const [control, setControl] = useState<HyperControl>(); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
-  useEffect(() => { let active = true; let timer: ReturnType<typeof setTimeout>;
-    async function poll() { try { const next = await hyperReadControl(agentId); if (active) setControl(next); } catch { if (active) setControl(undefined); } finally { if (active) timer = setTimeout(() => void poll(), 1000); } }
-    setControl(undefined); void poll(); return () => { active = false; clearTimeout(timer); };
-  }, [agentId]);
-  async function change(release: boolean) { setBusy(true); setError(''); try {
-    setControl(release && control?.request ? await hyperReleaseControl(agentId, control.request.id) : await hyperTakeControl(agentId, control?.request && ['waiting', 'taken'].includes(control.request.status) ? control.request.id : undefined));
-  } catch { setError('Control change failed or was refused. Refresh and try again.'); } finally { setBusy(false); } }
+  const authority = useHyperComputerControl(agentId);
+  const { control, busy } = authority;
+  const [error, setError] = useState('');
+  const current = useRef(agentId); current.current = agentId;
+  async function change(action: 'take' | 'release' | 'cancel') {
+    if (!authority.permits(action)) return;
+    setError('');
+    try { await authority.change(action); }
+    catch { if (current.current === agentId) setError('Control change failed or was refused. Refresh and try again.'); }
+  }
   return <section className="flex flex-col gap-3 p-4">
     {control?.request && <p role="status">Handoff: {control.request.status}</p>}
     {control?.request?.source !== 'manual' && control?.reason && <p>{control.reason}</p>}
     {error && <p role="alert" className="text-destructive">{error}</p>}
-    <div className="flex gap-2"><Button disabled={!control || busy || control.transitioning || control.holder === 'human'} onClick={() => void change(false)}>Take control</Button><Button variant="outline" disabled={!control?.request || busy || control.holder !== 'human'} onClick={() => void change(true)}>Hand back</Button>{control?.request && !['completed', 'cancelled', 'expired'].includes(control.request.status) && <Button variant="outline" disabled={busy || control.transitioning} onClick={() => { setBusy(true); void hyperOpenBotRequest<HyperControl>(`/api/computers/${encodeURIComponent(agentId)}/control/cancel`, 'POST', { requestId: control.request!.id }).then(setControl).catch(() => setError('The handoff could not be declined.')).finally(() => setBusy(false)); }}>Decline handoff</Button>}</div>
-    <HyperPrivateHandoffs key={agentId} agentId={agentId} control={control} onOpenBrowser={() => setTab('browser')} />
-    <nav aria-label="Computer views" className="flex gap-2">{(['browser', 'terminal', 'files', 'folders'] as const).map(item => <Button variant={tab === item ? 'default' : 'outline'} key={item} onClick={() => setTab(item)}>{item}</Button>)}</nav>
-    {tab === 'browser' && <HyperBrowserView key={agentId} agentId={agentId}/>}
-    {tab === 'terminal' && <div className="h-96"><HyperTerminal computerId={agentId} driving={control?.holder === 'human' && !control.transitioning}/></div>}
+    <div className="flex gap-2"><Button disabled={!authority.permits('take')} onClick={() => void change('take')}>Take control</Button><Button variant="outline" disabled={!authority.permits('release')} onClick={() => void change('release')}>Hand back</Button>{control?.request && !['completed', 'cancelled', 'expired'].includes(control.request.status) && <Button variant="outline" disabled={!authority.permits('cancel')} onClick={() => void change('cancel')}>Decline handoff</Button>}</div>
+    <HyperPrivateHandoffs key={agentId} agentId={agentId} control={control} authority={authority} onOpenBrowser={() => { if (authority.permits('private')) setTab('browser'); }} />
+    <nav aria-label="Computer views" className="flex gap-2">{(['browser', 'terminal', 'files', 'folders'] as const).map(item => <Button variant={tab === item ? 'default' : 'outline'} key={item} onClick={() => { if (authority.current()) setTab(item); }}>{item}</Button>)}</nav>
+    {tab === 'browser' && <HyperBrowserView key={agentId} agentId={agentId} authority={authority}/>}
+    {tab === 'terminal' && <div className="h-96"><HyperTerminal key={agentId} computerId={agentId} driving={!busy && authority.canDrive()} canInput={authority.canDrive}/></div>}
     {tab === 'files' && <HyperFiles key={agentId} agentId={agentId}/>}
     {tab === 'folders' && <HyperHostFolders key={agentId} agentId={agentId}/>}
   </section>;
