@@ -1,7 +1,7 @@
 import type { HyperInitialDraft as HyperHomeInitialDraft } from '../onboarding/HyperHomeApi';
 import { HyperScreenPickedFiles } from '../composer/hyper-files';
 import type { HyperConversationModel } from '../HyperModelSelection';
-export type HyperInitialDraft = HyperHomeInitialDraft & { modelPick?: HyperConversationModel };
+export type HyperInitialDraft = HyperHomeInitialDraft & { modelPick?: HyperConversationModel; agentId?: string | null };
 /** One memory-only start transaction, retained after refusal so retry reuses its server channel. */
 export class HyperInitialDraftTransfer<T> {
   private active?: AbortController;
@@ -16,7 +16,7 @@ export class HyperInitialDraftTransfer<T> {
     navigate(channel: T): void;
   }) {
     if (this.active) throw new Error('A conversation is already being started.');
-    const same = this.held && this.held.ids.join('\0') === ids.join('\0') && JSON.stringify(this.held.draft?.modelPick) === JSON.stringify(draft?.modelPick) && this.held.draft?.text === draft?.text && this.held.draft?.submit === draft?.submit && this.held.draft?.commandIds.join('\0') === draft?.commandIds.join('\0') && this.held.draft?.files.length === draft?.files.length && this.held.draft?.files.every((file, index) => file === draft?.files[index]);
+    const same = this.held && this.held.ids.join('\0') === ids.join('\0') && this.held.draft?.agentId === draft?.agentId && JSON.stringify(this.held.draft?.modelPick) === JSON.stringify(draft?.modelPick) && this.held.draft?.text === draft?.text && this.held.draft?.submit === draft?.submit && this.held.draft?.commandIds.join('\0') === draft?.commandIds.join('\0') && this.held.draft?.files.length === draft?.files.length && this.held.draft?.files.every((file, index) => file === draft?.files[index]);
     const held = same ? this.held! : { ids: [...ids], draft, channel: undefined as T | undefined, uploaded: new Map<File, HyperDraftAttachment>() };
     this.held = held;
     const controller = new AbortController(); this.active = controller;

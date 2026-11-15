@@ -107,6 +107,7 @@ export function hyperAppAccessAsRefused(live: HyperAppAccess, refusal?: 'connect
 
 
 export const hyperLoadAppAccess = (agentId: string, app: string) => hyperOpenBotRequest<{ app: HyperAppAccess }>(`/api/plugins/for/${encodeURIComponent(agentId)}/apps/${encodeURIComponent(app)}`);
+export const hyperReadAppAccessActor = () => hyperOpenBotRequest<{ user: { role: string } }>('/api/me');
 export const hyperRequestAppAccess = (agentId: string, app: string) => hyperOpenBotRequest('/api/plugins/access-requests', 'POST', { agentId, app });
 export const hyperCancelAppAccess = (id: string) => hyperOpenBotRequest(`/api/plugins/access-requests/${encodeURIComponent(id)}`, 'DELETE');
 export const hyperGiveApp = (agentId: string, app: string, give = true) => hyperOpenBotRequest(`/api/plugins/for/${encodeURIComponent(agentId)}/apps/${encodeURIComponent(app)}/give`, give ? 'POST' : 'DELETE');

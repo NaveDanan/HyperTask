@@ -348,6 +348,7 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
   async function start(agentIds: string[], initialDraft?: HyperInitialDraft) {
     if (!serviceRef.current) throw new Error('AI services are not ready.');
     if (!agentIds.length) throw new Error('Choose a Bot.');
+    if (initialDraft?.agentId && !agentIds.includes(initialDraft.agentId)) throw new Error('Address a Bot selected in this conversation.');
     if (!initialDraft) { cancelStart(); selectionVersion.current++; freshComposition(agentIds); setChannel(undefined); setNavigationIntent(undefined); setScreen('new-conversation'); return; }
     if (initialDraft && HyperScreenPickedFiles(initialDraft.files, { alreadyStaged: 0 }).rejected.length) throw new Error('Some files cannot be attached. Check file types, sizes, and the eight-file limit.');
     if (agentIds.length > 1 && initialDraft && (initialDraft.files.length || initialDraft.commandIds.length)) throw new Error('Files and skills require a conversation with one Bot.');
@@ -363,7 +364,7 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
           if (created.agentIds.length > 1) {
             const lease = hyperAcquireConversationDraft(created.id);
             lease.update(current => ({ ...current, text: initial.text, commandIds: initial.commandIds }));
-            if (initial.submit) { const sent = lease.prepareSubmission(initial.text, ''); try { await hyperSendGroup(created.id, { id: sent.id, text: initial.text, agentId: null }); } catch (error) { await request(`/api/channels/${encodeURIComponent(created.id)}?discardFailedStart=true`, 'DELETE').catch(() => {}); transfer.forget(created); throw error; } lease.update(current => ({ ...current, text: '', commandIds: [], retry: undefined })); } return;
+            if (initial.submit) { const sent = lease.prepareSubmission(initial.text, ''); try { await hyperSendGroup(created.id, { id: sent.id, text: initial.text, agentId: initial.agentId ?? null }); } catch (error) { await request(`/api/channels/${encodeURIComponent(created.id)}?discardFailedStart=true`, 'DELETE').catch(() => {}); transfer.forget(created); throw error; } lease.update(current => ({ ...current, text: '', commandIds: [], retry: undefined })); } return;
           }
           if (receiving?.id !== created.id) { receiver.current = undefined; setReceiving(created); }
           const receive = await new Promise<HyperInitialDraftReceiver>((resolve, reject) => {

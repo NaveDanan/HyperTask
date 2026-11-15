@@ -18,8 +18,8 @@ export function HyperSharedApprovalFields({ value, onChange, disabled = false }:
   return <fieldset disabled={disabled} className="space-y-2"><legend className="font-medium">Who can use the shared account through this Bot</legend>{options.map(option => <label key={option.audience} className="flex gap-2"><input type="radio" name={`shared-audience-${audienceId}`} checked={value.audience === option.audience} onChange={() => onChange({ ...value, audience: option.audience, members: option.audience === 'people' ? value.members : [] })} />{option.label}</label>)}<label className="flex gap-2"><input type="checkbox" checked={value.outsideInput} onChange={e => onChange({ ...value, outsideInput: e.target.checked })} />Allow outside input</label></fieldset>;
 }
 interface HyperGrantScope { key: string; active: boolean; operation: number }
-interface HyperPendingGrant { ref: string; bot: string; scope: HyperGrantScope; operation: number }
-interface HyperBatchApprovals { scope: HyperGrantScope; operation: number; selection: string; values: Record<string, HyperSharedApproval> }
+interface HyperPendingGrant { ref: string; bot: string; scope: HyperGrantScope; operation: number; serverResolved?: boolean }
+interface HyperBatchApprovals { scope: HyperGrantScope; operation: number; selection: string; values: Record<string, HyperSharedApproval | undefined> }
 
 export function HyperPluginGrants({ server, busy, selection, navigate, run, callbackAllowed, admin = false }: { server: HyperConnectionServer; busy: boolean; callbackAllowed?: boolean; admin?: boolean; selection?: HyperConnectionSelection; navigate(value: HyperConnectionSelection): void; run(action: () => Promise<void>): Promise<void> }) {
   const [bots, setBots] = useState<HyperPluginBot[]>();
@@ -61,8 +61,11 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
     const page = await hyperOpenBotRequest<{ apps: { serverId: string; needed: HyperSharedApproval; covered: boolean }[] }>(`/api/approvals/shared-use/bot/${encodeURIComponent(bot)}`);
     if (!valid(ticket)) throw new Error('The grant target changed.');
     const app = page.apps.find(value => value.serverId === server.id);
-    if (!app?.needed || !Array.isArray(app.needed.members) || !['owner', 'people', 'team'].includes(app.needed.audience)) throw new Error('Server-proposed shared access is unavailable.');
-    return app;
+    // This endpoint lists held apps only. The original grant endpoint resolves
+    // first-grant exposure itself when approval is omitted, preserving admin decisions.
+    if (!app) return { needed: undefined, covered: false, serverResolved: true };
+    if (!app.needed || !Array.isArray(app.needed.members) || !['owner', 'people', 'team'].includes(app.needed.audience)) throw new Error('Server-proposed shared access is unavailable.');
+    return { ...app, serverResolved: false };
   }
   const tools = server.tools.filter(t => !chosenTool || t.name === chosenTool);
   const reads = server.tools.filter(tool => tool.effect === 'read');
@@ -76,7 +79,7 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
       if (granted && server.accountMode === 'shared') {
         const app = await exposure(ticket, bot);
         if (app.covered) await grant(ticket, ref, bot, true);
-        else { setApproval(app.needed); setPending({ ref, bot, scope, operation: ticket }); }
+        else { if (app.needed) setApproval(app.needed); setPending({ ref, bot, scope, operation: ticket, serverResolved: app.serverResolved }); }
       } else await grant(ticket, ref, bot, granted);
     });
   }
@@ -84,7 +87,7 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
     if (!chosenBot || busy || !valid(operation)) return;
     const ticket = ++scope.operation; setError('');
     await execute(ticket, async () => {
-      if (server.accountMode === 'shared') { const app = await exposure(ticket, chosenBot); setApproval(app.needed); setPending({ ref: '*reads*', bot: chosenBot, scope, operation: ticket }); return; }
+      if (server.accountMode === 'shared') { const app = await exposure(ticket, chosenBot); if (app.needed) setApproval(app.needed); setPending({ ref: '*reads*', bot: chosenBot, scope, operation: ticket, serverResolved: app.serverResolved }); return; }
       let done = 0;
       try { for (const tool of reads) { await grant(ticket, tool.ref ?? `${server.id}/${tool.name}`, chosenBot, true); if (valid(ticket)) setProgress(`${++done}/${reads.length}`); } }
       finally { if (valid(ticket)) setProgress(''); }
@@ -98,7 +101,7 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
     if (busy || !valid(operation) || !batchBots.length || !batchTools.length) return;
     const ticket = ++scope.operation;
     await execute(ticket, async () => {
-      const values: Record<string, HyperSharedApproval> = {};
+      const values: Record<string, HyperSharedApproval | undefined> = {};
       for (const bot of batchBots) values[bot] = (await exposure(ticket, bot)).needed;
       if (valid(ticket)) setBatchApprovals({ scope, operation: ticket, selection: batchSelection, values });
     });
@@ -119,14 +122,14 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
     });
   }
   async function approvePending() {
-    if (busy || !pending || pending.scope !== scope || !valid(pending.operation) || currentApproval.current !== approval) return;
+    if (busy || !pending || pending.scope !== scope || !valid(pending.operation) || !pending.serverResolved && currentApproval.current !== approval) return;
     await execute(pending.operation, async () => {
-      if (currentApproval.current !== approval) return;
+      if (!pending.serverResolved && currentApproval.current !== approval) return;
       if (pending.ref === '*reads*') {
         let done = 0;
-        try { for (const tool of reads) { if (currentApproval.current !== approval) return; await grant(pending.operation, tool.ref ?? `${server.id}/${tool.name}`, pending.bot, true, approval); if (valid(pending.operation)) setProgress(`${++done}/${reads.length}`); } }
+        try { for (const tool of reads) { if (!pending.serverResolved && currentApproval.current !== approval) return; await grant(pending.operation, tool.ref ?? `${server.id}/${tool.name}`, pending.bot, true, pending.serverResolved ? undefined : approval); if (valid(pending.operation)) setProgress(`${++done}/${reads.length}`); } }
         finally { if (valid(pending.operation)) setProgress(''); }
-      } else await grant(pending.operation, pending.ref, pending.bot, true, approval);
+      } else await grant(pending.operation, pending.ref, pending.bot, true, pending.serverResolved ? undefined : approval);
       if (valid(pending.operation)) setPending(undefined);
     });
   }
@@ -140,14 +143,14 @@ export function HyperPluginGrants({ server, busy, selection, navigate, run, call
       {roster.filter(bot => bots?.some(b => b.id === bot.id)).map(bot => <label className="flex gap-2" key={bot.id}><input type="checkbox" disabled={busy} checked={batchBots.includes(bot.id)} onChange={e => updateBatch(() => setBatchBots(e.target.checked ? [...batchBots, bot.id] : batchBots.filter(id => id !== bot.id)))} />{bot.name}{bot.hidden ? ' · hidden' : ''}</label>)}
       {server.tools.map(tool => { const ref = tool.ref ?? `${server.id}/${tool.name}`; return <label className="flex gap-2" key={ref}><input type="checkbox" disabled={busy} checked={batchTools.includes(ref)} onChange={e => updateBatch(() => setBatchTools(e.target.checked ? [...batchTools, ref] : batchTools.filter(id => id !== ref)))} />{tool.name} · {tool.effect === 'read' ? 'Reads' : 'Changes things'}{tool.destructive ? ' · Destructive' : ''}</label>; })}
       <label>Action<select disabled={busy} value={String(batchGrant)} onChange={e => updateBatch(() => setBatchGrant(e.target.value === 'true'))}><option value="true">Grant</option><option value="false">Revoke</option></select></label>
-      {sharedBatch && <><p>These Bots act as the team account. Review each Bot's server-proposed audience and outside input.</p>{proof && batchBots.map(bot => <div key={bot}><h4>{roster.find(row => row.id === bot)?.name ?? bot}</h4><HyperSharedApprovalFields disabled={busy} value={proof.values[bot]} onChange={value => setBatchApprovals({ ...proof, values: { ...proof.values, [bot]: value } })} /></div>)}</>}
+      {sharedBatch && <><p>These Bots act as the team account. Review each Bot's server-proposed audience and outside input.</p>{proof && batchBots.map(bot => <div key={bot}><h4>{roster.find(row => row.id === bot)?.name ?? bot}</h4>{proof.values[bot] ? <HyperSharedApprovalFields disabled={busy} value={proof.values[bot]} onChange={value => setBatchApprovals({ ...proof, values: { ...proof.values, [bot]: value } })} /> : <p>This Bot has not held this shared app. The server will preserve any administrator approval or resolve this Bot's current audience and outside input on its first grant. No client membership is supplied.</p>}</div>)}</>}
       <p>{batchBots.length} Bots × {batchTools.length} tools = {batchBots.length * batchTools.length} changes.</p>
-      {sharedBatch && !proof ? <Button disabled={busy || !batchBots.length || !batchTools.length} onClick={() => void reviewBatch()}>Review shared audiences</Button> : <Button disabled={busy || !batchBots.length || !batchTools.length || !!proof && batchBots.some(bot => proof.values[bot]?.audience === 'people' && !proof.values[bot].members.length)} onClick={() => void confirmBatch()}>Confirm {batchGrant ? 'grant' : 'revoke'} batch</Button>}
+      {sharedBatch && !proof ? <Button disabled={busy || !batchBots.length || !batchTools.length} onClick={() => void reviewBatch()}>Review shared audiences</Button> : <Button disabled={busy || !batchBots.length || !batchTools.length || !!proof && batchBots.some(bot => proof.values[bot]?.audience === 'people' && !proof.values[bot]!.members.length)} onClick={() => void confirmBatch()}>Confirm {batchGrant ? 'grant' : 'revoke'} batch</Button>}
       <Button variant="outline" disabled={busy} onClick={close}>Cancel</Button>
     </div>}
     <Input aria-label="Search tools" value={search} onChange={e => setSearch(e.target.value)} />{!tools.length && <p>{chosenTool ? 'Tool not found. It may have been withdrawn.' : 'No tools reported.'}</p>}
     {(['read', 'write'] as const).map(effect => <div key={effect}><h3>{effect === 'read' ? 'Reads' : 'Changes things, including unknown actions'}</h3>{tools.filter(t => (t.effect === 'read' ? 'read' : 'write') === effect && `${t.name} ${t.description}`.toLowerCase().includes(search.toLowerCase())).map(tool => <div key={tool.name} className="space-y-2 rounded-lg border border-border p-4"><Button variant="ghost" onClick={() => go({ page: 'tool', key: server.id, tool: tool.name })}>{tool.name}</Button><p>{tool.description}</p>{tool.destructive && <p className="text-destructive">Vendor marks this action as destructive.</p>}{chosenTool && <pre className="overflow-x-auto text-xs">{JSON.stringify(tool.inputSchema ?? {}, null, 2)}</pre>}{(chosenBot ? roster.filter(b => b.id === chosenBot) : chosenTool ? roster : []).map(bot => <label key={bot.id} className="flex gap-2"><input type="checkbox" checked={alwaysOn || !!tool.grantedTo?.includes(bot.id)} disabled={busy || alwaysOn || !bots || !bots.some(b => b.id === bot.id)} onChange={e => void change(tool.ref ?? `${server.id}/${tool.name}`, bot.id, e.target.checked)} />{bot.name}{bot.hidden ? ' · hidden' : ''}{!callbackAllowed && !bot.hasCallbackToken && <span className="text-muted-foreground">Callback authentication also requires a Bot credential or deployment callback secret.</span>}</label>)}</div>)}</div>)}
     {server.withdrawn?.map(tool => <div key={tool.ref} className="rounded-lg border border-border p-3"><p>{tool.name} · Withdrawn. Held grants are not offered; they become active again if the vendor restores this tool.</p>{tool.grantedTo.map(bot => <Button key={bot} disabled={busy} variant="outline" onClick={() => void execute(operation, async () => { await grant(operation, tool.ref, bot, false); })}>Revoke from {bots?.find(b => b.id === bot)?.name ?? bot}</Button>)}</div>)}
-    {pending?.scope === scope && valid(pending.operation) && <div role="alertdialog" aria-label="Approve shared app access" className="space-y-3 rounded-lg border border-border p-4"><p>{roster.find(bot => bot.id === pending.bot)?.name ?? pending.bot} will use the deployment's shared account. Approve its audience and outside input before granting access.</p><HyperSharedApprovalFields value={approval} onChange={setApproval} disabled={busy} /><Button disabled={busy || approval.audience === 'people' && !approval.members.length} onClick={() => void approvePending()}>Approve and grant</Button><Button disabled={busy} variant="outline" onClick={close}>Cancel</Button></div>}
+    {pending?.scope === scope && valid(pending.operation) && <div role="alertdialog" aria-label="Approve shared app access" className="space-y-3 rounded-lg border border-border p-4"><p>{roster.find(bot => bot.id === pending.bot)?.name ?? pending.bot} will use the deployment's shared account. Approve its audience and outside input before granting access.</p>{pending.serverResolved ? <p>This Bot has not held this shared app. The server will preserve any administrator approval or resolve this Bot's current audience and outside input on its first grant. No client membership is supplied.</p> : <HyperSharedApprovalFields value={approval} onChange={setApproval} disabled={busy} />}<Button disabled={busy || !pending.serverResolved && approval.audience === 'people' && !approval.members.length} onClick={() => void approvePending()}>Approve and grant</Button><Button disabled={busy} variant="outline" onClick={close}>Cancel</Button></div>}
   </div>;
 }

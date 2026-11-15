@@ -3,8 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import * as api from './HyperAppAccessApi';
 import { useHyperAccessRequestList } from './HyperAccessRequestList';
-export interface HyperAppAccessActionProps { agentId: string; app: string; refusal?: 'connect' | 'reconnect' | 'shared'; refusalAt?: string; admin?: boolean; onOpenConnection?(key: string): void }
-export function HyperAppAccessAction({ agentId, app, refusal, refusalAt, admin = false, onOpenConnection }: HyperAppAccessActionProps) {
+export interface HyperAppAccessActionProps { agentId: string; app: string; refusal?: 'connect' | 'reconnect' | 'shared'; refusalAt?: string; admin?: boolean; deriveAdmin?: boolean; onOpenConnection?(key: string): void }
+export function HyperAppAccessAction({ agentId, app, refusal, refusalAt, admin: adminOverride, deriveAdmin = false, onOpenConnection }: HyperAppAccessActionProps) {
+  const [actorAdmin, setActorAdmin] = useState(false);
+  const admin = adminOverride ?? actorAdmin;
   const current = useRef({ agentId, app, admin, active: false, sequence: 0, busy: false, error: '', access: undefined as api.HyperAppAccess | undefined });
   if (current.current.agentId !== agentId || current.current.app !== app || current.current.admin !== admin) {
     current.current = { agentId, app, admin, active: false, sequence: 0, busy: false, error: '', access: undefined };
@@ -41,6 +43,7 @@ export function HyperAppAccessAction({ agentId, app, refusal, refusalAt, admin =
     void load();
     return () => { scope.active = false; scope.sequence++; scope.access = undefined; };
   }, [agentId, app, admin]);
+  useEffect(() => { if (!deriveAdmin || adminOverride !== undefined) return; let active = true; setActorAdmin(false); void api.hyperReadAppAccessActor().then(actor => { if (active) setActorAdmin(actor.user.role === 'admin'); }).catch(() => { if (active) setActorAdmin(false); }); return () => { active = false; }; }, [deriveAdmin, adminOverride, agentId, app]);
   async function run(action: () => Promise<unknown>) {
     if (!canAct()) return;
     scope.busy = true; publish();

@@ -70,3 +70,11 @@ it('fresh composition does not inherit the old upload-reference cache', async ()
   transfer.resetComposition(); await transfer.start(['bot'], draft, { create, receive, navigate: vi.fn() });
   expect(create).toHaveBeenCalledTimes(2); expect(maps[0]).not.toBe(maps[1]);
 });
+it('changing the first addressed Bot is not mistaken for retrying the same initial draft', async () => {
+  const transfer = new HyperInitialDraftTransfer<string>(), create = vi.fn().mockResolvedValueOnce('first').mockResolvedValueOnce('second');
+  const receive = vi.fn().mockRejectedValueOnce(new Error('failed')).mockResolvedValueOnce(undefined), navigate = vi.fn();
+  const draft = { text: 'Targeted', files: [], commandIds: [], submit: true, agentId: 'a' };
+  await expect(transfer.start(['a', 'b'], draft, { create, receive, navigate })).rejects.toThrow('failed');
+  await transfer.start(['a', 'b'], { ...draft, agentId: 'b' }, { create, receive, navigate });
+  expect(create).toHaveBeenCalledTimes(2);
+});

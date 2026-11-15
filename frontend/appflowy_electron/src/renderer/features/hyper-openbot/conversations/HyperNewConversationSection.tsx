@@ -8,6 +8,7 @@ import { HyperListBots, HyperAgentPath, type HyperBotProfile } from '../bots/Hyp
 import type { HyperOpenBotSectionContext } from '../HyperOpenBotSections';
 import { hyperRequestModelPick, type HyperModelCatalogue } from '../HyperModelSelection';
 import { HyperRoutingText } from '../onboarding/HyperHomeApi';
+import { HyperBotEditor } from '../bots/HyperBotsPanel';
 export default function HyperNewConversationSection({ context }: { context: HyperOpenBotSectionContext }) {
   const [commands, setCommands] = useState<{ id: string; label: string }[]>([]);
   const [files, setFiles] = useState<{ file: File; attachment: HyperComposerAttachment }[]>([]);
@@ -17,6 +18,8 @@ export default function HyperNewConversationSection({ context }: { context: Hype
   const [selected, setSelected] = useState<string[]>(() => [...(context.initialAgentIds ?? [])]);
   const [error, setError] = useState<string>();
   const [revision, setRevision] = useState(0);
+  const [creating, setCreating] = useState(false);
+  const createScope = useRef<object | undefined>(undefined);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const selection = JSON.stringify(selected);
@@ -30,6 +33,8 @@ export default function HyperNewConversationSection({ context }: { context: Hype
   const incoming = useRef({ key: incomingKey, sequence: 0 });
   if (incoming.current.key !== incomingKey) incoming.current = { key: incomingKey, sequence: 0 };
   const incomingOwner = incoming.current;
+  const creation = createScope.current;
+  const validCreation = () => mounted.current && incoming.current === incomingOwner && context.isCurrentNavigation?.() !== false && createScope.current === creation;
   const knownRecipients = useRef(false); knownRecipients.current = selected.length > 0 && selected.every(id => bots?.some(bot => bot.id === id));
   useEffect(() => {
     owner.active = true; owner.ready = false; owner.catalogue = undefined;
@@ -65,7 +70,7 @@ export default function HyperNewConversationSection({ context }: { context: Hype
   }, [revision, incomingKey]);
   return <div className="space-y-4 overflow-y-auto p-6"><h2 className="text-lg font-semibold">New conversation</h2><p className="text-sm text-muted-foreground">Choose Bots in the order they should answer.</p>{error && <div role="alert">{error}<Button onClick={() => setRevision(value => value + 1)}>Retry</Button></div>}{!bots && !error && <p role="status">Loading Bots…</p>}{bots && selected.length > 0 && !knownRecipients.current && !error && <p role="status">Loading selected Bot…</p>}{bots?.length === 0 && selected.length === 0 && <p>No Bots available. Create one in Bots.</p>}
     <div className="space-y-2">{bots?.map(bot => <label key={bot.id} className="flex items-center gap-3 rounded-lg border p-3"><input type="checkbox" disabled={files.length > 0 && selected.length > 0 && !selected.includes(bot.id)} checked={selected.includes(bot.id)} onChange={event => { setError(undefined); setSelected(value => { const known = value.filter(id => bots.some(bot => bot.id === id)); return event.target.checked ? [...new Set([...known, bot.id])] : known.filter(id => id !== bot.id); }); }} /><span>{bot.name} <span className="text-muted-foreground">{bot.title}</span></span>{selected.includes(bot.id) && <span>{selected.indexOf(bot.id) + 1}</span>}</label>)}</div>
-    <HyperComposer allowQueue={false} commands={commands} disabled={context.isCurrentNavigation?.() === false} submitDisabled={!knownRecipients.current} placeholder="Write the first message" attachments={files.map(item => item.attachment)}
+    <HyperComposer allowQueue={false} commands={commands} agents={selected.length > 1 ? selected.map(id => ({ id, name: bots?.find(bot => bot.id === id)?.name ?? id })) : undefined} disabled={context.isCurrentNavigation?.() === false} submitDisabled={!knownRecipients.current} placeholder="Write the first message" attachments={files.map(item => item.attachment)}
       onFiles={selected.length === 1 ? async added => { if (valid()) setFiles(files => [...files, ...added.map(file => ({ file, attachment: { id: crypto.randomUUID(), name: file.name, status: 'ready' as const } }))]); } : undefined}
       onRemoveAttachment={id => { if (valid()) setFiles(files => files.filter(item => item.attachment.id !== id)); }}
       onConsumeAttachments={ids => { if (valid()) setFiles(files => files.filter(item => !ids.includes(item.attachment.id))); }}
@@ -73,10 +78,13 @@ export default function HyperNewConversationSection({ context }: { context: Hype
       onSubmit={async draft => {
         if (!valid()) throw new Error('This conversation setup changed. Choose Bots again.');
         if (!knownRecipients.current) throw new Error('Choose an available Bot before sending.');
+        if (draft.agentId && !selected.includes(draft.agentId)) throw new Error('Address a Bot selected in this conversation.');
         const requested = pickable && owner.ready && owner.catalogue ? hyperRequestModelPick(owner.pick, owner.catalogue) : undefined;
         const modelPick = requested && (requested.model !== null || requested.effort !== null) ? requested : undefined;
         if (selected.length === 1) void hyperOpenBotRequest('/api/route', 'POST', { text: HyperRoutingText(draft.text), agentId: selected[0], skillSlugs: draft.commandIds ?? [] }).catch(() => {});
-        await context.startConversation(selected, { text: draft.text, files: files.filter(item => draft.attachments.some(attachment => attachment.id === item.attachment.id)).map(item => item.file), commandIds: draft.commandIds ?? [], submit: true, ...(modelPick ? { modelPick } : {}) });
+        await context.startConversation(selected, { text: draft.text, files: files.filter(item => draft.attachments.some(attachment => attachment.id === item.attachment.id)).map(item => item.file), commandIds: draft.commandIds ?? [], submit: true, ...(draft.agentId ? { agentId: draft.agentId } : {}), ...(modelPick ? { modelPick } : {}) });
       }} />
-    <Button variant="outline" onClick={() => context.navigate?.('bots')}>Create a Bot</Button></div>;
+    <Button variant="outline" disabled={creating} onClick={() => { if (!mounted.current || context.isCurrentNavigation?.() === false) return; createScope.current = {}; setCreating(true); }}>Create a Bot</Button>
+    {creating && <div role="dialog" aria-label="Create Bot in this composition"><HyperBotEditor onClose={() => { if (validCreation()) { createScope.current = undefined; setCreating(false); } }} onRemoved={() => {}} onSaved={bot => { if (!validCreation()) return; incomingOwner.sequence++; setBots(rows => [...(rows ?? []).filter(row => row.id !== bot.id), bot]); setSelected(ids => [...new Set([...ids, bot.id])]); createScope.current = undefined; setCreating(false); setRevision(value => value + 1); }} /></div>}
+    </div>;
 }
