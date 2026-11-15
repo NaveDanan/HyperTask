@@ -7,6 +7,8 @@ import { hyperObserveHomeDraftIdentity } from './onboarding/HyperHomeDraft';
 import { hyperReplyToConversationQuestion, hyperShownQuestionAnswer, hyperHasUnseenActivity } from './conversations/HyperQuestionReply';
 import { turnsLeftRunning, turnsNoLongerAway, turnsGoingAway, turnFinishedAway, onTurnFinishedAway, onTurnsAwayChanged } from './conversations/HyperTurnsAway';
 import { HyperNotifyPrompt } from './approvals-inbox/HyperNotifications';
+import { HyperStarterTasks } from './onboarding/HyperStarterTasks';
+import { HyperConversationTitle } from './screens/HyperScreenModels';
 import { HyperSubagentSteps } from './conversations/HyperSubagentSteps';
 import { HyperToolMessage } from './transcript/HyperTranscript';
 import { matchesHotkey, getHotkey } from './conversations/HyperHotkeys';
@@ -61,7 +63,7 @@ import { HYPER_OPENBOT_SECTIONS, hyperRenderConnections, type HyperOpenBotSectio
 
 type HyperChannel = HyperConversation & HyperChannelWorkHint & { threadId: string; agentIds: string[]; active: boolean; lastMessageAgentId?: string | null; lastMessageAt?: string | null; lastReadAt?: string | null };
 function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerReceiver, rosterSaysWorking }: { channel: HyperChannel; serviceReady: boolean; eventRevision?: number; registerReceiver?: (receiver: HyperInitialDraftReceiver | undefined) => void; rosterSaysWorking?: (channelId: string) => boolean | undefined }) {
-  const { copilotkit } = useCopilotKit();
+  const { copilotkit, executingToolCallIds } = useCopilotKit();
   const { agent, isReady } = useAgent({ agentId: `channel:${channel.id}`, runtimeAgentId: channel.agentIds[0], threadId: channel.threadId });
   const questions = useRef<HyperInbox['questions']>([]);
   const [error, setError] = useState<string>();
@@ -91,7 +93,7 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
   const stopRun = () => { supersedeAppCards(); stopEpoch.current++; stopped.current = true; return copilotkit.stopAgent({ agent }); };
   const generation = useRef(0);
   const { draft, getDraft, assertDraftCurrent, updateDraft, beginAttachmentSend, restoreQueuedDraft, prepareSubmission } = useHyperConversationDraft(channel.id);
-  const { uploadGroup, attachments } = draft;
+  const { attachments } = draft;
   const setAttachments = (change: (current: readonly HyperDraftAttachment[]) => readonly HyperDraftAttachment[]) => updateDraft(current => ({ ...current, attachments: change(current.attachments) }));
   const [voiceHistory, setVoiceHistory] = useState('');
   const [commands, setCommands] = useState<{ id: string; label: string }[]>([]);
@@ -191,6 +193,8 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
     }) : undefined;
     return [{ id: message.id, role: message.role, content: message.role === 'user' ? hyperShownQuestionAnswer(message.id, hyperMessageContent(message.content).text) : hyperMessageContent(message.content).text, attachments: hyperMessageContent(message.content).attachments, tools, live: sending, streaming: sending && agent.isRunning }];
   });
+  const latestAssistant = agent.messages.slice(agent.messages.findLastIndex(message => message.role === 'user') + 1).findLast(message => message.role === 'assistant');
+  const latestArguments = latestAssistant?.toolCalls?.at(-1)?.id;
   async function sendDraft(draft: { commandIds?: readonly string[]; text: string; attachments: readonly import('./composer').HyperComposerAttachment[] }) {
       if (turns.current.size || agent.isRunning || serverWorking()) throw new Error('This Bot is still working. Wait or stop it first.');
       supersedeAppCards();
@@ -308,11 +312,12 @@ function HyperChannelChat({ channel, serviceReady, eventRevision = 0, registerRe
 
     } }); if (epoch !== stopEpoch.current) throw new Error('The user stopped this task before it completed.'); return answer; }} />
     <HyperDeliveryControls channelId={channel.id} bots={channel.agentIds.map(id => ({ id, name: id }))} enabled={serviceReady} />
-    <HyperTranscript renderTool={tool => tool.label === 'run_subagent' ? <HyperToolMessage {...tool}><HyperSubagentSteps toolCallId={tool.id} parentThreadId={channel.threadId} agentId={channel.agentIds[0]} result={tool.result} live={tool.status === 'running'} /></HyperToolMessage> : <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} appCarryOn={{ key: `${channel.id}:${channel.threadId}:${hyperRuntimeBotOf(agent) ?? ''}:${tool.id}`, latest: () => { const state = appContinuationState(tool.id); return state.current && state.ready && !state.busy && state.latest && !state.hasDraft && !state.hasQuestion; }, resume: () => continueAppTask(tool.id) }} ask={!running && serviceReady && !restoring && !reconnectRequired ? text => { void sendDraft({ text, attachments: [] }).catch(() => setError('The follow-up could not be sent.')); } : undefined} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
+    <HyperTranscript renderTool={tool => tool.label === 'run_subagent' ? <HyperToolMessage {...tool}><HyperSubagentSteps toolCallId={tool.id} parentThreadId={channel.threadId} agentId={channel.agentIds[0]} result={tool.result} live={tool.status === 'running'} /></HyperToolMessage> : <HyperConversationResult tool={tool} callingBotId={hyperRuntimeBotOf(agent)} argumentsArriving={agent.isRunning && tool.id === latestArguments && tool.result === undefined && !executingToolCallIds?.has(tool.id)} turnInFlight={running} appCarryOn={{ key: `${channel.id}:${channel.threadId}:${hyperRuntimeBotOf(agent) ?? ''}:${tool.id}`, latest: () => { const state = appContinuationState(tool.id); return state.current && state.ready && !state.busy && state.latest && !state.hasDraft && !state.hasQuestion; }, resume: () => continueAppTask(tool.id) }} ask={!running && serviceReady && !restoring && !reconnectRequired ? text => { void sendDraft({ text, attachments: [] }).catch(() => setError('The follow-up could not be sent.')); } : undefined} />} messages={messages} busy={running} restoring={restoring} onOpenLink={url => void window.appflowy.shell.openExternal(url)} />
     {!!agent.messages.length && <HyperNotifyPrompt />}
     <HyperConversationActions onQuestions={value => { questions.current = value; }} onCarryOnChange={value => { continuation.current = value; setCarryingOn(value); }} threadId={channel.threadId} enabled={serviceReady} onResolved={() => { if (!running) setHistoryRevision(value => value + 1); }} />
-    <HyperComposer activeAttachmentIds={draft.activeAttachments?.ids} onRestoreQueued={(...args) => { supersedeAppCards(); return restoreQueuedDraft(...args); }} commandIds={draft.commandIds} onCommandIdsChange={ids => { supersedeAppCards(); updateDraft(current => ({ ...current, commandIds: ids })); }} commands={commands} onDiscardAttachment={id => { if (!getDraft().activeAttachments?.ids.includes(id)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }} className="m-4" value={draft.text} onTextChange={change => { supersedeAppCards(); updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} getAttachmentCount={() => getDraft().attachments.length} onRemoveAttachment={id => { if (getDraft().activeAttachments?.ids.includes(id)) return; setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => { supersedeAppCards(); return hyperUploadDraftFiles(files, async file => {
-      const form = new FormData(); form.append('file', file); form.append('uploadGroup', uploadGroup);
+    <HyperStarterTasks agentId={channel.agentIds[0]} channelId={channel.id} disabled={running || restoring || reconnectRequired || !serviceReady || !isReady || !channel.active} onSelect={text => sendDraft({ text, attachments: [] })} />
+    <HyperComposer activeAttachmentIds={draft.activeAttachments?.ids} onRestoreQueued={(...args) => { supersedeAppCards(); return restoreQueuedDraft(...args); }} commandIds={draft.commandIds} onCommandIdsChange={ids => { supersedeAppCards(); updateDraft(current => ({ ...current, commandIds: ids })); }} commands={commands} onDiscardAttachment={id => { if (!getDraft().activeAttachments?.ids.includes(id)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(() => {}); }} className="m-4" value={draft.text} onTextChange={change => { supersedeAppCards(); updateDraft(current => ({ ...current, text: typeof change === 'function' ? change(current.text) : change })); }} recoveryVersion={recoveryVersion} autoFocus disabled={!serviceReady || !isReady || restoring || reconnectRequired || !channel.active || modelPending} pending={running} attachments={attachments} getAttachmentCount={() => getDraft().attachments.length} onRemoveAttachment={id => { if (getDraft().activeAttachments?.ids.includes(id)) return; setAttachments(previous => previous.filter(file => file.id !== id)); if (!id.startsWith(HYPER_PENDING_ATTACHMENT)) void request(`/api/attachments/${encodeURIComponent(id)}`, 'DELETE').catch(error => setError(String(error))); }} onConsumeAttachments={ids => { setAttachments(previous => previous.filter(file => !ids.includes(file.id))); }} onFiles={files => { if (!mounted.current) throw new Error('This conversation is no longer active.'); assertDraftCurrent(); const batchUploadGroup = getDraft().uploadGroup; supersedeAppCards(); return hyperUploadDraftFiles(files, async file => {
+      const form = new FormData(); form.append('file', file); form.append('uploadGroup', batchUploadGroup);
       const response = await hyperOpenBotFetch(`${HYPER_OPENBOT_ORIGIN}/api/channels/${channel.id}/attachments`, { method: 'POST', body: form });
       const saved = await response.json();
       if (!response.ok || typeof saved.id !== 'string' || typeof saved.name !== 'string' || typeof saved.mimeType !== 'string') throw new Error(saved.error ?? 'Attachment upload failed');
@@ -388,7 +393,7 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
       if (current !== version.current) return;
       const live = list.channels.map(row => {
         if (Array.isArray(row.work)) busyChannels.current.set(row.id, hyperUpdateChannelWork(busyChannels.current.get(row.id), { work: row.work, workAt: row.workAt }));
-        return { ...row, busy: hyperChannelHasWork(busyChannels.current.get(row.id)) || hyperChannelHasWork(row), unreadCount: hyperHasUnseenActivity(row) ? 1 : 0 };
+        return { ...row, title: HyperConversationTitle(row), busy: hyperChannelHasWork(busyChannels.current.get(row.id)) || hyperChannelHasWork(row), unreadCount: hyperHasUnseenActivity(row) ? 1 : 0 };
       });
       setChannels(live);
       setChannel(current => current ? live.find(row => row.id === current.id) ?? current : current);
@@ -425,7 +430,7 @@ export function HyperOpenBotWorkspace({ viewId, serviceReady }: { viewId: string
         create: async ids => {
           const created = ids.length > 1 ? await hyperStartGroup<HyperChannel>(ids) : (await request<{ channel: HyperChannel }>('/api/channels', 'POST', { agentIds: ids })).channel;
           if (initialDraft?.modelPick && ids.length === 1) { try { await request(`/api/channels/${encodeURIComponent(created.id)}/model`, 'PUT', initialDraft.modelPick); } catch (error) { await request(`/api/channels/${encodeURIComponent(created.id)}?discardFailedStart=true`, 'DELETE').catch(() => {}); throw error; } }
-          version.current++; setLoading(false); setChannels(previous => [created, ...previous]); return created;
+          version.current++; setLoading(false); setChannels(previous => [{ ...created, title: HyperConversationTitle(created) }, ...previous]); return created;
         },
         receive: async (created, initial, signal, uploaded) => {
           if (created.agentIds.length > 1) {

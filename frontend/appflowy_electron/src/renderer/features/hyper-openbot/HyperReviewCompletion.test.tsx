@@ -31,6 +31,14 @@ import { HyperReachability } from './bot-tabs/HyperReachability';
 import { HyperConversationResult } from './screens-gen/HyperConversationResult';
 import { HyperSharedApprovalFields } from './connections/HyperPluginGrants';
 import { HyperConversationActions } from './HyperConversationActions';
+import { HyperProgressiveGalleryResult } from './screens-gen/HyperProgressiveGalleryResult';
+import { HyperDeliveryControls } from './conversations/HyperDeliveryControls';
+import { HyperSubagentSteps } from './conversations/HyperSubagentSteps';
+import { HyperStarterTasks } from './onboarding/HyperStarterTasks';
+import { HyperToolMessage } from './transcript/HyperTranscript';
+import { HyperPersonalLearningSection } from './memory/HyperPersonalLearningSection';
+import { HyperConversationsScreen } from './screens/HyperScreens';
+import { useHyperBotNames } from './screens-gen/HyperReportContext';
 
 // Exercise actual production effects and handlers without a live backend or browser fixture.
 const h = vi.hoisted(() => ({ active: false, states: [] as any[], refs: [] as any[], effects: [] as (() => unknown)[], deps: [] as (readonly unknown[] | undefined)[], cleanups: [] as (() => void)[], stateIndex: 0, refIndex: 0, context: undefined as any }));
@@ -1497,4 +1505,64 @@ it('initial composition waits to register its receiver until the approval read i
   render(chat.type as any, { ...chat.props, registerReceiver });
   h.effects[h.deps.findIndex(deps => deps?.[0] === registerReceiver)]();
   expect(registerReceiver).toHaveBeenCalledOnce(); expect(registerReceiver.mock.calls[0][0]).toBeTypeOf('function');
+});
+it('the native transcript adapter preserves progressive row facts and verified calling Bot', () => {
+  f.lookup.mockReturnValue({ name: 'showTable', kind: 'card' });
+  const tool = { id: 'progressive-row', label: 'showTable', arguments: '{"title":"Ready","rows":[', status: 'running' };
+  const tree = render(HyperConversationResult, { tool, callingBotId: 'bot', argumentsArriving: true, turnInFlight: true });
+  const progressive = find(tree, element => element.type === HyperProgressiveGalleryResult)!;
+  expect(progressive).toBeDefined(); expect(progressive.props.argumentsComplete).toBe(false); expect(progressive.props.decided).toBe(false); expect(progressive.props.agentId).toBe('bot');
+});
+it('recipient selection and inline creation send a changing focus token to the real composer', () => {
+  const context = { initialAgentIds: ['bot-a'], startConversation: vi.fn(), openConversation: vi.fn() };
+  let tree = render(HyperNewConversationSection, { context }, [[], [], [], { model: '', effort: null }, bots, ['bot-a'], undefined, 0]);
+  const initial = find(tree, element => element.type === HyperComposer)!.props.focusRequest;
+  const selected = find(tree, element => element.type === 'input' && element.props.type === 'checkbox' && element.props.checked)!.props.onChange;
+  selected({ target: { checked: true } }); tree = render(HyperNewConversationSection, { context });
+  const picked = find(tree, element => element.type === HyperComposer)!.props.focusRequest; expect(picked).not.toBe(initial);
+  button(tree, 'Create a Bot')!.props.onClick(); tree = render(HyperNewConversationSection, { context });
+  find(tree, element => element.type === HyperBotEditor)!.props.onSaved({ id: 'created', name: 'Created' }); tree = render(HyperNewConversationSection, { context });
+  expect(find(tree, element => element.type === HyperComposer)!.props.focusRequest).not.toBe(picked);
+});
+it('SMS cannot issue an ownerless challenge after a failed account lookup and Retry reads the owner again', async () => {
+  let owners = 0;
+  f.request.mockImplementation(async (path: string) => path === '/api/me' ? (++owners === 1 ? Promise.reject(new Error('Owner unavailable')) : { user: { id: 'owner' } }) : path === '/api/delivery' ? { bindings: [], devices: [], deliveries: [], available: { sms: true } } : { challengeId: 'challenge' });
+  const props = { channelId: 'channel', bots: [{ id: 'bot', name: 'Bot' }], enabled: true };
+  render(HyperDeliveryControls, props); mountEffects(); await drain(); let tree = render(HyperDeliveryControls, props);
+  expect(find(tree, element => element.props.children === 'Send verification code')!.props.disabled).toBe(true);
+  button(tree, 'Retry')!.props.onClick(); render(HyperDeliveryControls, props); mountEffects(); await drain(); tree = render(HyperDeliveryControls, props);
+  expect(owners).toBe(2); expect(find(tree, element => element.props.children === 'Send verification code')!.props.disabled).toBe(false);
+});
+it('subagent steps retain inspectable inner tool arguments and results', async () => {
+  f.fetch.mockResolvedValue(new Response(JSON.stringify({ messages: [{ id: 'assistant', role: 'assistant', content: 'Read it', toolCalls: [{ id: 'inner', type: 'function', function: { name: 'read_file', arguments: '{"path":"notes"}' } }] }, { id: 'result', role: 'tool', toolCallId: 'inner', content: 'Contents' }] })));
+  const props = { toolCallId: 'parent-call', parentThreadId: 'parent', agentId: 'bot', result: JSON.stringify({ threadId: 'inner-thread', answer: 'Done', steps: 1 }), live: false };
+  render(HyperSubagentSteps, props); mountEffects(); await drain(); const tree = render(HyperSubagentSteps, props);
+  const tool = find(tree, element => element.type === HyperToolMessage)!; expect(tool).toBeDefined(); expect(tool.props.arguments).toBe('{"path":"notes"}'); expect(tool.props.result).toBe('Contents');
+});
+it('the claimed native conversation mounts its own remaining starter tasks', async () => {
+  const chat = await hyperReviewedChatFixture(); h.states = []; h.refs = [];
+  const tree = render(chat.type as any, chat.props), starters = find(tree, element => element.type === HyperStarterTasks)!;
+  expect(starters).toBeDefined(); expect(starters.props.agentId).toBe('bot'); expect(starters.props.channelId).toBe('reviewed-channel');
+});
+it('grouped learning attempts later containers after an earlier container fails', async () => {
+  f.request.mockImplementation(async (path: string, method: string) => method === 'POST' ? path.includes('container=first') ? Promise.reject(new Error('One failure')) : {} : path === '/api/capabilities' ? { edition: 'personal' } : path === '/api/settings/learning/review' ? { sources: [{ label: 'Group', containerId: 'first', proposals: [] }, { label: 'Group', containerId: 'second', proposals: [] }], canReview: true, autoApprove: null } : { mode: 'closed', skills: [] });
+  render(HyperPersonalLearningSection, {}); mountEffects(); await drain(); const tree = render(HyperPersonalLearningSection, {});
+  button(tree, 'Learn now')!.props.onClick(); await drain();
+  expect(f.request.mock.calls.filter(call => call[1] === 'POST').map(call => call[0])).toEqual(['/api/settings/learning/runs?container=first', '/api/settings/learning/runs?container=second']);
+});
+it('written Skills never exposes raw backend details in its failure message', async () => {
+  f.request.mockRejectedValue(new Error('synthetic-private-backend-detail'));
+  render(HyperSkillsPanel, {}); mountEffects(); await drain(); const tree = render(HyperSkillsPanel, {});
+  expect(find(tree, element => element.props.role === 'alert')!.props.children).not.toContain('synthetic-private-backend-detail');
+});
+it('rename compares the actual conversation title rather than its emphasized Bot name', async () => {
+  const rename = vi.fn(async () => {}), props = { conversations: [{ id: 'conversation', name: 'Actual title', summary: 'Bot name', title: 'Actual title', canRename: true }], onOpen: vi.fn(), onRename: rename };
+  let tree = render(HyperConversationsScreen, props); button(tree, 'Rename…')!.props.onClick(); tree = render(HyperConversationsScreen, props);
+  find(tree, element => element.props['aria-label'] === 'Conversation name')!.props.onChange({ target: { value: 'Bot name' } }); tree = render(HyperConversationsScreen, props);
+  find(tree, element => element.type === 'form')!.props.onSubmit({ preventDefault() {} }); await drain(); expect(rename).toHaveBeenCalledWith('conversation', 'Bot name');
+});
+it('historical reports resolve permitted hidden Bot names without broadening actor visibility', async () => {
+  f.request.mockImplementation(async (path: string) => ({ agents: path.includes('hidden=true') ? [{ id: 'hidden', name: 'Hidden Bot' }] : [] }));
+  let resolve!: (id: string) => string; const probe = () => { resolve = useHyperBotNames(); return null; };
+  render(probe, {}); mountEffects(); await drain(); render(probe, {}); expect(resolve('hidden')).toBe('Hidden Bot');
 });

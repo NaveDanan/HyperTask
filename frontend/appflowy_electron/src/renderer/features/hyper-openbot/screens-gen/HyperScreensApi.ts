@@ -5,7 +5,7 @@ const path = (name: string) => `/api/components/${encodeURIComponent(name)}`;
 export const hyperScreensApi = {
   components: async () => (await request<{components: ComponentRecord[]}>('/api/components')).components ?? [],
   functions: async () => (await request<{functions: DataFunctionSummary[]}>('/api/components/functions')).functions ?? [],
-  bots: async () => (await request<{agents: {id: string; name: string}[]}>('/api/agents')).agents ?? [],
+  bots: async (hidden = false) => (await request<{agents: {id: string; name: string}[]}>(`/api/agents${hidden ? '?hidden=true' : ''}`)).agents ?? [],
   sandboxed: async () => (await request<{components: SandboxedRecord[]}>('/api/sandboxed')).components ?? [],
   published: async () => (await request<{components: PublishedSandboxed[]}>('/api/sandboxed/published')).components ?? [],
   description: (name: string, description: string) => request(`${path(name)}/draft`, 'PUT', {description}),

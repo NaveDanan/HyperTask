@@ -206,12 +206,18 @@ async function announce(
   let bots: HyperNoticeBot[] | undefined;
   try { bots = await reads.attention(); } catch { return; }
   if (!current()) return;
-  if (bots?.some(bot => bot.waitingIn === activity.channelId)) return;
+  const waiting = bots?.find(bot => bot.waitingIn === activity.channelId);
   let notify: HyperBotNotify | null = null;
-  if (activity.lastMessageAgentId) {
-    try { notify = await reads.notify(activity.lastMessageAgentId); } catch { return; }
+  const notifyingBot = waiting?.agentId ?? activity.lastMessageAgentId;
+  if (notifyingBot) {
+    try { notify = await reads.notify(notifyingBot); } catch { return; }
   }
-  const notice = HyperReplyNotice(activity, notify, bots, reads.agents());
+  // Native HyperTask has no separate global attention notifier. Replace, rather
+  // than silently suppress, an approval/question reply. The shared channel tag
+  // keeps one moment's notice singular and needs_input still receives it.
+  const notice = waiting ? notify === 'all' || notify === 'needs_input' ? {
+    title: `${waiting.name || 'Your Bot'} needs you`, body: 'Open the conversation to answer a question or approval.', tag: HyperConversationTag(activity.channelId), path: `/channel/${encodeURIComponent(activity.channelId)}`,
+  } : null : HyperReplyNotice(activity, notify, bots, reads.agents());
   if (!current() || !notice || announced.has(key) || HyperInSight()) return;
   remember(key);
   HyperShowNotice({ ...notice, onClick: () => open(activity.channelId) });

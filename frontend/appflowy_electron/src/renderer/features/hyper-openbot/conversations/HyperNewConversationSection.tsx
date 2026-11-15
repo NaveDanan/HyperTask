@@ -19,6 +19,7 @@ export default function HyperNewConversationSection({ context }: { context: Hype
   const [error, setError] = useState<string>();
   const [revision, setRevision] = useState(0);
   const [creating, setCreating] = useState(false);
+  const [focusRequest, setFocusRequest] = useState(0);
   const createScope = useRef<object | undefined>(undefined);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -68,9 +69,11 @@ export default function HyperNewConversationSection({ context }: { context: Hype
     })();
     return () => { live = false; };
   }, [revision, incomingKey]);
+  const recipientsReady = knownRecipients.current;
+  useEffect(() => { if (mounted.current && !creating && recipientsReady && context.isCurrentNavigation?.() !== false) setFocusRequest(value => value + 1); }, [incomingKey, recipientsReady]);
   return <div className="space-y-4 overflow-y-auto p-6"><h2 className="text-lg font-semibold">New conversation</h2><p className="text-sm text-muted-foreground">Choose Bots in the order they should answer.</p>{error && <div role="alert">{error}<Button onClick={() => setRevision(value => value + 1)}>Retry</Button></div>}{!bots && !error && <p role="status">Loading Bots…</p>}{bots && selected.length > 0 && !knownRecipients.current && !error && <p role="status">Loading selected Bot…</p>}{bots?.length === 0 && selected.length === 0 && <p>No Bots available. Create one in Bots.</p>}
-    <div className="space-y-2">{bots?.map(bot => <label key={bot.id} className="flex items-center gap-3 rounded-lg border p-3"><input type="checkbox" disabled={files.length > 0 && selected.length > 0 && !selected.includes(bot.id)} checked={selected.includes(bot.id)} onChange={event => { setError(undefined); setSelected(value => { const known = value.filter(id => bots.some(bot => bot.id === id)); return event.target.checked ? [...new Set([...known, bot.id])] : known.filter(id => id !== bot.id); }); }} /><span>{bot.name} <span className="text-muted-foreground">{bot.title}</span></span>{selected.includes(bot.id) && <span>{selected.indexOf(bot.id) + 1}</span>}</label>)}</div>
-    <HyperComposer allowQueue={false} commands={commands} agents={selected.length > 1 ? selected.map(id => ({ id, name: bots?.find(bot => bot.id === id)?.name ?? id })) : undefined} disabled={context.isCurrentNavigation?.() === false} submitDisabled={!knownRecipients.current} placeholder="Write the first message" attachments={files.map(item => item.attachment)}
+    <div className="space-y-2">{bots?.map(bot => <label key={bot.id} className="flex items-center gap-3 rounded-lg border p-3"><input type="checkbox" disabled={files.length > 0 && selected.length > 0 && !selected.includes(bot.id)} checked={selected.includes(bot.id)} onChange={event => { if (!mounted.current || context.isCurrentNavigation?.() === false) return; setFocusRequest(value => value + 1); setError(undefined); setSelected(value => { const known = value.filter(id => bots.some(bot => bot.id === id)); return event.target.checked ? [...new Set([...known, bot.id])] : known.filter(id => id !== bot.id); }); }} /><span>{bot.name} <span className="text-muted-foreground">{bot.title}</span></span>{selected.includes(bot.id) && <span>{selected.indexOf(bot.id) + 1}</span>}</label>)}</div>
+    <HyperComposer autoFocus focusRequest={focusRequest} allowQueue={false} commands={commands} agents={selected.length > 1 ? selected.map(id => ({ id, name: bots?.find(bot => bot.id === id)?.name ?? id })) : undefined} disabled={context.isCurrentNavigation?.() === false} submitDisabled={!knownRecipients.current} placeholder="Write the first message" attachments={files.map(item => item.attachment)}
       onFiles={selected.length === 1 ? async added => { if (valid()) setFiles(files => [...files, ...added.map(file => ({ file, attachment: { id: crypto.randomUUID(), name: file.name, status: 'ready' as const } }))]); } : undefined}
       onRemoveAttachment={id => { if (valid()) setFiles(files => files.filter(item => item.attachment.id !== id)); }}
       onConsumeAttachments={ids => { if (valid()) setFiles(files => files.filter(item => !ids.includes(item.attachment.id))); }}
@@ -85,6 +88,6 @@ export default function HyperNewConversationSection({ context }: { context: Hype
         await context.startConversation(selected, { text: draft.text, files: files.filter(item => draft.attachments.some(attachment => attachment.id === item.attachment.id)).map(item => item.file), commandIds: draft.commandIds ?? [], submit: true, ...(draft.agentId ? { agentId: draft.agentId } : {}), ...(modelPick ? { modelPick } : {}) });
       }} />
     <Button variant="outline" disabled={creating} onClick={() => { if (!mounted.current || context.isCurrentNavigation?.() === false) return; createScope.current = {}; setCreating(true); }}>Create a Bot</Button>
-    {creating && <div role="dialog" aria-label="Create Bot in this composition"><HyperBotEditor onClose={() => { if (validCreation()) { createScope.current = undefined; setCreating(false); } }} onRemoved={() => {}} onSaved={bot => { if (!validCreation()) return; incomingOwner.sequence++; setBots(rows => [...(rows ?? []).filter(row => row.id !== bot.id), bot]); setSelected(ids => [...new Set([...ids, bot.id])]); createScope.current = undefined; setCreating(false); setRevision(value => value + 1); }} /></div>}
+    {creating && <div role="dialog" aria-label="Create Bot in this composition"><HyperBotEditor onClose={() => { if (validCreation()) { createScope.current = undefined; setCreating(false); } }} onRemoved={() => {}} onSaved={bot => { if (!validCreation()) return; incomingOwner.sequence++; setBots(rows => [...(rows ?? []).filter(row => row.id !== bot.id), bot]); setSelected(ids => [...new Set([...ids, bot.id])]); createScope.current = undefined; setCreating(false); setRevision(value => value + 1); setFocusRequest(value => value + 1); }} /></div>}
     </div>;
 }

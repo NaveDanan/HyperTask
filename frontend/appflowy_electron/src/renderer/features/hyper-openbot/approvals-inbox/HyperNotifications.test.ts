@@ -29,6 +29,11 @@ describe('Hyper notification parity', () => {
     expect(HyperReplyNotice(event, 'needs_input', [], [])).toBeNull();
     expect(HyperReplyNotice({ ...event, pinned: true }, 'all', [], [])).toBeNull();
   });
+  it('provides a replacement needs-you notice for an approval or question reply', async () => {
+    const waiting = { ...reads, notify: async () => 'needs_input' as const, attention: async () => [{ agentId: 'bot', name: 'Helper', waitingIn: 'channel' }] };
+    HyperNoticeChannelEvent(event, waiting, vi.fn()); await vi.advanceTimersByTimeAsync(HyperReplyTiming.settleMs);
+    expect(shown).toHaveLength(1); expect(shown[0].title).toBe('Helper needs you'); expect(shown[0].options.tag).toBe('openbot-channel');
+  });
   it('waits for the turn to finish, settles replies and suppresses duplicates', async () => {
     HyperNoticeChannelEvent({ ...event, busy: true }, reads, vi.fn());
     HyperNoticeChannelEvent(event, reads, vi.fn());
@@ -45,8 +50,8 @@ describe('Hyper notification parity', () => {
     const waiting = { ...reads, attention: async () => [{ agentId: 'bot', name: 'Helper', waitingIn: 'channel' }] };
     HyperNoticeChannelEvent(event, waiting, vi.fn());
     await vi.advanceTimersByTimeAsync(1500);
-    expect(shown).toHaveLength(0);
-    HyperForgetReplies();
+    expect(shown).toHaveLength(1); expect(shown[0].title).toBe('Helper needs you');
+    HyperForgetReplies(); shown = [];
     vi.stubGlobal('document', { visibilityState: 'visible', hasFocus: () => true });
     HyperNoticeChannelEvent(event, reads, vi.fn());
     await vi.advanceTimersByTimeAsync(1500);

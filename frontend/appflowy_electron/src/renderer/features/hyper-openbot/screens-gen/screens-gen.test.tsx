@@ -33,7 +33,7 @@ describe('Hyper screens permission transport', () => {
   });
 });
 describe('Hyper conversation component seam', () => {
-  const draw = (overrides = {}) => renderToStaticMarkup(createElement(HyperConversationResult, {tool: {id: 'call', label: 'custom_chart', arguments: '{}', status: 'complete', ...overrides}}));
+  const draw = (overrides = {}, facts = {}) => renderToStaticMarkup(createElement(HyperConversationResult, {...facts, tool: {id: 'call', label: 'custom_chart', arguments: '{}', status: 'complete', ...overrides}}));
   it('requires call provenance rather than borrowing channel identity', () => {
     expect(draw()).toContain('calling Bot is required');
     expect(request).not.toHaveBeenCalled();
@@ -44,7 +44,7 @@ describe('Hyper conversation component seam', () => {
     expect(draw({result: JSON.stringify('Not asked: too early')})).toBe('');
   });
   it('handles incomplete or invalid arguments without executing them', () => {
-    expect(draw({arguments: '{', status: 'running'})).toContain('Drawing');
+    expect(draw({arguments: '{', status: 'running'}, { callingBotId: 'bot', argumentsArriving: true, turnInFlight: true })).toContain('Drawing');
     expect(draw({arguments: '[]'})).toContain('unreadable arguments');
     expect(draw({arguments: '{"html":"<script>alert(1)</script>"}'})).not.toContain('<script>');
   });

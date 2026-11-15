@@ -23,20 +23,20 @@ export function HyperSkillsPanel({ admin = false, selection: initialSelection, o
   const [deleting, setDeleting] = useState(false);
   useEffect(() => {
     let active = true;
-    hyperLoadSkills(admin).then(value => { if (active) setData(value); }).catch(e => { if (active) setError(String(e.message ?? e)); }).finally(() => { if (active) { refreshing.current = false; setLoading(false); } });
+    hyperLoadSkills(admin).then(value => { if (active) setData(value); }).catch(() => { if (active) setError('Skills could not be loaded. Check your access and refresh.'); }).finally(() => { if (active) { refreshing.current = false; setLoading(false); } });
     return () => { active = false; };
   }, []);
   async function refresh() {
     if (refreshing.current || mutating.current) return;
     refreshing.current = true;
     setLoading(true); setError('');
-    try { setData(await hyperLoadSkills(admin)); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { refreshing.current = false; setLoading(false); }
+    try { setData(await hyperLoadSkills(admin)); } catch { setError('Skills could not be loaded. Check your access and refresh.'); } finally { refreshing.current = false; setLoading(false); }
   }
   async function run(action: () => Promise<unknown>, success: string) {
     if (refreshing.current || mutating.current) return;
     mutating.current = true;
     setBusy(true); setError(''); setNotice('');
-    try { await action(); setNotice(success); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { try { setData(await hyperLoadSkills(admin)); } catch { setError('Could not reload skills. Refresh before making another change.'); } mutating.current = false; setBusy(false); }
+    try { await action(); setNotice(success); } catch { setError('The skill change failed or was refused. Check your access and try again.'); } finally { try { setData(await hyperLoadSkills(admin)); } catch { setError('Could not reload skills. Refresh before making another change.'); } mutating.current = false; setBusy(false); }
   }
   function applySkill(skill?: HyperSkill) {
     setSelection(skill?.slug ?? ''); setDraft(skill ? { slug: skill.slug, title: skill.title, summary: skill.summary ?? '', instructions: skill.instructions, tools: skill.tools ?? [], ...(admin && skill.ownerUserId === null ? { global: true } : {}) } : { ...hyperEmptyDraft(), ...(admin ? { global: true } : {}) });

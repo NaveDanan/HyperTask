@@ -9,6 +9,7 @@ export function hyperParseChannelEvent(data: unknown): (HyperChannelActivityEven
 }
 export function hyperWatchChannelEvents(onEvent: (event: ReturnType<typeof hyperParseChannelEvent>) => void, open: (id: string) => void) {
   let stopped = false; let generation = 0; let socket: HyperOpenBotSocket; let timer: ReturnType<typeof setTimeout>; let delay = 1000;
+  let notifications = Promise.resolve();
   const connect = () => {
     if (stopped) return;
     socket = new HyperOpenBotSocket('wss://hyper-openbot.invalid/api/channels/events');
@@ -17,7 +18,9 @@ export function hyperWatchChannelEvents(onEvent: (event: ReturnType<typeof hyper
       const parsed = hyperParseChannelEvent(data); if (!parsed) return; onEvent(parsed);
       if ('resync' in parsed) return;
       const current = generation;
-      void request<{ agents: { id: string; name: string }[] }>('/api/agents').then(({ agents }) => {
+      const names = request<{ agents: { id: string; name: string }[] }>('/api/agents').catch(() => ({ agents: [] }));
+      notifications = notifications.then(async () => {
+        const { agents } = await names;
         if (stopped || current !== generation) return;
         HyperNoticeChannelEvent(parsed, {
           attention: async () => { const value = await request<{ bots: { agentId: string; name: string; waitingIn?: string | null }[] }>('/api/bots/attention'); if (stopped) throw new Error('Session ended'); return value.bots; },

@@ -96,8 +96,10 @@ it('preserves other settings fields when independently completed saves overlap',
   expect(h.states[1]).toMatchObject({ user: { name: 'New' }, instructions: 'New instructions', preferences: { skin: 'plain' } });
 });
 it('shows a successful repository connection with failed readback outside its closed dialog', async () => {
-  f.repositories.mockRejectedValueOnce(new Error('readback failed'));
-  const tree = render(HyperSettingsAutomation, { preferences, onPreferences: vi.fn() }, [true, [], '', 0, false, true, 'owner/repo', 'synthetic-secret', '']);
+  f.repositories.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('readback failed'));
+  f.connect.mockResolvedValueOnce({ id: 'repository', repository: 'owner/repo', createdAt: '2026-11-15T00:00:00Z' });
+  render(HyperSettingsAutomation, { preferences, onPreferences: vi.fn() }, [true, [], '', 0, false, true, 'owner/repo', 'synthetic-secret', '']); mountEffects(); await drain();
+  const tree = render(HyperSettingsAutomation, { preferences, onPreferences: vi.fn() });
   await find(tree, element => element.type === 'form')!.props.onSubmit({ preventDefault() {} });
   expect(h.states[5]).toBe(false); expect(h.states[8]).toBe('');
   expect(h.states[2]).toMatch(/connected.*(?:refresh|reload)/i);

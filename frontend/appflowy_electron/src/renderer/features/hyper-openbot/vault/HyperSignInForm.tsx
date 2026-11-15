@@ -4,23 +4,27 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hyperVaultApi, type SignInRequest } from './HyperVaultApi';
+import type { HyperComputerActionGuard } from '../computer-browser/HyperComputerControl';
 const FINAL = ['signed_in', 'failed', 'cancelled', 'expired'];
 export interface HyperSignInFormProps {
   requestId: string;
   /** Lead integration supplies the native computer-browser navigation. No remote URL is opened here. */
   onOpenBrowser?: (botId: string) => void;
+  computerGuard?: HyperComputerActionGuard;
 }
 interface HyperSignInControl {
   live: boolean; epoch: number; requestId: string; issued: number; applied: number;
   writing: boolean; latest?: SignInRequest; read?: () => Promise<void>;
 }
-export function HyperSignInForm({ requestId, onOpenBrowser }: HyperSignInFormProps) {
+export function HyperSignInForm({ requestId, onOpenBrowser, computerGuard }: HyperSignInFormProps) {
   const [stored, setData] = useState<SignInRequest>();
   const data = stored?.id === requestId ? stored : undefined;
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const poll = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const control = useRef<HyperSignInControl>({ live: true, epoch: 0, requestId, issued: 0, applied: 0, writing: false, latest: data });
+  const guard = useRef({ value: computerGuard }); guard.current.value = computerGuard;
+  const guardCurrent = () => guard.current.value === computerGuard && (!computerGuard || computerGuard.current());
   const current = (epoch: number, id: string) => control.current.live && control.current.epoch === epoch && control.current.requestId === id;
   function apply(value: SignInRequest, sequence: number, epoch: number, id: string) {
     if (!current(epoch, id)) return;
@@ -53,11 +57,17 @@ export function HyperSignInForm({ requestId, onOpenBrowser }: HyperSignInFormPro
   }, [requestId]);
   async function answer(action: Parameters<typeof hyperVaultApi.answerSignIn>[1], body?: unknown) {
     const state = control.current, epoch = state.epoch;
-    if (busy || state.writing || !current(epoch, requestId) || FINAL.includes(state.latest?.status ?? '')) return;
+    if (busy || state.writing || !current(epoch, requestId) || !guardCurrent() || FINAL.includes(state.latest?.status ?? '')) return;
     state.writing = true; const sequence = ++state.issued;
     clearTimeout(poll.current); poll.current = undefined; setBusy(true); setError('');
     try {
-      apply(await hyperVaultApi.answerSignIn(requestId, action, body), sequence, epoch, requestId);
+      const write = async (ownerCurrent: () => boolean) => {
+        const valid = () => current(epoch, requestId) && guard.current.value === computerGuard && ownerCurrent();
+        if (!valid()) return;
+        const result = await hyperVaultApi.answerSignIn(requestId, action, body);
+        if (valid()) apply(result, sequence, epoch, requestId);
+      };
+      if (computerGuard) await computerGuard.run(write); else await write(() => true);
     }
     catch { if (current(epoch, requestId) && !FINAL.includes(state.latest?.status ?? '')) setError('Sign-in operation failed. Retype any secret and try again.'); }
     finally { if (current(epoch, requestId)) { state.writing = false; setBusy(false); schedule(); } }
@@ -69,7 +79,7 @@ export function HyperSignInForm({ requestId, onOpenBrowser }: HyperSignInFormPro
     {data.status === 'taken_over' ? <><p>Sign in by hand in the Bot's browser, then choose I've signed in.</p>{onOpenBrowser && <Button variant="outline" onClick={() => onOpenBrowser(data.botId)}>Open the Bot's browser</Button>}<Button disabled={busy} onClick={() => void answer('finish')}>I've signed in</Button></> : <>
       {data.status !== 'code_required' && data.savedLogins.map(login => <div key={login.id}>{login.username}<Button disabled={busy} onClick={() => void answer('use-saved', {loginId: login.id})}>Confirm and sign in</Button></div>)}
       <form key={data.status === 'code_required' ? 'code' : 'login'} autoComplete="off" className="space-y-3" onSubmit={event => {
-        event.preventDefault(); if (busy) return;
+        event.preventDefault(); if (busy || !guardCurrent()) { event.currentTarget.reset(); return; }
         const form = event.currentTarget;
         const values = new FormData(form); form.reset();
         if (data.status === 'code_required') { const code = String(values.get('code') ?? '').trim(); if (code) void answer('code', {code}); }
@@ -82,3 +92,5 @@ export function HyperSignInForm({ requestId, onOpenBrowser }: HyperSignInFormPro
     </>}
   </section>;
 }
+// Declares guard support only. The supplied current-owner guard authorizes each action.
+HyperSignInForm.hyperComputerGuard = 1 as const;

@@ -6,7 +6,7 @@ export const useHyperReportBot = () => useContext(HyperReportContext).botId;
 export const useHyperReportConversation = () => useContext(HyperReportContext);
 export function useHyperBotNames() {
   const [names, setNames] = useState<Map<string, string>>(new Map());
-  useEffect(() => {let live = true; void hyperScreensApi.bots().then(bots => {if (live) setNames(new Map(bots.map(bot => [bot.id, bot.name])));}).catch(() => undefined); return () => {live = false;};}, []);
+  useEffect(() => {let live = true; void Promise.all([hyperScreensApi.bots(), hyperScreensApi.bots(true).catch(() => [])]).then(([shown, hidden]) => {if (live) setNames(new Map([...hidden, ...shown].map(bot => [bot.id, bot.name])));}).catch(() => undefined); return () => {live = false;};}, []);
   return (id: string) => names.get(id) ?? id;
 }
 export async function hyperCallComponentFunction(component: string, fn: string, args: Record<string, unknown>, agentId: string): Promise<{allowed: boolean; data?: unknown; reason?: string; error?: string}> {
