@@ -1,84 +1,43 @@
 // Copyright (c) 2026 CopilotKit. SPDX-License-Identifier: MIT
-import type { SaveHyperVoiceSessionInput } from "./HyperVoiceContracts";
-const PREFIX = "openbot:voice-outbox:";
-const key = (
-  call: Pick<SaveHyperVoiceSessionInput, "channelId" | "id">,
-  userId: string,
-) =>
-  `${PREFIX}${encodeURIComponent(userId)}:${encodeURIComponent(call.channelId)}:${encodeURIComponent(call.id)}`;
+// HyperTask adaptation by NaveDanan: transcript recovery lasts only for this renderer session.
+import type { HyperOpenBotServiceState } from '@shared/HyperOpenBotService';
+import type { SaveHyperVoiceSessionInput } from './HyperVoiceContracts';
 
-/** Per-user recovery across reload/tab closure; confirmed saves are removed. No audio is stored. */
-export function rememberVoiceCall(
-  call: SaveHyperVoiceSessionInput,
-  userId: string | undefined,
-): boolean {
-  try {
-    if (!userId) return false;
-    localStorage.setItem(key(call, userId), JSON.stringify(call));
-    return true;
-  } catch {
-    return false;
-  }
+let epoch = 0;
+let observingIdentity = false;
+const pending = new Map<string, SaveHyperVoiceSessionInput>();
+const listeners = new Set<() => void>();
+const key = (call: Pick<SaveHyperVoiceSessionInput, 'channelId' | 'id'>, owner: string, identityEpoch: number) => JSON.stringify([identityEpoch, owner, call.channelId, call.id]);
+const changed = () => { for (const listener of listeners) listener(); };
+export const hyperVoiceIdentityEpoch = () => epoch;
+export function hyperSubscribeVoiceRecovery(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; }
+
+/** Keep listening after Chat unmounts, so sign-out elsewhere clears every pending transcript. */
+export function hyperObserveVoiceIdentity(subscribe: (listener: (state: HyperOpenBotServiceState) => void) => () => void) {
+  if (observingIdentity) return;
+  subscribe(state => {
+    if (!['signed_out', 'profile_required', 'unsupported'].includes(state.problem)) return;
+    epoch++;
+    pending.clear();
+    changed();
+  });
+  observingIdentity = true;
 }
 
-export function forgetVoiceCall(
-  call: Pick<SaveHyperVoiceSessionInput, "channelId" | "id">,
-  userId: string | undefined,
-) {
-  try {
-    if (userId) localStorage.removeItem(key(call, userId));
-  } catch {
-    /* Storage can be disabled; the database already holds this call. */
-  }
+/** No localStorage, audio, reload recovery or process-exit persistence. */
+export function rememberVoiceCall(call: SaveHyperVoiceSessionInput, owner: string | undefined, identityEpoch = epoch): boolean {
+  if (!owner || identityEpoch !== epoch) return false;
+  pending.set(key(call, owner, identityEpoch), structuredClone(call));
+  changed();
+  return true;
 }
-
-export function recoverVoiceCalls(channelId: string, userId: string | undefined): SaveHyperVoiceSessionInput[] {
-  try {
-    if (!userId) return [];
-    const prefix = `${PREFIX}${encodeURIComponent(userId)}:${encodeURIComponent(channelId)}:`;
-    const recovered: SaveHyperVoiceSessionInput[] = [];
-    for (let index = 0; index < localStorage.length; index++) {
-      const name = localStorage.key(index);
-      if (!name?.startsWith(prefix)) continue;
-      const raw = localStorage.getItem(name);
-      if (!raw || raw.length > 400_000) continue;
-      let value: unknown;
-      try {
-        value = JSON.parse(raw);
-      } catch {
-        continue;
-      }
-      if (isVoiceCall(value) && value.channelId === channelId)
-        recovered.push(value);
-    }
-    return recovered;
-  } catch {
-    return []; /* No recovery when the browser disables local storage. */
-  }
+export function forgetVoiceCall(call: Pick<SaveHyperVoiceSessionInput, 'channelId' | 'id'>, owner: string | undefined, identityEpoch = epoch) {
+  if (owner && identityEpoch === epoch && pending.delete(key(call, owner, identityEpoch))) changed();
 }
-
-function isVoiceCall(value: unknown): value is SaveHyperVoiceSessionInput {
-  if (!value || typeof value !== "object") return false;
-  const call = value as Record<string, unknown>;
-  return (
-    typeof call.id === "string" &&
-    typeof call.channelId === "string" &&
-    (call.anchorMessageId === null ||
-      typeof call.anchorMessageId === "string") &&
-    typeof call.startedAt === "string" &&
-    Number.isFinite(Date.parse(call.startedAt)) &&
-    typeof call.endedAt === "string" &&
-    Number.isFinite(Date.parse(call.endedAt)) &&
-    Date.parse(call.endedAt) >= Date.parse(call.startedAt) &&
-    Array.isArray(call.transcript) &&
-    call.transcript.length <= 300 &&
-    call.transcript.every(
-      (entry) =>
-        entry &&
-        typeof entry === "object" &&
-        typeof entry.id === "string" &&
-        (entry.role === "user" || entry.role === "assistant") &&
-        typeof entry.text === "string",
-    )
-  );
+export function recoverVoiceCalls(channelId: string, owner: string | undefined, identityEpoch = epoch): SaveHyperVoiceSessionInput[] {
+  if (!owner || identityEpoch !== epoch) return [];
+  return [...pending.entries()].filter(([name]) => {
+    const [savedEpoch, savedOwner, savedChannel] = JSON.parse(name);
+    return savedEpoch === identityEpoch && savedOwner === owner && savedChannel === channelId;
+  }).map(([, call]) => structuredClone(call));
 }
