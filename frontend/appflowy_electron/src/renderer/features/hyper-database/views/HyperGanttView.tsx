@@ -1,3 +1,4 @@
+import './gantt/HyperGanttView.css';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { addDays, format, startOfDay } from 'date-fns';
 import { GanttChart, Plus } from 'lucide-react';
@@ -60,7 +61,7 @@ export function HyperGanttView(props: HyperDatabaseViewProps) {
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    if (target.closest('input, textarea, [role=combobox], [contenteditable=true]')) return;
+    if (target.closest('input, textarea, [role=combobox], [contenteditable=true]') || !data.config.start_field_id) return;
     if (e.key.toLowerCase() === 't' && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); apiRef.current?.today(); }
     if ((e.key === '+' || e.key === '-' || e.key === '=') && target.closest('[data-slot=gantt-timeline-pane]')) {
       e.preventDefault(); void data.saveConfig({ zoom: Math.max(0.5, Math.min(3, data.config.zoom + (e.key === '-' ? -0.25 : 0.25))) }).catch(() => {});
@@ -75,6 +76,7 @@ export function HyperGanttView(props: HyperDatabaseViewProps) {
       data.commit({ event, occurrence: null, source: 'keyboard', start: e.shiftKey ? event.start : addDays(event.start, amount), end: addDays(event.end, amount), allDay: !!event.allDay, resourceId: rowId });
     }
   };
+  const hasDateField = state.fields.some(field => field.id === data.config.start_field_id);
   const loading = state.status === 'loading' || state.status === 'idle' || !data.initialized;
   const detailTask = detailId ? data.tasks.get(detailId) : undefined;
   useEffect(() => {
@@ -160,7 +162,7 @@ export function HyperGanttView(props: HyperDatabaseViewProps) {
       <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: resource.color }} />{state.rows[resource.id]?.icon && <span className="shrink-0">{state.rows[resource.id].icon}</span>}<span className="truncate">{resource.title}</span>
     </span>}
 
-    renderDragPreview={({ occurrence }) => <div className="flex h-full items-center rounded-sm border border-dashed border-primary bg-primary/10 px-2 text-foreground">
+    renderDragPreview={({ occurrence, valid }) => <div data-hyper-gantt-drag-preview data-valid={valid} className="flex h-full items-center px-2 text-foreground">
       <span className="truncate font-medium">{occurrence.event.title}</span>
     </div>}
 
@@ -180,6 +182,7 @@ export function HyperGanttView(props: HyperDatabaseViewProps) {
       setSettingsOpen={setSettingsOpen}
       createTask={create}
       creating={creating}
+      hasDateField={hasDateField}
     />
     <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background" data-hyper-gantt-frame>
       {state.status === 'error' ? <Alert variant="destructive" className="m-4 self-start">

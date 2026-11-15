@@ -1,0 +1,86 @@
+/* Feature-owned overrides for the vendored ReUI Gantt. Keep every colour tied to app tokens. */
+[data-hyper-gantt-view] {
+  --hyper-gantt-row-hover: color-mix(in oklab, var(--muted) 40%, var(--background));
+  --hyper-gantt-row-selected: color-mix(in oklab, var(--primary) 5%, var(--background));
+}
+
+[data-hyper-gantt-view] [data-slot='gantt-zoom'] {
+  bottom: 3rem;
+  inset-inline-end: calc(1rem + var(--gantt-zoom-shift, 0px));
+  min-width: 2rem;
+  align-items: center;
+}
+
+[data-hyper-gantt-view] [data-hyper-gantt-zoom-readout] {
+  width: 100%;
+  border-top: 1px solid var(--border);
+  padding-block: 0.25rem;
+  text-align: center;
+}
+
+[data-hyper-gantt-view] [data-hyper-gantt-create-task] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: transparent;
+  opacity: 1;
+}
+
+[data-hyper-gantt-view] [data-hyper-gantt-create-task]:hover:not(:disabled) {
+  background-color: color-mix(in oklab, var(--primary) 80%, transparent);
+}
+
+[data-hyper-gantt-view] [data-hyper-gantt-create-task]:disabled {
+  opacity: 0.5;
+}
+
+/* The weekend wash is positioned; place today's label above that underlay. */
+[data-hyper-gantt-view] [data-gantt-axis] [data-today] {
+  position: relative;
+  z-index: 1;
+}
+
+[data-hyper-gantt-view] [data-gantt-axis] [data-today] > span {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  opacity: 1;
+}
+
+[data-hyper-gantt-view] [data-slot='gantt-now-indicator'] {
+  background-image: none;
+  background-color: var(--destructive);
+  opacity: 1;
+  z-index: 20;
+}
+
+[data-hyper-gantt-view] [data-slot='gantt-drag-ghost']:not([data-milestone]) {
+  border: 1px dashed var(--primary);
+  background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  color: var(--foreground);
+}
+
+[data-hyper-gantt-view] [data-slot='gantt-drag-ghost'][data-drop-invalid] {
+  border-color: var(--destructive);
+  background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+}
+
+/* Opaque mixes match one tint over background, so the sticky cell cannot stack a second tint. */
+[data-hyper-gantt-view] [data-slot='gantt-row-group'][data-hover],
+[data-hyper-gantt-view] [data-slot='gantt-row-group'][data-hover] [data-slot='gantt-tree-cell'],
+[data-hyper-gantt-view] [data-gantt-row][data-hover] {
+  background-color: var(--hyper-gantt-row-hover);
+}
+
+[data-hyper-gantt-view] [data-slot='gantt-row-group'][data-selected],
+[data-hyper-gantt-view] [data-slot='gantt-row-group'][data-selected] [data-slot='gantt-tree-cell'],
+[data-hyper-gantt-view] [data-gantt-row][data-selected] {
+  background-color: var(--hyper-gantt-row-selected);
+}
+
+[data-hyper-gantt-view] [data-hyper-gantt-drag-preview] {
+  color: var(--foreground);
+}
+
+[data-hyper-gantt-view] [data-hyper-gantt-drag-preview][data-valid='false'] {
+  color: var(--destructive);
+}
