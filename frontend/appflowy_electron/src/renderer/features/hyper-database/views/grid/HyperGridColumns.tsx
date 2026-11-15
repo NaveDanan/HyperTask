@@ -41,6 +41,7 @@ export function HyperGridColumns(
   fields: HyperField[],
   selectRange: (row: Row<DataGridFeatures, HyperGridRow>, shift: boolean) => void,
   fieldCreated: (id: string) => void,
+  cellDisplay: (rowId: string, fieldId: string) => string = () => '',
 ): HyperGridColumn[] {
   return [{
     id: 'hyper-expand',
@@ -124,9 +125,10 @@ export function HyperGridColumns(
       skeleton: <Skeleton className='mx-3 h-4 w-24' />,
       fillWidth: field.isPrimary,
 
-      cellEdit: [FieldType.RichText, FieldType.Number, FieldType.DateTime, FieldType.SingleSelect, FieldType.MultiSelect, FieldType.URL].includes(field.type) ? {
-        editable: true,
-      } : undefined,
+      cellEdit: {
+        editable: [FieldType.RichText, FieldType.Number, FieldType.DateTime, FieldType.SingleSelect, FieldType.MultiSelect, FieldType.URL].includes(field.type),
+        format: (_value: unknown, row: HyperGridRow) => cellDisplay(row.id, field.id),
+      },
     },
   })), {
     id: 'hyper-add-field',

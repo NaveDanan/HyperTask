@@ -207,7 +207,7 @@ export function HyperGridView(
     selectAnchor.current = row.id;
   }, [rowIds, pagination]);
 
-  const columns = useMemo(() => HyperGridColumns(fields, selectRange, fieldCreated), [fields, selectRange, fieldCreated]);
+  const columns = useMemo(() => HyperGridColumns(fields, selectRange, fieldCreated, (rowId, fieldId) => controller.state.cells[rowId]?.[fieldId]?.display ?? ''), [fields, selectRange, fieldCreated, controller]);
 
   const table = useTable({
     features: dataGridFeatures,
