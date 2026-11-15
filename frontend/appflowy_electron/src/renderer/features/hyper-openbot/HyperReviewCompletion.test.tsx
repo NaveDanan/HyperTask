@@ -4,6 +4,7 @@ import { HyperPluginGrants } from './connections/HyperPluginGrants';
 import { HyperConnectionsPanel } from './connections/HyperConnectionsPanel';
 import HyperMemorySection from './memory/HyperMemorySection';
 import { HyperSkillsPanel } from './skills/HyperSkillsPanel';
+import HyperNativeSkills from './skills/HyperNativeSkills';
 import { HyperHomeComposer } from './onboarding/HyperHomeComposer';
 import { hyperHomeDraftStore } from './onboarding/HyperHomeDraft';
 import { HyperOpenBotPage, HyperOpenBotWorkspace } from './HyperOpenBotPage';
@@ -93,6 +94,34 @@ it('applies an incoming skill route without emitting navigation or resetting new
   render(HyperSkillsPanel, { ...props, selection: { page: 'new' }, onSelectionChange: vi.fn() });
   if (h.deps[1]!.some((value, index) => !Object.is(value, deps[index]))) h.effects[1]();
   expect(h.states[6].title).toBe('Newer title');
+});
+it.each([false, true])('returns successful skill deletion to the native list in admin mode %s', async admin => {
+  const skill = { slug: 'one', title: 'One', summary: '', instructions: 'Instructions', tools: [], grantedTo: [], ownerUserId: 'owner' };
+  let catalogue = { skills: [skill], servers: [] };
+  f.request.mockImplementation(async (path: string, method?: string) => {
+    if (path === '/api/plugins/skills/one' && method === 'DELETE') { catalogue = { ...catalogue, skills: [] }; return {}; }
+    return path === '/api/plugins' ? catalogue : { agents: [] };
+  });
+  const navigate = vi.fn(), context = { navigate, openConversation: vi.fn(), startConversation: vi.fn() };
+  const native = HyperNativeSkills({ context, path: admin ? '/admin/skills/one' : '/skills/one', admin });
+  render(HyperSkillsPanel, native.props); mountEffects(); await drain();
+  render(HyperSkillsPanel, native.props); h.effects[1]();
+  let tree = render(HyperSkillsPanel, native.props); button(tree, 'Delete skill')!.props.onClick();
+  tree = render(HyperSkillsPanel, native.props); button(tree, 'Confirm delete')!.props.onClick(); await drain();
+  expect(navigate).toHaveBeenCalledWith(admin ? 'admin-skills' : 'skills', { path: admin ? '/admin/skills' : '/skills' });
+});
+it('keeps failed and newer text and skill selections in a mounted uncontrolled composer', async () => {
+  let fail!: (error: Error) => void;
+  const props = { initialValue: '/a', commands: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], onSubmit: () => new Promise<void>((_, reject) => { fail = reject; }) };
+  const input = (tree: ReactNode) => find(tree, element => element.props['data-slot'] === 'composer-input')!;
+  let tree = render(HyperComposer, props); button(tree, '/a · A')!.props.onClick();
+  tree = render(HyperComposer, props); input(tree).props.onChange({ target: { value: 'A' } });
+  tree = render(HyperComposer, props); find(tree, element => element.type === 'form')!.props.onSubmit({ preventDefault() {} });
+  tree = render(HyperComposer, props); input(tree).props.onChange({ target: { value: '/b' } });
+  tree = render(HyperComposer, props); button(tree, '/b · B')!.props.onClick();
+  tree = render(HyperComposer, props); input(tree).props.onChange({ target: { value: 'B' } });
+  render(HyperComposer, props); fail(new Error('refused')); await drain(); tree = render(HyperComposer, props);
+  expect(input(tree).props.value).toBe('A B'); expect(button(tree, '/a ×')).toBeDefined(); expect(button(tree, '/b ×')).toBeDefined();
 });
 it('does not create an abandoned Home submission after its component unmounts', async () => {
   let finish!: (response: Response) => void; f.fetch.mockImplementation(() => new Promise(resolve => { finish = resolve; }));

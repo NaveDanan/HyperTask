@@ -179,7 +179,14 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     try {
       queueHeldAfterFailure.current = false; await runQueued(next);
       onConsumeAttachments?.(snapshot.attachments.map(file => file.id)); input.current?.focus();
-    } catch { if (mounted.current || !latest.current.onRestoreQueued) { setText(current => current || originalText); if (!commandsRef.current.length) setSelectedCommands(snapshot.commandIds); } /* Stable retry identity remains available. */ }
+    } catch {
+      if (mounted.current || !latest.current.onRestoreQueued) {
+        // Match upstream: failed words come before newer words; neither user's intent is dropped.
+        setText(current => !originalText.trim() ? current : !current.trim() ? originalText : `${originalText} ${current}`);
+        setSelectedCommands(current => [...new Set([...snapshot.commandIds, ...current])]);
+      }
+      /* Stable retry identity remains available. */
+    }
   };
   const stop = async () => {
     if (!onStop || stoppingRef.current) return;
