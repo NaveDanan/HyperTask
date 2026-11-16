@@ -2,7 +2,7 @@ use crate::util::receive_with_timeout;
 use event_integration_test::document_event::assert_document_data_equal;
 use event_integration_test::user_event::use_localhost_af_cloud;
 use event_integration_test::EventIntegrationTest;
-use flowy_document::entities::{DocumentSyncState, DocumentSyncStatePB};
+use hyper_document::entities::{DocumentSyncState, DocumentSyncStatePB};
 use std::time::Duration;
 
 #[tokio::test]

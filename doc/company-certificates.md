@@ -1,6 +1,6 @@
 # Company certificates
 
-> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/appflowy_electron/docs/STATUS.md) for current Electron functionality.
+> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/hypertask_electron/docs/STATUS.md) for current Electron functionality.
 
 Open **Settings → Certificates**, choose a `.cer`, `.crt`, or `.pem`
 file provided by IT, review its subject, issuer, expiry and SHA-256 fingerprint,
@@ -12,14 +12,14 @@ CA certificate rather than exporting a server's private key.
 The Windows desktop app imports the CA into **Current User → Trusted Root
 Certification Authorities**. It needs no administrator permission. The trust
 also applies to other applications using this Windows account. Existing
-Windows certificates remain in the Windows store if removed from AppFlowy's
-imported list; only roots added by AppFlowy are removed from Windows.
+Windows certificates remain in the Windows store if removed from Hypertask's
+imported list; only roots added by Hypertask are removed from Windows.
 
 Metadata and public certificate bytes are stored under the application support
 directory in `company_certificates/`. Dart restores these roots before opening
 network connections, and the native Rust clients use Windows' certificate
 store through their native TLS backend. Certificate validation remains
-mandatory. Restart AppFlowy after importing or removing a certificate to
+mandatory. Restart Hypertask after importing or removing a certificate to
 refresh all clients and cached trust contexts.
 
 Tests cover PEM/DER decoding, private-key rejection, read-only Windows parsing

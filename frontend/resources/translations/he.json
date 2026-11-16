@@ -287,7 +287,7 @@
   "notifications": {
     "export": {
       "markdown": "פתקית יוצאה ל־Markdown",
-      "path": "מסמכיםflowy"
+      "path": "מסמכיםhyper"
     }
   },
   "contactsPage": {
@@ -802,9 +802,9 @@
       "cloudServerType": "שרת ענן",
       "cloudServerTypeTip": "נא לשים לב שהפעולה הזאת עלולה להוציא אותך מהחשבון הנוכחי שלך לאחר מעבר לשרת הענן",
       "cloudLocal": "מקומי",
-      "cloudAppFlowy": "@:appName בענן בטא",
-      "cloudAppFlowySelfHost": "@:appName בענן באירוח עצמי",
-      "appFlowyCloudUrlCanNotBeEmpty": "כתובת הענן לא יכולה להישאר ריקה",
+      "cloudHypertask": "@:appName בענן בטא",
+      "cloudHypertaskSelfHost": "@:appName בענן באירוח עצמי",
+      "hypertaskCloudUrlCanNotBeEmpty": "כתובת הענן לא יכולה להישאר ריקה",
       "clickToCopy": "לחיצה להעתקה",
       "selfHostStart": "אם אין לך שרת, נא לפנות אל",
       "selfHostContent": "המסמך",
@@ -825,9 +825,9 @@
       "historicalUserListTooltip": "הרשימה הזאת מציגה את החשבונות האלמוניים שלך. אפשר ללחוץ על חשבון כדי לצפות בפרטים שלו. חשבונות אלמוניים נוצרים בלחיצה על הכפתור ‚איך מתחילים’",
       "openHistoricalUser": "נא ללחוץ כדי לפתוח את החשבון האלמוני",
       "customPathPrompt": "אחסון תיקיית הנתונים של @:appName בתיקייה שמסונכרנת עם הענן כגון Google Drive יכול להוות סיכון. אם למסד הנתונים בתיקייה הזאת ניגשים או עורכים ממגוון מקומות בו־זמנית, יכולות לקרות סתירות סנכרון והנתונים יכולים להינזק",
-      "importAppFlowyData": "ייבוא נתונים מתיקיית @:appName חיצונית",
-      "importingAppFlowyDataTip": "מתבצע ייבוא נתונים. נא לא לסגור את היישום",
-      "importAppFlowyDataDescription": "העתקת נתונים מתיקיית נתונים חיצונית של @:appName ולייבא אותה לתיקיית הנתונים הנוכחית של HyperTask",
+      "importHypertaskData": "ייבוא נתונים מתיקיית @:appName חיצונית",
+      "importingHypertaskDataTip": "מתבצע ייבוא נתונים. נא לא לסגור את היישום",
+      "importHypertaskDataDescription": "העתקת נתונים מתיקיית נתונים חיצונית של @:appName ולייבא אותה לתיקיית הנתונים הנוכחית של HyperTask",
       "importSuccess": "תיקיית הנתונים של @:appName יובאה בהצלחה",
       "importFailed": "ייבוא תיקיית הנתונים של @:appName נכשל",
       "importGuide": "לפרטים נוספים, נא לעיין במסמך המוזכר"
@@ -868,7 +868,7 @@
         "opacityEmptyError": "האטימות לא יכולה להיות ריקה",
         "opacityRangeError": "האטימות חייבת להיות בין 1 ל־100",
         "app": "יישום",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "החלה"
       },
       "layoutDirection": {
@@ -892,7 +892,7 @@
         "loading": "נא להמתין בזמן תיקוף והעלאת ערכת העיצוב שלך…",
         "uploadSuccess": "ערכת העיצוב שלך הועלתה בהצלחה",
         "deletionFailure": "מחיקת ערכת העיצוב נכשלה. נא לנסות למחוק אותה ידנית.",
-        "filePickerDialogTitle": "נא לבחור קובץ ‎.flowy_plugin",
+        "filePickerDialogTitle": "נא לבחור קובץ ‎.hyper_plugin",
         "urlUploadFailure": "פתיחת הכתובת נכשלה: {}"
       },
       "theme": "ערכת עיצוב",
@@ -1320,7 +1320,7 @@
       "smartEditCouldNotFetchResult": "לא ניתן למשוך את התוצאה מ־OpenAI",
       "smartEditCouldNotFetchKey": "לא ניתן למשוך מפתח OpenAI",
       "smartEditDisabled": "חיבור OpenAI בהגדרות",
-      "appflowyAIEditDisabled": "יש להיכנס כדי להפעיל יכולות בינה מלאכותית",
+      "hypertaskAIEditDisabled": "יש להיכנס כדי להפעיל יכולות בינה מלאכותית",
       "discardResponse": "להתעלם מתגובות הבינה המלאכותית?",
       "createInlineMathEquation": "יצירת משוואה",
       "fonts": "גופנים",
@@ -2063,7 +2063,7 @@
     "publishFailed": "הפרסום נכשל",
     "unpublishFailed": "ההסתרה נכשלה",
     "noAccessToVisit": "אין גישה לעמוד הזה…",
-    "createWithAppFlowy": "יצירת אתר עם HyperTask",
+    "createWithHypertask": "יצירת אתר עם HyperTask",
     "fastWithAI": "מהיר וקל עם בינה מלאכותית.",
     "tryItNow": "לנסות כעת"
   },

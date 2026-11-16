@@ -1,13 +1,13 @@
 # Self-hosting HyperTask
 
-HyperTask uses an AppFlowy-compatible collaboration server. The example deployment in [deploy/self-hosted](../deploy/self-hosted/) provides Cloud, GoTrue, PostgreSQL, Redis, SeaweedFS and an NGINX proxy. It uses pinned upstream images compatible with the client API in this checkout.
+HyperTask uses an Hypertask-compatible collaboration server. The example deployment in [deploy/self-hosted](../deploy/self-hosted/) provides Cloud, GoTrue, PostgreSQL, Redis, SeaweedFS and an NGINX proxy. It uses pinned upstream images compatible with the client API in this checkout.
 
 ## Start
 
 Copy the deployment directory to your server, install Docker Compose and Python 3, then run:
 
 ```sh
-cd appflowy-self-host
+cd hypertask-self-host
 ./bootstrap.sh http://collaboration.example.com:8080
 ./manage.sh health
 python3 verify-storage.py

@@ -1,22 +1,22 @@
-use flowy_folder::view_operation::{GatherEncodedCollab, ViewData};
+use hyper_folder::view_operation::{GatherEncodedCollab, ViewData};
 use std::str::FromStr;
 use std::sync::Arc;
 
 use collab_folder::{FolderData, View};
-use flowy_folder::entities::icon::UpdateViewIconPayloadPB;
-use flowy_folder::event_map::FolderEvent;
-use flowy_folder::event_map::FolderEvent::*;
-use flowy_folder::{entities::*, ViewLayout};
-use flowy_folder_pub::entities::PublishPayload;
-use flowy_search::services::manager::{SearchHandler, SearchType};
-use flowy_user::entities::{
+use hyper_folder::entities::icon::UpdateViewIconPayloadPB;
+use hyper_folder::event_map::FolderEvent;
+use hyper_folder::event_map::FolderEvent::*;
+use hyper_folder::{entities::*, ViewLayout};
+use hyper_folder_pub::entities::PublishPayload;
+use hyper_search::services::manager::{SearchHandler, SearchType};
+use hyper_user::entities::{
   AcceptWorkspaceInvitationPB, QueryWorkspacePB, RemoveWorkspaceMemberPB,
   RepeatedWorkspaceInvitationPB, RepeatedWorkspaceMemberPB, UserWorkspaceIdPB, UserWorkspacePB,
   WorkspaceMemberInvitationPB, WorkspaceMemberPB,
 };
-use flowy_user::errors::{FlowyError, FlowyResult};
-use flowy_user::event_map::UserEvent;
-use flowy_user_pub::entities::Role;
+use hyper_user::errors::{HyperError, HyperResult};
+use hyper_user::event_map::UserEvent;
+use hyper_user_pub::entities::Role;
 use uuid::Uuid;
 
 use crate::event_builder::EventBuilder;
@@ -135,7 +135,7 @@ impl EventIntegrationTest {
 
   pub fn get_folder_search_handler(&self) -> Arc<dyn SearchHandler> {
     self
-      .appflowy_core
+      .hypertask_core
       .search_manager
       .get_handler(SearchType::Folder)
       .unwrap()
@@ -162,7 +162,7 @@ impl EventIntegrationTest {
 
     for params in create_view_params {
       self
-        .appflowy_core
+        .hypertask_core
         .folder_manager
         .create_view_with_params(params, true)
         .await
@@ -189,7 +189,7 @@ impl EventIntegrationTest {
 
   pub async fn get_folder_data(&self) -> FolderData {
     self
-      .appflowy_core
+      .hypertask_core
       .folder_manager
       .get_folder_data()
       .await
@@ -270,7 +270,7 @@ impl EventIntegrationTest {
     };
   }
 
-  pub async fn update_view(&self, changeset: UpdateViewPayloadPB) -> Option<FlowyError> {
+  pub async fn update_view(&self, changeset: UpdateViewPayloadPB) -> Option<HyperError> {
     // delete the view. the view will be moved to trash
     EventBuilder::new(self.clone())
       .event(FolderEvent::UpdateView)
@@ -280,7 +280,7 @@ impl EventIntegrationTest {
       .error()
   }
 
-  pub async fn update_view_icon(&self, payload: UpdateViewIconPayloadPB) -> Option<FlowyError> {
+  pub async fn update_view_icon(&self, payload: UpdateViewIconPayloadPB) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(FolderEvent::UpdateViewIcon)
       .payload(payload)
@@ -333,7 +333,7 @@ impl EventIntegrationTest {
       .parse_or_panic::<ViewPB>()
   }
 
-  pub async fn import_data(&self, data: ImportPayloadPB) -> FlowyResult<RepeatedViewPB> {
+  pub async fn import_data(&self, data: ImportPayloadPB) -> HyperResult<RepeatedViewPB> {
     EventBuilder::new(self.clone())
       .event(FolderEvent::ImportData)
       .payload(data)

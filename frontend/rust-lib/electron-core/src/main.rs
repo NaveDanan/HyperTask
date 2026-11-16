@@ -1,4 +1,4 @@
-//! AppFlowy core process for the Electron shell.
+//! Hypertask core process for the Electron shell.
 //!
 //! This binary serves Electron requests over the framed loopback connection described
 //! in [`protocol`]. Events run on the core `AFPluginDispatcher`.
@@ -18,17 +18,17 @@ use tokio::sync::mpsc;
 use tokio::task::LocalSet;
 use tracing::{debug, error, info, trace, warn};
 
-use flowy_core::config::AppFlowyCoreConfig;
-use flowy_core::*;
-use flowy_notification::entities::SubscribeObject;
-use flowy_notification::{
+use hyper_core::config::HypertaskCoreConfig;
+use hyper_core::*;
+use hyper_notification::entities::SubscribeObject;
+use hyper_notification::{
   register_notification_sender, unregister_all_notification_sender, NotificationSender,
 };
-use flowy_server_pub::AuthenticatorType;
+use hyper_server_pub::AuthenticatorType;
 use lib_dispatch::prelude::*;
 use lib_dispatch::runtime::AFPluginRuntime;
 
-use crate::config::{save_appflowy_cloud_config, AppFlowyConfiguration};
+use crate::config::{save_hypertask_cloud_config, HypertaskConfiguration};
 use crate::protocol::*;
 
 mod config;
@@ -48,13 +48,13 @@ fn send_response(id: u64, status: u8, payload: &[u8]) {
 }
 
 fn main() {
-  let port: u16 = std::env::var("APPFLOWY_CORE_PORT")
+  let port: u16 = std::env::var("HYPERTASK_CORE_PORT")
     .ok()
     .and_then(|port| port.parse().ok())
-    .expect("APPFLOWY_CORE_PORT must name the Electron loopback port");
-  let token = std::env::var("APPFLOWY_CORE_TOKEN").expect("APPFLOWY_CORE_TOKEN must be set");
+    .expect("HYPERTASK_CORE_PORT must name the Electron loopback port");
+  let token = std::env::var("HYPERTASK_CORE_TOKEN").expect("HYPERTASK_CORE_TOKEN must be set");
   // The token is only for the handshake; keep it out of the core's environment.
-  std::env::remove_var("APPFLOWY_CORE_TOKEN");
+  std::env::remove_var("HYPERTASK_CORE_TOKEN");
 
   let stream = TcpStream::connect((Ipv4Addr::LOCALHOST, port))
     .expect("Failed to connect to the Electron main process");
@@ -106,7 +106,7 @@ unsafe impl Send for Task {}
 
 #[derive(Default)]
 struct CoreHost {
-  core: Option<AppFlowyCore>,
+  core: Option<HypertaskCore>,
   sender: Option<mpsc::UnboundedSender<Task>>,
   local_identity: bool,
 }
@@ -135,7 +135,7 @@ impl CoreHost {
   }
 
   fn init(&mut self, json: &str) -> i64 {
-    let configuration = match serde_json::from_str::<AppFlowyConfiguration>(json) {
+    let configuration = match serde_json::from_str::<HypertaskConfiguration>(json) {
       Ok(configuration) => configuration,
       Err(err) => {
         error!("[Electron]: invalid init configuration: {}", err);
@@ -145,8 +145,8 @@ impl CoreHost {
     let local_identity = configuration.authenticator_type == AuthenticatorType::Local;
     configuration.write_env();
 
-    if configuration.authenticator_type == AuthenticatorType::AppFlowyCloud {
-      let _ = save_appflowy_cloud_config(&configuration.root, &configuration.appflowy_cloud_config);
+    if configuration.authenticator_type == AuthenticatorType::HypertaskCloud {
+      let _ = save_hypertask_cloud_config(&configuration.root, &configuration.hypertask_cloud_config);
     }
 
     let mut app_version =
@@ -157,7 +157,7 @@ impl CoreHost {
       app_version = min_version;
     }
 
-    let config = AppFlowyCoreConfig::new(
+    let config = HypertaskCoreConfig::new(
       app_version,
       configuration.custom_app_path,
       configuration.origin_app_path,
@@ -182,7 +182,7 @@ impl CoreHost {
     self.sender = Some(sender);
     let cloned_runtime = runtime.clone();
     self.core =
-      Some(runtime.block_on(async move { AppFlowyCore::new(config, cloned_runtime, None).await }));
+      Some(runtime.block_on(async move { HypertaskCore::new(config, cloned_runtime, None).await }));
     self.local_identity = local_identity;
     0
   }
@@ -191,7 +191,7 @@ impl CoreHost {
     let (Some(core), Some(sender)) = (self.core.as_ref(), self.sender.as_ref()) else {
       // Answer requests received before initialization instead of leaving callers waiting.
       error!("[Electron]: event {} sent before init", request.event);
-      send_response(request.id, STATUS_INTERNAL, b"AppFlowy core is not initialized");
+      send_response(request.id, STATUS_INTERNAL, b"Hypertask core is not initialized");
       return;
     };
 
@@ -228,7 +228,7 @@ impl CoreHost {
     };
     if let Err(err) = sender.send(task) {
       error!("Failed to send task: {}", err);
-      send_response(request.id, STATUS_INTERNAL, b"AppFlowy core runner stopped");
+      send_response(request.id, STATUS_INTERNAL, b"Hypertask core runner stopped");
     }
   }
 

@@ -1,7 +1,7 @@
 use crate::user::local_test::helper::*;
 use event_integration_test::{event_builder::EventBuilder, EventIntegrationTest};
-use flowy_user::entities::{AuthTypePB, UpdateUserProfilePayloadPB, UserProfilePB};
-use flowy_user::{errors::ErrorCode, event_map::UserEvent::*};
+use hyper_user::entities::{AuthTypePB, UpdateUserProfilePayloadPB, UserProfilePB};
+use hyper_user::{errors::ErrorCode, event_map::UserEvent::*};
 use nanoid::nanoid;
 #[tokio::test]
 async fn user_profile_get_failed() {

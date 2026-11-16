@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use event_integration_test::EventIntegrationTest;
-use flowy_folder::entities::{ChildViewUpdatePB, RepeatedViewPB, UpdateViewPayloadPB};
-use flowy_folder::notification::FolderNotification;
+use hyper_folder::entities::{ChildViewUpdatePB, RepeatedViewPB, UpdateViewPayloadPB};
+use hyper_folder::notification::FolderNotification;
 
 use crate::util::receive_with_timeout;
 
 #[tokio::test]
 /// The primary purpose of this test is to validate that the notification subscription mechanism
 /// correctly notifies the subscriber of updates to workspace views.
-/// 1. Initialize the `FlowyCoreTest` with a guest user.
+/// 1. Initialize the `HyperCoreTest` with a guest user.
 /// 2. Retrieve the current workspace for the test user.
 /// 3. Subscribe to workspace view updates using the `RepeatedViewPB` notification.
 /// 4. Spawn a new asynchronous task to create a new view named "test_view" within the workspace.

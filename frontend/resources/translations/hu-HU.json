@@ -153,7 +153,7 @@
   "notifications": {
     "export": {
       "markdown": "Megjegyzés exportálva a Markdownba",
-      "path": "Dokumentumok/flowy"
+      "path": "Dokumentumok/hyper"
     }
   },
   "contactsPage": {
@@ -229,7 +229,7 @@
         "loading": "Kérjük, várjon, amíg ellenőrizzük és feltöltjük a témát...",
         "uploadSuccess": "A témát sikeresen feltöltötte",
         "deletionFailure": "Nem sikerült törölni a témát. Próbálja meg manuálisan törölni.",
-        "filePickerDialogTitle": "Válasszon egy .flowy_plugin fájlt",
+        "filePickerDialogTitle": "Válasszon egy .hyper_plugin fájlt",
         "urlUploadFailure": "Nem sikerült megnyitni az URL-t: {}",
         "failure": "A feltöltött téma formátuma érvénytelen."
       },

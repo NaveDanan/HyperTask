@@ -296,7 +296,7 @@
         "loading": "Aguarde enquanto validamos e carregamos seu tema...",
         "uploadSuccess": "Seu tema foi carregado com sucesso",
         "deletionFailure": "Falha ao excluir o tema. Tente excluí-lo manualmente.",
-        "filePickerDialogTitle": "Escolha um arquivo .flowy_plugin",
+        "filePickerDialogTitle": "Escolha um arquivo .hyper_plugin",
         "urlUploadFailure": "Falha ao abrir url: {}",
         "failure": "O tema que foi carregado tinha um formato inválido."
       },

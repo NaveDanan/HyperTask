@@ -149,7 +149,7 @@
   "notifications": {
     "export": {
       "markdown": "Oharra markdownera esportatuta",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -225,7 +225,7 @@
         "loading": "Mesedez, itxaron zure gaia balioztatzen eta kargatzen dugun bitartean...",
         "uploadSuccess": "Zure gaia behar bezala kargatu da",
         "deletionFailure": "Ezin izan da gaia ezabatu. Saiatu eskuz ezabatzen.",
-        "filePickerDialogTitle": "Aukeratu .flowy_plugin fitxategi bat",
+        "filePickerDialogTitle": "Aukeratu .hyper_plugin fitxategi bat",
         "urlUploadFailure": "Ezin izan da ireki URLa: {}",
         "failure": "Kargatu zen gaiak formatu baliogabea zuen."
       },

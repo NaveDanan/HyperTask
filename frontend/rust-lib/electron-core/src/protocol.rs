@@ -10,7 +10,7 @@
 //! - `SHUTDOWN`: empty, closes the database and exits
 //!
 //! Core -> Electron:
-//! - `HELLO`:        the token from `APPFLOWY_CORE_TOKEN`, sent first
+//! - `HELLO`:        the token from `HYPERTASK_CORE_TOKEN`, sent first
 //! - `INIT_DONE`:    `[i64 code]`, 0 on success
 //! - `RESPONSE`:     `[u64 id][u8 status][payload]`, status 0 = ok, 1 = error, 2 = internal
 //! - `NOTIFICATION`: a `SubscribeObject` protobuf message

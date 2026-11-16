@@ -195,7 +195,7 @@
   "notifications": {
     "export": {
       "markdown": "متن به یادداشت تبدیل شود",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -279,7 +279,7 @@
         "loading": "لطفاً منتظر بمانید تا تم قالب شما را اعتبارسنجی و آپلود کنیم...",
         "uploadSuccess": "تم قالب شما با موفقیت آپلود شد",
         "deletionFailure": "تم حذف نشد. سعی کنید آن را به صورت دستی حذف کنید.",
-        "filePickerDialogTitle": "یک فایل .flowy_plugin را انتخاب کنید",
+        "filePickerDialogTitle": "یک فایل .hyper_plugin را انتخاب کنید",
         "urlUploadFailure": "نشانی اینترنتی باز نشد: {}",
         "failure": "تم قالب آپلود شده نامعتبر است."
       },

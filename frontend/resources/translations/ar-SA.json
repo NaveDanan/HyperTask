@@ -37,7 +37,7 @@
     "loginStartWithAnonymous": "ابدأ بجلسة خفية",
     "continueAnonymousUser": "استمر بجلسة خفية",
     "continueWithLocalModel": "الاستمرار بالنموذج المحلي",
-    "switchToAppFlowyCloud": "HyperTask السحابي",
+    "switchToHypertaskCloud": "HyperTask السحابي",
     "anonymousMode": "الوضع المجهول",
     "buttonText": "تسجيل الدخول",
     "signingInText": "جاري تسجيل الدخول...",
@@ -107,7 +107,7 @@
     "verifying": "جاري التحقق...",
     "continueWithPassword": "متابعة مع كلمة المرور",
     "youAreInLocalMode": "أنت في الوضع المحلي.",
-    "loginToAppFlowyCloud": "تسجيل الدخول إلى HyperTask Cloud",
+    "loginToHypertaskCloud": "تسجيل الدخول إلى HyperTask Cloud",
     "anonymous": "مجهول",
     "LogInWithGoogle": "تسجيل الدخول عبر جوجل",
     "LogInWithGithub": "تسجيل الدخول مع جيثب",
@@ -168,7 +168,7 @@
     "exportAsTab": "تصدير كـ",
     "publishTab": "نشر",
     "shareTab": "مشاركة",
-    "publishOnAppFlowy": "نشر على HyperTask",
+    "publishOnHypertask": "نشر على HyperTask",
     "shareTabTitle": "دعوة للتعاون",
     "shareTabDescription": "من أجل التعاون السهل مع أي شخص",
     "copyLinkSuccess": "تم نسخ الرابط إلى الحافظة",
@@ -456,7 +456,7 @@
   "notifications": {
     "export": {
       "markdown": "تم تصدير ملاحظة إلى Markdown",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -904,7 +904,7 @@
         "readOnlyField": "هذا الحقل للقراءة فقط",
         "llmModelType": "نوع نموذج اللغة",
         "downloadLLMPrompt": "تنزيل {}",
-        "downloadAppFlowyOfflineAI": "سيؤدي تنزيل حزمة AI دون اتصال بالإنترنت إلى تفعيل تشغيل AI على جهازك. هل تريد الاستمرار؟",
+        "downloadHypertaskOfflineAI": "سيؤدي تنزيل حزمة AI دون اتصال بالإنترنت إلى تفعيل تشغيل AI على جهازك. هل تريد الاستمرار؟",
         "downloadLLMPromptDetail": " تنزيل النموذج المحلي {} سيستخدم ما يصل إلى {} من مساحة التخزين. هل تريد الاستمرار؟",
         "downloadBigFilePrompt": "قد يستغرق الأمر حوالي 10 دقائق لإكمال التنزيل",
         "downloadAIModelButton": "تنزيل",
@@ -1188,9 +1188,9 @@
       "cloudServerType": "خادم سحابي",
       "cloudServerTypeTip": "يرجى ملاحظة أنه قد يقوم بتسجيل الخروج من حسابك الحالي بعد تبديل الخادم السحابي",
       "cloudLocal": "محلي",
-      "cloudAppFlowy": "سحابة @:appName",
-      "cloudAppFlowySelfHost": "@:appName استضافة ذاتية على السحابة",
-      "appFlowyCloudUrlCanNotBeEmpty": "لا يمكن أن يكون عنوان URL السحابي فارغًا",
+      "cloudHypertask": "سحابة @:appName",
+      "cloudHypertaskSelfHost": "@:appName استضافة ذاتية على السحابة",
+      "hypertaskCloudUrlCanNotBeEmpty": "لا يمكن أن يكون عنوان URL السحابي فارغًا",
       "clickToCopy": "انقر للنسخ",
       "selfHostStart": "إذا لم يكن لديك خادم، يرجى الرجوع إلى",
       "selfHostContent": "مستند",
@@ -1214,9 +1214,9 @@
       "historicalUserListTooltip": "تعرض هذه القائمة حساباتك المجهولة. يمكنك النقر على الحساب لعرض تفاصيله. يتم إنشاء الحسابات المجهولة بالنقر فوق الزر \"البدء\".",
       "openHistoricalUser": "انقر لفتح الحساب الخفي",
       "customPathPrompt": "قد يؤدي تخزين مجلد بيانات @:appName في مجلد متزامن على السحابة مثل Google Drive إلى مخاطر. إذا تم الوصول إلى قاعدة البيانات الموجودة في هذا المجلد أو تعديلها من مواقع متعددة في نفس الوقت، فقد يؤدي ذلك إلى حدوث تعارضات في المزامنة وتلف محتمل للبيانات",
-      "importAppFlowyData": "استيراد البيانات من مجلد خارجي @:appName",
-      "importingAppFlowyDataTip": "جاري استيراد البيانات. يرجى عدم إغلاق التطبيق",
-      "importAppFlowyDataDescription": "انسخ البيانات من مجلد بيانات خارجي @:appName واستوردها إلى مجلد بيانات HyperTask الحالي",
+      "importHypertaskData": "استيراد البيانات من مجلد خارجي @:appName",
+      "importingHypertaskDataTip": "جاري استيراد البيانات. يرجى عدم إغلاق التطبيق",
+      "importHypertaskDataDescription": "انسخ البيانات من مجلد بيانات خارجي @:appName واستوردها إلى مجلد بيانات HyperTask الحالي",
       "importSuccess": "تم استيراد مجلد البيانات @:appName بنجاح",
       "importFailed": "فشل استيراد مجلد البيانات @:appName",
       "importGuide": "لمزيد من التفاصيل، يرجى مراجعة الوثيقة المشار إليها",
@@ -1301,7 +1301,7 @@
         "opacityEmptyError": "لا يمكن أن تكون الشفافية فارغة",
         "opacityRangeError": "يجب أن تكون الشفافية بين 1 و 100",
         "app": "App",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "تطبيق"
       },
       "layoutDirection": {
@@ -1325,7 +1325,7 @@
         "loading": "يرجى الانتظار بينما نقوم بالتحقق من صحة السمة الخاصة بك وترفعها ...",
         "uploadSuccess": "تم رفع سمتك بنجاح",
         "deletionFailure": "فشل حذف الموضوع. حاول حذفه يدويًا.",
-        "filePickerDialogTitle": "اختر ملف .flowy_plugin",
+        "filePickerDialogTitle": "اختر ملف .hyper_plugin",
         "urlUploadFailure": "فشل فتح عنوان url: {}",
         "failure": "النسق الذي تم تحميله به تنسيق غير صالح."
       },
@@ -1378,7 +1378,7 @@
         "memberLimitExceeded": "تم الوصول إلى الحد الأقصى للأعضاء، لدعوة المزيد من الأعضاء، يرجى ",
         "memberLimitExceededUpgrade": "ترقية",
         "memberLimitExceededPro": "تم الوصول إلى الحد الأقصى للأعضاء، إذا كنت بحاجة إلى المزيد من الأعضاء، فاتصل بنا ",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "فشل في إضافة العضو",
         "addMemberSuccess": "تمت إضافة العضو بنجاح",
         "removeMember": "إزالة العضو",
@@ -1909,7 +1909,7 @@
       "smartEditCouldNotFetchResult": "تعذر جلب النتيجة من AI",
       "smartEditCouldNotFetchKey": "تعذر جلب مفتاح AI",
       "smartEditDisabled": "قم بتوصيل AI في الإعدادات",
-      "appflowyAIEditDisabled": "تسجيل الدخول لتمكين ميزات الذكاء الاصطناعي",
+      "hypertaskAIEditDisabled": "تسجيل الدخول لتمكين ميزات الذكاء الاصطناعي",
       "discardResponse": "هل تريد تجاهل استجابات الذكاء الاصطناعي؟",
       "createInlineMathEquation": "اصنع معادلة",
       "fonts": "الخطوط",
@@ -2738,7 +2738,7 @@
       "accountLogin": "تسجيل الدخول إلى الحساب",
       "updateNameError": "فشل في تحديث الاسم",
       "updateIconError": "فشل في تحديث الأيقونة",
-      "aboutAppFlowy": "حول appName",
+      "aboutHypertask": "حول appName",
       "deleteAccount": {
         "title": "حذف الحساب",
         "subtitle": "احذف حسابك وجميع بياناتك بشكل دائم.",
@@ -2931,7 +2931,7 @@
     "publishFailed": "فشل في النشر",
     "unpublishFailed": "فشل في إلغاء النشر",
     "noAccessToVisit": "لا يمكن الوصول إلى هذه الصفحة...",
-    "createWithAppFlowy": "إنشاء موقع ويب مع HyperTask",
+    "createWithHypertask": "إنشاء موقع ويب مع HyperTask",
     "fastWithAI": "سريع وسهل مع الذكاء الاصطناعي.",
     "tryItNow": "جربها الآن",
     "onlyGridViewCanBePublished": "لا يمكن نشر سوى عرض الشبكة",
@@ -3314,7 +3314,7 @@
     "cancelPlan": {
       "title": "نأسف على مغادرتك",
       "success": "لقد تم إلغاء اشتراكك بنجاح",
-      "description": "يؤسفنا رحيلك. يسعدنا سماع تعليقاتك لمساعدتنا على تحسين AppFlowy. يُرجى تخصيص بعض الوقت للإجابة على بعض الأسئلة.",
+      "description": "يؤسفنا رحيلك. يسعدنا سماع تعليقاتك لمساعدتنا على تحسين Hypertask. يُرجى تخصيص بعض الوقت للإجابة على بعض الأسئلة.",
       "commonOther": "آخر",
       "otherHint": "اكتب إجابتك هنا",
       "questionOne": {

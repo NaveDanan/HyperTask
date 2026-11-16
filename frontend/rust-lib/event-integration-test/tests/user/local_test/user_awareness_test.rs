@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use event_integration_test::event_builder::EventBuilder;
 use event_integration_test::EventIntegrationTest;
-use flowy_user::entities::{ReminderPB, RepeatedReminderPB};
-use flowy_user::event_map::UserEvent::*;
+use hyper_user::entities::{ReminderPB, RepeatedReminderPB};
+use hyper_user::event_map::UserEvent::*;
 
 #[tokio::test]
 async fn user_update_with_reminder() {

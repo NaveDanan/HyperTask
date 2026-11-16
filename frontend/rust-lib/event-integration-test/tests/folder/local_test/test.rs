@@ -1,8 +1,8 @@
 use event_integration_test::event_builder::EventBuilder;
 use event_integration_test::EventIntegrationTest;
-use flowy_folder::entities::icon::{UpdateViewIconPayloadPB, ViewIconPB, ViewIconTypePB};
-use flowy_folder::entities::*;
-use flowy_user::errors::ErrorCode;
+use hyper_folder::entities::icon::{UpdateViewIconPayloadPB, ViewIconPB, ViewIconTypePB};
+use hyper_folder::entities::*;
+use hyper_user::errors::ErrorCode;
 
 // #[tokio::test]
 // async fn open_workspace_event_test() {
@@ -13,22 +13,22 @@ use flowy_user::errors::ErrorCode;
 //   };
 //   // create a workspace
 //   let resp_1 = EventBuilder::new(test.clone())
-//     .event(flowy_folder::event_map::FolderEvent::CreateWorkspace)
+//     .event(hyper_folder::event_map::FolderEvent::CreateWorkspace)
 //     .payload(payload)
 //     .async_send()
 //     .await
-//     .parse::<flowy_folder::entities::WorkspacePB>();
+//     .parse::<hyper_folder::entities::WorkspacePB>();
 //
 //   // open the workspace
 //   let payload = WorkspaceIdPB {
 //     value: Some(resp_1.id.clone()),
 //   };
 //   let resp_2 = EventBuilder::new(test)
-//     .event(flowy_folder::event_map::FolderEvent::OpenWorkspace)
+//     .event(hyper_folder::event_map::FolderEvent::OpenWorkspace)
 //     .payload(payload)
 //     .async_send()
 //     .await
-//     .parse::<flowy_folder::entities::WorkspacePB>();
+//     .parse::<hyper_folder::entities::WorkspacePB>();
 //
 //   assert_eq!(resp_1.id, resp_2.id);
 //   assert_eq!(resp_1.name, resp_2.name);
@@ -105,7 +105,7 @@ async fn delete_view_event_test() {
     value: view.id.clone(),
   };
   let error = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::GetView)
+    .event(hyper_folder::event_map::FolderEvent::GetView)
     .payload(payload)
     .async_send()
     .await
@@ -128,7 +128,7 @@ async fn put_back_trash_event_test() {
     value: view.id.clone(),
   };
   let error = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::GetView)
+    .event(hyper_folder::event_map::FolderEvent::GetView)
     .payload(payload)
     .async_send()
     .await
@@ -140,7 +140,7 @@ async fn put_back_trash_event_test() {
     id: view.id.clone(),
   };
   EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::RestoreTrashItem)
+    .event(hyper_folder::event_map::FolderEvent::RestoreTrashItem)
     .payload(payload)
     .async_send()
     .await;
@@ -149,7 +149,7 @@ async fn put_back_trash_event_test() {
     value: view.id.clone(),
   };
   let error = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::GetView)
+    .event(hyper_folder::event_map::FolderEvent::GetView)
     .payload(payload)
     .async_send()
     .await
@@ -170,16 +170,16 @@ async fn delete_view_permanently_event_test() {
 
   // delete the view. the view will be moved to trash
   EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::DeleteView)
+    .event(hyper_folder::event_map::FolderEvent::DeleteView)
     .payload(payload)
     .async_send()
     .await;
 
   let trash = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::ListTrashItems)
+    .event(hyper_folder::event_map::FolderEvent::ListTrashItems)
     .async_send()
     .await
-    .parse_or_panic::<flowy_folder::entities::RepeatedTrashPB>()
+    .parse_or_panic::<hyper_folder::entities::RepeatedTrashPB>()
     .items;
   assert_eq!(trash.len(), 1);
   assert_eq!(trash[0].id, view.id);
@@ -191,17 +191,17 @@ async fn delete_view_permanently_event_test() {
     }],
   };
   EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::PermanentlyDeleteTrashItem)
+    .event(hyper_folder::event_map::FolderEvent::PermanentlyDeleteTrashItem)
     .payload(payload)
     .async_send()
     .await;
 
   // After delete the last view, the trash should be empty
   let trash = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::ListTrashItems)
+    .event(hyper_folder::event_map::FolderEvent::ListTrashItems)
     .async_send()
     .await
-    .parse_or_panic::<flowy_folder::entities::RepeatedTrashPB>()
+    .parse_or_panic::<hyper_folder::entities::RepeatedTrashPB>()
     .items;
   assert!(trash.is_empty());
 }
@@ -220,32 +220,32 @@ async fn delete_all_trash_test() {
     };
     // delete the view. the view will be moved to trash
     EventBuilder::new(test.clone())
-      .event(flowy_folder::event_map::FolderEvent::DeleteView)
+      .event(hyper_folder::event_map::FolderEvent::DeleteView)
       .payload(payload)
       .async_send()
       .await;
   }
 
   let trash = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::ListTrashItems)
+    .event(hyper_folder::event_map::FolderEvent::ListTrashItems)
     .async_send()
     .await
-    .parse_or_panic::<flowy_folder::entities::RepeatedTrashPB>()
+    .parse_or_panic::<hyper_folder::entities::RepeatedTrashPB>()
     .items;
   assert_eq!(trash.len(), 3);
 
   // Delete all the trash
   EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::PermanentlyDeleteAllTrashItem)
+    .event(hyper_folder::event_map::FolderEvent::PermanentlyDeleteAllTrashItem)
     .async_send()
     .await;
 
   // After delete the last view, the trash should be empty
   let trash = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::ListTrashItems)
+    .event(hyper_folder::event_map::FolderEvent::ListTrashItems)
     .async_send()
     .await
-    .parse_or_panic::<flowy_folder::entities::RepeatedTrashPB>()
+    .parse_or_panic::<hyper_folder::entities::RepeatedTrashPB>()
     .items;
   assert!(trash.is_empty());
 }
@@ -271,7 +271,7 @@ async fn multiple_hierarchy_view_test() {
   }
 
   let mut views = test.get_all_workspace_views().await;
-  // There will be one default view when AppFlowy is initialized. So there will be 4 views in total
+  // There will be one default view when Hypertask is initialized. So there will be 4 views in total
   assert_eq!(views.len(), 4);
   views.remove(0);
 
@@ -306,11 +306,11 @@ async fn multiple_hierarchy_view_test() {
       };
 
       let child = EventBuilder::new(test.clone())
-        .event(flowy_folder::event_map::FolderEvent::GetView)
+        .event(hyper_folder::event_map::FolderEvent::GetView)
         .payload(payload)
         .async_send()
         .await
-        .parse_or_panic::<flowy_folder::entities::ViewPB>();
+        .parse_or_panic::<hyper_folder::entities::ViewPB>();
       assert_eq!(child.name, format!("My {}-{} view", i + 1, j + 1));
       assert_eq!(child.child_views.len(), 1);
       // By default only the first level of child views will be loaded
@@ -341,7 +341,7 @@ async fn move_view_event_test() {
     }
   }
   let views = test.get_all_workspace_views().await;
-  // There will be one default view when AppFlowy is initialized. So there will be 4 views in total
+  // There will be one default view when Hypertask is initialized. So there will be 4 views in total
   assert_eq!(views.len(), 4);
   assert_eq!(views[1].name, "My 1 view");
   assert_eq!(views[2].name, "My 2 view");
@@ -353,7 +353,7 @@ async fn move_view_event_test() {
     to: 2,
   };
   let _ = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::MoveView)
+    .event(hyper_folder::event_map::FolderEvent::MoveView)
     .payload(payload)
     .async_send()
     .await;
@@ -381,7 +381,7 @@ async fn move_view_event_after_delete_view_test() {
   assert_eq!(views[5].name, "My 5 view");
   test.delete_view(&views[3].id).await;
 
-  // There will be one default view when AppFlowy is initialized. So there will be 4 views in total
+  // There will be one default view when Hypertask is initialized. So there will be 4 views in total
   let views = test.get_all_workspace_views().await;
   assert_eq!(views[1].name, "My 1 view");
   assert_eq!(views[2].name, "My 2 view");
@@ -394,7 +394,7 @@ async fn move_view_event_after_delete_view_test() {
     to: 3,
   };
   let _ = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::MoveView)
+    .event(hyper_folder::event_map::FolderEvent::MoveView)
     .payload(payload)
     .async_send()
     .await;
@@ -435,7 +435,7 @@ async fn move_view_event_after_delete_view_test2() {
     to: 2,
   };
   let _ = EventBuilder::new(test.clone())
-    .event(flowy_folder::event_map::FolderEvent::MoveView)
+    .event(hyper_folder::event_map::FolderEvent::MoveView)
     .payload(payload)
     .async_send()
     .await;
@@ -507,7 +507,7 @@ async fn move_folder_nested_view(
     to_section: None,
   };
   EventBuilder::new(sdk)
-    .event(flowy_folder::event_map::FolderEvent::MoveNestedView)
+    .event(hyper_folder::event_map::FolderEvent::MoveNestedView)
     .payload(payload)
     .async_send()
     .await;

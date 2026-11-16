@@ -319,7 +319,7 @@
   "notifications": {
     "export": {
       "markdown": "Експортовано нотатку в Markdown",
-      "path": "Документи/flowy"
+      "path": "Документи/hyper"
     }
   },
   "contactsPage": {
@@ -680,7 +680,7 @@
         "llmModel": "Модель мови",
         "llmModelType": "Тип мовної моделі",
         "downloadLLMPrompt": "Завантажити {}",
-        "downloadAppFlowyOfflineAI": "Завантаження офлайн-пакету AI дозволить працювати AI на вашому пристрої. Ви хочете продовжити?",
+        "downloadHypertaskOfflineAI": "Завантаження офлайн-пакету AI дозволить працювати AI на вашому пристрої. Ви хочете продовжити?",
         "downloadLLMPromptDetail": "Завантаження {} локальної моделі займе до {} пам’яті. Ви хочете продовжити?",
         "downloadBigFilePrompt": "Завантаження може зайняти близько 10 хвилин",
         "downloadAIModelButton": "Завантажити",
@@ -941,9 +941,9 @@
       "cloudServerType": "Хмарний сервер",
       "cloudServerTypeTip": "Зауважте, що після перемикання хмарного сервера ваш поточний обліковий запис може вийти з системи",
       "cloudLocal": "Місцевий",
-      "cloudAppFlowy": "@:appName Cloud Beta",
-      "cloudAppFlowySelfHost": "@:appName Cloud на власному сервері",
-      "appFlowyCloudUrlCanNotBeEmpty": "URL-адреса хмари не може бути пустою",
+      "cloudHypertask": "@:appName Cloud Beta",
+      "cloudHypertaskSelfHost": "@:appName Cloud на власному сервері",
+      "hypertaskCloudUrlCanNotBeEmpty": "URL-адреса хмари не може бути пустою",
       "clickToCopy": "Натисніть, щоб скопіювати",
       "selfHostStart": "Якщо у вас немає сервера, зверніться до",
       "selfHostContent": "документ",
@@ -964,9 +964,9 @@
       "historicalUserListTooltip": "У цьому списку відображаються ваші анонімні облікові записи. Ви можете клацнути на обліковий запис, щоб переглянути його деталі. Анонімні облікові записи створюються, натискаючи кнопку 'Розпочати роботу'",
       "openHistoricalUser": "Клацніть, щоб відкрити анонімний обліковий запис",
       "customPathPrompt": "Зберігання папки даних @:appName у папці, що синхронізується з хмарою, як-от Google Drive, може становити ризик. Якщо база даних у цій папці доступна або змінена з кількох місць одночасно, це може призвести до конфліктів синхронізації та можливого пошкодження даних",
-      "importAppFlowyData": "Імпорт даних із зовнішньої @:appName",
-      "importingAppFlowyDataTip": "Виконується імпорт даних. Будь ласка, не закривайте додаток",
-      "importAppFlowyDataDescription": "Скопіюйте дані із зовнішньої папки @:appName та імпортуйте їх у поточну папку даних HyperTask",
+      "importHypertaskData": "Імпорт даних із зовнішньої @:appName",
+      "importingHypertaskDataTip": "Виконується імпорт даних. Будь ласка, не закривайте додаток",
+      "importHypertaskDataDescription": "Скопіюйте дані із зовнішньої папки @:appName та імпортуйте їх у поточну папку даних HyperTask",
       "importSuccess": "Папку даних @:appName успішно імпортовано",
       "importFailed": "Не вдалося імпортувати папку даних @:appName",
       "importGuide": "Щоб отримати додаткові відомості, перегляньте документ, на який посилається"
@@ -1047,7 +1047,7 @@
         "opacityEmptyError": "Непрозорість не може бути пустою",
         "opacityRangeError": "Непрозорість має бути від 1 до 100",
         "app": "Додаток",
-        "flowy": "Текучий",
+        "hyper": "Текучий",
         "apply": "Застосувати"
       },
       "layoutDirection": {
@@ -1071,7 +1071,7 @@
         "loading": "Будь ласка, зачекайте, поки ми перевіряємо та завантажуємо вашу тему...",
         "uploadSuccess": "Вашу тему успішно завантажено",
         "deletionFailure": "Не вдалося видалити тему. Спробуйте видалити її вручну.",
-        "filePickerDialogTitle": "Виберіть файл .flowy_plugin",
+        "filePickerDialogTitle": "Виберіть файл .hyper_plugin",
         "urlUploadFailure": "Не вдалося відкрити URL: {}",
         "failure": "Тему, яка була завантажена, має неправильний формат."
       },
@@ -1124,7 +1124,7 @@
         "memberLimitExceeded": "Досягнуто обмеження кількості учасників, будь ласка, запросіть більше учасників ",
         "memberLimitExceededUpgrade": "оновлення",
         "memberLimitExceededPro": "Досягнуто ліміту учасників, якщо вам потрібно більше учасників, зв’яжіться ",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "Не вдалося додати учасника",
         "addMemberSuccess": "Учасника успішно додано",
         "removeMember": "Видалити учасника",
@@ -1555,7 +1555,7 @@
       "smartEditCouldNotFetchResult": "Не вдалося отримати результат від ШІ",
       "smartEditCouldNotFetchKey": "Не вдалося отримати ключ ШІ",
       "smartEditDisabled": "Підключіть ШІ в Налаштуваннях",
-      "appflowyAIEditDisabled": "Увійдіть, щоб увімкнути функції ШІ",
+      "hypertaskAIEditDisabled": "Увійдіть, щоб увімкнути функції ШІ",
       "discardResponse": "Ви хочете відкинути відповіді AI?",
       "createInlineMathEquation": "Створити рівняння",
       "fonts": "Шрифти",
@@ -2427,7 +2427,7 @@
     "publishFailed": "Не вдалося опублікувати",
     "unpublishFailed": "Не вдалося скасувати публікацію",
     "noAccessToVisit": "Немає доступу до цієї сторінки...",
-    "createWithAppFlowy": "Створіть веб-сайт за допомогою HyperTask",
+    "createWithHypertask": "Створіть веб-сайт за допомогою HyperTask",
     "fastWithAI": "Швидко та легко з AI.",
     "tryItNow": "Спробуй зараз",
     "onlyGridViewCanBePublished": "Можна опублікувати лише режим сітки",

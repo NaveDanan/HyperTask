@@ -157,7 +157,7 @@
   "notifications": {
     "export": {
       "markdown": "Exporterade anteckning till Markdown",
-      "path": "Dokument/flowy"
+      "path": "Dokument/hyper"
     }
   },
   "contactsPage": {
@@ -247,7 +247,7 @@
       "cloudServerType": "Molnserver",
       "cloudServerTypeTip": "Observera att det kan logga ut ditt nuvarande konto efter att ha bytt molnserver",
       "cloudLocal": "Lokal",
-      "appFlowyCloudUrlCanNotBeEmpty": "Molnets webbadress får inte vara tom",
+      "hypertaskCloudUrlCanNotBeEmpty": "Molnets webbadress får inte vara tom",
       "clickToCopy": "Klicka för att kopiera",
       "selfHostStart": "Om du inte har en server, vänligen se",
       "selfHostContent": "dokument",
@@ -268,9 +268,9 @@
       "historicalUserListTooltip": "Den här listan visar dina anonyma konton. Du kan klicka på ett konto för att se dess detaljer. Anonyma konton skapas genom att klicka på knappen \"Kom igång\".",
       "openHistoricalUser": "Klicka för att öppna det anonyma kontot",
       "customPathPrompt": "Att lagra @:appName-datamappen i en molnsynkroniserad mapp som Google Drive kan innebära risker. Om databasen i den här mappen nås eller ändras från flera platser samtidigt, kan det resultera i synkroniseringskonflikter och potentiell datakorruption",
-      "importAppFlowyData": "Importera data från extern @:appName-mapp",
-      "importingAppFlowyDataTip": "Dataimport pågår. Stäng inte appen",
-      "importAppFlowyDataDescription": "Kopiera data från en extern @:appName-datamapp och importera den till den aktuella @:appName-datamappen",
+      "importHypertaskData": "Importera data från extern @:appName-mapp",
+      "importingHypertaskDataTip": "Dataimport pågår. Stäng inte appen",
+      "importHypertaskDataDescription": "Kopiera data från en extern @:appName-datamapp och importera den till den aktuella @:appName-datamappen",
       "importSuccess": "@:appName-datamappen har importerats",
       "importFailed": "Det gick inte att importera @:appName-datamappen",
       "importGuide": "För ytterligare information, snälla se det refererade dokumentet"
@@ -292,7 +292,7 @@
         "loading": "Vänta medan vi validerar och laddar upp ditt tema...",
         "uploadSuccess": "Ditt tema laddades upp",
         "deletionFailure": "Det gick inte att ta bort temat. Försök att radera det manuellt.",
-        "filePickerDialogTitle": "Välj en .flowy_plugin-fil",
+        "filePickerDialogTitle": "Välj en .hyper_plugin-fil",
         "urlUploadFailure": "Det gick inte att öppna webbadressen: {}",
         "failure": "Temat som laddades upp hade ett ogiltigt format."
       },

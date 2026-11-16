@@ -2,11 +2,11 @@ use crate::util::unzip;
 use bytes::Bytes;
 use event_integration_test::user_event::use_localhost_af_cloud;
 use event_integration_test::EventIntegrationTest;
-use flowy_core::DEFAULT_NAME;
-use flowy_search::entities::{SearchResponsePB, SearchStatePB};
-use flowy_search::services::manager::SearchType;
-use flowy_user::errors::FlowyResult;
-use flowy_user_pub::entities::WorkspaceType;
+use hyper_core::DEFAULT_NAME;
+use hyper_search::entities::{SearchResponsePB, SearchStatePB};
+use hyper_search::services::manager::SearchType;
+use hyper_user::errors::HyperResult;
+use hyper_user_pub::entities::WorkspaceType;
 use futures::{Sink, StreamExt};
 use lib_infra::util::timestamp;
 use std::convert::TryFrom;
@@ -71,7 +71,7 @@ async fn perform_search_with_workspace(
   test: &EventIntegrationTest,
   query: &str,
   workspace_id: &Uuid,
-) -> Vec<FlowyResult<SearchResponsePB>> {
+) -> Vec<HyperResult<SearchResponsePB>> {
   let search_handler = test
     .search_manager
     .get_handler(SearchType::DocumentLocal)
@@ -87,7 +87,7 @@ async fn perform_search_with_workspace(
 async fn perform_search(
   test: &EventIntegrationTest,
   query: &str,
-) -> Vec<FlowyResult<SearchResponsePB>> {
+) -> Vec<HyperResult<SearchResponsePB>> {
   let sink = CollectingSink::new();
   let search_id = timestamp();
 
@@ -116,7 +116,7 @@ async fn wait_for_document_indexing(
   workspace_id: &Uuid,
   document_name: &str,
   timeout_secs: u64,
-) -> Vec<FlowyResult<SearchResponsePB>> {
+) -> Vec<HyperResult<SearchResponsePB>> {
   let start_time = Instant::now();
   let timeout = Duration::from_secs(timeout_secs);
   let mut result = Vec::new();

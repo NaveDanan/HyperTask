@@ -8,14 +8,14 @@ use collab_document::blocks::TextDelta;
 use collab_document::document::Document;
 use event_integration_test::user_event::use_localhost_af_cloud;
 use event_integration_test::EventIntegrationTest;
-use flowy_core::DEFAULT_NAME;
-use flowy_folder::entities::ViewLayoutPB;
-use flowy_user::errors::ErrorCode;
+use hyper_core::DEFAULT_NAME;
+use hyper_folder::entities::ViewLayoutPB;
+use hyper_user::errors::ErrorCode;
 use serde_json::{json, Value};
 use std::env::temp_dir;
 
 #[tokio::test]
-async fn import_appflowy_data_with_ref_views_test() {
+async fn import_hypertask_data_with_ref_views_test() {
   let import_container_name = "data_ref_doc".to_string();
   let user_db_path = unzip("./tests/asset", &import_container_name).unwrap();
   use_localhost_af_cloud().await;
@@ -24,7 +24,7 @@ async fn import_appflowy_data_with_ref_views_test() {
   let views = test.get_all_workspace_views().await;
   let shared_space_id = views[1].id.clone();
   test
-    .import_appflowy_data(
+    .import_hypertask_data(
       user_db_path.to_str().unwrap().to_string(),
       Some(import_container_name.clone()),
     )
@@ -96,7 +96,7 @@ async fn import_appflowy_data_with_ref_views_test() {
 }
 
 #[tokio::test]
-async fn import_appflowy_data_folder_into_new_view_test() {
+async fn import_hypertask_data_folder_into_new_view_test() {
   let import_container_name = "040_local".to_string();
   let user_db_path = unzip("./tests/asset", &import_container_name).unwrap();
   // In the 040_local, the structure is:
@@ -124,7 +124,7 @@ async fn import_appflowy_data_folder_into_new_view_test() {
   //   Shared
 
   test
-    .import_appflowy_data(
+    .import_hypertask_data(
       user_db_path.to_str().unwrap().to_string(),
       Some(import_container_name.clone()),
     )
@@ -176,7 +176,7 @@ async fn import_appflowy_data_folder_into_new_view_test() {
 }
 
 #[tokio::test]
-async fn import_appflowy_data_folder_into_current_workspace_test() {
+async fn import_hypertask_data_folder_into_current_workspace_test() {
   let import_container_name = "040_local".to_string();
   let user_db_path = unzip("./tests/asset", &import_container_name).unwrap();
   // In the 040_local, the structure is:
@@ -192,7 +192,7 @@ async fn import_appflowy_data_folder_into_current_workspace_test() {
   //   view: Getting Started
 
   test
-    .import_appflowy_data(user_db_path.to_str().unwrap().to_string(), None)
+    .import_hypertask_data(user_db_path.to_str().unwrap().to_string(), None)
     .await
     .unwrap();
   let views = test.get_all_workspace_views().await;
@@ -226,23 +226,23 @@ async fn import_appflowy_data_folder_into_current_workspace_test() {
 }
 
 #[tokio::test]
-async fn import_empty_appflowy_data_folder_test() {
+async fn import_empty_hypertask_data_folder_test() {
   let path = temp_dir();
   use_localhost_af_cloud().await;
   let test = EventIntegrationTest::new_with_name(DEFAULT_NAME).await;
   let _ = test.af_cloud_sign_up().await;
   let error = test
-    .import_appflowy_data(
+    .import_hypertask_data(
       path.to_str().unwrap().to_string(),
       Some("empty_folder".to_string()),
     )
     .await
     .unwrap_err();
-  assert_eq!(error.code, ErrorCode::AppFlowyDataFolderImportError);
+  assert_eq!(error.code, ErrorCode::HypertaskDataFolderImportError);
 }
 
 #[tokio::test]
-async fn import_appflowy_data_folder_multiple_times_test() {
+async fn import_hypertask_data_folder_multiple_times_test() {
   let import_container_name = "040_local_2".to_string();
   let user_db_path = unzip("./tests/asset", &import_container_name).unwrap();
   // In the 040_local_2, the structure is:
@@ -267,7 +267,7 @@ async fn import_appflowy_data_folder_multiple_times_test() {
   assert!(shared_space.child_views.is_empty());
 
   test
-    .import_appflowy_data(
+    .import_hypertask_data(
       user_db_path.to_str().unwrap().to_string(),
       Some(import_container_name.clone()),
     )
@@ -294,7 +294,7 @@ async fn import_appflowy_data_folder_multiple_times_test() {
   assert_040_local_2_import_content(&test, &_040_local_view_id).await;
 
   test
-    .import_appflowy_data(
+    .import_hypertask_data(
       user_db_path.to_str().unwrap().to_string(),
       Some(import_container_name.clone()),
     )

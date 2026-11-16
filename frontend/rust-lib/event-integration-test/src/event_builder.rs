@@ -1,5 +1,5 @@
 use crate::EventIntegrationTest;
-use flowy_user::errors::{internal_error, FlowyError, FlowyResult};
+use hyper_user::errors::{internal_error, HyperError, HyperResult};
 use lib_dispatch::prelude::{
   AFPluginDispatcher, AFPluginEventResponse, AFPluginFromBytes, AFPluginRequest, ToBytes, *,
 };
@@ -67,7 +67,7 @@ impl EventBuilder {
     R: AFPluginFromBytes,
   {
     let response = self.get_response();
-    match response.clone().parse::<R, FlowyError>() {
+    match response.clone().parse::<R, HyperError>() {
       Ok(Ok(data)) => data,
       Ok(Err(e)) => {
         panic!("Parser {:?} failed: {:?}", std::any::type_name::<R>(), e)
@@ -78,12 +78,12 @@ impl EventBuilder {
     }
   }
 
-  pub fn parse<R>(self) -> FlowyResult<R>
+  pub fn parse<R>(self) -> HyperResult<R>
   where
     R: AFPluginFromBytes,
   {
     let response = self.get_response();
-    match response.clone().parse::<R, FlowyError>() {
+    match response.clone().parse::<R, HyperError>() {
       Ok(Ok(data)) => Ok(data),
       Ok(Err(e)) => Err(e),
       Err(e) => {
@@ -92,17 +92,17 @@ impl EventBuilder {
     }
   }
 
-  pub fn try_parse<R>(self) -> Result<R, FlowyError>
+  pub fn try_parse<R>(self) -> Result<R, HyperError>
   where
     R: AFPluginFromBytes,
   {
     let response = self.get_response();
-    response.parse::<R, FlowyError>().map_err(internal_error)?
+    response.parse::<R, HyperError>().map_err(internal_error)?
   }
 
-  pub fn error(self) -> Option<FlowyError> {
+  pub fn error(self) -> Option<HyperError> {
     let response = self.get_response();
-    <AFPluginData<FlowyError>>::try_from(response.payload)
+    <AFPluginData<HyperError>>::try_from(response.payload)
       .ok()
       .map(|data| data.into_inner())
   }

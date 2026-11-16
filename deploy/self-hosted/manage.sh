@@ -13,17 +13,17 @@ case ${1:-status} in
       printf '\n'
     done
     ;;
-  logs) "${compose[@]}" logs --tail 80 "${2:-appflowy_cloud}" ;;
+  logs) "${compose[@]}" logs --tail 80 "${2:-hypertask_cloud}" ;;
   start) "${compose[@]}" up -d --no-build ;;
   stop) "${compose[@]}" stop ;;
   backup)
     umask 077
     mkdir -p backups
     backup_date=$(date -u +%Y%m%dT%H%M%SZ)
-    "${compose[@]}" stop appflowy_cloud gotrue minio
-    trap '"${compose[@]}" start minio gotrue appflowy_cloud >/dev/null' EXIT
-    "${compose[@]}" exec -T postgres pg_dump -U appflowy -d appflowy -Fc > "backups/database-$backup_date.dump"
-    docker run --rm --network none --volumes-from appflowy-demo-minio-1:ro --entrypoint tar nginx:1.26.3-alpine@sha256:1eadbb07820339e8bbfed18c771691970baee292ec4ab2558f1453d26153e22d -C /data -czf - . > "backups/files-$backup_date.tar.gz"
+    "${compose[@]}" stop hypertask_cloud gotrue minio
+    trap '"${compose[@]}" start minio gotrue hypertask_cloud >/dev/null' EXIT
+    "${compose[@]}" exec -T postgres pg_dump -U hypertask -d hypertask -Fc > "backups/database-$backup_date.dump"
+    docker run --rm --network none --volumes-from hypertask-demo-minio-1:ro --entrypoint tar nginx:1.26.3-alpine@sha256:1eadbb07820339e8bbfed18c771691970baee292ec4ab2558f1453d26153e22d -C /data -czf - . > "backups/files-$backup_date.tar.gz"
     cp -- .env "backups/config-$backup_date.env"
     chmod 600 "backups/config-$backup_date.env"
     printf 'Backup written to %s/backups (%s)\n' "$PWD" "$backup_date"
@@ -33,6 +33,6 @@ case ${1:-status} in
     "${compose[@]}" --profile web up -d --no-build web
     "${compose[@]}" exec -T nginx nginx -s reload
     ;;
-  source-build) "${compose[@]}" -f compose.yaml -f compose.source.yaml build gotrue appflowy_cloud admin_frontend ;;
+  source-build) "${compose[@]}" -f compose.yaml -f compose.source.yaml build gotrue hypertask_cloud admin_frontend ;;
   *) printf 'Usage: %s {status|health|logs [service]|start|stop|backup|web|source-build}\n' "$0" >&2; exit 2 ;;
 esac

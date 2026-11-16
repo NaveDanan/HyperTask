@@ -34,7 +34,7 @@ use collab_plugins::local_storage::kv::doc::CollabKVAction;
 use collab_user::core::{UserAwareness, UserAwarenessNotifier};
 
 use crate::instant_indexed_data_provider::InstantIndexedDataWriter;
-use flowy_error::FlowyError;
+use hyper_error::HyperError;
 use lib_infra::{if_native, if_wasm};
 use tracing::{error, instrument, trace, warn};
 use uuid::Uuid;
@@ -42,12 +42,12 @@ use uuid::Uuid;
 #[derive(Clone, Debug)]
 pub enum CollabPluginProviderType {
   Local,
-  AppFlowyCloud,
+  HypertaskCloud,
 }
 
 pub enum CollabPluginProviderContext {
   Local,
-  AppFlowyCloud {
+  HypertaskCloud {
     uid: i64,
     collab_object: CollabObject,
     local_collab: Weak<RwLock<dyn BorrowMut<Collab> + Send + Sync + 'static>>,
@@ -58,7 +58,7 @@ impl Display for CollabPluginProviderContext {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let str = match self {
       CollabPluginProviderContext::Local => "Local".to_string(),
-      CollabPluginProviderContext::AppFlowyCloud {
+      CollabPluginProviderContext::HypertaskCloud {
         uid: _,
         collab_object,
         ..
@@ -69,11 +69,11 @@ impl Display for CollabPluginProviderContext {
 }
 
 pub trait WorkspaceCollabIntegrate: Send + Sync {
-  fn workspace_id(&self) -> Result<Uuid, FlowyError>;
-  fn device_id(&self) -> Result<String, FlowyError>;
+  fn workspace_id(&self) -> Result<Uuid, HyperError>;
+  fn device_id(&self) -> Result<String, HyperError>;
 }
 
-pub struct AppFlowyCollabBuilder {
+pub struct HypertaskCollabBuilder {
   network_reachability: CollabConnectReachability,
   plugin_provider: ArcSwap<Arc<dyn CollabCloudPluginProvider>>,
   snapshot_persistence: ArcSwapOption<Arc<dyn SnapshotPersistence + 'static>>,
@@ -83,7 +83,7 @@ pub struct AppFlowyCollabBuilder {
   embeddings_writer: Option<Weak<InstantIndexedDataWriter>>,
 }
 
-impl AppFlowyCollabBuilder {
+impl HypertaskCollabBuilder {
   pub fn new(
     storage_provider: impl CollabCloudPluginProvider + 'static,
     workspace_integrate: impl WorkspaceCollabIntegrate + 'static,
@@ -336,9 +336,9 @@ impl AppFlowyCollabBuilder {
         tracing::span!(tracing::Level::TRACE, "collab_builder", object_id = %object.object_id);
       let _enter = span.enter();
       match provider_type {
-        CollabPluginProviderType::AppFlowyCloud => {
+        CollabPluginProviderType::HypertaskCloud => {
           let local_collab = Arc::downgrade(&collab);
-          let plugins = plugin_provider.get_plugins(CollabPluginProviderContext::AppFlowyCloud {
+          let plugins = plugin_provider.get_plugins(CollabPluginProviderContext::HypertaskCloud {
             uid: object.uid,
             collab_object: object,
             local_collab,

@@ -129,7 +129,7 @@
     "exportAsTab": "导出为",
     "publishTab": "发布",
     "shareTab": "分享",
-    "publishOnAppFlowy": "在 HyperTask 发布",
+    "publishOnHypertask": "在 HyperTask 发布",
     "shareTabTitle": "邀请他人来协作",
     "shareTabDescription": "与任何人轻松协作",
     "copyLinkSuccess": "链接已复制到剪贴板",
@@ -372,7 +372,7 @@
   "notifications": {
     "export": {
       "markdown": "导出笔记为Markdown文档",
-      "path": "文档/flowy"
+      "path": "文档/hyper"
     }
   },
   "contactsPage": {
@@ -800,9 +800,9 @@
       "cloudServerType": "云服务器",
       "cloudServerTypeTip": "请注意，切换云服务器后可能会登出您当前的账户",
       "cloudLocal": "本地",
-      "cloudAppFlowy": "@:appName Cloud Beta",
-      "cloudAppFlowySelfHost": "@:appName Cloud 自托管",
-      "appFlowyCloudUrlCanNotBeEmpty": "云地址不能为空",
+      "cloudHypertask": "@:appName Cloud Beta",
+      "cloudHypertaskSelfHost": "@:appName Cloud 自托管",
+      "hypertaskCloudUrlCanNotBeEmpty": "云地址不能为空",
       "clickToCopy": "点击复制",
       "selfHostStart": "如果您没有服务器，请参阅",
       "selfHostContent": "文档",
@@ -823,9 +823,9 @@
       "historicalUserListTooltip": "此列表显示您的匿名帐户。您可以单击某个帐户来查看其详细信息。单击“开始”按钮即可创建匿名帐户",
       "openHistoricalUser": "点击开设匿名账户",
       "customPathPrompt": "将 @:appName 数据文件夹存储在云同步文件夹（例如 Google Drive）中可能会带来风险。如果同时从多个位置访问或修改此文件夹中的数据库，可能会导致同步冲突和潜在的数据损坏",
-      "importAppFlowyData": "从外部 @:appName 文件夹导入数据",
-      "importingAppFlowyDataTip": "数据导入正在进行中。请不要关闭应用程序",
-      "importAppFlowyDataDescription": "从外部 @:appName 数据文件夹复制数据并将其导入到当前 @:appName 数据文件夹中",
+      "importHypertaskData": "从外部 @:appName 文件夹导入数据",
+      "importingHypertaskDataTip": "数据导入正在进行中。请不要关闭应用程序",
+      "importHypertaskDataDescription": "从外部 @:appName 数据文件夹复制数据并将其导入到当前 @:appName 数据文件夹中",
       "importSuccess": "成功导入@:appName数据文件夹",
       "importFailed": "导入 @:appName 数据文件夹失败",
       "importGuide": "有关详细信息，请参阅参考文档",
@@ -886,7 +886,7 @@
         "opacityEmptyError": "不透明度不能为空",
         "opacityRangeError": "不透明度必须介于 1 到 100 之间",
         "app": "应用程序",
-        "flowy": "弗洛菲",
+        "hyper": "弗洛菲",
         "apply": "申请"
       },
       "layoutDirection": {
@@ -910,7 +910,7 @@
         "loading": "我们正在验证并上传您的主题，请稍候...",
         "uploadSuccess": "您的主题已上传成功",
         "deletionFailure": "删除主题失败，请尝试手动删除。",
-        "filePickerDialogTitle": "选择 .flowy_plugin 文件",
+        "filePickerDialogTitle": "选择 .hyper_plugin 文件",
         "urlUploadFailure": "无法打开网址：{}",
         "failure": "上传的主题格式无效。"
       },
@@ -947,7 +947,7 @@
         "member": "成员",
         "emailSent": "邮件已发送，请检查您的邮箱",
         "memberLimitExceededUpgrade": "升级",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "添加成员失败",
         "addMemberSuccess": "添加成员成功",
         "removeMember": "移除成员",

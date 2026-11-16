@@ -25,5 +25,5 @@ pub(crate) fn invalid_password_test_case() -> Vec<String> {
 }
 
 pub(crate) fn valid_name() -> String {
-  "AppFlowy".to_string()
+  "Hypertask".to_string()
 }

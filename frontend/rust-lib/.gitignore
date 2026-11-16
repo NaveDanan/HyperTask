@@ -13,7 +13,7 @@ bin/
 **/src/protobuf
 **/resources/proto
 .idea/
-AppFlowy-Collab/
+Hypertask-Collab/
 .env
 .env.**
 **/unit_test**

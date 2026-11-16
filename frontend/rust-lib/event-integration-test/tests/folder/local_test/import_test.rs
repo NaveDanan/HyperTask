@@ -1,8 +1,8 @@
 use crate::util::unzip;
 use event_integration_test::EventIntegrationTest;
-use flowy_core::DEFAULT_NAME;
-use flowy_error::ErrorCode;
-use flowy_folder::entities::{ImportItemPayloadPB, ImportPayloadPB, ImportTypePB, ViewLayoutPB};
+use hyper_core::DEFAULT_NAME;
+use hyper_error::ErrorCode;
+use hyper_folder::entities::{ImportItemPayloadPB, ImportPayloadPB, ImportTypePB, ViewLayoutPB};
 
 #[tokio::test]
 async fn import_492_row_csv_file_test() {

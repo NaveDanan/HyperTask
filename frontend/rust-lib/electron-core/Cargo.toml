@@ -5,7 +5,7 @@ edition = "2021"
 
 # Hosts the Rust core in a child process of the Electron shell.
 [[bin]]
-name = "appflowy_core"
+name = "hypertask_core"
 path = "src/main.rs"
 
 [dependencies]
@@ -22,18 +22,18 @@ futures = "0.3.31"
 lib-dispatch = { workspace = true, features = ["local_set"] }
 lib-log.workspace = true
 lib-infra.workspace = true
-flowy-core = { workspace = true }
-flowy-notification.workspace = true
-flowy-document.workspace = true
-flowy-user.workspace = true
-flowy-date.workspace = true
-flowy-server = { workspace = true }
-flowy-server-pub = { workspace = true }
+hyper-core = { workspace = true }
+hyper-notification.workspace = true
+hyper-document.workspace = true
+hyper-user.workspace = true
+hyper-date.workspace = true
+hyper-server = { workspace = true }
+hyper-server-pub = { workspace = true }
 collab-integrate = { workspace = true }
-flowy-error = { workspace = true, features = ["impl_from_sqlite", "impl_from_dispatch_error", "impl_from_appflowy_cloud", "impl_from_reqwest", "impl_from_serde"] }
+hyper-error = { workspace = true, features = ["impl_from_sqlite", "impl_from_dispatch_error", "impl_from_hypertask_cloud", "impl_from_reqwest", "impl_from_serde"] }
 
 [features]
-file_reader = ["flowy-core/file_reader"]
-http_sync = ["flowy-core/http_sync"]
+file_reader = ["hyper-core/file_reader"]
+http_sync = ["hyper-core/http_sync"]
 verbose_log = []
-openssl_vendored = ["flowy-core/openssl_vendored"]
+openssl_vendored = ["hyper-core/openssl_vendored"]

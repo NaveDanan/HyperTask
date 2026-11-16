@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::util::gen_csv_import_data;
 use event_integration_test::EventIntegrationTest;
-use flowy_database2::entities::{
+use hyper_database2::entities::{
   CalculationType, CellChangesetPB, DatabasePB, RemoveCalculationChangesetPB,
   UpdateCalculationChangesetPB,
 };

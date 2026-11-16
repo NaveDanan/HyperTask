@@ -1,7 +1,7 @@
 use crate::util::load_text_file_content;
 use event_integration_test::user_event::use_localhost_af_cloud;
 use event_integration_test::EventIntegrationTest;
-use flowy_user_pub::entities::WorkspaceType;
+use hyper_user_pub::entities::WorkspaceType;
 
 #[tokio::test]
 async fn local_ollama_test_create_chat_with_selected_sources() {

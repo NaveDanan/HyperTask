@@ -4,7 +4,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use flowy_folder::entities::{RepeatedViewPB, WorkspacePB};
+use hyper_folder::entities::{RepeatedViewPB, WorkspacePB};
 use protobuf::ProtobufError;
 use tokio::sync::broadcast::{channel, Sender};
 use tracing::error;
@@ -12,21 +12,21 @@ use uuid::Uuid;
 
 use crate::event_builder::EventBuilder;
 use crate::EventIntegrationTest;
-use flowy_folder::event_map::FolderEvent;
-use flowy_notification::entities::SubscribeObject;
-use flowy_notification::NotificationSender;
-use flowy_server::af_cloud::define::{USER_DEVICE_ID, USER_EMAIL, USER_SIGN_IN_URL, USER_UUID};
-use flowy_server_pub::af_cloud_config::AFCloudConfiguration;
-use flowy_server_pub::AuthenticatorType;
-use flowy_user::entities::{
-  AuthTypePB, ChangeWorkspaceIconPB, CloudSettingPB, CreateWorkspacePB, ImportAppFlowyDataPB,
+use hyper_folder::event_map::FolderEvent;
+use hyper_notification::entities::SubscribeObject;
+use hyper_notification::NotificationSender;
+use hyper_server::af_cloud::define::{USER_DEVICE_ID, USER_EMAIL, USER_SIGN_IN_URL, USER_UUID};
+use hyper_server_pub::af_cloud_config::AFCloudConfiguration;
+use hyper_server_pub::AuthenticatorType;
+use hyper_user::entities::{
+  AuthTypePB, ChangeWorkspaceIconPB, CloudSettingPB, CreateWorkspacePB, ImportHypertaskDataPB,
   OauthSignInPB, OpenUserWorkspacePB, RenameWorkspacePB, RepeatedUserWorkspacePB, SignInUrlPB,
   SignInUrlPayloadPB, SignUpPayloadPB, UpdateCloudConfigPB, UpdateUserProfilePayloadPB,
   UserProfilePB, UserWorkspaceIdPB, UserWorkspacePB, WorkspaceTypePB,
 };
-use flowy_user::errors::{FlowyError, FlowyResult};
-use flowy_user::event_map::UserEvent;
-use flowy_user_pub::entities::WorkspaceType;
+use hyper_user::errors::{HyperError, HyperResult};
+use hyper_user::event_map::UserEvent;
+use hyper_user_pub::entities::WorkspaceType;
 use lib_dispatch::prelude::{AFPluginDispatcher, AFPluginRequest, ToBytes};
 
 impl EventIntegrationTest {
@@ -59,10 +59,10 @@ impl EventIntegrationTest {
 
   pub async fn sign_up_as_anon(&self) -> SignUpContext {
     let password = login_password();
-    let email = "anon@appflowy.io".to_string();
+    let email = "anon@hypertask.io".to_string();
     let payload = SignUpPayloadPB {
       email,
-      name: "appflowy".to_string(),
+      name: "hypertask".to_string(),
       password: password.clone(),
       auth_type: AuthTypePB::Local,
       device_id: uuid::Uuid::new_v4().to_string(),
@@ -74,11 +74,11 @@ impl EventIntegrationTest {
     let user_profile = self
       .local_set
       .run_until(AFPluginDispatcher::async_send(
-        &self.appflowy_core.dispatcher(),
+        &self.hypertask_core.dispatcher(),
         request,
       ))
       .await
-      .parse::<UserProfilePB, FlowyError>()
+      .parse::<UserProfilePB, HyperError>()
       .unwrap()
       .unwrap();
 
@@ -120,7 +120,7 @@ impl EventIntegrationTest {
     self.sign_up_as_anon().await.user_profile
   }
 
-  pub async fn get_user_profile(&self) -> Result<UserProfilePB, FlowyError> {
+  pub async fn get_user_profile(&self) -> Result<UserProfilePB, HyperError> {
     EventBuilder::new(self.clone())
       .event(UserEvent::GetUserProfile)
       .async_send()
@@ -136,7 +136,7 @@ impl EventIntegrationTest {
       .await;
   }
 
-  pub async fn af_cloud_sign_in_with_email(&self, email: &str) -> FlowyResult<UserProfilePB> {
+  pub async fn af_cloud_sign_in_with_email(&self, email: &str) -> HyperResult<UserProfilePB> {
     let payload = SignInUrlPayloadPB {
       email: email.to_string(),
       authenticator: AuthTypePB::Server,
@@ -167,18 +167,18 @@ impl EventIntegrationTest {
     Ok(user_profile)
   }
 
-  pub async fn import_appflowy_data(
+  pub async fn import_hypertask_data(
     &self,
     path: String,
     name: Option<String>,
-  ) -> Result<(), FlowyError> {
-    let payload = ImportAppFlowyDataPB {
+  ) -> Result<(), HyperError> {
+    let payload = ImportHypertaskDataPB {
       path,
       import_container_name: name,
       parent_view_id: None,
     };
     match EventBuilder::new(self.clone())
-      .event(UserEvent::ImportAppFlowyDataFolder)
+      .event(UserEvent::ImportHypertaskDataFolder)
       .payload(payload)
       .async_send()
       .await
@@ -210,7 +210,7 @@ impl EventIntegrationTest {
     &self,
     workspace_id: &str,
     new_name: &str,
-  ) -> Result<(), FlowyError> {
+  ) -> Result<(), HyperError> {
     let payload = RenameWorkspacePB {
       workspace_id: workspace_id.to_owned(),
       new_name: new_name.to_owned(),
@@ -231,7 +231,7 @@ impl EventIntegrationTest {
     &self,
     workspace_id: &str,
     new_icon: &str,
-  ) -> Result<(), FlowyError> {
+  ) -> Result<(), HyperError> {
     let payload = ChangeWorkspaceIconPB {
       workspace_id: workspace_id.to_owned(),
       new_icon: new_icon.to_owned(),
@@ -423,11 +423,11 @@ pub fn third_party_sign_up_param(uuid: String) -> HashMap<String, String> {
 }
 
 pub fn unique_email() -> String {
-  format!("{}@appflowy.io", Uuid::new_v4())
+  format!("{}@hypertask.io", Uuid::new_v4())
 }
 
 pub fn login_email() -> String {
-  "annie2@appflowy.io".to_string()
+  "annie2@hypertask.io".to_string()
 }
 
 pub fn login_password() -> String {
@@ -442,7 +442,7 @@ pub async fn use_local_mode() {
   AFCloudConfiguration::default().write_env();
 }
 pub async fn use_localhost_af_cloud() {
-  AuthenticatorType::AppFlowyCloud.write_env();
+  AuthenticatorType::HypertaskCloud.write_env();
   let base_url =
     std::env::var("af_cloud_test_base_url").unwrap_or("http://localhost:8000".to_string());
   let ws_base_url =

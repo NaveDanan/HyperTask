@@ -4,7 +4,7 @@ use bytes::Bytes;
 
 use event_integration_test::event_builder::EventBuilder;
 use event_integration_test::EventIntegrationTest;
-use flowy_database2::entities::{
+use hyper_database2::entities::{
   CellChangesetPB, CellIdPB, CheckboxCellDataPB, ChecklistCellDataChangesetPB,
   ChecklistCellInsertPB, DatabaseLayoutPB, DatabaseSettingChangesetPB, DatabaseViewIdPB,
   DateCellChangesetPB, FieldType, OrderObjectPositionPB, RelationCellChangesetPB,
@@ -22,13 +22,13 @@ async fn get_database_id_event_test() {
 
   // The view id can be used to get the database id.
   let database_id = EventBuilder::new(test.clone())
-    .event(flowy_database2::event_map::DatabaseEvent::GetDatabaseId)
+    .event(hyper_database2::event_map::DatabaseEvent::GetDatabaseId)
     .payload(DatabaseViewIdPB {
       value: grid_view.id.clone(),
     })
     .async_send()
     .await
-    .parse_or_panic::<flowy_database2::entities::DatabaseIdPB>()
+    .parse_or_panic::<hyper_database2::entities::DatabaseIdPB>()
     .value;
 
   assert_ne!(database_id, grid_view.id);

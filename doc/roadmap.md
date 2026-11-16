@@ -1,3 +1,3 @@
-[AppFlowy Roadmap ReadMe](https://appflowy.gitbook.io/docs/essential-documentation/roadmap)
+[Hypertask Roadmap ReadMe](https://hypertask.gitbook.io/docs/essential-documentation/roadmap)
 
-[AppFlowy Public Roadmap](https://github.com/orgs/AppFlowy-IO/projects/5/views/12)
+[Hypertask Public Roadmap](https://github.com/orgs/Hypertask-IO/projects/5/views/12)

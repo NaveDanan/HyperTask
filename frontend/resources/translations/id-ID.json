@@ -217,7 +217,7 @@
   "notifications": {
     "export": {
       "markdown": "Mengekspor Catatan ke Markdown",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -335,7 +335,7 @@
         "loading": "Harap tunggu sementara kami memvalidasi dan mengunggah tema Anda...",
         "uploadSuccess": "Tema Anda berhasil diunggah",
         "deletionFailure": "Gagal menghapus tema. Cobalah untuk menghapusnya secara manual.",
-        "filePickerDialogTitle": "Pilih file .flowy_plugin",
+        "filePickerDialogTitle": "Pilih file .hyper_plugin",
         "urlUploadFailure": "Gagal membuka url: {}",
         "failure": "Tema yang diunggah memiliki format yang tidak valid."
       },

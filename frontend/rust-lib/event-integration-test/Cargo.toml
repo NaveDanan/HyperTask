@@ -6,24 +6,24 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-flowy-core = { workspace = true }
-flowy-user = { workspace = true }
-flowy-user-pub = { workspace = true }
-flowy-folder = { path = "../flowy-folder", features = ["test_helper"] }
-flowy-folder-pub = { workspace = true }
-flowy-database2 = { path = "../flowy-database2" }
-flowy-document = { path = "../flowy-document" }
-flowy-ai = { workspace = true }
+hyper-core = { workspace = true }
+hyper-user = { workspace = true }
+hyper-user-pub = { workspace = true }
+hyper-folder = { path = "../hyper-folder", features = ["test_helper"] }
+hyper-folder-pub = { workspace = true }
+hyper-database2 = { path = "../hyper-database2" }
+hyper-document = { path = "../hyper-document" }
+hyper-ai = { workspace = true }
 lib-dispatch = { workspace = true }
 lib-infra = { workspace = true }
-flowy-server = { path = "../flowy-server" }
-flowy-server-pub = { workspace = true }
-flowy-notification = { workspace = true }
-flowy-storage = { workspace = true }
-flowy-storage-pub = { workspace = true }
-flowy-search = { workspace = true }
+hyper-server = { path = "../hyper-server" }
+hyper-server-pub = { workspace = true }
+hyper-notification = { workspace = true }
+hyper-storage = { workspace = true }
+hyper-storage-pub = { workspace = true }
+hyper-search = { workspace = true }
 semver = "1.0.23"
-flowy-error = { workspace = true }
+hyper-error = { workspace = true }
 
 serde.workspace = true
 serde_json.workspace = true
@@ -48,7 +48,7 @@ chrono = "0.4.31"
 zip.workspace = true
 walkdir = "2.5.0"
 futures = "0.3.31"
-flowy-ai-pub = { workspace = true }
+hyper-ai-pub = { workspace = true }
 serial_test = "2.0.0"
 
 [features]

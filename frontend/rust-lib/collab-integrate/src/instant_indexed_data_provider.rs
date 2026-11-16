@@ -5,8 +5,8 @@ use collab::lock::RwLock;
 use collab::preclude::{Collab, Transact};
 use collab_document::document::DocumentBody;
 use collab_entity::{CollabObject, CollabType};
-use flowy_ai_pub::entities::{UnindexedCollab, UnindexedCollabMetadata, UnindexedData};
-use flowy_error::{FlowyError, FlowyResult};
+use hyper_ai_pub::entities::{UnindexedCollab, UnindexedCollabMetadata, UnindexedData};
+use hyper_error::{HyperError, HyperResult};
 use lib_infra::async_trait::async_trait;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
@@ -66,7 +66,7 @@ impl InstantIndexedDataWriter {
     guard.push(consumer);
   }
 
-  pub async fn spawn_instant_indexed_provider(&self, runtime: &Runtime) -> FlowyResult<()> {
+  pub async fn spawn_instant_indexed_provider(&self, runtime: &Runtime) -> HyperResult<()> {
     let weak_collab_by_object = Arc::downgrade(&self.collab_by_object);
     let consumers_weak = Arc::downgrade(&self.consumers);
     let interval_dur = Duration::from_secs(30);
@@ -179,9 +179,9 @@ impl InstantIndexedDataWriter {
     object_id: Uuid,
     data: EncodedCollab,
     collab_type: CollabType,
-  ) -> FlowyResult<()> {
+  ) -> HyperResult<()> {
     match unindexed_collab_from_encoded_collab(workspace_id, object_id, data, collab_type) {
-      None => Err(FlowyError::internal().with_context("Failed to create unindexed collab")),
+      None => Err(HyperError::internal().with_context("Failed to create unindexed collab")),
       Some(data) => {
         self.index_unindexed_collab(data).await?;
         Ok(())
@@ -189,7 +189,7 @@ impl InstantIndexedDataWriter {
     }
   }
 
-  pub async fn index_unindexed_collab(&self, data: UnindexedCollab) -> FlowyResult<()> {
+  pub async fn index_unindexed_collab(&self, data: UnindexedCollab) -> HyperResult<()> {
     let consumers_guard = self.consumers.read().await;
     for consumer in consumers_guard.iter() {
       match consumer
@@ -314,11 +314,11 @@ pub trait InstantIndexedDataConsumer: Send + Sync + 'static {
     data: Option<UnindexedData>,
     object_id: &Uuid,
     collab_type: CollabType,
-  ) -> Result<bool, FlowyError>;
+  ) -> Result<bool, HyperError>;
 
   async fn did_delete_collab(
     &self,
     workspace_id: &Uuid,
     object_id: &Uuid,
-  ) -> Result<(), FlowyError>;
+  ) -> Result<(), HyperError>;
 }

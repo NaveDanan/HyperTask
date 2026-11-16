@@ -284,7 +284,7 @@
         "loading": "कृपया तब तक प्रतीक्षा करें जब तक हम आपकी थीम को सत्यापित और अपलोड नहीं कर देते...",
         "uploadSuccess": "आपका थीम सफलतापूर्वक अपलोड किया गया",
         "deletionFailure": "थीम को हटाने में विफल। इसे मैन्युअल रूप से हटाने का प्रयास करें।",
-        "filePickerDialogTitle": "एक .flowy_plugin फ़ाइल चुनें",
+        "filePickerDialogTitle": "एक .hyper_plugin फ़ाइल चुनें",
         "urlUploadFailure": "URL खोलने में विफल: {}"
       },
       "theme": "थीम",

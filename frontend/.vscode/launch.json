@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
       {
-          // This task only builds the Dart code of AppFlowy.
+          // This task only builds the Dart code of Hypertask.
           // It supports both the desktop and mobile version.
           "name": "AF: Build Dart Only",
           "request": "launch",
@@ -16,26 +16,26 @@
           },
           // uncomment the following line to testing performance.
           // "flutterMode": "profile",
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
-          // This task builds the Rust and Dart code of AppFlowy.
+          // This task builds the Rust and Dart code of Hypertask.
           "name": "AF-desktop: Build All",
           "request": "launch",
           "program": "./lib/main.dart",
           "type": "dart",
-          "preLaunchTask": "AF: Build Appflowy Core",
+          "preLaunchTask": "AF: Build Hypertask Core",
           "env": {
               "RUST_LOG": "trace",
               "RUST_BACKTRACE": "1"
           },
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
           // This task builds will:
           // - call the clean task,
           // - rebuild all the generated Files (including freeze and language files)
-          // - rebuild the the Rust and Dart code of AppFlowy.
+          // - rebuild the the Rust and Dart code of Hypertask.
           "name": "AF-desktop: Clean + Rebuild All",
           "request": "launch",
           "program": "./lib/main.dart",
@@ -44,18 +44,18 @@
           "env": {
               "RUST_LOG": "trace"
           },
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
           "name": "AF-iOS: Build All",
           "request": "launch",
           "program": "./lib/main.dart",
           "type": "dart",
-          "preLaunchTask": "AF: Build Appflowy Core For iOS",
+          "preLaunchTask": "AF: Build Hypertask Core For iOS",
           "env": {
               "RUST_LOG": "trace"
           },
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
           "name": "AF-iOS: Clean + Rebuild All",
@@ -66,18 +66,18 @@
           "env": {
               "RUST_LOG": "trace"
           },
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
           "name": "AF-iOS-Simulator: Build All",
           "request": "launch",
           "program": "./lib/main.dart",
           "type": "dart",
-          "preLaunchTask": "AF: Build Appflowy Core For iOS Simulator",
+          "preLaunchTask": "AF: Build Hypertask Core For iOS Simulator",
           "env": {
               "RUST_LOG": "trace"
           },
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
           "name": "AF-iOS-Simulator: Clean + Rebuild All",
@@ -88,18 +88,18 @@
           "env": {
               "RUST_LOG": "trace"
           },
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
           "name": "AF-Android: Build All",
           "request": "launch",
           "program": "./lib/main.dart",
           "type": "dart",
-          "preLaunchTask": "AF: Build Appflowy Core For Android",
+          "preLaunchTask": "AF: Build Hypertask Core For Android",
           "env": {
               "RUST_LOG": "trace"
           },
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
           "name": "AF-Android: Clean + Rebuild All",
@@ -110,7 +110,7 @@
           "env": {
               "RUST_LOG": "trace"
           },
-          "cwd": "${workspaceRoot}/appflowy_flutter"
+          "cwd": "${workspaceRoot}/hypertask_flutter"
       },
       {
           "name": "AF-desktop: Debug Rust",

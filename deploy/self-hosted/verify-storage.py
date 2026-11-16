@@ -6,7 +6,7 @@ values = dict(line.split('=', 1) for line in (root / '.env').read_text().splitli
 key = values['S3_SECRET']
 origin = values['SERVER_ORIGIN'].rstrip('/')
 region = 'us-east-1'
-bucket = 'appflowy'
+bucket = 'hypertask'
 def request(method, resource, body=b''):
     now = datetime.datetime.now(datetime.timezone.utc)
     date = now.strftime('%Y%m%d')
@@ -20,14 +20,14 @@ def request(method, resource, body=b''):
     def sign(secret, content): return hmac.new(secret, content.encode(), hashlib.sha256).digest()
     secret = sign(sign(sign(sign(('AWS4' + key).encode(), date), region), 's3'), 'aws4_request')
     signature = hmac.new(secret, data.encode(), hashlib.sha256).hexdigest()
-    auth = 'AWS4-HMAC-SHA256 Credential=appflowy_storage/' + scope + ', SignedHeaders=' + signed + ', Signature=' + signature
+    auth = 'AWS4-HMAC-SHA256 Credential=hypertask_storage/' + scope + ', SignedHeaders=' + signed + ', Signature=' + signature
     req = urllib.request.Request(origin + '/minio-api' + resource, data=body if method == 'PUT' else None, method=method,
         headers={'Host': 'minio:9000', 'x-amz-date': stamp, 'x-amz-content-sha256': digest, 'Authorization': auth})
     with urllib.request.urlopen(req, timeout=20) as response:
         return response.status, response.read()
 request('HEAD', '/' + bucket)
 resource = '/' + bucket + '/readiness/' + str(uuid.uuid4()) + '.txt'
-payload = b'AppFlowy DEMO local object storage readiness\n'
+payload = b'Hypertask DEMO local object storage readiness\n'
 request('PUT', resource, payload)
 try:
     status, result = request('GET', resource)

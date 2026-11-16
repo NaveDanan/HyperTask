@@ -126,7 +126,7 @@
     "exportAsTab": "ส่งออกเป็น",
     "publishTab": "เผยแพร่",
     "shareTab": "แชร์",
-    "publishOnAppFlowy": "เผยแพร่บน HyperTask",
+    "publishOnHypertask": "เผยแพร่บน HyperTask",
     "shareTabTitle": "เชิญเพื่อการทำงานร่วมกัน",
     "shareTabDescription": "เพื่อการทำงานร่วมกันอย่างง่ายดายกับใครก็ได้",
     "copyLinkSuccess": "คัดลอกลิงก์ไปยังคลิปบอร์ดแล้ว",
@@ -349,7 +349,7 @@
   "notifications": {
     "export": {
       "markdown": "ส่งออกบันทึกย่อไปยัง Markdown",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -782,7 +782,7 @@
         "llmModel": "โมเดลภาษา",
         "llmModelType": "ประเภทของโมเดลภาษา",
         "downloadLLMPrompt": "ดาวน์โหลด {}",
-        "downloadAppFlowyOfflineAI": "การดาวน์โหลดแพ็กเกจ AI แบบออฟไลน์จะทำให้ AI สามารถทำงานบนอุปกรณ์ของคุณได้ คุณต้องการดำเนินการต่อหรือไม่?",
+        "downloadHypertaskOfflineAI": "การดาวน์โหลดแพ็กเกจ AI แบบออฟไลน์จะทำให้ AI สามารถทำงานบนอุปกรณ์ของคุณได้ คุณต้องการดำเนินการต่อหรือไม่?",
         "downloadLLMPromptDetail": "การดาวน์โหลดโมเดล {} ในเครื่องของคุณ จะใช้พื้นที่เก็บข้อมูลสูงสุด {} คุณต้องการดำเนินการต่อหรือไม่",
         "downloadBigFilePrompt": "การดาวน์โหลดอาจใช้เวลาประมาณ 10 นาทีให้เสร็จสิ้น",
         "downloadAIModelButton": "ดาวน์โหลด",
@@ -1044,9 +1044,9 @@
       "cloudServerType": "เซิร์ฟเวอร์คลาวด์",
       "cloudServerTypeTip": "โปรดทราบว่าอาจมีการออกจากระบบบัญชีปัจจุบันของคุณหลังจากเปลี่ยนเซิร์ฟเวอร์คลาวด์",
       "cloudLocal": "ในเครื่อง",
-      "cloudAppFlowy": "คลาวด์ของ HyperTask",
-      "cloudAppFlowySelfHost": "@:appName คลาวด์ที่โฮสต์เอง",
-      "appFlowyCloudUrlCanNotBeEmpty": "URL ของคลาวด์ไม่สามารถเว้นว่างได้",
+      "cloudHypertask": "คลาวด์ของ HyperTask",
+      "cloudHypertaskSelfHost": "@:appName คลาวด์ที่โฮสต์เอง",
+      "hypertaskCloudUrlCanNotBeEmpty": "URL ของคลาวด์ไม่สามารถเว้นว่างได้",
       "clickToCopy": "คลิกเพื่อคัดลอก",
       "selfHostStart": "หากคุณไม่มีเซิร์ฟเวอร์ โปรดดูที่",
       "selfHostContent": "เอกสาร",
@@ -1069,9 +1069,9 @@
       "historicalUserListTooltip": "รายการนี้จะแสดงบัญชีที่ไม่ระบุตัวตนของคุณ คุณสามารถคลิกที่บัญชีเพื่อดูรายละเอียดได้ บัญชีที่ไม่เปิดเผยตัวตนถูกสร้างขึ้นโดยการคลิกปุ่ม 'เริ่มต้น'",
       "openHistoricalUser": "คลิกเพื่อเปิดบัญชีที่ไม่ระบุตัวตน",
       "customPathPrompt": "การจัดเก็บโฟลเดอร์ข้อมูลของ HyperTask ไว้ในโฟลเดอร์ที่ซิงค์บนคลาวด์ เช่น Google Drive อาจทำให้เกิดความเสี่ยงได้ หากมีการเข้าถึงหรือแก้ไขฐานข้อมูลภายในโฟลเดอร์นี้จากหลายตำแหน่งพร้อมกัน อาจส่งผลให้เกิดความขัดแย้งในการซิงโครไนซ์และข้อมูลอาจเสียหายได้",
-      "importAppFlowyData": "นำเข้าข้อมูลจากโฟลเดอร์ @:appName ภายนอก",
-      "importingAppFlowyDataTip": "กำลังดำเนินการนำเข้าข้อมูล โปรดอย่าปิดแอป",
-      "importAppFlowyDataDescription": "คัดลอกข้อมูลจากโฟลเดอร์ข้อมูลภายนอกของ @:appName และนำเข้าไปยังโฟลเดอร์ข้อมูล HyperTask ปัจจุบัน",
+      "importHypertaskData": "นำเข้าข้อมูลจากโฟลเดอร์ @:appName ภายนอก",
+      "importingHypertaskDataTip": "กำลังดำเนินการนำเข้าข้อมูล โปรดอย่าปิดแอป",
+      "importHypertaskDataDescription": "คัดลอกข้อมูลจากโฟลเดอร์ข้อมูลภายนอกของ @:appName และนำเข้าไปยังโฟลเดอร์ข้อมูล HyperTask ปัจจุบัน",
       "importSuccess": "นำเข้าโฟลเดอร์ข้อมูล @:appName สำเร็จแล้ว",
       "importFailed": "การนำเข้าโฟลเดอร์ข้อมูล @:appName ล้มเหลว",
       "importGuide": "สำหรับรายละเอียดเพิ่มเติม โปรดตรวจสอบเอกสารอ้างอิง"
@@ -1154,7 +1154,7 @@
         "opacityEmptyError": "ความทึบแสงไม่สามารถเว้นว่างได้",
         "opacityRangeError": "ความทึบแสงต้องอยู่ระหว่าง 1 และ 100",
         "app": "App",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "นำไปใช้"
       },
       "layoutDirection": {
@@ -1178,7 +1178,7 @@
         "loading": "โปรดรอสักครู่ในขณะที่เราตรวจสอบและอัปโหลดธีมของคุณ...",
         "uploadSuccess": "อัปโหลดธีมของคุณสำเร็จแล้ว",
         "deletionFailure": "ไม่สามารถลบธีมได้ ลองลบมันด้วยตนเอง",
-        "filePickerDialogTitle": "เลือกไฟล์ .flowy_plugin",
+        "filePickerDialogTitle": "เลือกไฟล์ .hyper_plugin",
         "urlUploadFailure": "ไม่สามารถเปิด URL: {} ได้",
         "failure": "ธีมที่อัปโหลดมีรูปแบบที่ไม่ถูกต้อง"
       },
@@ -1231,7 +1231,7 @@
         "memberLimitExceeded": "จำนวนสมาชิกถึงขีดจำกัดแล้ว เพื่อเชิญสมาชิกเพิ่มเติม กรุณา...",
         "memberLimitExceededUpgrade": "อัพเกรด",
         "memberLimitExceededPro": "จำนวนสมาชิกถึงขีดจำกัดแล้ว หากต้องการสมาชิกเพิ่มเติม กรุณาติดต่อ ",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "เพิ่มสมาชิกไม่สำเร็จ",
         "addMemberSuccess": "เพิ่มสมาชิกสำเร็จ",
         "removeMember": "ลบสมาชิก",
@@ -1711,7 +1711,7 @@
       "smartEditCouldNotFetchResult": "ไม่สามารถดึงผลลัพธ์จาก AI ได้",
       "smartEditCouldNotFetchKey": "ไม่สามารถดึงคีย์ AI ได้",
       "smartEditDisabled": "เชื่อมต่อ AI ในการตั้งค่า",
-      "appflowyAIEditDisabled": "ลงชื่อเข้าใช้เพื่อเปิดใช้งานฟีเจอร์ AI",
+      "hypertaskAIEditDisabled": "ลงชื่อเข้าใช้เพื่อเปิดใช้งานฟีเจอร์ AI",
       "discardResponse": "คุณต้องการทิ้งการตอบกลับของ AI หรือไม่",
       "createInlineMathEquation": "สร้างสมการ",
       "fonts": "แบบอักษร",
@@ -2605,7 +2605,7 @@
     "publishFailed": "เผยแพร่ไม่สำเร็จ",
     "unpublishFailed": "ยกเลิกการเผยแพร่ไม่สำเร็จ",
     "noAccessToVisit": "ไม่มีการเข้าถึงหน้านี้...",
-    "createWithAppFlowy": "สร้างเว็บไซต์ด้วย HyperTask",
+    "createWithHypertask": "สร้างเว็บไซต์ด้วย HyperTask",
     "fastWithAI": "รวดเร็วและง่ายดายด้วย AI",
     "tryItNow": "ลองเลยตอนนี้",
     "onlyGridViewCanBePublished": "สามารถเผยแพร่ได้เฉพาะมุมมองแบบกริดเท่านั้น",

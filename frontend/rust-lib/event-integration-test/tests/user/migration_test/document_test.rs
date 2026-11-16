@@ -1,6 +1,6 @@
 use event_integration_test::EventIntegrationTest;
-use flowy_core::DEFAULT_NAME;
-use flowy_folder::entities::ViewLayoutPB;
+use hyper_core::DEFAULT_NAME;
+use hyper_folder::entities::ViewLayoutPB;
 
 use crate::util::unzip;
 

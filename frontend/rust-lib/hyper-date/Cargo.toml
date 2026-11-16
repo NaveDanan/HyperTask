@@ -1,0 +1,25 @@
+[package]
+name = "hyper-date"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+lib-dispatch = { path = "../lib-dispatch" }
+hyper-error = { path = "../hyper-error" }
+hyper-derive.workspace = true
+protobuf.workspace = true
+bytes.workspace = true
+strum_macros = "0.21"
+tracing.workspace = true
+date_time_parser = { version = "0.2.0" }
+chrono.workspace = true
+fancy-regex = { version = "0.11.0" }
+
+[build-dependencies]
+hyper-codegen.workspace = true
+
+[features]

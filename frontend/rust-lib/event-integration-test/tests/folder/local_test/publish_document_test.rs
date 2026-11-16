@@ -1,9 +1,9 @@
 use collab_folder::ViewLayout;
 use event_integration_test::EventIntegrationTest;
-use flowy_folder::entities::{ViewLayoutPB, ViewPB};
-use flowy_folder::publish_util::generate_publish_name;
-use flowy_folder::view_operation::GatherEncodedCollab;
-use flowy_folder_pub::entities::{
+use hyper_folder::entities::{ViewLayoutPB, ViewPB};
+use hyper_folder::publish_util::generate_publish_name;
+use hyper_folder::view_operation::GatherEncodedCollab;
+use hyper_folder_pub::entities::{
   PublishDocumentPayload, PublishPayload, PublishViewInfo, PublishViewMeta, PublishViewMetaData,
 };
 use uuid::Uuid;

@@ -323,7 +323,7 @@
   "notifications": {
     "export": {
       "markdown": "Đã xuất ghi chú sang Markdown",
-      "path": "Tài liệu/flowy"
+      "path": "Tài liệu/hyper"
     }
   },
   "contactsPage": {
@@ -685,7 +685,7 @@
         "llmModel": "Mô hình ngôn ngữ",
         "llmModelType": "Kiểu mô hình ngôn ngữ",
         "downloadLLMPrompt": "Tải xuống {}",
-        "downloadAppFlowyOfflineAI": "Tải xuống gói AI ngoại tuyến sẽ cho phép AI chạy trên thiết bị của bạn. Bạn có muốn tiếp tục không?",
+        "downloadHypertaskOfflineAI": "Tải xuống gói AI ngoại tuyến sẽ cho phép AI chạy trên thiết bị của bạn. Bạn có muốn tiếp tục không?",
         "downloadLLMPromptDetail": "Tải xuống mô hình cục bộ {} sẽ chiếm tới {} dung lượng lưu trữ. Bạn có muốn tiếp tục không?",
         "downloadBigFilePrompt": "Có thể mất khoảng 10 phút để hoàn tất việc tải xuống",
         "downloadAIModelButton": "Tải về",
@@ -943,9 +943,9 @@
       "cloudServerType": "Máy chủ đám mây",
       "cloudServerTypeTip": "Xin lưu ý rằng có thể bạn sẽ bị đăng xuất sau khi chuyển máy chủ đám mây",
       "cloudLocal": "Cục bộ",
-      "cloudAppFlowy": "@:appName Cloud Beta",
-      "cloudAppFlowySelfHost": "@:appName Cloud Tự lưu trữ",
-      "appFlowyCloudUrlCanNotBeEmpty": "URL đám mây không được để trống",
+      "cloudHypertask": "@:appName Cloud Beta",
+      "cloudHypertaskSelfHost": "@:appName Cloud Tự lưu trữ",
+      "hypertaskCloudUrlCanNotBeEmpty": "URL đám mây không được để trống",
       "clickToCopy": "Bấm để sao chép",
       "selfHostStart": "Nếu bạn không có máy chủ, vui lòng tham khảo",
       "selfHostContent": "tài liệu",
@@ -966,9 +966,9 @@
       "historicalUserListTooltip": "Danh sách này hiển thị các tài khoản ẩn danh của bạn. Bạn có thể nhấp vào một tài khoản để xem thông tin chi tiết của tài khoản đó. Các tài khoản ẩn danh được tạo bằng cách nhấp vào nút 'Bắt đầu'",
       "openHistoricalUser": "Ấn để mở tài khoản ẩn danh",
       "customPathPrompt": "Lưu trữ thư mục dữ liệu @:appName trong thư mục được đồng bộ hóa trên đám mây như Google Drive có thể gây ra rủi ro. Nếu cơ sở dữ liệu trong thư mục này được truy cập hoặc sửa đổi từ nhiều vị trí cùng một lúc, có thể dẫn đến xung đột đồng bộ hóa và hỏng dữ liệu tiềm ẩn",
-      "importAppFlowyData": "Nhập dữ liệu từ thư mục @:appName bên ngoài",
-      "importingAppFlowyDataTip": "Quá trình nhập dữ liệu đang diễn ra. Vui lòng không đóng ứng dụng",
-      "importAppFlowyDataDescription": "Sao chép dữ liệu từ thư mục dữ liệu @:appName bên ngoài và nhập dữ liệu đó vào thư mục dữ liệu @:appName hiện tại",
+      "importHypertaskData": "Nhập dữ liệu từ thư mục @:appName bên ngoài",
+      "importingHypertaskDataTip": "Quá trình nhập dữ liệu đang diễn ra. Vui lòng không đóng ứng dụng",
+      "importHypertaskDataDescription": "Sao chép dữ liệu từ thư mục dữ liệu @:appName bên ngoài và nhập dữ liệu đó vào thư mục dữ liệu @:appName hiện tại",
       "importSuccess": "Đã nhập thành công thư mục dữ liệu @:appName",
       "importFailed": "Nhập thư mục dữ liệu @:appName không thành công",
       "importGuide": "Để biết thêm chi tiết, vui lòng kiểm tra tài liệu được tham chiếu"
@@ -1049,7 +1049,7 @@
         "opacityEmptyError": "Độ mờ không được để trống",
         "opacityRangeError": "Độ mờ phải nằm trong khoảng từ 1 đến 100",
         "app": "App",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "Áp dụng"
       },
       "layoutDirection": {
@@ -1073,7 +1073,7 @@
         "loading": "Vui lòng đợi trong khi chúng tôi xác thực và tải theme của bạn lên...",
         "uploadSuccess": "Theme của bạn đã được tải lên thành công",
         "deletionFailure": "Không xóa được theme. Hãy thử xóa nó bằng tay.",
-        "filePickerDialogTitle": "Chọn tệp .flowy_plugin",
+        "filePickerDialogTitle": "Chọn tệp .hyper_plugin",
         "urlUploadFailure": "Không mở được url: {}"
       },
       "theme": "Chủ đề",
@@ -1125,7 +1125,7 @@
         "memberLimitExceeded": "Đã đạt đến giới hạn thành viên, vui lòng mời thêm thành viên ",
         "memberLimitExceededUpgrade": "nâng cấp",
         "memberLimitExceededPro": "Đã đạt đến giới hạn thành viên, nếu bạn cần thêm thành viên hãy liên hệ ",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "Không thêm được thành viên",
         "addMemberSuccess": "Thành viên đã được thêm thành công",
         "removeMember": "Xóa thành viên",
@@ -1566,7 +1566,7 @@
       "smartEditCouldNotFetchResult": "Không thể lấy kết quả từ AI",
       "smartEditCouldNotFetchKey": "Không thể lấy được khóa AI",
       "smartEditDisabled": "Kết nối AI trong Cài đặt",
-      "appflowyAIEditDisabled": "Đăng nhập để bật tính năng AI",
+      "hypertaskAIEditDisabled": "Đăng nhập để bật tính năng AI",
       "discardResponse": "Bạn có muốn loại bỏ phản hồi của AI không?",
       "createInlineMathEquation": "Tạo phương trình",
       "fonts": "Phông chữ",
@@ -2391,7 +2391,7 @@
     "publishFailed": "Không thể xuất bản",
     "unpublishFailed": "Không thể hủy xuất bản",
     "noAccessToVisit": "Không thể truy cập vào trang này...",
-    "createWithAppFlowy": "Tạo trang web với HyperTask",
+    "createWithHypertask": "Tạo trang web với HyperTask",
     "fastWithAI": "Nhanh chóng và dễ dàng với AI.",
     "tryItNow": "Thử ngay bây giờ",
     "onlyGridViewCanBePublished": "Chỉ có thể xuất bản chế độ xem Lưới",

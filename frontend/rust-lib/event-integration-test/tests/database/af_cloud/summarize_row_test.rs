@@ -4,7 +4,7 @@ use tokio::time::sleep;
 
 use event_integration_test::user_event::user_localhost_af_cloud;
 use event_integration_test::EventIntegrationTest;
-use flowy_database2::entities::{FieldType, SummaryRowPB};
+use hyper_database2::entities::{FieldType, SummaryRowPB};
 
 #[tokio::test]
 async fn af_cloud_summarize_row_test() {

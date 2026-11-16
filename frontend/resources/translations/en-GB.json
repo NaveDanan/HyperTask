@@ -124,7 +124,7 @@
     "exportAsTab": "Export as",
     "publishTab": "Publish",
     "shareTab": "Share",
-    "publishOnAppFlowy": "Publish on HyperTask",
+    "publishOnHypertask": "Publish on HyperTask",
     "shareTabTitle": "Invite to collaborate",
     "shareTabDescription": "For easy collaboration with anyone",
     "copyLinkSuccess": "Copied link to clipboard",
@@ -410,7 +410,7 @@
   "notifications": {
     "export": {
       "markdown": "Exported Note To Markdown",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -850,7 +850,7 @@
         "llmModel": "Language Model",
         "llmModelType": "Language Model Type",
         "downloadLLMPrompt": "Download {}",
-        "downloadAppFlowyOfflineAI": "Downloading AI offline package will enable AI to run on your device. Do you want to continue?",
+        "downloadHypertaskOfflineAI": "Downloading AI offline package will enable AI to run on your device. Do you want to continue?",
         "downloadLLMPromptDetail": "Downloading {} local model will take up to {} of storage. Do you want to continue?",
         "downloadBigFilePrompt": "It may take around 10 minutes to complete the download",
         "downloadAIModelButton": "Download",
@@ -1131,9 +1131,9 @@
       "cloudServerType": "Cloud server",
       "cloudServerTypeTip": "Please note that it might log out your current account after switching the cloud server",
       "cloudLocal": "Local",
-      "cloudAppFlowy": "@:appName Cloud",
-      "cloudAppFlowySelfHost": "@:appName Cloud Self-hosted",
-      "appFlowyCloudUrlCanNotBeEmpty": "The cloud url can't be empty",
+      "cloudHypertask": "@:appName Cloud",
+      "cloudHypertaskSelfHost": "@:appName Cloud Self-hosted",
+      "hypertaskCloudUrlCanNotBeEmpty": "The cloud url can't be empty",
       "clickToCopy": "Copy to clipboard",
       "selfHostStart": "If you don't have a server, please refer to the",
       "selfHostContent": "document",
@@ -1157,9 +1157,9 @@
       "historicalUserListTooltip": "This list displays your anonymous accounts. You can click on an account to view its details. Anonymous accounts are created by clicking the 'Get Started' button",
       "openHistoricalUser": "Click to open the anonymous account",
       "customPathPrompt": "Storing the @:appName data folder in a cloud-synced folder such as Google Drive can pose risks. If the database within this folder is accessed or modified from multiple locations at the same time, it may result in synchronisation conflicts and potential data corruption",
-      "importAppFlowyData": "Import Data from External @:appName Folder",
-      "importingAppFlowyDataTip": "Data import is in progress. Please do not close the app",
-      "importAppFlowyDataDescription": "Copy data from an external @:appName data folder and import it into the current HyperTask data folder",
+      "importHypertaskData": "Import Data from External @:appName Folder",
+      "importingHypertaskDataTip": "Data import is in progress. Please do not close the app",
+      "importHypertaskDataDescription": "Copy data from an external @:appName data folder and import it into the current HyperTask data folder",
       "importSuccess": "Successfully imported the @:appName data folder",
       "importFailed": "Importing the @:appName data folder failed",
       "importGuide": "For further details, please check the referenced document"
@@ -1243,7 +1243,7 @@
         "opacityEmptyError": "Opacity cannot be empty",
         "opacityRangeError": "Opacity must be between 1 and 100",
         "app": "App",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "Apply"
       },
       "layoutDirection": {
@@ -1267,7 +1267,7 @@
         "loading": "Please wait while we validate and upload your theme...",
         "uploadSuccess": "Your theme was uploaded successfully",
         "deletionFailure": "Failed to delete the theme. Try to delete it manually.",
-        "filePickerDialogTitle": "Choose a .flowy_plugin file",
+        "filePickerDialogTitle": "Choose a .hyper_plugin file",
         "urlUploadFailure": "Failed to open url: {}"
       },
       "theme": "Theme",
@@ -1319,7 +1319,7 @@
         "memberLimitExceeded": "Member limit reached, to invite more members, please ",
         "memberLimitExceededUpgrade": "upgrade",
         "memberLimitExceededPro": "Member limit reached, if you require more members contact ",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "Failed to add member",
         "addMemberSuccess": "Member added successfully",
         "removeMember": "Remove Member",
@@ -1812,7 +1812,7 @@
       "smartEditCouldNotFetchResult": "Could not fetch result from AI",
       "smartEditCouldNotFetchKey": "Could not fetch AI key",
       "smartEditDisabled": "Connect AI in Settings",
-      "appflowyAIEditDisabled": "Sign in to enable AI features",
+      "hypertaskAIEditDisabled": "Sign in to enable AI features",
       "discardResponse": "Are you sure you want to discard the AI response?",
       "createInlineMathEquation": "Create equation",
       "fonts": "Fonts",
@@ -2592,7 +2592,7 @@
       "accountLogin": "Account Login",
       "updateNameError": "Failed to update name",
       "updateIconError": "Failed to update icon",
-      "aboutAppFlowy": "About @:appName",
+      "aboutHypertask": "About @:appName",
       "deleteAccount": {
         "title": "Delete Account",
         "subtitle": "Permanently delete your account and all of your data.",
@@ -2743,7 +2743,7 @@
     "publishFailed": "Failed to publish",
     "unpublishFailed": "Failed to unpublish",
     "noAccessToVisit": "No access to this page...",
-    "createWithAppFlowy": "Create a website with HyperTask",
+    "createWithHypertask": "Create a website with HyperTask",
     "fastWithAI": "Fast and easy with AI.",
     "tryItNow": "Try it now",
     "onlyGridViewCanBePublished": "Only Grid view can be published",
@@ -3126,7 +3126,7 @@
     "cancelPlan": {
       "title": "Sorry to see you go",
       "success": "Your subscription has been canceled successfully",
-      "description": "We're sorry to see you go. We'd love to hear your feedback to help us improve AppFlowy. Please take a moment to answer a few questions.",
+      "description": "We're sorry to see you go. We'd love to hear your feedback to help us improve Hypertask. Please take a moment to answer a few questions.",
       "commonOther": "Other",
       "otherHint": "Write your answer here",
       "questionOne": {

@@ -236,7 +236,7 @@
   "notifications": {
     "export": {
       "markdown": "گۆڕینی دەق بۆ تێبینی",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -331,9 +331,9 @@
       "cloudServerType": "ڕاژەکاری کڵاود",
       "cloudServerTypeTip": "تکایە ئاگاداربە کە لەوانەیە دوای گۆڕینی ڕاژەکاری کڵاودکە لە ئەکاونتی ئێستات دەربچێت",
       "cloudLocal": "خۆماڵی",
-      "cloudAppFlowy": "ئەپفلۆوی کلاود بێتا",
-      "cloudAppFlowySelfHost": "ئەپفلۆوی کلاود بە هۆستی خۆیی",
-      "appFlowyCloudUrlCanNotBeEmpty": "url ی هەور ناتوانێت بەتاڵ بێت",
+      "cloudHypertask": "ئەپفلۆوی کلاود بێتا",
+      "cloudHypertaskSelfHost": "ئەپفلۆوی کلاود بە هۆستی خۆیی",
+      "hypertaskCloudUrlCanNotBeEmpty": "url ی هەور ناتوانێت بەتاڵ بێت",
       "clickToCopy": "کرتە بۆ کۆپی کردن",
       "selfHostStart": "ئەگەر ڕاژه‌كارت نییە، تکایە سەردانی بکە...",
       "selfHostContent": "به‌ڵگه‌نامه",
@@ -354,9 +354,9 @@
       "historicalUserListTooltip": "ئەم لیستە ئەکاونتە بێناوەکانت پیشان دەدات. دەتوانیت کلیک لەسەر ئەکاونتێک بکەیت بۆ بینینی وردەکارییەکانی. ئەکاونتی بێناو بە کلیک کردن لەسەر دوگمەی دەستپێکردن دروست دەکرێت",
       "openHistoricalUser": "بۆ کردنەوەی ئەکاونتی بێناو کلیک بکە",
       "customPathPrompt": "هەڵگرتنی فۆڵدەری داتاکانی @:appName لە فۆڵدەرێکی هاوکاتی کڵاود وەک گووگڵ درایڤ دەتوانێت مەترسی دروست بکات. ئەگەر بنکەدراوەی ناو ئەم فۆڵدەرە لە یەک کاتدا لە چەندین شوێنەوە دەستی پێ بگات یان دەستکاری بکرێت، لەوانەیە ببێتە هۆی ناکۆکی هاوکاتکردن و ئەگەری تێکچوونی داتاکان",
-      "importAppFlowyData": "هێنانی داتا لە فۆڵدەری دەرەکی @:appName",
-      "importingAppFlowyDataTip": "هێنانی داتا لە قۆناغی جێبەجێکردندایە. تکایە ئەپەکە دامەخە",
-      "importAppFlowyDataDescription": "داتا لە فۆڵدەری داتای دەرەکی @:appName کۆپی بکە و هاوردە بکە بۆ ناو فۆڵدەری داتاکانی @:appName ی ئێستا",
+      "importHypertaskData": "هێنانی داتا لە فۆڵدەری دەرەکی @:appName",
+      "importingHypertaskDataTip": "هێنانی داتا لە قۆناغی جێبەجێکردندایە. تکایە ئەپەکە دامەخە",
+      "importHypertaskDataDescription": "داتا لە فۆڵدەری داتای دەرەکی @:appName کۆپی بکە و هاوردە بکە بۆ ناو فۆڵدەری داتاکانی @:appName ی ئێستا",
       "importSuccess": "بە سەرکەوتوویی فۆڵدەری داتاکانی @:appName هاوردە کرد",
       "importFailed": "هاوردەکردنی فۆڵدەری داتاکانی @:appName شکستی هێنا",
       "importGuide": "بۆ زانیاری زیاتر، تکایە بەڵگەنامەی ئاماژەپێکراو بپشکنە"
@@ -388,7 +388,7 @@
         "opacityEmptyError": "لێڵی ناتوانێت بەتاڵ بێت",
         "opacityRangeError": "لێڵی دەبێت لە نێوان 1 بۆ 100 بێت",
         "app": "App",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "به‌کاربردن"
       },
       "layoutDirection": {
@@ -412,7 +412,7 @@
         "loading": "تکایە چاوەڕوان بن تا ئێمە تێمی قاڵبەکەت پشتڕاست دەکەینەوە و بار دەکەین...",
         "uploadSuccess": "تێمی قاڵبەکەت بە سەرکەوتوویی بارکرا",
         "deletionFailure": "تێمەکە نەسڕدرایەوە. هەوڵبدە بە دەستی لابەریت.",
-        "filePickerDialogTitle": "پەڕگەیەکی .flowy_plugin هەڵبژێرە",
+        "filePickerDialogTitle": "پەڕگەیەکی .hyper_plugin هەڵبژێرە",
         "urlUploadFailure": "ناتوانرێت URL بکرێتەوە: {}",
         "failure": "تێمی قاڵبی بارکراو نادروستە."
       },

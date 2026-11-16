@@ -319,7 +319,7 @@
   "notifications": {
     "export": {
       "markdown": "Nota exportada como um marcador",
-      "path": "Documentos/flowy"
+      "path": "Documentos/hyper"
     }
   },
   "contactsPage": {
@@ -608,7 +608,7 @@
       "cloudServerType": "Servidor em nuvem",
       "cloudServerTypeTip": "Observe que ele pode desconectar sua conta atual após mudar o servidor em nuvem",
       "cloudLocal": "Local",
-      "cloudAppFlowy": "@:appName Cloud Beta",
+      "cloudHypertask": "@:appName Cloud Beta",
       "clickToCopy": "Clique para copiar",
       "selfHostStart": "Se você não possui um servidor, consulte o",
       "selfHostContent": "documento",
@@ -628,8 +628,8 @@
       "historicalUserListTooltip": "Esta lista exibe suas contas anônimas. Você pode clicar em uma conta para ver seus detalhes. Contas anônimas são criadas clicando no botão ‘Começar’",
       "openHistoricalUser": "Clique para abrir a conta anônima",
       "customPathPrompt": "Armazenar a pasta de dados do @:appName em uma pasta sincronizada na nuvem, como o Google Drive, pode representar riscos. Se o banco de dados nesta pasta for acessado ou modificado de vários locais ao mesmo tempo, isso poderá resultar em conflitos de sincronização e possível corrupção de dados",
-      "importAppFlowyData": "Importar dados da pasta @:appName externa",
-      "importAppFlowyDataDescription": "Copie dados de uma pasta de dados externa do @:appName e importe-os para a pasta de dados atual do @:appName",
+      "importHypertaskData": "Importar dados da pasta @:appName externa",
+      "importHypertaskDataDescription": "Copie dados de uma pasta de dados externa do @:appName e importe-os para a pasta de dados atual do @:appName",
       "importSuccess": "Importou com sucesso a pasta de dados do @:appName",
       "importFailed": "Falha ao importar a pasta de dados do @:appName",
       "importGuide": "Para mais detalhes, consulte o documento referenciado"
@@ -661,7 +661,7 @@
         "opacityEmptyError": "A opacidade não pode estar vazia",
         "opacityRangeError": "A opacidade deve estar entre 1 e 100",
         "app": "App",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "Aplicar"
       },
       "layoutDirection": {
@@ -685,7 +685,7 @@
         "loading": "Aguarde enquanto validamos e carregamos seu tema...",
         "uploadSuccess": "Seu tema foi carregado com sucesso",
         "deletionFailure": "Falha ao excluir o tema. Tente excluí-lo manualmente.",
-        "filePickerDialogTitle": "Escolha um arquivo .flowy_plugin",
+        "filePickerDialogTitle": "Escolha um arquivo .hyper_plugin",
         "urlUploadFailure": "Falha ao abrir url: {}",
         "failure": "O tema que foi carregado tinha um formato inválido."
       },

@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use collab_folder::ViewLayout;
 use event_integration_test::EventIntegrationTest;
-use flowy_folder::entities::{
+use hyper_folder::entities::{
   ImportItemPayloadPB, ImportPayloadPB, ImportTypePB, ViewLayoutPB, ViewPB,
 };
-use flowy_folder::view_operation::GatherEncodedCollab;
+use hyper_folder::view_operation::GatherEncodedCollab;
 
 use crate::util::unzip;
 
@@ -123,7 +123,7 @@ async fn test_publish_encode_collab_result(
 async fn import_workspace(file_name: &str, test: &EventIntegrationTest) -> Vec<ViewPB> {
   let file_path = unzip("./tests/asset", file_name).unwrap();
   test
-    .import_appflowy_data(file_path.to_str().unwrap().to_string(), None)
+    .import_hypertask_data(file_path.to_str().unwrap().to_string(), None)
     .await
     .unwrap();
 

@@ -37,7 +37,7 @@
     "loginStartWithAnonymous": "繼續匿名對話",
     "continueAnonymousUser": "繼續匿名對話",
     "continueWithLocalModel": "繼續使用本地模型",
-    "switchToAppFlowyCloud": "HyperTask 雲端",
+    "switchToHypertaskCloud": "HyperTask 雲端",
     "anonymousMode": "匿名模式",
     "buttonText": "登入",
     "signingInText": "正在登入...",
@@ -107,7 +107,7 @@
     "verifying": "正在驗證…",
     "continueWithPassword": "繼續使用密碼",
     "youAreInLocalMode": "您目前處於本地模式。",
-    "loginToAppFlowyCloud": "登入 HyperTask Cloud"
+    "loginToHypertaskCloud": "登入 HyperTask Cloud"
   },
   "workspace": {
     "chooseWorkspace": "選擇你的工作區",
@@ -163,7 +163,7 @@
     "exportAsTab": "匯出為",
     "publishTab": "發佈",
     "shareTab": "分享",
-    "publishOnAppFlowy": "在 HyperTask 上發布",
+    "publishOnHypertask": "在 HyperTask 上發布",
     "shareTabTitle": "邀請協作",
     "shareTabDescription": "方便與任何人協作",
     "copyLinkSuccess": "連結已複製到剪貼簿",
@@ -449,7 +449,7 @@
   "notifications": {
     "export": {
       "markdown": "已將筆記匯出成 Markdown",
-      "path": "文件/flowy"
+      "path": "文件/hyper"
     }
   },
   "contactsPage": {
@@ -896,7 +896,7 @@
         "readOnlyField": "此欄位為唯讀設定",
         "llmModelType": "語言模型類型",
         "downloadLLMPrompt": "下載 {}",
-        "downloadAppFlowyOfflineAI": "下載 AI 離線套件將啟用裝置上的 AI 執行。您要繼續嗎?",
+        "downloadHypertaskOfflineAI": "下載 AI 離線套件將啟用裝置上的 AI 執行。您要繼續嗎?",
         "downloadLLMPromptDetail": "下載 {} 本地模型將佔用高達 {} 的儲存空間。您要繼續嗎?",
         "downloadBigFilePrompt": "下載完成可能需要大約 10 分鐘的時間",
         "downloadAIModelButton": "下載",
@@ -1179,9 +1179,9 @@
       "cloudServerType": "雲端伺服器種類",
       "cloudServerTypeTip": "請注意，切換雲端伺服器後可能會登出您目前的帳號",
       "cloudLocal": "本地",
-      "cloudAppFlowy": "@:appName Cloud",
-      "cloudAppFlowySelfHost": "@:appName 雲端 自架設",
-      "appFlowyCloudUrlCanNotBeEmpty": "雲端網址不能為空",
+      "cloudHypertask": "@:appName Cloud",
+      "cloudHypertaskSelfHost": "@:appName 雲端 自架設",
+      "hypertaskCloudUrlCanNotBeEmpty": "雲端網址不能為空",
       "clickToCopy": "點選以複製",
       "selfHostStart": "若您尚未設定伺服器，請參閱",
       "selfHostContent": "文件",
@@ -1205,9 +1205,9 @@
       "historicalUserListTooltip": "此列表顯示您的匿名帳號。您可以點選帳號以檢視其詳細資訊。透過點選「開始使用」按鈕來建立匿名帳號",
       "openHistoricalUser": "點選以開啟匿名帳號",
       "customPathPrompt": "將 @:appName 資料資料夾儲存在如 Google 雲端硬碟等雲端同步資料夾中可能會帶來風險。如果該資料庫在多處同時被存取或修改，可能會導致同步衝突和潛在的資料損壞",
-      "importAppFlowyData": "從外部 @:appName 資料夾匯入資料",
-      "importingAppFlowyDataTip": "資料正在匯入中。請勿關閉應用程式",
-      "importAppFlowyDataDescription": "從外部 @:appName 資料夾複製資料並匯入到目前的 @:appName 資料夾",
+      "importHypertaskData": "從外部 @:appName 資料夾匯入資料",
+      "importingHypertaskDataTip": "資料正在匯入中。請勿關閉應用程式",
+      "importHypertaskDataDescription": "從外部 @:appName 資料夾複製資料並匯入到目前的 @:appName 資料夾",
       "importSuccess": "成功匯入 @:appName 資料夾",
       "importFailed": "匯入 @:appName 資料夾失敗",
       "importGuide": "欲瞭解更多詳細資訊，請查閱參考文件"
@@ -1291,7 +1291,7 @@
         "opacityEmptyError": "不透明度不能為空",
         "opacityRangeError": "不透明度必須在 1 到 100 之間",
         "app": "App",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "套用"
       },
       "layoutDirection": {
@@ -1315,7 +1315,7 @@
         "loading": "我們正在驗證並上傳您的主題，請稍候...",
         "uploadSuccess": "您的主題已成功上傳",
         "deletionFailure": "刪除主題失敗。請嘗試手動刪除。",
-        "filePickerDialogTitle": "選擇 .flowy_plugin 檔案",
+        "filePickerDialogTitle": "選擇 .hyper_plugin 檔案",
         "urlUploadFailure": "無法開啟網址: {}"
       },
       "theme": "主題",
@@ -1367,7 +1367,7 @@
         "memberLimitExceeded": "已達成員上限，若要邀請更多成員，請...",
         "memberLimitExceededUpgrade": "升級",
         "memberLimitExceededPro": "已達成員上限，若需要更多成員，請聯繫...",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "新增成員失敗",
         "addMemberSuccess": "成員新增成功",
         "removeMember": "刪除成員",
@@ -1881,7 +1881,7 @@
       "smartEditCouldNotFetchResult": "無法取得 AI 的結果",
       "smartEditCouldNotFetchKey": "無法取得 AI 金鑰",
       "smartEditDisabled": "在設定連結 AI ",
-      "appflowyAIEditDisabled": "登入以啟用 AI 功能",
+      "hypertaskAIEditDisabled": "登入以啟用 AI 功能",
       "discardResponse": "您確定要捨棄 AI 回應嗎?",
       "createInlineMathEquation": "建立公式",
       "fonts": "字型",
@@ -2710,7 +2710,7 @@
       "accountLogin": "帳戶登入",
       "updateNameError": "名稱更新失敗",
       "updateIconError": "個人頭像更新失敗",
-      "aboutAppFlowy": "關於 @:appName",
+      "aboutHypertask": "關於 @:appName",
       "deleteAccount": {
         "title": "刪除帳號",
         "subtitle": "永久刪除您的帳戶和所有資料",
@@ -2904,7 +2904,7 @@
     "publishFailed": "發布失敗",
     "unpublishFailed": "取消發布失敗",
     "noAccessToVisit": "無法存取此頁面...",
-    "createWithAppFlowy": "使用 HyperTask 建立網站",
+    "createWithHypertask": "使用 HyperTask 建立網站",
     "fastWithAI": "使用 AI 快速且輕鬆。",
     "tryItNow": "立即嘗試",
     "onlyGridViewCanBePublished": "僅限網格檢視可發布",

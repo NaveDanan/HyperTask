@@ -1,0 +1,3 @@
+
+# Check out the HyperConfig (located in hyper_toml.rs) for more details.
+proto_input = ["src/errors.rs","src/code.rs"]

@@ -13,7 +13,7 @@ cmp -s .tls/cert-public.pem .tls/key-public.pem || { printf 'The certificate and
 server_host=$(python3 - "$3" <<'PY'
 import sys, urllib.parse
 u=urllib.parse.urlparse(sys.argv[1]);h=(u.hostname or '').lower().rstrip('.')
-if u.scheme!='https' or not h or u.username or u.password or u.path not in ('','/') or u.query or u.fragment or any(h==d or h.endswith('.'+d) for d in ('appflowy.com','appflowy.io','appflowy.cloud')):
+if u.scheme!='https' or not h or u.username or u.password or u.path not in ('','/') or u.query or u.fragment or any(h==d or h.endswith('.'+d) for d in ('hypertask.com','hypertask.io','hypertask.cloud')):
     raise SystemExit('Enter your HTTPS server origin without credentials or a path.')
 print(h)
 PY

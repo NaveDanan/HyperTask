@@ -1,5 +1,5 @@
 use event_integration_test::EventIntegrationTest;
-use flowy_core::DEFAULT_NAME;
+use hyper_core::DEFAULT_NAME;
 use std::time::Duration;
 
 use crate::util::unzip;

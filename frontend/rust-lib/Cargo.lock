@@ -1132,8 +1132,8 @@ dependencies = [
  "collab-folder",
  "collab-plugins",
  "collab-user",
- "flowy-ai-pub",
- "flowy-error",
+ "hyper-ai-pub",
+ "hyper-error",
  "lib-infra",
  "serde",
  "serde_json",
@@ -1893,15 +1893,15 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "collab-integrate",
- "flowy-core",
- "flowy-date",
- "flowy-document",
- "flowy-error",
- "flowy-notification",
- "flowy-server",
- "flowy-server-pub",
- "flowy-user",
  "futures",
+ "hyper-core",
+ "hyper-date",
+ "hyper-document",
+ "hyper-error",
+ "hyper-notification",
+ "hyper-server",
+ "hyper-server-pub",
+ "hyper-user",
  "lib-dispatch",
  "lib-infra",
  "lib-log",
@@ -1979,23 +1979,23 @@ dependencies = [
  "collab-document",
  "collab-entity",
  "collab-folder",
- "flowy-ai",
- "flowy-ai-pub",
- "flowy-core",
- "flowy-database2",
- "flowy-document",
- "flowy-error",
- "flowy-folder",
- "flowy-folder-pub",
- "flowy-notification",
- "flowy-search",
- "flowy-server",
- "flowy-server-pub",
- "flowy-storage",
- "flowy-storage-pub",
- "flowy-user",
- "flowy-user-pub",
  "futures",
+ "hyper-ai",
+ "hyper-ai-pub",
+ "hyper-core",
+ "hyper-database2",
+ "hyper-document",
+ "hyper-error",
+ "hyper-folder",
+ "hyper-folder-pub",
+ "hyper-notification",
+ "hyper-search",
+ "hyper-server",
+ "hyper-server-pub",
+ "hyper-storage",
+ "hyper-storage-pub",
+ "hyper-user",
+ "hyper-user-pub",
  "lib-dispatch",
  "lib-infra",
  "nanoid",
@@ -2172,677 +2172,6 @@ checksum = "5f54427cfd1c7829e2a139fcefea601bf088ebca651d2bf53ebc600eac295dae"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
-]
-
-[[package]]
-name = "flowy-ai"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "async-stream",
- "async-trait",
- "base64 0.21.5",
- "bytes",
- "dashmap 6.0.1",
- "flowy-ai-pub",
- "flowy-codegen",
- "flowy-database-pub",
- "flowy-derive",
- "flowy-error",
- "flowy-notification",
- "flowy-sqlite",
- "flowy-sqlite-vec",
- "flowy-storage-pub",
- "futures",
- "futures-util",
- "langchain-rust",
- "lib-dispatch",
- "lib-infra",
- "log",
- "lopdf",
- "notify",
- "ollama-rs",
- "protobuf",
- "pulldown-cmark 0.13.0",
- "reqwest 0.11.27",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "strum_macros 0.21.1",
- "tempdir",
- "tempfile",
- "text-splitter 0.25.1",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tracing",
- "tracing-subscriber",
- "twox-hash",
- "uuid",
- "validator 0.18.1",
-]
-
-[[package]]
-name = "flowy-ai-pub"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "client-api",
- "flowy-error",
- "flowy-sqlite",
- "flowy-user-pub",
- "futures",
- "lib-infra",
- "serde",
- "serde_json",
- "tracing",
- "twox-hash",
- "uuid",
-]
-
-[[package]]
-name = "flowy-ast"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "flowy-codegen"
-version = "0.1.0"
-dependencies = [
- "cmd_lib",
- "console",
- "fancy-regex 0.10.0",
- "flowy-ast",
- "itertools 0.10.5",
- "lazy_static",
- "log",
- "phf 0.8.0",
- "protoc-bin-vendored",
- "protoc-rust",
- "quote",
- "serde",
- "serde_json",
- "similar 1.3.0",
- "syn 1.0.109",
- "tera",
- "toml 0.5.11",
- "walkdir",
-]
-
-[[package]]
-name = "flowy-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "base64 0.21.5",
- "bytes",
- "client-api",
- "collab",
- "collab-document",
- "collab-entity",
- "collab-folder",
- "collab-integrate",
- "collab-plugins",
- "console-subscriber",
- "dashmap 6.0.1",
- "diesel",
- "flowy-ai",
- "flowy-ai-pub",
- "flowy-database-pub",
- "flowy-database2",
- "flowy-date",
- "flowy-document",
- "flowy-document-pub",
- "flowy-error",
- "flowy-folder",
- "flowy-folder-pub",
- "flowy-search",
- "flowy-search-pub",
- "flowy-server",
- "flowy-server-pub",
- "flowy-sqlite",
- "flowy-sqlite-vec",
- "flowy-storage",
- "flowy-storage-pub",
- "flowy-user",
- "flowy-user-pub",
- "futures",
- "futures-core",
- "lib-dispatch",
- "lib-infra",
- "lib-log",
- "once_cell",
- "semver",
- "serde",
- "serde_json",
- "sysinfo",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tracing",
- "twox-hash",
- "url",
- "uuid",
-]
-
-[[package]]
-name = "flowy-database-pub"
-version = "0.1.0"
-dependencies = [
- "client-api",
- "collab",
- "collab-entity",
- "flowy-error",
- "lib-infra",
- "uuid",
-]
-
-[[package]]
-name = "flowy-database2"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "async-stream",
- "async-trait",
- "bytes",
- "chrono",
- "chrono-tz 0.8.3",
- "collab",
- "collab-database",
- "collab-entity",
- "collab-integrate",
- "collab-plugins",
- "csv",
- "dashmap 6.0.1",
- "event-integration-test",
- "fancy-regex 0.11.0",
- "flowy-codegen",
- "flowy-database-pub",
- "flowy-database2",
- "flowy-derive",
- "flowy-error",
- "flowy-notification",
- "futures",
- "indexmap 2.9.0",
- "lazy_static",
- "lib-dispatch",
- "lib-infra",
- "moka",
- "nanoid",
- "protobuf",
- "rayon",
- "rust_decimal",
- "rusty-money",
- "serde",
- "serde_json",
- "serde_repr",
- "strum 0.25.0",
- "strum_macros 0.25.2",
- "tokio",
- "tokio-util",
- "tracing",
- "url",
- "uuid",
- "validator 0.18.1",
-]
-
-[[package]]
-name = "flowy-date"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "chrono",
- "date_time_parser",
- "fancy-regex 0.11.0",
- "flowy-codegen",
- "flowy-derive",
- "flowy-error",
- "lib-dispatch",
- "protobuf",
- "strum_macros 0.21.1",
- "tracing",
-]
-
-[[package]]
-name = "flowy-derive"
-version = "0.1.0"
-dependencies = [
- "dashmap 6.0.1",
- "flowy-ast",
- "flowy-codegen",
- "lazy_static",
- "proc-macro2",
- "quote",
- "serde_json",
- "syn 1.0.109",
- "walkdir",
-]
-
-[[package]]
-name = "flowy-document"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "collab",
- "collab-document",
- "collab-entity",
- "collab-integrate",
- "collab-plugins",
- "dashmap 6.0.1",
- "flowy-codegen",
- "flowy-derive",
- "flowy-document-pub",
- "flowy-error",
- "flowy-notification",
- "flowy-storage-pub",
- "futures",
- "getrandom 0.2.10",
- "indexmap 2.9.0",
- "lib-dispatch",
- "lib-infra",
- "nanoid",
- "protobuf",
- "scraper 0.18.1",
- "serde",
- "serde_json",
- "strum_macros 0.21.1",
- "tempfile",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "validator 0.18.1",
-]
-
-[[package]]
-name = "flowy-document-pub"
-version = "0.1.0"
-dependencies = [
- "collab",
- "collab-document",
- "flowy-error",
- "lib-infra",
- "uuid",
-]
-
-[[package]]
-name = "flowy-error"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bytes",
- "client-api",
- "collab",
- "collab-database",
- "collab-document",
- "collab-folder",
- "collab-plugins",
- "fancy-regex 0.11.0",
- "flowy-codegen",
- "flowy-derive",
- "flowy-sqlite",
- "lib-dispatch",
- "ollama-rs",
- "protobuf",
- "r2d2",
- "reqwest 0.11.27",
- "serde",
- "serde_json",
- "serde_repr",
- "tantivy",
- "thiserror 1.0.64",
- "tokio",
- "url",
- "uuid",
- "validator 0.18.1",
-]
-
-[[package]]
-name = "flowy-folder"
-version = "0.1.0"
-dependencies = [
- "arc-swap",
- "async-trait",
- "bytes",
- "client-api",
- "collab",
- "collab-entity",
- "collab-folder",
- "collab-integrate",
- "dashmap 6.0.1",
- "flowy-codegen",
- "flowy-derive",
- "flowy-error",
- "flowy-folder-pub",
- "flowy-notification",
- "flowy-search-pub",
- "flowy-sqlite",
- "flowy-user-pub",
- "futures",
- "lib-dispatch",
- "lib-infra",
- "num_enum",
- "protobuf",
- "regex",
- "serde",
- "serde_json",
- "strum_macros 0.21.1",
- "tokio",
- "tokio-stream",
- "tracing",
- "unicode-segmentation",
- "uuid",
- "validator 0.18.1",
-]
-
-[[package]]
-name = "flowy-folder-pub"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "client-api",
- "collab",
- "collab-entity",
- "collab-folder",
- "diesel",
- "flowy-error",
- "flowy-sqlite",
- "lib-infra",
- "serde",
- "serde_json",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "flowy-notification"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "dashmap 6.0.1",
- "flowy-codegen",
- "flowy-derive",
- "lazy_static",
- "lib-dispatch",
- "protobuf",
- "serde",
- "tokio",
- "tokio-util",
- "tracing",
-]
-
-[[package]]
-name = "flowy-search"
-version = "0.1.0"
-dependencies = [
- "arc-swap",
- "async-stream",
- "bytes",
- "collab",
- "collab-folder",
- "dashmap 6.0.1",
- "derive_builder",
- "flowy-codegen",
- "flowy-derive",
- "flowy-error",
- "flowy-folder",
- "flowy-search-pub",
- "flowy-user",
- "futures",
- "lib-dispatch",
- "lib-infra",
- "protobuf",
- "serde",
- "serde_json",
- "strum_macros 0.26.4",
- "tantivy",
- "tokio",
- "tokio-stream",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "flowy-search-pub"
-version = "0.1.0"
-dependencies = [
- "client-api",
- "collab",
- "collab-folder",
- "dashmap 6.0.1",
- "flowy-error",
- "lib-infra",
- "once_cell",
- "tantivy",
- "tokio",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "flowy-server"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "bytes",
- "chrono",
- "client-api",
- "collab",
- "collab-database",
- "collab-document",
- "collab-entity",
- "collab-plugins",
- "collab-user",
- "flowy-ai",
- "flowy-ai-pub",
- "flowy-database-pub",
- "flowy-document-pub",
- "flowy-error",
- "flowy-folder-pub",
- "flowy-search-pub",
- "flowy-server-pub",
- "flowy-sqlite",
- "flowy-storage",
- "flowy-storage-pub",
- "flowy-user-pub",
- "futures-util",
- "lazy_static",
- "lib-infra",
- "rand 0.8.5",
- "semver",
- "serde",
- "serde_json",
- "thiserror 1.0.64",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tracing",
- "uuid",
- "workspace-template",
-]
-
-[[package]]
-name = "flowy-server-pub"
-version = "0.1.0"
-dependencies = [
- "client-api",
- "flowy-error",
- "serde",
- "serde_repr",
-]
-
-[[package]]
-name = "flowy-sqlite"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "diesel",
- "diesel_derives",
- "diesel_migrations",
- "libsqlite3-sys",
- "openssl",
- "openssl-sys",
- "r2d2",
- "scheduled-thread-pool",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 1.0.64",
- "tracing",
-]
-
-[[package]]
-name = "flowy-sqlite-vec"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "flowy-ai-pub",
- "include_dir",
- "r2d2",
- "r2d2_sqlite",
- "rusqlite",
- "rusqlite_migration",
- "serde",
- "serde_json",
- "sqlite-vec",
- "tempfile",
- "tokio",
- "tracing",
- "uuid",
- "zerocopy 0.9.0-alpha.0",
-]
-
-[[package]]
-name = "flowy-storage"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bytes",
- "chrono",
- "collab-importer",
- "dashmap 6.0.1",
- "flowy-codegen",
- "flowy-derive",
- "flowy-error",
- "flowy-notification",
- "flowy-sqlite",
- "flowy-storage-pub",
- "lib-dispatch",
- "lib-infra",
- "mime_guess",
- "protobuf",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "strum_macros 0.25.2",
- "tokio",
- "tracing",
- "url",
- "uuid",
-]
-
-[[package]]
-name = "flowy-storage-pub"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "bytes",
- "client-api-entity",
- "flowy-error",
- "lib-infra",
- "mime",
- "mime_guess",
- "serde",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "flowy-user"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "base64 0.21.5",
- "bytes",
- "chrono",
- "client-api",
- "collab",
- "collab-database",
- "collab-document",
- "collab-entity",
- "collab-folder",
- "collab-integrate",
- "collab-plugins",
- "collab-user",
- "dashmap 6.0.1",
- "diesel",
- "fake",
- "fancy-regex 0.11.0",
- "flowy-codegen",
- "flowy-derive",
- "flowy-error",
- "flowy-folder-pub",
- "flowy-notification",
- "flowy-server-pub",
- "flowy-sqlite",
- "flowy-user-pub",
- "lazy_static",
- "lib-dispatch",
- "lib-infra",
- "num_enum",
- "protobuf",
- "quickcheck",
- "quickcheck_macros",
- "rand 0.8.5",
- "rand_core 0.6.4",
- "rayon",
- "semver",
- "serde",
- "serde_json",
- "strum 0.25.0",
- "strum_macros 0.25.2",
- "tokio",
- "tokio-stream",
- "tracing",
- "unicode-segmentation",
- "uuid",
- "validator 0.18.1",
-]
-
-[[package]]
-name = "flowy-user-pub"
-version = "0.1.0"
-dependencies = [
- "base64 0.21.5",
- "chrono",
- "client-api",
- "collab",
- "collab-entity",
- "collab-folder",
- "flowy-error",
- "flowy-folder-pub",
- "flowy-sqlite",
- "lib-infra",
- "serde",
- "serde_json",
- "serde_repr",
- "tokio",
- "tokio-stream",
- "tracing",
- "uuid",
 ]
 
 [[package]]
@@ -3499,6 +2828,412 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper-ai"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "async-stream",
+ "async-trait",
+ "base64 0.21.5",
+ "bytes",
+ "dashmap 6.0.1",
+ "futures",
+ "futures-util",
+ "hyper-ai-pub",
+ "hyper-codegen",
+ "hyper-database-pub",
+ "hyper-derive",
+ "hyper-error",
+ "hyper-notification",
+ "hyper-sqlite",
+ "hyper-sqlite-vec",
+ "hyper-storage-pub",
+ "langchain-rust",
+ "lib-dispatch",
+ "lib-infra",
+ "log",
+ "lopdf",
+ "notify",
+ "ollama-rs",
+ "protobuf",
+ "pulldown-cmark 0.13.0",
+ "reqwest 0.11.27",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "strum_macros 0.21.1",
+ "tempdir",
+ "tempfile",
+ "text-splitter 0.25.1",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+ "twox-hash",
+ "uuid",
+ "validator 0.18.1",
+]
+
+[[package]]
+name = "hyper-ai-pub"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "client-api",
+ "futures",
+ "hyper-error",
+ "hyper-sqlite",
+ "hyper-user-pub",
+ "lib-infra",
+ "serde",
+ "serde_json",
+ "tracing",
+ "twox-hash",
+ "uuid",
+]
+
+[[package]]
+name = "hyper-ast"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "hyper-codegen"
+version = "0.1.0"
+dependencies = [
+ "cmd_lib",
+ "console",
+ "fancy-regex 0.10.0",
+ "hyper-ast",
+ "itertools 0.10.5",
+ "lazy_static",
+ "log",
+ "phf 0.8.0",
+ "protoc-bin-vendored",
+ "protoc-rust",
+ "quote",
+ "serde",
+ "serde_json",
+ "similar 1.3.0",
+ "syn 1.0.109",
+ "tera",
+ "toml 0.5.11",
+ "walkdir",
+]
+
+[[package]]
+name = "hyper-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "base64 0.21.5",
+ "bytes",
+ "client-api",
+ "collab",
+ "collab-document",
+ "collab-entity",
+ "collab-folder",
+ "collab-integrate",
+ "collab-plugins",
+ "console-subscriber",
+ "dashmap 6.0.1",
+ "diesel",
+ "futures",
+ "futures-core",
+ "hyper-ai",
+ "hyper-ai-pub",
+ "hyper-database-pub",
+ "hyper-database2",
+ "hyper-date",
+ "hyper-document",
+ "hyper-document-pub",
+ "hyper-error",
+ "hyper-folder",
+ "hyper-folder-pub",
+ "hyper-search",
+ "hyper-search-pub",
+ "hyper-server",
+ "hyper-server-pub",
+ "hyper-sqlite",
+ "hyper-sqlite-vec",
+ "hyper-storage",
+ "hyper-storage-pub",
+ "hyper-user",
+ "hyper-user-pub",
+ "lib-dispatch",
+ "lib-infra",
+ "lib-log",
+ "once_cell",
+ "semver",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tracing",
+ "twox-hash",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "hyper-database-pub"
+version = "0.1.0"
+dependencies = [
+ "client-api",
+ "collab",
+ "collab-entity",
+ "hyper-error",
+ "lib-infra",
+ "uuid",
+]
+
+[[package]]
+name = "hyper-database2"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "async-stream",
+ "async-trait",
+ "bytes",
+ "chrono",
+ "chrono-tz 0.8.3",
+ "collab",
+ "collab-database",
+ "collab-entity",
+ "collab-integrate",
+ "collab-plugins",
+ "csv",
+ "dashmap 6.0.1",
+ "event-integration-test",
+ "fancy-regex 0.11.0",
+ "futures",
+ "hyper-codegen",
+ "hyper-database-pub",
+ "hyper-database2",
+ "hyper-derive",
+ "hyper-error",
+ "hyper-notification",
+ "indexmap 2.9.0",
+ "lazy_static",
+ "lib-dispatch",
+ "lib-infra",
+ "moka",
+ "nanoid",
+ "protobuf",
+ "rayon",
+ "rust_decimal",
+ "rusty-money",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "strum 0.25.0",
+ "strum_macros 0.25.2",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "url",
+ "uuid",
+ "validator 0.18.1",
+]
+
+[[package]]
+name = "hyper-date"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "chrono",
+ "date_time_parser",
+ "fancy-regex 0.11.0",
+ "hyper-codegen",
+ "hyper-derive",
+ "hyper-error",
+ "lib-dispatch",
+ "protobuf",
+ "strum_macros 0.21.1",
+ "tracing",
+]
+
+[[package]]
+name = "hyper-derive"
+version = "0.1.0"
+dependencies = [
+ "dashmap 6.0.1",
+ "hyper-ast",
+ "hyper-codegen",
+ "lazy_static",
+ "proc-macro2",
+ "quote",
+ "serde_json",
+ "syn 1.0.109",
+ "walkdir",
+]
+
+[[package]]
+name = "hyper-document"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "collab",
+ "collab-document",
+ "collab-entity",
+ "collab-integrate",
+ "collab-plugins",
+ "dashmap 6.0.1",
+ "futures",
+ "getrandom 0.2.10",
+ "hyper-codegen",
+ "hyper-derive",
+ "hyper-document-pub",
+ "hyper-error",
+ "hyper-notification",
+ "hyper-storage-pub",
+ "indexmap 2.9.0",
+ "lib-dispatch",
+ "lib-infra",
+ "nanoid",
+ "protobuf",
+ "scraper 0.18.1",
+ "serde",
+ "serde_json",
+ "strum_macros 0.21.1",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "validator 0.18.1",
+]
+
+[[package]]
+name = "hyper-document-pub"
+version = "0.1.0"
+dependencies = [
+ "collab",
+ "collab-document",
+ "hyper-error",
+ "lib-infra",
+ "uuid",
+]
+
+[[package]]
+name = "hyper-error"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "client-api",
+ "collab",
+ "collab-database",
+ "collab-document",
+ "collab-folder",
+ "collab-plugins",
+ "fancy-regex 0.11.0",
+ "hyper-codegen",
+ "hyper-derive",
+ "hyper-sqlite",
+ "lib-dispatch",
+ "ollama-rs",
+ "protobuf",
+ "r2d2",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "tantivy",
+ "thiserror 1.0.64",
+ "tokio",
+ "url",
+ "uuid",
+ "validator 0.18.1",
+]
+
+[[package]]
+name = "hyper-folder"
+version = "0.1.0"
+dependencies = [
+ "arc-swap",
+ "async-trait",
+ "bytes",
+ "client-api",
+ "collab",
+ "collab-entity",
+ "collab-folder",
+ "collab-integrate",
+ "dashmap 6.0.1",
+ "futures",
+ "hyper-codegen",
+ "hyper-derive",
+ "hyper-error",
+ "hyper-folder-pub",
+ "hyper-notification",
+ "hyper-search-pub",
+ "hyper-sqlite",
+ "hyper-user-pub",
+ "lib-dispatch",
+ "lib-infra",
+ "num_enum",
+ "protobuf",
+ "regex",
+ "serde",
+ "serde_json",
+ "strum_macros 0.21.1",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "unicode-segmentation",
+ "uuid",
+ "validator 0.18.1",
+]
+
+[[package]]
+name = "hyper-folder-pub"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "client-api",
+ "collab",
+ "collab-entity",
+ "collab-folder",
+ "diesel",
+ "hyper-error",
+ "hyper-sqlite",
+ "lib-infra",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "hyper-notification"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "dashmap 6.0.1",
+ "hyper-codegen",
+ "hyper-derive",
+ "lazy_static",
+ "lib-dispatch",
+ "protobuf",
+ "serde",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "hyper-rustls"
 version = "0.27.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3515,6 +3250,195 @@ dependencies = [
  "tokio-rustls",
  "tower-service",
  "webpki-roots",
+]
+
+[[package]]
+name = "hyper-search"
+version = "0.1.0"
+dependencies = [
+ "arc-swap",
+ "async-stream",
+ "bytes",
+ "collab",
+ "collab-folder",
+ "dashmap 6.0.1",
+ "derive_builder",
+ "futures",
+ "hyper-codegen",
+ "hyper-derive",
+ "hyper-error",
+ "hyper-folder",
+ "hyper-search-pub",
+ "hyper-user",
+ "lib-dispatch",
+ "lib-infra",
+ "protobuf",
+ "serde",
+ "serde_json",
+ "strum_macros 0.26.4",
+ "tantivy",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "hyper-search-pub"
+version = "0.1.0"
+dependencies = [
+ "client-api",
+ "collab",
+ "collab-folder",
+ "dashmap 6.0.1",
+ "hyper-error",
+ "lib-infra",
+ "once_cell",
+ "tantivy",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "hyper-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "bytes",
+ "chrono",
+ "client-api",
+ "collab",
+ "collab-database",
+ "collab-document",
+ "collab-entity",
+ "collab-plugins",
+ "collab-user",
+ "futures-util",
+ "hyper-ai",
+ "hyper-ai-pub",
+ "hyper-database-pub",
+ "hyper-document-pub",
+ "hyper-error",
+ "hyper-folder-pub",
+ "hyper-search-pub",
+ "hyper-server-pub",
+ "hyper-sqlite",
+ "hyper-storage",
+ "hyper-storage-pub",
+ "hyper-user-pub",
+ "lazy_static",
+ "lib-infra",
+ "rand 0.8.5",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.64",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tracing",
+ "uuid",
+ "workspace-template",
+]
+
+[[package]]
+name = "hyper-server-pub"
+version = "0.1.0"
+dependencies = [
+ "client-api",
+ "hyper-error",
+ "serde",
+ "serde_repr",
+]
+
+[[package]]
+name = "hyper-sqlite"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "diesel",
+ "diesel_derives",
+ "diesel_migrations",
+ "libsqlite3-sys",
+ "openssl",
+ "openssl-sys",
+ "r2d2",
+ "scheduled-thread-pool",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.64",
+ "tracing",
+]
+
+[[package]]
+name = "hyper-sqlite-vec"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "hyper-ai-pub",
+ "include_dir",
+ "r2d2",
+ "r2d2_sqlite",
+ "rusqlite",
+ "rusqlite_migration",
+ "serde",
+ "serde_json",
+ "sqlite-vec",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "uuid",
+ "zerocopy 0.9.0-alpha.0",
+]
+
+[[package]]
+name = "hyper-storage"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "chrono",
+ "collab-importer",
+ "dashmap 6.0.1",
+ "hyper-codegen",
+ "hyper-derive",
+ "hyper-error",
+ "hyper-notification",
+ "hyper-sqlite",
+ "hyper-storage-pub",
+ "lib-dispatch",
+ "lib-infra",
+ "mime_guess",
+ "protobuf",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "strum_macros 0.25.2",
+ "tokio",
+ "tracing",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "hyper-storage-pub"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bytes",
+ "client-api-entity",
+ "hyper-error",
+ "lib-infra",
+ "mime",
+ "mime_guess",
+ "serde",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -3556,6 +3480,82 @@ dependencies = [
  "tokio",
  "tokio-native-tls",
  "tower-service",
+]
+
+[[package]]
+name = "hyper-user"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "base64 0.21.5",
+ "bytes",
+ "chrono",
+ "client-api",
+ "collab",
+ "collab-database",
+ "collab-document",
+ "collab-entity",
+ "collab-folder",
+ "collab-integrate",
+ "collab-plugins",
+ "collab-user",
+ "dashmap 6.0.1",
+ "diesel",
+ "fake",
+ "fancy-regex 0.11.0",
+ "hyper-codegen",
+ "hyper-derive",
+ "hyper-error",
+ "hyper-folder-pub",
+ "hyper-notification",
+ "hyper-server-pub",
+ "hyper-sqlite",
+ "hyper-user-pub",
+ "lazy_static",
+ "lib-dispatch",
+ "lib-infra",
+ "num_enum",
+ "protobuf",
+ "quickcheck",
+ "quickcheck_macros",
+ "rand 0.8.5",
+ "rand_core 0.6.4",
+ "rayon",
+ "semver",
+ "serde",
+ "serde_json",
+ "strum 0.25.0",
+ "strum_macros 0.25.2",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "unicode-segmentation",
+ "uuid",
+ "validator 0.18.1",
+]
+
+[[package]]
+name = "hyper-user-pub"
+version = "0.1.0"
+dependencies = [
+ "base64 0.21.5",
+ "chrono",
+ "client-api",
+ "collab",
+ "collab-entity",
+ "collab-folder",
+ "hyper-error",
+ "hyper-folder-pub",
+ "hyper-sqlite",
+ "lib-infra",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]

@@ -1,14 +1,14 @@
 use collab::entity::EncodedCollab;
 use std::collections::HashMap;
 
-use flowy_document::entities::*;
-use flowy_document::event_map::DocumentEvent;
-use flowy_document::parser::parser_entities::{
+use hyper_document::entities::*;
+use hyper_document::event_map::DocumentEvent;
+use hyper_document::parser::parser_entities::{
   ConvertDataToJsonPayloadPB, ConvertDataToJsonResponsePB, ConvertDocumentPayloadPB,
   ConvertDocumentResponsePB,
 };
-use flowy_folder::entities::{CreateViewPayloadPB, ViewLayoutPB, ViewPB};
-use flowy_folder::event_map::FolderEvent;
+use hyper_folder::entities::{CreateViewPayloadPB, ViewLayoutPB, ViewPB};
+use hyper_folder::event_map::FolderEvent;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -40,7 +40,7 @@ impl DocumentEventTest {
   pub async fn get_encoded_v1(&self, doc_id: &Uuid) -> EncodedCollab {
     let doc = self
       .event_test
-      .appflowy_core
+      .hypertask_core
       .document_manager
       .editable_document(doc_id)
       .await

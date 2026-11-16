@@ -20,7 +20,7 @@ const LOG_TARGET_PATH: &str = "log.target";
 const RESERVED_FIELDS: [&str; 3] = [LEVEL, TIME, MESSAGE];
 const IGNORE_FIELDS: [&str; 2] = [LOG_MODULE_PATH, LOG_TARGET_PATH];
 
-pub struct FlowyFormattingLayer<'a, W: MakeWriter<'static> + 'static> {
+pub struct HyperFormattingLayer<'a, W: MakeWriter<'static> + 'static> {
   make_writer: W,
   with_target: bool,
   #[allow(clippy::type_complexity)]
@@ -28,7 +28,7 @@ pub struct FlowyFormattingLayer<'a, W: MakeWriter<'static> + 'static> {
   phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a, W> FlowyFormattingLayer<'a, W>
+impl<'a, W> HyperFormattingLayer<'a, W>
 where
   W: for<'writer> MakeWriter<'writer> + 'static,
 {
@@ -172,7 +172,7 @@ fn format_event_message<S: Subscriber + for<'a> tracing_subscriber::registry::Lo
   message
 }
 
-impl<S, W> Layer<S> for FlowyFormattingLayer<'static, W>
+impl<S, W> Layer<S> for HyperFormattingLayer<'static, W>
 where
   S: Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a>,
   W: for<'writer> MakeWriter<'writer> + 'static,
@@ -222,7 +222,7 @@ where
               map_serializer.serialize_entry(key, value)?;
             } else {
               tracing::debug!(
-                "{} is a reserved field in the flowy log format. Skipping it.",
+                "{} is a reserved field in the hyper log format. Skipping it.",
                 key
               );
             }

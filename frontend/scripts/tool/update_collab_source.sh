@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Paths to your Cargo.toml files
-REPO_PATH="./AppFlowy-Collab"
+REPO_PATH="./Hypertask-Collab"
 CARGO_TOML_1="./rust-lib/Cargo.toml"
-REPO_RELATIVE_PATH_1="../AppFlowy-Collab"
+REPO_RELATIVE_PATH_1="../Hypertask-Collab"
 
 # Function to switch dependencies in a given Cargo.toml
 switch_deps() {
@@ -27,9 +27,9 @@ switch_deps() {
     fi
 }
 
-# Check if AppFlowy-Collab directory exists
+# Check if Hypertask-Collab directory exists
 if [ ! -d "$REPO_PATH" ]; then
-    echo "AppFlowy-Collab directory not found. Cloning the repository..."
+    echo "Hypertask-Collab directory not found. Cloning the repository..."
     git clone https://github.com/AppFlowy-IO/AppFlowy-Collab.git "$REPO_PATH"
 fi
 

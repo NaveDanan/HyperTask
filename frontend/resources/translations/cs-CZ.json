@@ -37,7 +37,7 @@
     "loginStartWithAnonymous": "Začít anonymní sezení",
     "continueAnonymousUser": "Pokra",
     "continueWithLocalModel": "Pokračovat s lokálním modelem",
-    "switchToAppFlowyCloud": "HyperTask Cloud",
+    "switchToHypertaskCloud": "HyperTask Cloud",
     "anonymousMode": "Anonymní režim",
     "buttonText": "Přihlásit se",
     "signingInText": "Přihlašování...",
@@ -107,7 +107,7 @@
     "verifying": "Ověřování...",
     "continueWithPassword": "Pokračovat s heslem",
     "youAreInLocalMode": "Jste v lokálním režimu.",
-    "loginToAppFlowyCloud": "Přihlášení do HyperTask Cloud",
+    "loginToHypertaskCloud": "Přihlášení do HyperTask Cloud",
     "LogInWithGoogle": "Přihlásit přes Google",
     "LogInWithGithub": "Přihlásit přes GitHub",
     "LogInWithDiscord": "Přihlásit přes Discord"
@@ -166,7 +166,7 @@
     "exportAsTab": "Exportovat jako",
     "publishTab": "Zveřejnit",
     "shareTab": "Sdílet",
-    "publishOnAppFlowy": "Zveřejnit na HyperTask",
+    "publishOnHypertask": "Zveřejnit na HyperTask",
     "shareTabTitle": "Pozvat ke spolupráci",
     "shareTabDescription": "Pro snadnou spolupráci s kýmkoli",
     "copyLinkSuccess": "Odkaz zkopírován do schránky",
@@ -451,7 +451,7 @@
   "notifications": {
     "export": {
       "markdown": "Poznámka exportována do Markdownu",
-      "path": "Dokumenty/flowy"
+      "path": "Dokumenty/hyper"
     }
   },
   "contactsPage": {
@@ -675,7 +675,7 @@
       "enableSync": "Zapnout synchronizaci",
       "enableEncrypt": "Šifrovat data",
       "cloudURL": "URL adresa serveru",
-      "cloudAppFlowy": "@:appName Cloud Beta",
+      "cloudHypertask": "@:appName Cloud Beta",
       "enableEncryptPrompt": "Zapněte šifrování a zabezpečte svá ",
       "inputEncryptPrompt": "Vložte prosím Váš šifrovací klíč k",
       "clickToCopySecret": "Kliknutím zkopírujete šifrovací klíč",
@@ -725,7 +725,7 @@
         "loading": "Prosím počkejte dokud nedokončíme kontrolu a nahrávání vašeho motivu vzhledu...",
         "uploadSuccess": "Váš motiv vzhledu byl úspěšně nahrán",
         "deletionFailure": "Nepodařilo se smazat motiv vzhledu. Zkuste ho smazat ručně.",
-        "filePickerDialogTitle": "Vyberte soubor typu .flowy_plugin",
+        "filePickerDialogTitle": "Vyberte soubor typu .hyper_plugin",
         "urlUploadFailure": "Nepodařilo se otevřít URL adresu: {}",
         "failure": "Nahrané téma vzhledu má neplatný formát."
       },

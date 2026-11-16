@@ -123,7 +123,7 @@
     "exportAsTab": "Exportieren als",
     "publishTab": "Veröffentlichen",
     "shareTab": "Teilen",
-    "publishOnAppFlowy": "Auf HyperTask veröffentlichen",
+    "publishOnHypertask": "Auf HyperTask veröffentlichen",
     "shareTabTitle": "Zum Mitmachen einladen",
     "shareTabDescription": "Für eine einfache Zusammenarbeit mit allen",
     "copyLinkSuccess": "Link in die Zwischenablage kopiert",
@@ -357,7 +357,7 @@
   "notifications": {
     "export": {
       "markdown": "Notiz nach Markdown exportiert",
-      "path": "Dokumente/flowy"
+      "path": "Dokumente/hyper"
     }
   },
   "contactsPage": {
@@ -793,7 +793,7 @@
         "llmModel": "Sprachmodell",
         "llmModelType": "Sprachmodelltyp",
         "downloadLLMPrompt": "Herunterladen {}",
-        "downloadAppFlowyOfflineAI": "Durch das Herunterladen des KI-Offlinepakets kann KI auf deinem Gerät ausgeführt werden. Möchtest du fortfahren?",
+        "downloadHypertaskOfflineAI": "Durch das Herunterladen des KI-Offlinepakets kann KI auf deinem Gerät ausgeführt werden. Möchtest du fortfahren?",
         "downloadLLMPromptDetail": "Das Herunterladen des lokalen Modells {} beansprucht bis zu {} Speicherplatz. Möchtest du fortfahren?",
         "downloadBigFilePrompt": "Der Download kann etwa 10 Minuten dauern",
         "downloadAIModelButton": "KI-Modell herunterladen",
@@ -1088,9 +1088,9 @@
       "cloudServerType": "Cloud Server",
       "cloudServerTypeTip": "Bitte beachte, dass der aktuelle Benutzer ausgeloggt wird beim wechsel des Cloud-Servers",
       "cloudLocal": "Lokal",
-      "cloudAppFlowy": "@:appName Cloud Beta",
-      "cloudAppFlowySelfHost": "@:appName Cloud Self-hosted",
-      "appFlowyCloudUrlCanNotBeEmpty": "Die Cloud-URL darf nicht leer sein",
+      "cloudHypertask": "@:appName Cloud Beta",
+      "cloudHypertaskSelfHost": "@:appName Cloud Self-hosted",
+      "hypertaskCloudUrlCanNotBeEmpty": "Die Cloud-URL darf nicht leer sein",
       "clickToCopy": "Klicken, um zu kopieren",
       "selfHostStart": "Falls du keinen Server hast, konsultiere bitte",
       "selfHostContent": "Dokument",
@@ -1113,9 +1113,9 @@
       "historicalUserListTooltip": "Diese Liste zeigt deine anonymen Accounts. Du kannst einen Account anklicken, um mehr Informationen zu sehen.\nAnonyme Accounts werden über den 'Erste Schritte' Button erstellt.",
       "openHistoricalUser": "Klicken, um einen anonymen Account zu öffnen",
       "customPathPrompt": "Den @:appName Daten-Ordner in einem mit der Cloud synchronisierten Ordner (z.B. Google Drive) zu speichern, könnte Risiken bergen. Falls die Datenbank innerhalb dieses Ordners gleichzeitig von mehreren Orten zugegriffen oder verändert wird könnte dies zu Synchronisationskonflikten und potentiellen Daten-Beschädigungen führen",
-      "importAppFlowyData": "Daten von einem externen @:appName Ordner importieren.",
-      "importingAppFlowyDataTip": "Der Datenimport läuft. Bitte die App nicht schließen oder in den Hintergrund setzten",
-      "importAppFlowyDataDescription": "Daten von einem externen @:appName Ordner kopieren und in den aktuellen @:appName Datenordner importieren.",
+      "importHypertaskData": "Daten von einem externen @:appName Ordner importieren.",
+      "importingHypertaskDataTip": "Der Datenimport läuft. Bitte die App nicht schließen oder in den Hintergrund setzten",
+      "importHypertaskDataDescription": "Daten von einem externen @:appName Ordner kopieren und in den aktuellen @:appName Datenordner importieren.",
       "importSuccess": "Der @:appName Dateienordner wurde erfolgreich importiert",
       "importFailed": "Der @:appName Dateienordner-Import ist fehlgeschlagen",
       "importGuide": "Für weitere Details, bitte das verlinkte Dokument prüfen"
@@ -1198,7 +1198,7 @@
         "opacityEmptyError": "Transparenz darf nicht leer sein",
         "opacityRangeError": "Transparenz ist ein Wert zwischen 1 und 100",
         "app": "App",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "Verwenden"
       },
       "layoutDirection": {
@@ -1222,7 +1222,7 @@
         "loading": "Bitte warte einen Moment . . .\nWir validieren gerade dein Theme und laden es hoch.",
         "uploadSuccess": "Das Theme wurde erfolgreich hochgeladen",
         "deletionFailure": "Das Theme konnte nicht gelöscht werden. Versuche, es manuell zu löschen.",
-        "filePickerDialogTitle": "Wähle eine .flowy_plugin-Datei",
+        "filePickerDialogTitle": "Wähle eine .hyper_plugin-Datei",
         "urlUploadFailure": "URL konnte nicht geöffnet werden: {}",
         "failure": "Das hochgeladene Theme hat ein ungültiges Format."
       },
@@ -1275,7 +1275,7 @@
         "memberLimitExceeded": "Du hast die maximal zulässige Mitgliederzahl für dein Benutzerkonto erreicht. Benötigst du weitere Mitglieder, um deine Arbeit fortsetzen zu können, erstelle auf Github bitte eine entsprechende Anfrage.",
         "memberLimitExceededUpgrade": "upgrade",
         "memberLimitExceededPro": "Mitgliederlimit erreicht. Wenn du mehr Mitglieder benötigst, kontaktiere",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "Mitglied konnte nicht hinzugefügt werden!",
         "addMemberSuccess": "Mitglied erfolgreich hinzugefügt",
         "removeMember": "Mitglied entfernen",
@@ -1761,7 +1761,7 @@
       "smartEditCouldNotFetchResult": "Das Ergebnis konnte nicht von AI abgerufen werden",
       "smartEditCouldNotFetchKey": "Der AI-Schlüssel konnte nicht abgerufen werden",
       "smartEditDisabled": "AI in den Einstellungen verbinden",
-      "appflowyAIEditDisabled": "Melde dich an, um KI-Funktionen zu aktivieren",
+      "hypertaskAIEditDisabled": "Melde dich an, um KI-Funktionen zu aktivieren",
       "discardResponse": "Möchtest du die KI-Antworten verwerfen?",
       "createInlineMathEquation": "Formel erstellen",
       "fonts": "Schriftarten",
@@ -2655,7 +2655,7 @@
     "publishFailed": "Veröffentlichung fehlgeschlagen",
     "unpublishFailed": "Die Veröffentlichung konnte nicht rückgängig gemacht werden.",
     "noAccessToVisit": "Kein Zugriff auf diese Seite...",
-    "createWithAppFlowy": "Erstelle eine Website mit HyperTask",
+    "createWithHypertask": "Erstelle eine Website mit HyperTask",
     "fastWithAI": "Schnell und einfach mit KI.",
     "tryItNow": "Probiere es jetzt",
     "onlyGridViewCanBePublished": "Nur die Datentabellenansicht kann veröffentlicht werden",
@@ -2693,7 +2693,7 @@
     "continueWithDiscord": "Weiter mit Discord",
     "continueWithApple": "Weiter mit Apple ",
     "moreOptions": "Weitere Optionen",
-    "signInAgreement": "Wenn du oben auf \"Weiter\" klickst, bestätigst du, dass\ndu folgende Dokumente gelesen, verstanden und akzeptiert hast:\nAppFlowys",
+    "signInAgreement": "Wenn du oben auf \"Weiter\" klickst, bestätigst du, dass\ndu folgende Dokumente gelesen, verstanden und akzeptiert hast:\nHypertasks",
     "and": "und",
     "termOfUse": "Bedingungen",
     "privacyPolicy": "Datenschutzrichtlinie",

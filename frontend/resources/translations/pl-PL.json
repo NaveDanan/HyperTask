@@ -225,7 +225,7 @@
   "notifications": {
     "export": {
       "markdown": "Wyeksportowano notatkę do Markdown",
-      "path": "Dokumenty/flowy"
+      "path": "Dokumenty/hyper"
     }
   },
   "contactsPage": {
@@ -382,7 +382,7 @@
         "loading": "Poczekaj, aż zweryfikujemy i prześlemy Twój motyw...",
         "uploadSuccess": "Twój motyw został przesłany pomyślnie",
         "deletionFailure": "Nie udało się usunąć motywu. Spróbuj usunąć go ręcznie.",
-        "filePickerDialogTitle": "Wybierz plik .flowy_plugin",
+        "filePickerDialogTitle": "Wybierz plik .hyper_plugin",
         "urlUploadFailure": "Nie udało się otworzyć adresu URL: {}",
         "failure": "Przesłany motyw miał nieprawidłowy format."
       },

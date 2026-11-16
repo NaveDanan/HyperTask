@@ -26,14 +26,14 @@ frontend/.vscode/settings.json
 
 # Commit the highest level pubspec.lock, but ignore the others
 pubspec.lock
-!frontend/appflowy_flutter/pubspec.lock
+!frontend/hypertask_flutter/pubspec.lock
 
 # ignore tool used for commit linting
 .githooks/gitlint
 .githooks/gitlint.exe
 .fvm/
 
-**/AppFlowy-Collab/
+**/Hypertask-Collab/
 
 # ignore generated assets
 frontend/package
@@ -43,4 +43,4 @@ frontend/*.deb
 
 **/.cargo/**
 # Keep the Electron application dependency lockfile.
-!frontend/appflowy_electron/package-lock.json
+!frontend/hypertask_electron/package-lock.json

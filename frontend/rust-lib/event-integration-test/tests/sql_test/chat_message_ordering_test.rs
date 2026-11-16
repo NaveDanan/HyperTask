@@ -1,7 +1,7 @@
 use event_integration_test::user_event::use_localhost_af_cloud;
 use event_integration_test::EventIntegrationTest;
-use flowy_ai_pub::cloud::MessageCursor;
-use flowy_ai_pub::persistence::{select_chat_messages, upsert_chat_messages, ChatMessageTable};
+use hyper_ai_pub::cloud::MessageCursor;
+use hyper_ai_pub::persistence::{select_chat_messages, upsert_chat_messages, ChatMessageTable};
 use uuid::Uuid;
 
 /// This test creates a set of messages with sequential timestamps and IDs

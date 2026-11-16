@@ -233,8 +233,8 @@
 ### Mobile
 #### New Features
 - Person, a new database property, lets you assign a row to one or more collaborators
-- iOS Share to AppFlowy: quickly save a web page with optional notes to a target AppFlowy page or database
-- Android Share to AppFlowy: quickly save a web page with optional notes to a target AppFlowy page or database
+- iOS Share to Hypertask: quickly save a web page with optional notes to a target Hypertask page or database
+- Android Share to Hypertask: quickly save a web page with optional notes to a target Hypertask page or database
 - A new Android widget: Quick Page Access
 
 ## Version 0.9.9 – 11/09/2025
@@ -247,7 +247,7 @@
 - Workspace user profile: customize your avatar, about me, and profile card banner
 - Two new Android widgets: Recent Pages and Favorites
 - A new iOS widget: Quick Page Access
-- iOS Share to AppFlowy: quickly save browser page links with optional notes to a target AppFlowy page
+- iOS Share to Hypertask: quickly save browser page links with optional notes to a target Hypertask page
 
 ## Version 0.9.8 – 28/08/2025
 ### Desktop
@@ -270,8 +270,8 @@
 - Mention or assign persons in documents via '@' or '/'
 - Mentioned persons get notified about the mention via email
 - More colors are available for database Select options and page covers
-- Back up your AppFlowy workspace: Export your workspace as a ZIP file and import it back at any time
-- GPT-5 is now available in AppFlowy
+- Back up your Hypertask workspace: Export your workspace as a ZIP file and import it back at any time
+- GPT-5 is now available in Hypertask
 
 ### Mobile
 #### New Features
@@ -319,7 +319,7 @@ Bug Fixes
 ## Version 0.9.3 - 28/05/2025
 ### Desktop
 #### New Features
-- Meet AppFlowy Workspace AI Search: Quickly find pages by searching titles, keywords, or asking natural-language questions
+- Meet Hypertask Workspace AI Search: Quickly find pages by searching titles, keywords, or asking natural-language questions
 - AI Overviews: Ask natural questions and receive instant AI-generated summaries with source links, inspired by Google's AI Overviews
 - Revamped Search Panel: A cleaner, smarter interface to help you search faster and more effectively
 - Custom Prompts: Load a database page as the source for your own custom AI prompts
@@ -331,7 +331,7 @@ Bug Fixes
 - Aligned checkbox icon with the first line of text
 ### Mobile
 #### New Features
-- Meet AppFlowy Workspace AI Search: Quickly find pages by searching titles, keywords, or asking natural-language questions
+- Meet Hypertask Workspace AI Search: Quickly find pages by searching titles, keywords, or asking natural-language questions
 - AI Overviews: Ask natural questions and receive instant AI-generated summaries with source links, inspired by Google's AI Overviews
 - Revamped Search Tab: A redesigned interface that helps you find what you need more efficiently
 #### Bug Fixes
@@ -342,7 +342,7 @@ Bug Fixes
 #### New Features
 - Supported AI Overview in Search to answer user queries based on their entire workspace
 - Revamped the Search panel in the desktop app
-- Enabled loading custom prompts from an AppFlowy database page
+- Enabled loading custom prompts from an Hypertask database page
 #### Bug Fixes
 - Improved inserting emojis using the colon (:)
 - Supported automatically filling the link name with the URL if the name is left empty
@@ -353,7 +353,7 @@ Bug Fixes
 ## Version 0.9.1 - 01/05/2025
 ### Desktop
 #### New Features
-- Added AppFlowy Prompt Library to AI Chat and Document's Ask AI
+- Added Hypertask Prompt Library to AI Chat and Document's Ask AI
 - Revamped the desktop in-app notification center
 - Supported login with password, as well as forgot and change password options
 - Supported copying link to invite members
@@ -375,7 +375,7 @@ Bug Fixes
 ## Version 0.9.0 - 30/04/2025
 ### Desktop
 #### New Features
-- Added AppFlowy Prompt Library to AI Chat and Document's Ask AI
+- Added Hypertask Prompt Library to AI Chat and Document's Ask AI
 - Revamped the desktop in-app notification center
 - Supported login with password, as well as forgot and change password options
 - Supported copying link to invite members
@@ -514,7 +514,7 @@ Bug Fixes
 
 ## Version 0.7.9 - 30/12/2024
 ### New Features
-- Meet AppFlowy Web (Lite): Use AppFlowy directly in your browser.
+- Meet Hypertask Web (Lite): Use Hypertask directly in your browser.
   - Create beautiful documents with 22 content types and markdown support
   - Use Quick Note to save anything you want to remember—like meeting notes, a grocery list, or to-dos
   - Invite members to your workspace for seamless collaboration
@@ -546,7 +546,7 @@ Bug Fixes
    - Adjust to page width
 - Enjoy a new UI/UX for a seamless experience
 - Revamped mention page interactions in AI Chat
-- Improved AppFlowy AI service
+- Improved Hypertask AI service
 
 ### Bug Fixes
 - Fixed an error when opening files in the database in local mode
@@ -809,7 +809,7 @@ Bug Fixes
 ### Bug Fixes
 - Fixed the database synchronization indicator issue
 - Resolved the issue with opening the mentioned page on mobile
-- Cleared the collaboration status when the user exits AppFlowy
+- Cleared the collaboration status when the user exits Hypertask
 
 ## Version 0.5.4 - 04/08/2024
 ### New Features
@@ -833,7 +833,7 @@ Bug Fixes
 ### Bug Fixes
 - Rectified the issue of incomplete row data in Grids when adding new rows with active filters
 - Enhanced the logic governing the filtering of number and select/multi-select fields for improved accuracy
-- Implemented UI refinements on both Desktop and Mobile platforms, enriching the overall user experience of AppFlowy
+- Implemented UI refinements on both Desktop and Mobile platforms, enriching the overall user experience of Hypertask
 
 ## Version 0.5.2 - 03/13/2024
 ### Bug Fixes
@@ -912,15 +912,15 @@ Bug Fixes
 - Fixed file name too long issue
 
 ## Version 0.4.2 - 01/15/2024
-AppFlowy for Android is available to download on GitHub.
-If you’ve been using our desktop app, it’s important to read [this guide](https://docs.appflowy.io/docs/guides/sync-desktop-and-mobile) before logging into the mobile app.
+Hypertask for Android is available to download on GitHub.
+If you’ve been using our desktop app, it’s important to read [this guide](https://docs.hypertask.io/docs/guides/sync-desktop-and-mobile) before logging into the mobile app.
 ### New Features
 - Enhanced RTL (Right-to-Left) support for mobile platforms.
 - Optimized selection gesture system on mobile.
 - Optimized the mobile toolbar menu.
 - Improved reference menu (‘@’ menu).
 - Updated privacy policy.
-- Improved the data import process for AppFlowy by implementing a progress indicator and compressing the data to enhance efficiency.
+- Improved the data import process for Hypertask by implementing a progress indicator and compressing the data to enhance efficiency.
 - Enhanced the utilization of local disk space to optimize storage consumption.
 ### Bug Fixes
 - Fixed sign-in cancellation issue on mobile.
@@ -929,12 +929,12 @@ If you’ve been using our desktop app, it’s important to read [this guide](ht
 
 ## Version 0.4.1 - 01/03/2024
 ### Bug fixes
-- Fix import AppFlowy data folder
+- Fix import Hypertask data folder
 
 ## Version 0.4.0 - 12/30/2023
-1. Added capability to import data from an AppFlowy data folder. For detailed information, please see [AppFlowy Data Storage Documentation](https://docs.appflowy.io/docs/appflowy/product/data-storage).
+1. Added capability to import data from an Hypertask data folder. For detailed information, please see [Hypertask Data Storage Documentation](https://docs.hypertask.io/docs/hypertask/product/data-storage).
 2. Enhanced user interface and fixed various bugs.
-3. Improved the efficiency of data synchronization in AppFlowy Cloud
+3. Improved the efficiency of data synchronization in Hypertask Cloud
 
 ## Version 0.3.9.1 - 12/07/2023
 
@@ -1006,7 +1006,7 @@ If you’ve been using our desktop app, it’s important to read [this guide](ht
 
 ### New Features
 - Added support for browsing and inserting images from Unsplash.
-- Revamp and unify the emoji picker throughout AppFlowy.
+- Revamp and unify the emoji picker throughout Hypertask.
 
 ### Bug fixes
 - Improve layout of the settings page.
@@ -1121,7 +1121,7 @@ If you’ve been using our desktop app, it’s important to read [this guide](ht
 
 ### New Features
 
-<img width="1147" src="https://github.com/AppFlowy-IO/AppFlowy/assets/11863087/ac464740-c685-4a85-ae99-1074c1c607e5">
+<img width="1147" src="https://github.com/Hypertask-IO/Hypertask/assets/11863087/ac464740-c685-4a85-ae99-1074c1c607e5">
 
 - Open page in new tab
 - Create toggle lists to keep things tidy in your pages
@@ -1231,11 +1231,11 @@ The data format of this version is not compatible with previous versions. Theref
 
 #### Export files in v0.1.6
 
-https://github.com/AppFlowy-IO/AppFlowy/assets/11863087/0c89bf2b-cd97-4a7b-b627-59df8d2967d9
+https://github.com/Hypertask-IO/Hypertask/assets/11863087/0c89bf2b-cd97-4a7b-b627-59df8d2967d9
 
 #### Import files in v0.2.0
 
-https://github.com/AppFlowy-IO/AppFlowy/assets/11863087/7b392f35-4972-497a-8a7f-f38efced32e2
+https://github.com/Hypertask-IO/Hypertask/assets/11863087/7b392f35-4972-497a-8a7f-f38efced32e2
 
 ## Version 0.1.5 - 11/05/2023
 
@@ -1248,7 +1248,7 @@ https://github.com/AppFlowy-IO/AppFlowy/assets/11863087/7b392f35-4972-497a-8a7f-
 
 ### New features
 
-- Use AppFlowy’s calendar views to plan and manage tasks and deadlines.
+- Use Hypertask’s calendar views to plan and manage tasks and deadlines.
 - Writing can be improved with the help of OpenAI.
 
 ## Version 0.1.3 - 24/04/2023
@@ -1274,7 +1274,7 @@ https://github.com/AppFlowy-IO/AppFlowy/assets/11863087/7b392f35-4972-497a-8a7f-
 
 ### New features
 
-- AppFlowy brings the power of OpenAI into your AppFlowy pages. Ask AI to write anything for you in AppFlowy.
+- Hypertask brings the power of OpenAI into your Hypertask pages. Ask AI to write anything for you in Hypertask.
 - Support adding a cover image to your page, making your pages beautiful.
 - More shortcuts become available. Click on '?' at the bottom right to access our shortcut guide.
 
@@ -1358,7 +1358,7 @@ https://github.com/AppFlowy-IO/AppFlowy/assets/11863087/7b392f35-4972-497a-8a7f-
 
 ### New features
 
-- Optimize appflowy_editor dark mode style
+- Optimize hypertask_editor dark mode style
 
 ### Bug Fixes
 
@@ -1368,7 +1368,7 @@ https://github.com/AppFlowy-IO/AppFlowy/assets/11863087/7b392f35-4972-497a-8a7f-
 
 ### New features
 
-- Integrate **appflowy_editor**
+- Integrate **hypertask_editor**
 
 ## Version 0.0.5.3 - 09/26/2022
 
@@ -1394,7 +1394,7 @@ https://github.com/AppFlowy-IO/AppFlowy/assets/11863087/7b392f35-4972-497a-8a7f-
 
 ### Bug Fixes
 
-- Fix cannot open AppFlowy error
+- Fix cannot open Hypertask error
 - Fix delete the Kanban board's row error
 
 ## Version 0.0.5.1 - 09/14/2022

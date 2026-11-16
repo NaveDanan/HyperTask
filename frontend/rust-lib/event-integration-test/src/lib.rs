@@ -5,11 +5,11 @@ use collab::preclude::Collab;
 use collab_document::blocks::DocumentData;
 use collab_document::document::Document;
 use collab_entity::CollabType;
-use flowy_core::config::AppFlowyCoreConfig;
-use flowy_core::AppFlowyCore;
-use flowy_notification::register_notification_sender;
-use flowy_user::entities::AuthTypePB;
-use flowy_user::errors::FlowyError;
+use hyper_core::config::HypertaskCoreConfig;
+use hyper_core::HypertaskCore;
+use hyper_notification::register_notification_sender;
+use hyper_user::entities::AuthTypePB;
+use hyper_user::errors::HyperError;
 use lib_dispatch::runtime::AFPluginRuntime;
 use nanoid::nanoid;
 use semver::Version;
@@ -35,7 +35,7 @@ pub mod user_event;
 #[derive(Clone)]
 pub struct EventIntegrationTest {
   pub authenticator: Arc<AtomicU8>,
-  pub appflowy_core: AppFlowyCore,
+  pub hypertask_core: HypertaskCore,
   #[allow(dead_code)]
   cleaner: Arc<Cleaner>,
   pub notification_sender: TestNotificationSender,
@@ -55,7 +55,7 @@ impl EventIntegrationTest {
     Self::new_with_user_data_path(temp_dir, name.to_string()).await
   }
 
-  pub async fn new_with_config(config: AppFlowyCoreConfig) -> Self {
+  pub async fn new_with_config(config: HypertaskCoreConfig) -> Self {
     let clean_path = config.storage_path.clone();
     let inner = init_core(config).await;
     let notification_sender = TestNotificationSender::new();
@@ -65,7 +65,7 @@ impl EventIntegrationTest {
     // In case of dropping the runtime that runs the core, we need to forget the dispatcher
     std::mem::forget(inner.dispatcher());
     Self {
-      appflowy_core: inner,
+      hypertask_core: inner,
       authenticator,
       notification_sender,
       cleaner: Arc::new(Cleaner::new(PathBuf::from(clean_path))),
@@ -77,7 +77,7 @@ impl EventIntegrationTest {
   pub async fn new_with_user_data_path(path_buf: PathBuf, name: String) -> Self {
     let path = path_buf.to_str().unwrap().to_string();
     let device_id = uuid::Uuid::new_v4().to_string();
-    let mut config = AppFlowyCoreConfig::new(
+    let mut config = HypertaskCoreConfig::new(
       Version::new(0, 7, 0),
       path.clone(),
       path,
@@ -88,7 +88,7 @@ impl EventIntegrationTest {
     .log_filter(
       "trace",
       vec![
-        "flowy_test".to_string(),
+        "hyper_test".to_string(),
         "tokio".to_string(),
         // "lib_dispatch".to_string(),
       ],
@@ -105,16 +105,16 @@ impl EventIntegrationTest {
   }
 
   pub fn instance_name(&self) -> String {
-    self.appflowy_core.config.name.clone()
+    self.hypertask_core.config.name.clone()
   }
 
   pub fn user_data_path(&self) -> String {
-    self.appflowy_core.config.application_path.clone()
+    self.hypertask_core.config.application_path.clone()
   }
 
   pub async fn wait_ws_connected(&self) {
     if self
-      .appflowy_core
+      .hypertask_core
       .server_provider
       .get_server()
       .unwrap()
@@ -125,7 +125,7 @@ impl EventIntegrationTest {
     }
 
     let mut ws_state = self
-      .appflowy_core
+      .hypertask_core
       .server_provider
       .get_server()
       .unwrap()
@@ -151,7 +151,7 @@ impl EventIntegrationTest {
     &self,
     oid: &str,
     collab_type: CollabType,
-  ) -> Result<Vec<u8>, FlowyError> {
+  ) -> Result<Vec<u8>, HyperError> {
     let server = self.server_provider.get_server()?;
 
     let workspace_id = self.get_current_workspace().await.id;
@@ -189,17 +189,17 @@ pub fn document_from_document_doc_state(doc_id: &str, doc_state: Vec<u8>) -> Doc
   Document::open(collab).unwrap()
 }
 
-async fn init_core(config: AppFlowyCoreConfig) -> AppFlowyCore {
+async fn init_core(config: HypertaskCoreConfig) -> HypertaskCore {
   let runtime = Arc::new(AFPluginRuntime::new().unwrap());
   let cloned_runtime = runtime.clone();
-  AppFlowyCore::new(config, cloned_runtime, None).await
+  HypertaskCore::new(config, cloned_runtime, None).await
 }
 
 impl std::ops::Deref for EventIntegrationTest {
-  type Target = AppFlowyCore;
+  type Target = HypertaskCore;
 
   fn deref(&self) -> &Self::Target {
-    &self.appflowy_core
+    &self.hypertask_core
   }
 }
 

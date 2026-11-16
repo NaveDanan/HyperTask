@@ -8,14 +8,14 @@ use collab_database::fields::select_type_option::{
 };
 use collab_database::fields::Field;
 use collab_database::rows::{Row, RowId};
-use flowy_database2::entities::*;
-use flowy_database2::event_map::DatabaseEvent;
-use flowy_database2::services::cell::CellBuilder;
-use flowy_database2::services::field::checklist_filter::ChecklistCellInsertChangeset;
-use flowy_database2::services::share::csv::CSVFormat;
-use flowy_folder::entities::*;
-use flowy_folder::event_map::FolderEvent;
-use flowy_user::errors::FlowyError;
+use hyper_database2::entities::*;
+use hyper_database2::event_map::DatabaseEvent;
+use hyper_database2::services::cell::CellBuilder;
+use hyper_database2::services::field::checklist_filter::ChecklistCellInsertChangeset;
+use hyper_database2::services::share::csv::CSVFormat;
+use hyper_folder::entities::*;
+use hyper_folder::event_map::FolderEvent;
+use hyper_user::errors::HyperError;
 
 use crate::event_builder::EventBuilder;
 use crate::EventIntegrationTest;
@@ -23,7 +23,7 @@ use crate::EventIntegrationTest;
 impl EventIntegrationTest {
   pub async fn get_database_export_data(&self, database_view_id: &str) -> String {
     self
-      .appflowy_core
+      .hypertask_core
       .database_manager
       .get_database_editor_with_view_id(database_view_id)
       .await
@@ -160,7 +160,7 @@ impl EventIntegrationTest {
       .await;
   }
 
-  pub async fn delete_field(&self, view_id: &str, field_id: &str) -> Option<FlowyError> {
+  pub async fn delete_field(&self, view_id: &str, field_id: &str) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::DeleteField)
       .payload(DeleteFieldPayloadPB {
@@ -175,7 +175,7 @@ impl EventIntegrationTest {
   pub async fn remove_calculate(
     &self,
     changeset: RemoveCalculationChangesetPB,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::RemoveCalculation)
       .payload(changeset)
@@ -198,7 +198,7 @@ impl EventIntegrationTest {
   pub async fn update_calculation(
     &self,
     changeset: UpdateCalculationChangesetPB,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateCalculation)
       .payload(changeset)
@@ -212,7 +212,7 @@ impl EventIntegrationTest {
     view_id: &str,
     field_id: &str,
     field_type: FieldType,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateFieldType)
       .payload(UpdateFieldTypePayloadPB {
@@ -226,7 +226,7 @@ impl EventIntegrationTest {
       .error()
   }
 
-  pub async fn duplicate_field(&self, view_id: &str, field_id: &str) -> Option<FlowyError> {
+  pub async fn duplicate_field(&self, view_id: &str, field_id: &str) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::DuplicateField)
       .payload(DuplicateFieldPayloadPB {
@@ -283,7 +283,7 @@ impl EventIntegrationTest {
       .parse_or_panic::<RowMetaPB>()
   }
 
-  pub async fn delete_row(&self, view_id: &str, row_id: &str) -> Option<FlowyError> {
+  pub async fn delete_row(&self, view_id: &str, row_id: &str) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::DeleteRows)
       .payload(RepeatedRowIdPB {
@@ -321,7 +321,7 @@ impl EventIntegrationTest {
       .parse_or_panic::<RowMetaPB>()
   }
 
-  pub async fn update_row_meta(&self, changeset: UpdateRowMetaChangesetPB) -> Option<FlowyError> {
+  pub async fn update_row_meta(&self, changeset: UpdateRowMetaChangesetPB) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateRowMeta)
       .payload(changeset)
@@ -330,7 +330,7 @@ impl EventIntegrationTest {
       .error()
   }
 
-  pub async fn duplicate_row(&self, view_id: &str, row_id: &str) -> Option<FlowyError> {
+  pub async fn duplicate_row(&self, view_id: &str, row_id: &str) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::DuplicateRow)
       .payload(DatabaseViewRowIdPB {
@@ -343,7 +343,7 @@ impl EventIntegrationTest {
       .error()
   }
 
-  pub async fn move_row(&self, view_id: &str, row_id: &str, to_row_id: &str) -> Option<FlowyError> {
+  pub async fn move_row(&self, view_id: &str, row_id: &str, to_row_id: &str) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::MoveRow)
       .payload(MoveRowPayloadPB {
@@ -356,7 +356,7 @@ impl EventIntegrationTest {
       .error()
   }
 
-  pub async fn update_cell(&self, changeset: CellChangesetPB) -> Option<FlowyError> {
+  pub async fn update_cell(&self, changeset: CellChangesetPB) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateCell)
       .payload(changeset)
@@ -365,7 +365,7 @@ impl EventIntegrationTest {
       .error()
   }
 
-  pub async fn update_date_cell(&self, changeset: DateCellChangesetPB) -> Option<FlowyError> {
+  pub async fn update_date_cell(&self, changeset: DateCellChangesetPB) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateDateCell)
       .payload(changeset)
@@ -420,7 +420,7 @@ impl EventIntegrationTest {
   pub async fn update_checklist_cell(
     &self,
     changeset: ChecklistCellDataChangesetPB,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateChecklistCell)
       .payload(changeset)
@@ -435,7 +435,7 @@ impl EventIntegrationTest {
     field_id: &str,
     row_id: &str,
     name: &str,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     let option = EventBuilder::new(self.clone())
       .event(DatabaseEvent::CreateSelectOption)
       .payload(CreateSelectOptionPayloadPB {
@@ -472,7 +472,7 @@ impl EventIntegrationTest {
       .items
   }
 
-  pub async fn move_group(&self, view_id: &str, from_id: &str, to_id: &str) -> Option<FlowyError> {
+  pub async fn move_group(&self, view_id: &str, from_id: &str, to_id: &str) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::MoveGroup)
       .payload(MoveGroupPayloadPB {
@@ -490,7 +490,7 @@ impl EventIntegrationTest {
     view_id: &str,
     field_id: &str,
     setting_content: Vec<u8>,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::SetGroupByField)
       .payload(GroupByFieldPayloadPB {
@@ -509,7 +509,7 @@ impl EventIntegrationTest {
     group_id: &str,
     name: Option<String>,
     visible: Option<bool>,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateGroup)
       .payload(UpdateGroupPB {
@@ -523,7 +523,7 @@ impl EventIntegrationTest {
       .error()
   }
 
-  pub async fn delete_group(&self, view_id: &str, group_id: &str) -> Option<FlowyError> {
+  pub async fn delete_group(&self, view_id: &str, group_id: &str) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::DeleteGroup)
       .payload(DeleteGroupPayloadPB {
@@ -535,7 +535,7 @@ impl EventIntegrationTest {
       .error()
   }
 
-  pub async fn update_setting(&self, changeset: DatabaseSettingChangesetPB) -> Option<FlowyError> {
+  pub async fn update_setting(&self, changeset: DatabaseSettingChangesetPB) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateDatabaseSetting)
       .payload(changeset)
@@ -559,7 +559,7 @@ impl EventIntegrationTest {
   pub async fn update_relation_cell(
     &self,
     changeset: RelationCellChangesetPB,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     EventBuilder::new(self.clone())
       .event(DatabaseEvent::UpdateRelationCell)
       .payload(changeset)

@@ -2,35 +2,35 @@
 members = [
   "lib-dispatch",
   "lib-log",
-  "flowy-core",
+  "hyper-core",
   "electron-core",
-  "flowy-user",
-  "flowy-user-pub",
+  "hyper-user",
+  "hyper-user-pub",
   "event-integration-test",
-  "flowy-sqlite",
-  "flowy-folder",
-  "flowy-folder-pub",
-  "flowy-notification",
-  "flowy-document",
-  "flowy-document-pub",
-  "flowy-error",
-  "flowy-database2",
-  "flowy-database-pub",
-  "flowy-server",
-  "flowy-server-pub",
-  "flowy-storage",
+  "hyper-sqlite",
+  "hyper-folder",
+  "hyper-folder-pub",
+  "hyper-notification",
+  "hyper-document",
+  "hyper-document-pub",
+  "hyper-error",
+  "hyper-database2",
+  "hyper-database-pub",
+  "hyper-server",
+  "hyper-server-pub",
+  "hyper-storage",
   "collab-integrate",
-  "flowy-date",
-  "flowy-search",
+  "hyper-date",
+  "hyper-search",
   "lib-infra",
-  "build-tool/flowy-ast",
-  "build-tool/flowy-codegen",
-  "build-tool/flowy-derive",
-  "flowy-search-pub",
-  "flowy-ai",
-  "flowy-ai-pub",
-  "flowy-storage-pub",
-  "flowy-sqlite-vec",
+  "build-tool/hyper-ast",
+  "build-tool/hyper-codegen",
+  "build-tool/hyper-derive",
+  "hyper-search-pub",
+  "hyper-ai",
+  "hyper-ai-pub",
+  "hyper-storage-pub",
+  "hyper-sqlite-vec",
 ]
 
 resolver = "2"
@@ -39,31 +39,31 @@ resolver = "2"
 lib-dispatch = { path = "lib-dispatch" }
 lib-log = { path = "lib-log" }
 lib-infra = { path = "lib-infra" }
-flowy-ast = { path = "build-tool/flowy-ast" }
-flowy-codegen = { path = "build-tool/flowy-codegen", features = ["proto_gen"] }
-flowy-derive = { path = "build-tool/flowy-derive" }
-flowy-core = { path = "flowy-core" }
-flowy-user = { path = "flowy-user" }
-flowy-user-pub = { path = "flowy-user-pub" }
-flowy-sqlite = { path = "flowy-sqlite" }
-flowy-folder = { path = "flowy-folder" }
-flowy-folder-pub = { path = "flowy-folder-pub" }
-flowy-notification = { path = "flowy-notification" }
-flowy-document = { path = "flowy-document" }
-flowy-document-pub = { path = "flowy-document-pub" }
-flowy-error = { path = "flowy-error" }
-flowy-database2 = { path = "flowy-database2" }
-flowy-database-pub = { path = "flowy-database-pub" }
-flowy-server = { path = "flowy-server" }
-flowy-server-pub = { path = "flowy-server-pub" }
-flowy-storage = { path = "flowy-storage" }
-flowy-storage-pub = { path = "flowy-storage-pub" }
-flowy-search = { path = "flowy-search" }
-flowy-search-pub = { path = "flowy-search-pub" }
+hyper-ast = { path = "build-tool/hyper-ast" }
+hyper-codegen = { path = "build-tool/hyper-codegen", features = ["proto_gen"] }
+hyper-derive = { path = "build-tool/hyper-derive" }
+hyper-core = { path = "hyper-core" }
+hyper-user = { path = "hyper-user" }
+hyper-user-pub = { path = "hyper-user-pub" }
+hyper-sqlite = { path = "hyper-sqlite" }
+hyper-folder = { path = "hyper-folder" }
+hyper-folder-pub = { path = "hyper-folder-pub" }
+hyper-notification = { path = "hyper-notification" }
+hyper-document = { path = "hyper-document" }
+hyper-document-pub = { path = "hyper-document-pub" }
+hyper-error = { path = "hyper-error" }
+hyper-database2 = { path = "hyper-database2" }
+hyper-database-pub = { path = "hyper-database-pub" }
+hyper-server = { path = "hyper-server" }
+hyper-server-pub = { path = "hyper-server-pub" }
+hyper-storage = { path = "hyper-storage" }
+hyper-storage-pub = { path = "hyper-storage-pub" }
+hyper-search = { path = "hyper-search" }
+hyper-search-pub = { path = "hyper-search-pub" }
 collab-integrate = { path = "collab-integrate" }
-flowy-date = { path = "flowy-date" }
-flowy-ai = { path = "flowy-ai" }
-flowy-ai-pub = { path = "flowy-ai-pub" }
+hyper-date = { path = "hyper-date" }
+hyper-ai = { path = "hyper-ai" }
+hyper-ai-pub = { path = "hyper-ai-pub" }
 anyhow = "1.0"
 arc-swap = "1.7"
 tracing = "0.1.40"
@@ -102,7 +102,7 @@ dashmap = "6.0.1"
 derive_builder = "0.20.2"
 tantivy = { version = "0.24.1" }
 num_enum = "0.7.3"
-flowy-sqlite-vec = { path = "flowy-sqlite-vec" }
+hyper-sqlite-vec = { path = "hyper-sqlite-vec" }
 
 # Please using the following command to update the revision id
 # Current directory: frontend

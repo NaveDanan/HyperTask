@@ -1,23 +1,23 @@
 # Jira integration (Server / Data Center)
 
-> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/appflowy_electron/docs/STATUS.md) for current Electron functionality.
+> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/hypertask_electron/docs/STATUS.md) for current Electron functionality.
 
-A local Jira dashboard inside AppFlowy: sync issues from a Jira project, view
+A local Jira dashboard inside Hypertask: sync issues from a Jira project, view
 progress, and create, edit and close issues. Code lives in
-`frontend/appflowy_flutter/lib/features/jira/`; tests in
-`frontend/appflowy_flutter/test/features/jira/`.
+`frontend/hypertask_flutter/lib/features/jira/`; tests in
+`frontend/hypertask_flutter/test/features/jira/`.
 
 ## Entry point
 
 ```dart
-import 'package:appflowy/features/jira/jira.dart';
+import 'package:hypertask/features/jira/jira.dart';
 
 JiraDashboardPage(user: userProfile) // UserProfilePB
 ```
 
 `JiraDashboardPage` is self-contained (it creates its own `JiraBloc`,
-repository and local store) and expects an `AppFlowyTheme` ancestor, as every
-AppFlowy page has. Optional `repository` and `databaseMapper` parameters are
+repository and local store) and expects an `HypertaskTheme` ancestor, as every
+Hypertask page has. Optional `repository` and `databaseMapper` parameters are
 for tests. The Windows sidebar opens the dashboard as a tab via LocalToolPlugin.
 
 ## Configuration
@@ -45,7 +45,7 @@ Open the dashboard and press **Connect to Jira** (or the settings icon).
 * A secret is bound to one server + project + auth mode + username. Changing
   any of these requires entering the token again; it is never carried over
   to another host.
-* The Windows sidebar supplies WindowsJiraCredentialStore, protecting each token with the current Windows account's DPAPI key and storing only ciphertext in device-local files. Tokens survive restart, remain scoped to the Jira server/project/login, and never enter AppFlowy sync. Other platforms use session-only credentials.
+* The Windows sidebar supplies WindowsJiraCredentialStore, protecting each token with the current Windows account's DPAPI key and storing only ciphertext in device-local files. Tokens survive restart, remain scoped to the Jira server/project/login, and never enter Hypertask sync. Other platforms use session-only credentials.
 
 
 ## Sync and cache
@@ -60,9 +60,9 @@ Open the dashboard and press **Connect to Jira** (or the settings icon).
   whole JQL result and reports issues that no longer match (they are dropped
   from the local cache only).
 * The cache (issues, JQL, last attempt, last success, last error) is stored in
-  shared preferences on this device under `appflowy.jira.<userId>.*`, scoped
-  to the AppFlowy user id and to the Jira server + project. It is never
-  synced to AppFlowy Cloud. A failed sync keeps the cached issues and shows
+  shared preferences on this device under `hypertask.jira.<userId>.*`, scoped
+  to the Hypertask user id and to the Jira server + project. It is never
+  synced to Hypertask Cloud. A failed sync keeps the cached issues and shows
   the error with the time of the last good sync.
 * Issues are keyed by their Jira key (`DEMO-42`); the numeric id is also
   stored. Keys can change if an issue is moved to another project; a full
@@ -108,10 +108,10 @@ category" if present) from the `statusCategory` Jira reports for each status,
 a stacked progress bar (done share), per-assignee done/total with progress,
 and counts per workflow status. Tiles, assignees and search filter the list.
 
-## AppFlowy database mirror (optional, one-way)
+## Hypertask database mirror (optional, one-way)
 
 With a database view id configured, **Update database** mirrors the cached
-issues into that existing Grid/Board (Jira → AppFlowy only):
+issues into that existing Grid/Board (Jira → Hypertask only):
 
 * Columns `Jira Key`, `Jira Status`, `Jira Status Category`, `Jira Type`,
   `Jira Assignee`, `Jira Priority`, `Jira Link`, `Jira Updated` are added as

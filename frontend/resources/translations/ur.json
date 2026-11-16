@@ -178,7 +178,7 @@
     "notifications": {
         "export": {
             "markdown": "مارک ڈاؤن کو نوٹ برآمد کریں",
-            "path": "دستخط/flowy"
+            "path": "دستخط/hyper"
         }
     },
     "contactsPage": {
@@ -283,7 +283,7 @@
                 "loading": "براہ کرم انتظار کریں جب ہم آپ کے تھیم کو تصدیق اور اپ لوڈ کرتے ہیں۔...",
                 "uploadSuccess": "آپ کا تھیم کامیابی کے ساتھ اپ لوڈ کر دیا گیا",
                 "deletionFailure": "تھیم حذف کرنے میں ناکام ہو گیا۔ اسے دستی طور پر حذف کرنے کی کوشش کریں۔",
-                "filePickerDialogTitle": ".flowy_plugin فائل منتخب کریں",
+                "filePickerDialogTitle": ".hyper_plugin فائل منتخب کریں",
                 "urlUploadFailure": "url کھولنے میں ناکام: {}"
             },
             "theme": "تھیم",

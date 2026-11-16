@@ -37,7 +37,7 @@
     "loginStartWithAnonymous": "Lancer avec une session anonyme",
     "continueAnonymousUser": "Continuer avec une session anonyme",
     "continueWithLocalModel": "Continuer avec le modèle local",
-    "switchToAppFlowyCloud": "HyperTask Cloud",
+    "switchToHypertaskCloud": "HyperTask Cloud",
     "anonymousMode": "Mode anonyme",
     "buttonText": "Se connecter",
     "signingInText": "Connexion en cours...",
@@ -106,7 +106,7 @@
     "passwordsDoNotMatch": "Le mot de passe et sa confirmation ne correspondent pas.",
     "verifying": "En cours de vérification",
     "youAreInLocalMode": "Vous êtes en mode local",
-    "loginToAppFlowyCloud": "Connexion au nuage d'HyperTask",
+    "loginToHypertaskCloud": "Connexion au nuage d'HyperTask",
     "anonymous": "Anonyme",
     "LogInWithGoogle": "Se connecter avec Google",
     "LogInWithGithub": "Se connecter avec Github",
@@ -168,7 +168,7 @@
     "exportAsTab": "Exporter en tant que",
     "publishTab": "Publier",
     "shareTab": "Partager",
-    "publishOnAppFlowy": "Publier sur HyperTask",
+    "publishOnHypertask": "Publier sur HyperTask",
     "shareTabTitle": "Inviter à collaborer",
     "shareTabDescription": "Pour faciliter la collaboration avec n'importe qui",
     "copyLinkSuccess": "Lien copié",
@@ -459,7 +459,7 @@
   "notifications": {
     "export": {
       "markdown": "Note exportée en Markdown",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -907,7 +907,7 @@
         "readOnlyField": "Ce champ est en lecture seule",
         "llmModelType": "Type de modèle de langue",
         "downloadLLMPrompt": "Télécharger {}",
-        "downloadAppFlowyOfflineAI": "Le téléchargement du package hors ligne AI permettra à AI de fonctionner sur votre appareil. Voulez-vous continuer ?",
+        "downloadHypertaskOfflineAI": "Le téléchargement du package hors ligne AI permettra à AI de fonctionner sur votre appareil. Voulez-vous continuer ?",
         "downloadLLMPromptDetail": "Le téléchargement du modèle local {} prendra jusqu'à {} d'espace de stockage. Voulez-vous continuer ?",
         "downloadBigFilePrompt": "Le téléchargement peut prendre environ 10 minutes.",
         "downloadAIModelButton": "Télécharger",
@@ -1190,9 +1190,9 @@
       "cloudServerType": "Serveur cloud",
       "cloudServerTypeTip": "Veuillez noter qu'il est possible que votre compte actuel soit déconnecté après avoir changé de serveur cloud.",
       "cloudLocal": "Local",
-      "cloudAppFlowy": "@:appName Cloud Bêta",
-      "cloudAppFlowySelfHost": "@:appName Cloud auto-hébergé",
-      "appFlowyCloudUrlCanNotBeEmpty": "L'URL cloud ne peut pas être vide",
+      "cloudHypertask": "@:appName Cloud Bêta",
+      "cloudHypertaskSelfHost": "@:appName Cloud auto-hébergé",
+      "hypertaskCloudUrlCanNotBeEmpty": "L'URL cloud ne peut pas être vide",
       "clickToCopy": "Cliquez pour copier",
       "selfHostStart": "Si vous n'avez pas de serveur, veuillez vous référer au",
       "selfHostContent": "document",
@@ -1216,9 +1216,9 @@
       "historicalUserListTooltip": "Cette liste affiche vos comptes anonymes. Vous pouvez cliquer sur un compte pour afficher ses détails. Les comptes anonymes sont créés en cliquant sur le bouton « Commencer »",
       "openHistoricalUser": "Cliquez pour ouvrir le compte anonyme",
       "customPathPrompt": "Le stockage du dossier de données @:appName dans un dossier synchronisé avec le cloud tel que Google Drive peut présenter des risques. Si la base de données de ce dossier est consultée ou modifiée à partir de plusieurs emplacements en même temps, cela peut entraîner des conflits de synchronisation et une corruption potentielle des données.",
-      "importAppFlowyData": "Importer des données à partir du dossier @:appName externe",
-      "importingAppFlowyDataTip": "L'importation des données est en cours. Veuillez ne pas fermer l'application",
-      "importAppFlowyDataDescription": "Copiez les données d'un dossier de données @:appName externe et importez-les dans le dossier de données @:appName actuel",
+      "importHypertaskData": "Importer des données à partir du dossier @:appName externe",
+      "importingHypertaskDataTip": "L'importation des données est en cours. Veuillez ne pas fermer l'application",
+      "importHypertaskDataDescription": "Copiez les données d'un dossier de données @:appName externe et importez-les dans le dossier de données @:appName actuel",
       "importSuccess": "Importation réussie du dossier de données @:appName",
       "importFailed": "L'importation du dossier de données @:appName a échoué",
       "importGuide": "Pour plus de détails, veuillez consulter le document référencé"
@@ -1302,7 +1302,7 @@
         "opacityEmptyError": "L'opacité ne peut pas être vide",
         "opacityRangeError": "L'opacité doit être comprise entre 1 et 100",
         "app": "Application",
-        "flowy": "Fluide",
+        "hyper": "Fluide",
         "apply": "Appliquer"
       },
       "layoutDirection": {
@@ -1326,7 +1326,7 @@
         "loading": "Veuillez patienter pendant que nous validons et téléchargeons votre thème...",
         "uploadSuccess": "Votre thème a été téléversé avec succès",
         "deletionFailure": "Échec de la suppression du thème. Essayez de le supprimer manuellement.",
-        "filePickerDialogTitle": "Choisissez un fichier .flowy_plugin",
+        "filePickerDialogTitle": "Choisissez un fichier .hyper_plugin",
         "urlUploadFailure": "Échec de l'ouverture de l'URL : {}",
         "failure": "Le thème qui a été téléchargé avait un format non valide."
       },
@@ -1379,7 +1379,7 @@
         "memberLimitExceeded": "Vous avez atteint la limite maximale de membres autorisée pour votre compte. Si vous souhaitez ajouter d'autres membres pour continuer votre travail, veuillez en faire la demande sur Github.",
         "memberLimitExceededUpgrade": "mise à niveau",
         "memberLimitExceededPro": "Limite de membres atteinte, si vous avez besoin de plus de membres, contactez ",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "Échec de l'ajout d'un membre",
         "addMemberSuccess": "Membre ajouté avec succès",
         "removeMember": "Supprimer un membre",
@@ -1911,7 +1911,7 @@
       "smartEditCouldNotFetchResult": "Impossible de récupérer le résultat d'AI",
       "smartEditCouldNotFetchKey": "Impossible de récupérer la clé AI",
       "smartEditDisabled": "Connectez AI dans les paramètres",
-      "appflowyAIEditDisabled": "Connectez-vous pour activer les fonctionnalités de l'IA",
+      "hypertaskAIEditDisabled": "Connectez-vous pour activer les fonctionnalités de l'IA",
       "discardResponse": "Voulez-vous supprimer les réponses de l'IA ?",
       "createInlineMathEquation": "Créer une équation",
       "fonts": "Polices",
@@ -2729,7 +2729,7 @@
       "accountLogin": "Connexion au compte",
       "updateNameError": "Échec de la mise à jour du nom",
       "updateIconError": "Échec de la mise à jour de l'icône",
-      "aboutAppFlowy": "À propos de @:appName",
+      "aboutHypertask": "À propos de @:appName",
       "deleteAccount": {
         "title": "Supprimer le compte",
         "subtitle": "Supprimez définitivement votre compte et toutes vos données.",
@@ -2912,7 +2912,7 @@
     "publishFailed": "Impossible de publier",
     "unpublishFailed": "Impossible de dépublier",
     "noAccessToVisit": "Pas d'accès à cette page...",
-    "createWithAppFlowy": "Créer un site Web avec HyperTask",
+    "createWithHypertask": "Créer un site Web avec HyperTask",
     "fastWithAI": "Rapide et facile avec l'IA.",
     "tryItNow": "Essayez maintenant",
     "onlyGridViewCanBePublished": "Seule la vue Grille peut être publiée",
@@ -2951,7 +2951,7 @@
     "continueWithApple": "Continuer avec Apple ",
     "moreOptions": "Plus d'options",
     "collapse": "Réduire",
-    "signInAgreement": "En cliquant sur « Continuer » ci-dessus, vous avez accepté les conditions d'utilisation d'AppFlowy.",
+    "signInAgreement": "En cliquant sur « Continuer » ci-dessus, vous avez accepté les conditions d'utilisation d'Hypertask.",
     "and": "et",
     "termOfUse": "Termes",
     "privacyPolicy": "politique de confidentialité",
@@ -3294,7 +3294,7 @@
     "cancelPlan": {
       "title": "Désolé de te voir partir",
       "success": "Votre abonnement a été annulé avec succès",
-      "description": "Nous sommes désolés de votre départ. Vos commentaires nous aideront à améliorer AppFlowy. Veuillez prendre quelques instants pour répondre à quelques questions.",
+      "description": "Nous sommes désolés de votre départ. Vos commentaires nous aideront à améliorer Hypertask. Veuillez prendre quelques instants pour répondre à quelques questions.",
       "commonOther": "Autre",
       "otherHint": "Écrivez votre réponse ici",
       "questionOne": {

@@ -16,16 +16,16 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 use event_integration_test::event_builder::EventBuilder;
 
 use event_integration_test::EventIntegrationTest;
-use flowy_folder::entities::{ImportItemPayloadPB, ImportPayloadPB, ImportTypePB, ViewLayoutPB};
-use flowy_user::entities::UpdateUserProfilePayloadPB;
-use flowy_user::errors::FlowyError;
-use flowy_user::event_map::UserEvent::*;
+use hyper_folder::entities::{ImportItemPayloadPB, ImportPayloadPB, ImportTypePB, ViewLayoutPB};
+use hyper_user::entities::UpdateUserProfilePayloadPB;
+use hyper_user::errors::HyperError;
+use hyper_user::event_map::UserEvent::*;
 
-pub struct FlowySupabaseTest {
+pub struct HyperSupabaseTest {
   event_test: EventIntegrationTest,
 }
 
-impl FlowySupabaseTest {
+impl HyperSupabaseTest {
   pub async fn new() -> Option<Self> {
     let event_test = EventIntegrationTest::new().await;
     Some(Self { event_test })
@@ -34,7 +34,7 @@ impl FlowySupabaseTest {
   pub async fn update_user_profile(
     &self,
     payload: UpdateUserProfilePayloadPB,
-  ) -> Option<FlowyError> {
+  ) -> Option<HyperError> {
     EventBuilder::new(self.event_test.clone())
       .event(UpdateUserProfile)
       .payload(payload)
@@ -44,7 +44,7 @@ impl FlowySupabaseTest {
   }
 }
 
-impl Deref for FlowySupabaseTest {
+impl Deref for HyperSupabaseTest {
   type Target = EventIntegrationTest;
 
   fn deref(&self) -> &Self::Target {

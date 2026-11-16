@@ -1,7 +1,7 @@
 use crate::document::generate_random_bytes;
 use event_integration_test::user_event::use_localhost_af_cloud;
 use event_integration_test::{EventIntegrationTest, SINGLE_FILE_UPLOAD_SIZE};
-use flowy_storage_pub::storage::FileUploadState;
+use hyper_storage_pub::storage::FileUploadState;
 use lib_infra::util::md5;
 use std::env::temp_dir;
 use std::sync::Arc;
@@ -66,7 +66,7 @@ async fn af_cloud_upload_big_file_test() {
 
   // download the file and then compare the data.
   let file_service = test
-    .appflowy_core
+    .hypertask_core
     .server_provider
     .get_server()
     .unwrap()

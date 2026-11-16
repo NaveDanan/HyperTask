@@ -1,8 +1,8 @@
 use event_integration_test::user_event::{login_password, unique_email};
 use event_integration_test::{event_builder::EventBuilder, EventIntegrationTest};
-use flowy_user::entities::{AuthTypePB, SignInPayloadPB, SignUpPayloadPB};
-use flowy_user::errors::ErrorCode;
-use flowy_user::event_map::UserEvent::*;
+use hyper_user::entities::{AuthTypePB, SignInPayloadPB, SignUpPayloadPB};
+use hyper_user::errors::ErrorCode;
+use hyper_user::event_map::UserEvent::*;
 
 use crate::user::local_test::helper::*;
 

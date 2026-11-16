@@ -124,7 +124,7 @@
     "exportAsTab": "Farklı dışa aktar",
     "publishTab": "Yayınla",
     "shareTab": "Paylaş",
-    "publishOnAppFlowy": "HyperTask'de Yayınla",
+    "publishOnHypertask": "HyperTask'de Yayınla",
     "shareTabTitle": "İşbirliği için davet et",
     "shareTabDescription": "Herhangi biriyle kolay işbirliği için",
     "copyLinkSuccess": "Bağlantı panoya kopyalandı",
@@ -391,7 +391,7 @@
   "notifications": {
     "export": {
       "markdown": "Not Markdown Olarak Dışa Aktarıldı",
-      "path": "Documents/flowy"
+      "path": "Documents/hyper"
     }
   },
   "contactsPage": {
@@ -827,7 +827,7 @@
         "llmModel": "Dil Modeli",
         "llmModelType": "Dil Modeli Türü",
         "downloadLLMPrompt": "{} İndir",
-        "downloadAppFlowyOfflineAI": "Yapay Zeka çevrimdışı paketini indirmek, Yapay Zeka'nın cihazınızda çalışmasını sağlayacak. Devam etmek istiyor musunuz?",
+        "downloadHypertaskOfflineAI": "Yapay Zeka çevrimdışı paketini indirmek, Yapay Zeka'nın cihazınızda çalışmasını sağlayacak. Devam etmek istiyor musunuz?",
         "downloadLLMPromptDetail": "{} yerel modelini indirmek {} depolama alanı kullanacak. Devam etmek istiyor musunuz?",
         "downloadBigFilePrompt": "İndirmenin tamamlanması yaklaşık 10 dakika sürebilir",
         "downloadAIModelButton": "İndir",
@@ -1092,9 +1092,9 @@
       "cloudServerType": "Bulut sunucusu",
       "cloudServerTypeTip": "Lütfen bulut sunucusunu değiştirdikten sonra mevcut hesabınızdan çıkış yapabileceğinizi unutmayın",
       "cloudLocal": "Yerel",
-      "cloudAppFlowy": "@:appName Cloud",
-      "cloudAppFlowySelfHost": "@:appName Cloud Kendi Kendine Barındırma",
-      "appFlowyCloudUrlCanNotBeEmpty": "Bulut URL'si boş olamaz",
+      "cloudHypertask": "@:appName Cloud",
+      "cloudHypertaskSelfHost": "@:appName Cloud Kendi Kendine Barındırma",
+      "hypertaskCloudUrlCanNotBeEmpty": "Bulut URL'si boş olamaz",
       "clickToCopy": "Panoya kopyala",
       "selfHostStart": "Bir sunucunuz yoksa, lütfen",
       "selfHostContent": "belgesine",
@@ -1118,9 +1118,9 @@
       "historicalUserListTooltip": "Bu liste anonim hesaplarınızı gösterir. Detaylarını görüntülemek için bir hesaba tıklayabilirsiniz. Anonim hesaplar 'Başla' düğmesine tıklanarak oluşturulur",
       "openHistoricalUser": "Anonim hesabı açmak için tıklayın",
       "customPathPrompt": "@:appName veri klasörünü Google Drive gibi bulut senkronizasyonlu bir klasörde saklamak risk oluşturabilir. Bu klasördeki veritabanına aynı anda birden fazla konumdan erişilir veya değiştirilirse, senkronizasyon çakışmaları ve olası veri bozulmaları meydana gelebilir",
-      "importAppFlowyData": "Harici @:appName Klasöründen Veri İçe Aktar",
-      "importingAppFlowyDataTip": "Veri içe aktarma devam ediyor. Lütfen uygulamayı kapatmayın",
-      "importAppFlowyDataDescription": "Harici bir @:appName veri klasöründen veri kopyalayın ve mevcut HyperTask veri klasörüne aktarın",
+      "importHypertaskData": "Harici @:appName Klasöründen Veri İçe Aktar",
+      "importingHypertaskDataTip": "Veri içe aktarma devam ediyor. Lütfen uygulamayı kapatmayın",
+      "importHypertaskDataDescription": "Harici bir @:appName veri klasöründen veri kopyalayın ve mevcut HyperTask veri klasörüne aktarın",
       "importSuccess": "@:appName veri klasörü başarıyla içe aktarıldı",
       "importFailed": "@:appName veri klasörünün içe aktarılması başarısız oldu",
       "importGuide": "Daha fazla detay için lütfen referans belgeyi kontrol edin"
@@ -1204,7 +1204,7 @@
         "opacityEmptyError": "Opaklık boş olamaz",
         "opacityRangeError": "Opaklık 1 ile 100 arasında olmalıdır",
         "app": "Uygulama",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "Uygula"
       },
       "layoutDirection": {
@@ -1228,7 +1228,7 @@
         "loading": "Temanızı doğrulayıp yüklerken lütfen bekleyin...",
         "uploadSuccess": "Temanız başarıyla yüklendi",
         "deletionFailure": "Tema silinemedi. Manuel olarak silmeyi deneyin.",
-        "filePickerDialogTitle": "Bir .flowy_plugin dosyası seçin",
+        "filePickerDialogTitle": "Bir .hyper_plugin dosyası seçin",
         "urlUploadFailure": "URL açılamadı: {}"
       },
       "theme": "Tema",
@@ -1280,7 +1280,7 @@
         "memberLimitExceeded": "Üye sınırına ulaşıldı, daha fazla üye davet etmek için lütfen ",
         "memberLimitExceededUpgrade": "yükseltin",
         "memberLimitExceededPro": "Üye sınırına ulaşıldı, daha fazla üye gerekiyorsa ",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "Üye eklenemedi",
         "addMemberSuccess": "Üye başarıyla eklendi",
         "removeMember": "Üyeyi Kaldır",
@@ -1750,7 +1750,7 @@
       "smartEditCouldNotFetchResult": "Yapay zekadan sonuç alınamadı",
       "smartEditCouldNotFetchKey": "Yapay zeka anahtarı alınamadı",
       "smartEditDisabled": "Ayarlar'dan Yapay Zeka'yı bağlayın",
-      "appflowyAIEditDisabled": "Yapay Zeka özelliklerini etkinleştirmek için giriş yapın",
+      "hypertaskAIEditDisabled": "Yapay Zeka özelliklerini etkinleştirmek için giriş yapın",
       "discardResponse": "Yapay Zeka yanıtlarını silmek istiyor musunuz?",
       "createInlineMathEquation": "Denklem oluştur",
       "fonts": "Yazı tipleri",
@@ -2659,7 +2659,7 @@
     "publishFailed": "Yayınlanamadı",
     "unpublishFailed": "Yayından kaldırılamadı",
     "noAccessToVisit": "Bu sayfaya erişim yok...",
-    "createWithAppFlowy": "HyperTask ile bir web sitesi oluşturun",
+    "createWithHypertask": "HyperTask ile bir web sitesi oluşturun",
     "fastWithAI": "Yapay zeka ile hızlı ve kolay.",
     "tryItNow": "Şimdi deneyin",
     "onlyGridViewCanBePublished": "Yalnızca Tablo görünümü yayınlanabilir",

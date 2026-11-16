@@ -1,12 +1,12 @@
 # Local template store
 
-> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/appflowy_electron/docs/STATUS.md) for current Electron functionality.
+> Historical implementation notes: the previous client has been removed. See the [desktop status](../frontend/hypertask_electron/docs/STATUS.md) for current Electron functionality.
 
 The local template store is a copy of the public template catalog at
-https://appflowy.com/templates, bundled with the app so templates can be
+https://hypertask.com/templates, bundled with the app so templates can be
 browsed and imported with no network access. Each template's published snapshot
 is stored exactly as the site serves it, along with every image, file and cover
-it references. The importer turns those into typed AppFlowy content: document
+it references. The importer turns those into typed Hypertask content: document
 blocks, and databases with their fields, views, rows and row pages.
 
 ## Coverage
@@ -72,7 +72,7 @@ their SHA-256, so a changed asset gets a new name.
 
 ## Refreshing the store
 
-From `frontend/appflowy_flutter`:
+From `frontend/hypertask_flutter`:
 
 ```sh
 node --use-system-ca scripts/local_templates/fetch_templates.mjs
@@ -103,7 +103,7 @@ and makes no network request.
 
 Every asset the snapshots reference is downloaded: image blocks, file blocks,
 the PDF block, page covers, and row covers. The URL hosts are
-`beta.appflowy.cloud/api/file_storage/` (10 assets) and `images.unsplash.com`
+`beta.hypertask.cloud/api/file_storage/` (10 assets) and `images.unsplash.com`
 (10 assets). Plain web links (link previews and references) are not assets and
 stay as links.
 
@@ -119,7 +119,7 @@ At import the converters replace each remote URL with a durable local path:
   a file rather than a URL.
 - The bundled `media/` folder is never referenced at runtime.
 
-The import checks its own output. If any `beta.appflowy.cloud` or
+The import checks its own output. If any `beta.hypertask.cloud` or
 `images.unsplash.com` URL is left in a block, the import stops with an error. A
 test runs this check over all 50 payloads.
 
@@ -265,7 +265,7 @@ for this work.
    `UserProfilePB`:
 
    ```dart
-   import 'package:appflowy/features/local_templates/local_templates.dart';
+   import 'package:hypertask/features/local_templates/local_templates.dart';
 
    LocalTemplateStorePage(user: userProfile)
    ```
@@ -280,8 +280,8 @@ for this work.
    wired up.
 
 4. **Dependency validation.** The feature imports `bloc`, `flutter_bloc`,
-   `equatable`, `appflowy_backend`, `appflowy_result`, `flowy_infra`,
-   `flowy_infra_ui` and `path`, which the app already declares. The UUIDv5
+   `equatable`, `hypertask_backend`, `hypertask_result`, `hyper_infra`,
+   `hyper_infra_ui` and `path`, which the app already declares. The UUIDv5
    derivation and SHA-1 are written in the converter, so no `uuid` import is
    needed. `uuid` is only listed under `dependency_overrides`, which the
    analyzer does not count as a dependency.

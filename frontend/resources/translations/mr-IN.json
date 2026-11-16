@@ -124,7 +124,7 @@
   "exportAsTab": "या स्वरूपात निर्यात करा",
   "publishTab": "प्रकाशित करा",
   "shareTab": "शेअर करा",
-  "publishOnAppFlowy": "HyperTask वर प्रकाशित करा",
+  "publishOnHypertask": "HyperTask वर प्रकाशित करा",
   "shareTabTitle": "सहकार्य करण्यासाठी आमंत्रित करा",
   "shareTabDescription": "कोणासही सहज सहकार्य करण्यासाठी",
   "copyLinkSuccess": "लिंक क्लिपबोर्डवर कॉपी केली",
@@ -409,7 +409,7 @@
   "notifications": {
     "export": {
     "markdown": "टीप Markdown मध्ये निर्यात केली",
-    "path": "Documents/flowy"
+    "path": "Documents/hyper"
     }
   },
     "contactsPage": {
@@ -849,7 +849,7 @@
     "llmModel": "भाषा मॉडेल",
     "llmModelType": "भाषा मॉडेल प्रकार",
     "downloadLLMPrompt": "{} डाउनलोड करा",
-    "downloadAppFlowyOfflineAI": "AI ऑफलाइन पॅकेज डाउनलोड केल्याने तुमच्या डिव्हाइसवर AI चालवता येईल. तुम्हाला पुढे जायचे आहे का?",
+    "downloadHypertaskOfflineAI": "AI ऑफलाइन पॅकेज डाउनलोड केल्याने तुमच्या डिव्हाइसवर AI चालवता येईल. तुम्हाला पुढे जायचे आहे का?",
     "downloadLLMPromptDetail": "{} स्थानिक मॉडेल डाउनलोड करण्यासाठी सुमारे {} संचयन लागेल. तुम्हाला पुढे जायचे आहे का?",
     "downloadBigFilePrompt": "डाउनलोड पूर्ण होण्यासाठी सुमारे १० मिनिटे लागू शकतात",
     "downloadAIModelButton": "डाउनलोड करा",
@@ -1130,9 +1130,9 @@
   "cloudServerType": "क्लाऊड सर्व्हर",
   "cloudServerTypeTip": "कृपया लक्षात घ्या की क्लाऊड सर्व्हर बदलल्यास तुम्ही सध्या लॉगिन केलेले खाते लॉगआउट होऊ शकते",
   "cloudLocal": "स्थानिक",
-  "cloudAppFlowy": "@:appName Cloud",
-  "cloudAppFlowySelfHost": "@:appName क्लाऊड सेल्फ-होस्टेड",
-  "appFlowyCloudUrlCanNotBeEmpty": "क्लाऊड URL रिकामा असू शकत नाही",
+  "cloudHypertask": "@:appName Cloud",
+  "cloudHypertaskSelfHost": "@:appName क्लाऊड सेल्फ-होस्टेड",
+  "hypertaskCloudUrlCanNotBeEmpty": "क्लाऊड URL रिकामा असू शकत नाही",
   "clickToCopy": "क्लिपबोर्डवर कॉपी करा",
   "selfHostStart": "जर तुमच्याकडे सर्व्हर नसेल, तर कृपया हे पाहा",
   "selfHostContent": "दस्तऐवज",
@@ -1156,9 +1156,9 @@
   "historicalUserListTooltip": "ही यादी तुमची अनामिक खाती दर्शवते. तपशील पाहण्यासाठी खात्यावर क्लिक करा. अनामिक खाती 'सुरुवात करा' बटणावर क्लिक करून तयार केली जातात",
   "openHistoricalUser": "अनामिक खाते उघडण्यासाठी क्लिक करा",
   "customPathPrompt": "@:appName डेटा फोल्डर Google Drive सारख्या क्लाऊड-सिंक फोल्डरमध्ये साठवणे धोकादायक ठरू शकते. फोल्डरमधील डेटाबेस अनेक ठिकाणांवरून एकाच वेळी ऍक्सेस/संपादित केल्यास डेटा सिंक समस्या किंवा भ्रष्ट होण्याची शक्यता असते.",
-  "importAppFlowyData": "बाह्य @:appName फोल्डरमधून डेटा आयात करा",
-  "importingAppFlowyDataTip": "डेटा आयात सुरू आहे. कृपया अ‍ॅप बंद करू नका",
-  "importAppFlowyDataDescription": "बाह्य @:appName फोल्डरमधून डेटा कॉपी करून सध्याच्या HyperTask डेटा फोल्डरमध्ये आयात करा",
+  "importHypertaskData": "बाह्य @:appName फोल्डरमधून डेटा आयात करा",
+  "importingHypertaskDataTip": "डेटा आयात सुरू आहे. कृपया अ‍ॅप बंद करू नका",
+  "importHypertaskDataDescription": "बाह्य @:appName फोल्डरमधून डेटा कॉपी करून सध्याच्या HyperTask डेटा फोल्डरमध्ये आयात करा",
   "importSuccess": "@:appName डेटा फोल्डर यशस्वीरित्या आयात झाला",
   "importFailed": "@:appName डेटा फोल्डर आयात करण्यात अयशस्वी",
   "importGuide": "अधिक माहितीसाठी, कृपया संदर्भित दस्तऐवज पहा"
@@ -1242,7 +1242,7 @@
     "opacityEmptyError": "अपारदर्शकता रिकामी असू शकत नाही",
     "opacityRangeError": "अपारदर्शकता 1 ते 100 दरम्यान असावी",
     "app": "अ‍ॅप",
-    "flowy": "Flowy",
+    "hyper": "Hyper",
     "apply": "लागू करा"
   },
   "layoutDirection": {
@@ -1266,7 +1266,7 @@
     "loading": "कृपया प्रतीक्षा करा. आम्ही तुमची थीम पडताळत आहोत आणि अपलोड करत आहोत...",
     "uploadSuccess": "तुमची थीम यशस्वीरित्या अपलोड झाली आहे",
     "deletionFailure": "थीम हटवण्यात अयशस्वी. कृपया ती मॅन्युअली हटवून पाहा.",
-    "filePickerDialogTitle": ".flowy_plugin फाईल निवडा",
+    "filePickerDialogTitle": ".hyper_plugin फाईल निवडा",
     "urlUploadFailure": "URL उघडण्यात अयशस्वी: {}"
   },
   "theme": "थीम",
@@ -1318,7 +1318,7 @@
     "memberLimitExceeded": "सदस्य मर्यादा गाठली आहे, अधिक सदस्य आमंत्रित करण्यासाठी कृपया ",
     "memberLimitExceededUpgrade": "अपग्रेड करा",
     "memberLimitExceededPro": "सदस्य मर्यादा गाठली आहे, अधिक सदस्य आवश्यक असल्यास संपर्क करा",
-    "memberLimitExceededProContact": "support@appflowy.io",
+    "memberLimitExceededProContact": "support@hypertask.io",
     "failedToAddMember": "सदस्य जोडण्यात अयशस्वी",
     "addMemberSuccess": "सदस्य यशस्वीरित्या जोडला गेला",
     "removeMember": "सदस्य काढा",
@@ -1810,7 +1810,7 @@
 "smartEditCouldNotFetchResult": "AI कडून उत्तर मिळवता आले नाही",
 "smartEditCouldNotFetchKey": "AI की मिळवता आली नाही",
 "smartEditDisabled": "सेटिंग्जमध्ये AI कनेक्ट करा",
-"appflowyAIEditDisabled": "AI वैशिष्ट्ये सक्षम करण्यासाठी साइन इन करा",
+"hypertaskAIEditDisabled": "AI वैशिष्ट्ये सक्षम करण्यासाठी साइन इन करा",
 "discardResponse": "AI उत्तर फेकून द्यायचं आहे का?",
 "createInlineMathEquation": "समीकरण तयार करा",
 "fonts": "फॉन्ट्स",
@@ -2590,7 +2590,7 @@
     "accountLogin": "खाते लॉगिन",
     "updateNameError": "नाव अपडेट करण्यात अयशस्वी",
     "updateIconError": "चिन्ह अपडेट करण्यात अयशस्वी",
-    "aboutAppFlowy": "@:appName विषयी",
+    "aboutHypertask": "@:appName विषयी",
     "deleteAccount": {
       "title": "खाते हटवा",
       "subtitle": "तुमचे खाते आणि सर्व डेटा कायमचे हटवा.",
@@ -2741,7 +2741,7 @@
   "publishFailed": "प्रकाशित करण्यात अयशस्वी",
   "unpublishFailed": "अनपब्लिश करण्यात अयशस्वी",
   "noAccessToVisit": "या पृष्ठावर प्रवेश नाही...",
-  "createWithAppFlowy": "HyperTask ने वेबसाइट तयार करा",
+  "createWithHypertask": "HyperTask ने वेबसाइट तयार करा",
   "fastWithAI": "AI सह जलद आणि सोपे.",
   "tryItNow": "आत्ताच वापरून पहा",
   "onlyGridViewCanBePublished": "फक्त Grid view प्रकाशित केला जाऊ शकतो",

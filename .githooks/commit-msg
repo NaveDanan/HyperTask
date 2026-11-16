@@ -12,18 +12,18 @@ RED="\e[31m"
 ENDCOLOR="\e[0m"
 
 printMessage() {
-   printf "${YELLOW}AppFlowy : $1${ENDCOLOR}\n"
+   printf "${YELLOW}Hypertask : $1${ENDCOLOR}\n"
 }
 
 printSuccess() {
-   printf "${GREEN}AppFlowy : $1${ENDCOLOR}\n"
+   printf "${GREEN}Hypertask : $1${ENDCOLOR}\n"
 }
 
 printError() {
-   printf "${RED}AppFlowy : $1${ENDCOLOR}\n"
+   printf "${RED}Hypertask : $1${ENDCOLOR}\n"
 }
 
-printMessage "Running the AppFlowy commit-msg hook."
+printMessage "Running the Hypertask commit-msg hook."
 
 # This example catches duplicate Signed-off-by lines.
 
@@ -43,8 +43,8 @@ test "" = "$(grep '^Signed-off-by: ' "$1" |
 
 if [ $? -ne 0 ]
 then
-    printError "Please fix your commit message to match AppFlowy coding standards"
-    printError "https://docs.appflowy.io/docs/documentation/software-contributions/conventions/git-conventions"
+    printError "Please fix your commit message to match Hypertask coding standards"
+    printError "https://docs.hypertask.io/docs/documentation/software-contributions/conventions/git-conventions"
     exit 1
 fi
 

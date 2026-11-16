@@ -1,12 +1,12 @@
 use crate::event_builder::EventBuilder;
 use crate::EventIntegrationTest;
-use flowy_ai::entities::{
+use hyper_ai::entities::{
   ChatId, ChatMessageListPB, ChatMessageTypePB, LoadNextChatMessagePB, LoadPrevChatMessagePB,
   StreamChatPayloadPB, UpdateChatSettingsPB,
 };
-use flowy_ai::event_map::AIEvent;
-use flowy_folder::entities::{CreateViewPayloadPB, ViewLayoutPB, ViewPB};
-use flowy_folder::event_map::FolderEvent;
+use hyper_ai::event_map::AIEvent;
+use hyper_folder::entities::{CreateViewPayloadPB, ViewLayoutPB, ViewPB};
+use hyper_folder::event_map::FolderEvent;
 
 impl EventIntegrationTest {
   pub async fn create_chat(&self, parent_id: &str) -> ViewPB {

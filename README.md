@@ -4,8 +4,8 @@ HyperTask is a self-hostable productivity workspace developed by NaveDanan. Its 
 
 ## Development
 
-See the [Electron development guide](frontend/appflowy_electron/README.md) for setup and commands. The [status](frontend/appflowy_electron/docs/STATUS.md) describes the implemented features and remaining placeholders.
+See the [Electron development guide](frontend/hypertask_electron/README.md) for setup and commands. The [status](frontend/hypertask_electron/docs/STATUS.md) describes the implemented features and remaining placeholders.
 
 ## License and attribution
 
-HyperTask is derived from [AppFlowy](https://github.com/AppFlowy-IO/AppFlowy) and retains its contributors' copyright notices and [GNU Affero General Public License v3](LICENSE). Individual dependencies and assets may have their own licenses.
+HyperTask is derived from [Hypertask](https://github.com/Hypertask-IO/Hypertask) and retains its contributors' copyright notices and [GNU Affero General Public License v3](LICENSE). Individual dependencies and assets may have their own licenses.

@@ -1,7 +1,7 @@
 use collab_folder::ViewLayout;
 use event_integration_test::EventIntegrationTest;
-use flowy_folder::entities::icon::{ViewIconPB, ViewIconTypePB};
-use flowy_folder::entities::ViewLayoutPB;
+use hyper_folder::entities::icon::{ViewIconPB, ViewIconTypePB};
+use hyper_folder::entities::ViewLayoutPB;
 use uuid::Uuid;
 
 use crate::folder::local_test::script::FolderScript::*;

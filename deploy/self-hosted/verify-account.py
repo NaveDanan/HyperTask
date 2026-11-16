@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Initialize the verified local account in AppFlowy using the normal client API."""
+"""Initialize the verified local account in Hypertask using the normal client API."""
 import json,pathlib,urllib.request,urllib.error,urllib.parse
 root=pathlib.Path(__file__).resolve().parent
 values=dict(l.split('=',1) for l in (root/'.env').read_text().splitlines() if '=' in l)

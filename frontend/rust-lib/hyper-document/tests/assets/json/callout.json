@@ -1,0 +1,32 @@
+{
+  "type": "page",
+  "data": {},
+  "children": [
+    {
+      "type": "callout",
+      "data": {
+        "delta": [
+          { "insert": "\nLike Hypertask? Follow us:\n" },
+          {
+            "attributes": {
+              "href": "https://github.com/Hypertask-IO/Hypertask"
+            },
+            "insert": "GitHub"
+          },
+          { "insert": "\n" },
+          {
+            "attributes": { "href": "https://twitter.com/hypertask" },
+            "insert": "Twitter"
+          },
+          { "insert": ": @hypertask\n" },
+          {
+            "attributes": { "href": "https://blog-hypertask.ghost.io/" },
+            "insert": "Newsletter"
+          },
+          { "insert": "\n" }
+        ],
+        "icon": "🥰"
+      }
+    }
+  ]
+}

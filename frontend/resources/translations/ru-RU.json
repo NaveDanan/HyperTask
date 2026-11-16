@@ -37,7 +37,7 @@
     "loginStartWithAnonymous": "Продолжить в анонимной сессии",
     "continueAnonymousUser": "Продолжить в анонимной сессии",
     "continueWithLocalModel": "Продолжить с локальной моделью",
-    "switchToAppFlowyCloud": "HyperTask Cloud",
+    "switchToHypertaskCloud": "HyperTask Cloud",
     "anonymousMode": "Анонимный режим",
     "buttonText": "Войти",
     "signingInText": "Выполняется вход...",
@@ -141,7 +141,7 @@
     "exportAsTab": "Экспортировать как",
     "publishTab": "Опубликовать",
     "shareTab": "Поделиться",
-    "publishOnAppFlowy": "Опубликовать на HyperTask",
+    "publishOnHypertask": "Опубликовать на HyperTask",
     "shareTabTitle": "Пригласить к совместной работе",
     "shareTabDescription": "Для простой совместной работы с кем угодно",
     "copyLinkSuccess": "Ссылка скопирована в буфер обмена",
@@ -427,7 +427,7 @@
   "notifications": {
     "export": {
       "markdown": "Заметка экспортирована в Markdown",
-      "path": "Документы/flowy"
+      "path": "Документы/hyper"
     }
   },
   "contactsPage": {
@@ -868,7 +868,7 @@
         "llmModel": "Языковая модель",
         "llmModelType": "Тип языковой модели",
         "downloadLLMPrompt": "Загрузить {}",
-        "downloadAppFlowyOfflineAI": "Загрузка офлайн-пакета AI позволит AI работать на вашем устройстве. Вы хотите продолжить?",
+        "downloadHypertaskOfflineAI": "Загрузка офлайн-пакета AI позволит AI работать на вашем устройстве. Вы хотите продолжить?",
         "downloadLLMPromptDetail": "Загрузка локальной модели {} займет до {} места на диске. Вы хотите продолжить?",
         "downloadBigFilePrompt": "Загрузка может занять около 10 минут",
         "downloadAIModelButton": "Загрузить",
@@ -1150,9 +1150,9 @@
       "cloudServerType": "Тип облачного сервера",
       "cloudServerTypeTip": "Обратите внимание, что после смены облачного сервера может потребоваться выход из текущей учетной записи",
       "cloudLocal": "Локальный",
-      "cloudAppFlowy": "HyperTask Cloud",
-      "cloudAppFlowySelfHost": "HyperTask Cloud Self-hosted",
-      "appFlowyCloudUrlCanNotBeEmpty": "URL облака не может быть пустым",
+      "cloudHypertask": "HyperTask Cloud",
+      "cloudHypertaskSelfHost": "HyperTask Cloud Self-hosted",
+      "hypertaskCloudUrlCanNotBeEmpty": "URL облака не может быть пустым",
       "clickToCopy": "Скопировать в буфер обмена",
       "selfHostStart": "Если у вас нет сервера, пожалуйста, обратитесь к",
       "selfHostContent": "документации",
@@ -1176,9 +1176,9 @@
       "historicalUserListTooltip": "Этот список отображает ваши анонимные учетные записи. Вы можете нажать на учетную запись, чтобы просмотреть ее детали. Анонимные учетные записи создаются при нажатии кнопки «Начать»",
       "openHistoricalUser": "Нажмите, чтобы открыть анонимную учетную запись",
       "customPathPrompt": "Хранение папки данных @:appName в облачной синхронизируемой папке, такой как Google Drive, может представлять риски. Если доступ к базе данных в этой папке или ее изменение осуществляется из нескольких мест одновременно, это может привести к конфликтам синхронизации и потенциальному повреждению данных.",
-      "importAppFlowyData": "Импорт данных из внешней папки @:appName",
-      "importingAppFlowyDataTip": "Идет импорт данных. Пожалуйста, не закрывайте приложение",
-      "importAppFlowyDataDescription": "Копирование данных из внешней папки данных @:appName и импорт их в текущую папку данных HyperTask",
+      "importHypertaskData": "Импорт данных из внешней папки @:appName",
+      "importingHypertaskDataTip": "Идет импорт данных. Пожалуйста, не закрывайте приложение",
+      "importHypertaskDataDescription": "Копирование данных из внешней папки данных @:appName и импорт их в текущую папку данных HyperTask",
       "importSuccess": "Папка данных @:appName успешно импортирована",
       "importFailed": "Не удалось импортировать папку данных @:appName",
       "importGuide": "Для получения более подробной информации, пожалуйста, ознакомьтесь с указанным документом"
@@ -1262,7 +1262,7 @@
         "opacityEmptyError": "Непрозрачность не может быть пустой",
         "opacityRangeError": "Непрозрачность должна быть от 1 до 100",
         "app": "Приложение",
-        "flowy": "Flowy",
+        "hyper": "Hyper",
         "apply": "Применить"
       },
       "layoutDirection": {
@@ -1286,7 +1286,7 @@
         "loading": "Пожалуйста, подождите, пока мы проверим и загрузим вашу тему...",
         "uploadSuccess": "Ваша тема успешно загружена",
         "deletionFailure": "Не удалось удалить тему. Попробуйте удалить ее вручную.",
-        "filePickerDialogTitle": "Выберите файл .flowy_plugin",
+        "filePickerDialogTitle": "Выберите файл .hyper_plugin",
         "urlUploadFailure": "Не удалось открыть url: {}"
       },
       "theme": "Тема",
@@ -1338,7 +1338,7 @@
         "memberLimitExceeded": "Достигнут лимит участников, чтобы пригласить больше, пожалуйста,",
         "memberLimitExceededUpgrade": "обновитесь",
         "memberLimitExceededPro": "Достигнут лимит участников, если вам нужно больше участников, свяжитесь с",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "support@hypertask.io",
         "failedToAddMember": "Не удалось добавить участника",
         "addMemberSuccess": "Участник успешно добавлен",
         "removeMember": "Удалить участника",
@@ -1847,7 +1847,7 @@
       "smartEditCouldNotFetchResult": "Не удалось получить результат от AI",
       "smartEditCouldNotFetchKey": "Не удалось получить ключ AI",
       "smartEditDisabled": "Подключить AI в настройках",
-      "appflowyAIEditDisabled": "Войдите, чтобы включить функции AI",
+      "hypertaskAIEditDisabled": "Войдите, чтобы включить функции AI",
       "discardResponse": "Вы уверены, что хотите отменить ответ AI?",
       "createInlineMathEquation": "Создать уравнение",
       "fonts": "Шрифты",
@@ -2705,7 +2705,7 @@
       "accountLogin": "Вход в аккаунт",
       "updateNameError": "Не удалось обновить имя",
       "updateIconError": "Не удалось обновить иконку",
-      "aboutAppFlowy": "О @:appName",
+      "aboutHypertask": "О @:appName",
       "deleteAccount": {
         "title": "Удалить аккаунт",
         "subtitle": "Окончательно удалить ваш аккаунт и все ваши данные.",
@@ -2892,7 +2892,7 @@
     "publishFailed": "Не удалось опубликовать",
     "unpublishFailed": "Не удалось снять с публикации",
     "noAccessToVisit": "Нет доступа к этой странице...",
-    "createWithAppFlowy": "Создать сайт с помощью HyperTask",
+    "createWithHypertask": "Создать сайт с помощью HyperTask",
     "fastWithAI": "Быстро и легко с помощью AI.",
     "tryItNow": "Попробуйте сейчас",
     "onlyGridViewCanBePublished": "Может быть опубликован только вид Таблица",
@@ -3275,7 +3275,7 @@
     "cancelPlan": {
       "title": "Жаль видеть, что вы уходите",
       "success": "Ваша подписка успешно отменена",
-      "description": "Нам жаль, что вы уходите. Мы будем рады услышать ваш отзыв, чтобы помочь нам улучшить AppFlowy. Пожалуйста, уделите минутку, чтобы ответить на несколько вопросов.",
+      "description": "Нам жаль, что вы уходите. Мы будем рады услышать ваш отзыв, чтобы помочь нам улучшить Hypertask. Пожалуйста, уделите минутку, чтобы ответить на несколько вопросов.",
       "commonOther": "Другое",
       "otherHint": "Напишите свой ответ здесь",
       "questionOne": {

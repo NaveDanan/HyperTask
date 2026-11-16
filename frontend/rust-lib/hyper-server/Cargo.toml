@@ -1,0 +1,62 @@
+[package]
+name = "hyper-server"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+
+[dependencies]
+tracing.workspace = true
+futures-util = "0.3.26"
+serde.workspace = true
+serde_json.workspace = true
+thiserror = "1.0"
+tokio = { workspace = true, features = ["sync"] }
+lazy_static = "1.4.0"
+bytes = { workspace = true, features = ["serde"] }
+anyhow.workspace = true
+arc-swap.workspace = true
+uuid.workspace = true
+collab = { workspace = true }
+collab-plugins = { workspace = true }
+collab-document = { workspace = true }
+collab-entity = { workspace = true }
+collab-database = { workspace = true }
+collab-user = { workspace = true }
+lib-infra = { workspace = true }
+hyper-user-pub = { workspace = true }
+hyper-folder-pub = { workspace = true }
+hyper-database-pub = { workspace = true }
+hyper-document-pub = { workspace = true }
+hyper-error = { workspace = true, features = ["impl_from_serde", "impl_from_reqwest", "impl_from_url", "impl_from_hypertask_cloud"] }
+hyper-server-pub = { workspace = true }
+hyper-search-pub = { workspace = true }
+hyper-storage = { workspace = true }
+hyper-storage-pub = { workspace = true }
+hyper-ai-pub = { workspace = true }
+tokio-util = "0.7"
+tokio-stream = { workspace = true, features = ["sync"] }
+rand = "0.8.5"
+semver = "1.0.23"
+hyper-sqlite = { workspace = true }
+hyper-ai = { workspace = true }
+chrono.workspace = true
+workspace-template.workspace = true
+
+[dependencies.client-api]
+workspace = true
+features = [
+  "collab-sync",
+  "test_util",
+  "enable_brotli",
+  # Uncomment the following line to enable verbose logging for sync
+  # "sync_verbose_log",
+]
+
+[dev-dependencies]
+uuid.workspace = true
+serde_json.workspace = true
+

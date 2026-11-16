@@ -6,10 +6,10 @@ use collab_entity::CollabType;
 use collab_folder::Folder;
 use event_integration_test::user_event::{use_local_mode, use_localhost_af_cloud};
 use event_integration_test::EventIntegrationTest;
-use flowy_core::DEFAULT_NAME;
-use flowy_user::entities::AFRolePB;
-use flowy_user_pub::cloud::UserCloudServiceProvider;
-use flowy_user_pub::entities::{AuthType, WorkspaceType};
+use hyper_core::DEFAULT_NAME;
+use hyper_user::entities::AFRolePB;
+use hyper_user_pub::cloud::UserCloudServiceProvider;
+use hyper_user_pub::entities::{AuthType, WorkspaceType};
 use std::time::Duration;
 use tokio::task::LocalSet;
 use tokio::time::sleep;
@@ -293,7 +293,7 @@ async fn af_cloud_different_open_same_workspace_test() {
 
 #[tokio::test]
 async fn af_cloud_create_local_workspace_test() {
-  // Setup: Initialize test environment with AppFlowyCloud
+  // Setup: Initialize test environment with HypertaskCloud
   use_localhost_af_cloud().await;
   let test = EventIntegrationTest::new().await;
   let _ = test.af_cloud_sign_up().await;
@@ -402,7 +402,7 @@ async fn af_cloud_create_local_workspace_test() {
   let user_profile = test.get_user_profile().await.unwrap();
   test
     .server_provider
-    .set_server_auth_type(&AuthType::AppFlowyCloud, Some(user_profile.token.clone()))
+    .set_server_auth_type(&AuthType::HypertaskCloud, Some(user_profile.token.clone()))
     .unwrap();
   test.server_provider.set_token(&user_profile.token).unwrap();
 

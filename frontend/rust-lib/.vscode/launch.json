@@ -11,7 +11,7 @@
             // "pid": "${command:pickMyProcess}"
             // To launch the application directly, use the following configuration:
             "request": "launch",
-            "program": "/Users/lucas.xu/Desktop/appflowy_backup/frontend/appflowy_flutter/build/macos/Build/Products/Debug/AppFlowy.app",
+            "program": "/Users/lucas.xu/Desktop/hypertask_backup/frontend/hypertask_flutter/build/macos/Build/Products/Debug/Hypertask.app",
         },
     ]
   }

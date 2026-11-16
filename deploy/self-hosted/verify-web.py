@@ -15,7 +15,7 @@ with urllib.request.urlopen(origin+'/app',timeout=20) as response:
 parser=Assets();parser.feed(document)
 external=[url for url in parser.assets if urllib.parse.urlparse(url).netloc]
 if external: raise RuntimeError('Web page has external runtime assets')
-if 'https://appflowy.com' in document or 'fonts.googleapis.com' in document: raise RuntimeError('Web HTML retained a hosted origin')
+if 'https://hypertask.com' in document or 'fonts.googleapis.com' in document: raise RuntimeError('Web HTML retained a hosted origin')
 if not csp: raise RuntimeError('Web proxy did not serve the runtime isolation policy')
 loaded=[]
 for url in parser.assets:

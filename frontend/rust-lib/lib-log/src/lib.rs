@@ -2,7 +2,7 @@ use std::io;
 use std::io::Write;
 use std::sync::{Arc, RwLock};
 
-use crate::layer::FlowyFormattingLayer;
+use crate::layer::HyperFormattingLayer;
 use crate::stream_log::{StreamLog, StreamLogSender};
 use chrono::Local;
 use lazy_static::lazy_static;
@@ -74,17 +74,17 @@ impl Builder {
 
   pub fn build(self) -> Result<(), String> {
     let env_filter = EnvFilter::new(self.env_filter);
-    let (appflowy_log_non_blocking, app_log_guard) =
+    let (hypertask_log_non_blocking, app_log_guard) =
       tracing_appender::non_blocking(self.app_log_appender);
     *APP_LOG_GUARD.write().unwrap() = Some(app_log_guard);
-    let app_file_layer = FlowyFormattingLayer::new(appflowy_log_non_blocking)
+    let app_file_layer = HyperFormattingLayer::new(hypertask_log_non_blocking)
       .with_target_filter(|target| target != SYNC_TARGET);
 
     let (sync_log_non_blocking, sync_log_guard) =
       tracing_appender::non_blocking(self.sync_log_appender);
     *COLLAB_SYNC_LOG_GUARD.write().unwrap() = Some(sync_log_guard);
 
-    let collab_sync_file_layer = FlowyFormattingLayer::new(sync_log_non_blocking)
+    let collab_sync_file_layer = HyperFormattingLayer::new(sync_log_non_blocking)
       .with_target_filter(|target| target == SYNC_TARGET);
 
     if let Some(stream_log_sender) = &self.stream_log_sender {
@@ -112,7 +112,7 @@ impl Builder {
         .pretty()
         .with_env_filter(env_filter)
         .finish()
-        .with(FlowyFormattingLayer::new(DebugStdoutWriter))
+        .with(HyperFormattingLayer::new(DebugStdoutWriter))
         .with(JsonStorageLayer)
         .with(app_file_layer)
         .with(collab_sync_file_layer);

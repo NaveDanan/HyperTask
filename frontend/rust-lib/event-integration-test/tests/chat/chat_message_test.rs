@@ -1,11 +1,11 @@
 use crate::util::receive_with_timeout;
 use event_integration_test::user_event::use_localhost_af_cloud;
 use event_integration_test::EventIntegrationTest;
-use flowy_ai::entities::ChatMessageListPB;
-use flowy_ai::notification::ChatNotification;
+use hyper_ai::entities::ChatMessageListPB;
+use hyper_ai::notification::ChatNotification;
 use std::str::FromStr;
 
-use flowy_ai_pub::cloud::ChatMessageType;
+use hyper_ai_pub::cloud::ChatMessageType;
 
 use std::time::Duration;
 use uuid::Uuid;
@@ -20,7 +20,7 @@ async fn af_cloud_create_chat_message_test() {
   let view = test.create_chat(&current_workspace.id).await;
   let chat_id = view.id.clone();
   let chat_service = test
-    .appflowy_core
+    .hypertask_core
     .server_provider
     .get_server()
     .unwrap()
@@ -81,7 +81,7 @@ async fn af_cloud_load_remote_system_message_test() {
   let chat_id = view.id.clone();
 
   let chat_service = test
-    .appflowy_core
+    .hypertask_core
     .server_provider
     .get_server()
     .unwrap()
