@@ -50,11 +50,18 @@ services:
       GOTRUE_URI_ALLOW_LIST: '${SERVER_ORIGIN}/**,hypertask-flutter://**'
       GOTRUE_JWT_SECRET: ${JWT_SECRET:?Run bootstrap.sh first}
       GOTRUE_JWT_EXP: '7200'
+      GOTRUE_JWT_AUD: authenticated
       GOTRUE_JWT_ADMIN_GROUP_NAME: supabase_admin
       GOTRUE_DISABLE_SIGNUP: 'false'
       GOTRUE_MAILER_AUTOCONFIRM: 'true'
       GOTRUE_SMTP_HOST: smtp-disabled
       GOTRUE_SMTP_PORT: '25'
+      # Disabled until IT supplies this installation's own Entra registration.
+      GOTRUE_EXTERNAL_AZURE_ENABLED: ${HYPER_ENTRA_ENABLED:-false}
+      GOTRUE_EXTERNAL_AZURE_CLIENT_ID: ${HYPER_ENTRA_CLIENT_ID:-}
+      GOTRUE_EXTERNAL_AZURE_SECRET: ${HYPER_ENTRA_CLIENT_SECRET:-}
+      GOTRUE_EXTERNAL_AZURE_URL: https://login.microsoftonline.com/${HYPER_ENTRA_TENANT_ID:-organizations}/v2.0
+      GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: ${HYPER_ENTRA_REDIRECT_URI:-}
       GOTRUE_EXTERNAL_GOOGLE_ENABLED: 'false'
       GOTRUE_EXTERNAL_GITHUB_ENABLED: 'false'
       GOTRUE_EXTERNAL_DISCORD_ENABLED: 'false'

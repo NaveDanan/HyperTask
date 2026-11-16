@@ -1,3 +1,4 @@
+import { HyperEntraSettings } from '@/features/hyper-entra/HyperEntraSettings';
 import { useEffect, useState, type ReactNode } from 'react';
 import { HardDrive, Server } from 'lucide-react';
 import {
@@ -110,6 +111,7 @@ export function SelfHostedSettingsView({ restartApp }: { restartApp: () => void 
           <div><Button disabled={saving} onClick={() => void save()}>{saving ? 'Applying…' : 'Apply and restart'}</Button></div>
         </SettingsSection>
       )}
+      {!loading && <HyperEntraSettings />}
     </>
   );
 }

@@ -20,6 +20,20 @@ export const KVKeys = {
   recentIcons: 'kRecentIcons',
 } as const;
 
+// Read preferences written by the previous desktop and Flutter builds.
+const legacyKeys: Record<string, string> = {
+  [KVKeys.hypertaskCloudBaseURL]: 'kAppFlowyCloudBaseURL',
+  [KVKeys.hypertaskBaseShareDomain]: 'kAppFlowyBaseShareDomain',
+  [KVKeys.enableSyncTrace]: 'kAppFlowyEnableSyncTrace',
+  [KVKeys.pathLocation]: 'io.appflowy.appflowy_flutter.path_location',
+};
+
+function storedKey(key: string): string {
+  const data = store();
+  const legacy = legacyKeys[key];
+  return legacy && !(key in data) && legacy in data ? legacy : key;
+}
+
 export async function loadKeyValueStorage(): Promise<void> {
   cache = await window.hypertask.prefs.getAll();
 }
@@ -31,7 +45,7 @@ function store(): Record<string, unknown> {
 
 export const KeyValueStorage = {
   get(key: string): string | null {
-    const value = store()[key];
+    const value = store()[storedKey(key)];
     return value === undefined || value === null ? null : String(value);
   },
   getJson<T>(key: string): T | null {
@@ -44,12 +58,14 @@ export const KeyValueStorage = {
     }
   },
   async set(key: string, value: string): Promise<void> {
-    store()[key] = value;
-    await window.hypertask.prefs.set(key, value);
+    const actualKey = storedKey(key);
+    store()[actualKey] = value;
+    await window.hypertask.prefs.set(actualKey, value);
   },
   async remove(key: string): Promise<void> {
-    delete store()[key];
-    await window.hypertask.prefs.remove(key);
+    const keys = [key, legacyKeys[key]].filter((entry): entry is string => !!entry && entry in store());
+    for (const entry of keys) delete store()[entry];
+    await Promise.all(keys.map((entry) => window.hypertask.prefs.remove(entry)));
   },
   async clear(): Promise<void> {
     await Promise.all(Object.keys(store()).map((key) => this.remove(key)));

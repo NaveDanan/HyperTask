@@ -1,13 +1,17 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { net } from 'electron';
-import type { OpenAIEndpointTestRequest } from '@shared/api';
+import type { HyperEndpointModelsRequest, OpenAIEndpointTestRequest } from '@shared/api';
 import { unprotect } from './dpapi';
 import {
   endpointApiUrl,
   completionTestBody,
   httpStatusMessage,
   parseCompletionBody,
+  parseResponsesBody,
+  shouldUseResponses,
+  parseEndpointModels,
+  validateEndpointUrl,
   unreachableMessage,
   validateEndpoint,
 } from '@shared/openai-endpoint';
@@ -39,8 +43,8 @@ interface RawResponse {
   body: string | null;
 }
 
-/** One POST with redirects not followed: a redirect resolves with its status and no body. */
-function post(url: string, headers: Record<string, string>, body: string): Promise<RawResponse> {
+/** One request with redirects not followed: a redirect resolves with its status and no body. */
+function send(method: 'GET' | 'POST', url: string, headers: Record<string, string>, body?: string): Promise<RawResponse> {
   return new Promise((resolve, reject) => {
     let settled = false;
     let timer: NodeJS.Timeout;
@@ -50,7 +54,7 @@ function post(url: string, headers: Record<string, string>, body: string): Promi
       clearTimeout(timer);
       action();
     };
-    const request = net.request({ method: 'POST', url, redirect: 'manual' });
+    const request = net.request({ method, url, redirect: 'manual' });
     const fail = (error: SettingsError) =>
       done(() => {
         request.abort();
@@ -70,17 +74,15 @@ function post(url: string, headers: Record<string, string>, body: string): Promi
     request.on('response', (response) => {
       if (settled) return;
       const status = response.statusCode;
-      if (status < 200 || status >= 300) {
-        done(() => {
-          request.abort();
-          resolve({ status, body: null });
-        });
-        return;
-      }
       clearTimeout(timer);
       timer = setTimeout(() => fail(new SettingsError('other', timeoutMessage(TIMEOUT_MS))), TIMEOUT_MS);
       const chunks: Buffer[] = [];
-      response.on('data', (chunk: Buffer) => chunks.push(chunk));
+      let bytes = 0;
+      response.on('data', (chunk: Buffer) => {
+        bytes += chunk.length;
+        if (bytes > 4 * 1024 * 1024) fail(new SettingsError('state', 'Endpoint response is too large.'));
+        else chunks.push(chunk);
+      });
       response.on('end', () => done(() => resolve({ status, body: Buffer.concat(chunks).toString('utf8') })));
       response.on('error', () => fail(new SettingsError('state', unreachableMessage)));
       response.on('aborted', () => fail(new SettingsError('state', unreachableMessage)));
@@ -95,9 +97,27 @@ export async function testEndpoint(request: OpenAIEndpointTestRequest): Promise<
   const key = await unprotect(request.protectedKey);
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (key !== '') headers.Authorization = `Bearer ${key}`;
-  const response = await post(endpointApiUrl(request.baseUrl, 'chat/completions'), headers, completionTestBody(request.model));
+  let response = await send('POST', endpointApiUrl(request.baseUrl, 'chat/completions'), headers, completionTestBody(request.model));
+  const responses = shouldUseResponses(response.status, response.body ?? '');
+  if (responses) {
+    response = await send('POST', endpointApiUrl(request.baseUrl, 'responses'), headers, JSON.stringify({ model: request.model, stream: false, store: false, input: [{ role: 'user', content: 'Reply with OK.' }] }));
+  }
   if (response.status < 200 || response.status >= 300) {
     throw new SettingsError('state', httpStatusMessage(response.status));
   }
-  parseCompletionBody(response.body ?? '');
+  if (responses) parseResponsesBody(response.body ?? '');
+  else parseCompletionBody(response.body ?? '');
+}
+
+/** Discover models using Chromium's Windows trust store, without following redirects. */
+export async function listEndpointModels(request: HyperEndpointModelsRequest): Promise<string[]> {
+  validateEndpointUrl(request.baseUrl);
+  const key = await unprotect(request.protectedKey);
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (key !== '') headers.Authorization = `Bearer ${key}`;
+  const response = await send('GET', endpointApiUrl(request.baseUrl, 'models'), headers);
+  if (response.status < 200 || response.status >= 300) {
+    throw new SettingsError('state', `Model discovery returned HTTP ${response.status}. Check the URL and credential, or enter model IDs manually.`);
+  }
+  return parseEndpointModels(response.body ?? '');
 }

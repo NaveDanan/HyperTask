@@ -1,3 +1,8 @@
+import { HyperMentionInput, type HyperMentionHandle } from '@/features/hyper-people/HyperMentionInput';
+import { HyperMentionText } from '@/features/hyper-people/HyperMentionText';
+import { HyperPeopleDisplay, HyperPeoplePicker } from '@/features/hyper-people/HyperPeoplePicker';
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
+import { hyperMentionText } from '@/features/hyper-people/hyperMentions';
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ExternalLink, Plus } from 'lucide-react';
 import { cn } from 'cn';
@@ -26,8 +31,10 @@ export function HyperGridCellDisplay(
   {
     cell,
     wrap = false,
+    field,
   }: {
     cell: HyperCell;
+    field?: HyperField;
     wrap?: boolean;
   },
 ) {
@@ -70,7 +77,7 @@ export function HyperGridCellDisplay(
   case 'url':
     return <span className={cn(textClass, 'text-info underline-offset-2 hover:underline')}>{cell.url}</span>;
   case 'text':
-    return <span className={textClass}>{cell.text}</span>;
+    return field && hyperIsPeopleField(field.proto) ? <HyperPeopleDisplay value={cell.text} /> : <HyperMentionText className={textClass} value={cell.text} />;
   default:
     return <span className={cn(textClass, 'text-muted-foreground')}>{cell.display}</span>;
   }
@@ -87,7 +94,7 @@ function HyperGridTextEditor(
   },
 ) {
   const grid = useHyperGrid();
-  const input = useRef<HTMLInputElement>(null);
+  const input = useRef<HTMLInputElement | HyperMentionHandle>(null);
   const [draft, setDraft] = useState(grid.editing?.initial ?? (cell.kind === 'number' ? cell.value?.toString() ?? '' : cell.display));
   const [invalid, setInvalid] = useState(false);
   const committed = useRef(false);
@@ -131,10 +138,11 @@ function HyperGridTextEditor(
     grid.edit(null, direction);
   };
 
+  const Editor = cell.kind === 'text' ? HyperMentionInput : Input;
   return (
-    <Input
+    <Editor
       data-hyper-grid-editor
-      ref={input}
+      ref={(node: HTMLInputElement | HyperMentionHandle | null) => { input.current = node; }}
       aria-label={`Edit ${field.name}`}
       aria-invalid={invalid}
       inputMode={cell.kind === 'number' ? 'decimal' : undefined}
@@ -401,6 +409,8 @@ export function HyperGridCell(
     </Tooltip>
   );
 
+  if (cell.kind === 'text' && hyperIsPeopleField(field.proto)) return <HyperPeoplePicker label={field.name} value={cell.text} onChange={value => grid.write(rowId, field.id, { kind: 'text', text: value }, { ...cell, text: value, display: value }, true)} initiallyOpen={editing} onOpenChange={open => grid.edit(open ? { rowId, fieldId: field.id } : null)} onClose={() => grid.edit(null)} />;
+
   if (editing && (cell.kind === 'text' || cell.kind === 'url' || cell.kind === 'number'))
     return <HyperGridTextEditor key={`${rowId}:${field.id}`} rowId={rowId} field={field} cell={cell} property={property} />;
 
@@ -434,7 +444,7 @@ export function HyperGridCell(
       <Button
         variant='ghost'
         tabIndex={property ? 0 : -1}
-        aria-label={`${editable ? 'Edit' : 'Read'} ${field.name}: ${cell.display || 'empty'}`}
+        aria-label={`${editable ? 'Edit' : 'Read'} ${field.name}: ${hyperMentionText(cell.display) || 'empty'}`}
         disabled={!editable}
         onClick={() => cell.kind === 'checklist' ? grid.expand(rowId) : grid.edit({
           rowId,
@@ -447,7 +457,7 @@ export function HyperGridCell(
           field.isPrimary && 'font-medium',
         )}>
         <span className='min-w-0 flex-1'>
-          <HyperGridCellDisplay cell={cell} wrap={field.settings.wrapCellContent} />
+          <HyperGridCellDisplay cell={cell} field={field} wrap={field.settings.wrapCellContent} />
         </span>
       </Button>{cell.kind === 'url' && /^https?:\/\//i.test(cell.url) ? <a
         href={cell.url}

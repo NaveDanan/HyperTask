@@ -1,0 +1,108 @@
+# Mirror images first; scripts/mirror-images.sh generates the image overrides.
+fullnameOverride: ""
+global:
+  host: hypertask.example.internal
+  existingSecret: hypertask-secrets
+  storageClassName: ""
+  # Optional PEM CA bundle for internal Keycloak HTTPS (public certificates only).
+  trustedCa: {existingConfigMap: "", key: ca-bundle.crt}
+  imageRegistryPrefix: artifactory.rafael.co.il/mems-docker-local-ww/danan/
+  imagePullSecrets:
+    - name: nave-pull-secret
+
+images:
+  postgres: {repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-postgres, tag: REPLACE_WITH_UNIQUE_TAG, digest: ""}
+  redis: {repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-redis, tag: REPLACE_WITH_UNIQUE_TAG, digest: ""}
+  storage: {repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-storage, tag: REPLACE_WITH_UNIQUE_TAG, digest: ""}
+  gotrue: {repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-gotrue, tag: REPLACE_WITH_UNIQUE_TAG, digest: ""}
+  cloud: {repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-cloud, tag: REPLACE_WITH_UNIQUE_TAG, digest: ""}
+  admin: {repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-admin, tag: REPLACE_WITH_UNIQUE_TAG, digest: ""}
+  proxy: {repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-proxy, tag: REPLACE_WITH_UNIQUE_TAG, digest: ""}
+  web: {repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-web, tag: REPLACE_WITH_UNIQUE_TAG, digest: ""}
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  tls:
+    secretName: wildcard-tls
+    # True only when the ingress controller already serves the correct wildcard
+    # certificate as its default. Then secretName must be empty.
+    useControllerDefaultCertificate: false
+
+networkPolicy:
+  enabled: true
+  ingressControllerNamespaces: [ingress-nginx]
+
+postgres:
+  database: appflowy
+  username: appflowy
+  storage: 20Gi
+  existingClaim: ""
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "2", memory: 2Gi}
+redis:
+  storage: 2Gi
+  existingClaim: ""
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+storage:
+  bucket: appflowy
+  region: us-east-1
+  storage: 50Gi
+  existingClaim: ""
+  resources:
+    requests: {cpu: 250m, memory: 256Mi}
+    limits: {cpu: "2", memory: 2Gi}
+auth:
+  replicas: 1
+  jwtExpirySeconds: 7200
+  emailEnabled: true
+  # Suitable for initial password-login testing without SMTP. For company-only
+  # SSO use values.keycloak.example.yaml, which disables email authentication.
+  emailAutoConfirm: true
+  allowSignup: true
+  siteUrl: hypertask-flutter://login-callback
+  # Retain the upstream desktop protocol as well as HyperTask's current one.
+  additionalRedirects: [hypertask-flutter://**, appflowy-flutter://**]
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+keycloak:
+  enabled: false
+  issuerUrl: ""
+  clientId: hypertask-gotrue
+cloud:
+  replicas: 1
+  environment: local
+  resources:
+    requests: {cpu: 500m, memory: 512Mi}
+    limits: {cpu: "2", memory: 2Gi}
+admin:
+  enabled: true
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+proxy:
+  replicas: 1
+  maxBodySize: 2g
+  resources:
+    requests: {cpu: 100m, memory: 64Mi}
+    limits: {cpu: "1", memory: 256Mi}
+web:
+  # Optional web client image built for same-origin /app routing. Electron
+  # requires only the backend and does not run inside Kubernetes.
+  enabled: false
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 64Mi}
+    limits: {cpu: "1", memory: 256Mi}
+smtp:
+  enabled: false
+  host: ""
+  port: 587
+  from: hypertask@localhost.local
+  tlsKind: starttls

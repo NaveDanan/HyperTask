@@ -1,3 +1,5 @@
+import { HyperEntraSignIn } from '@/features/hyper-entra/HyperEntraSignIn';
+import { useHyperEntraStore } from '@/features/hyper-entra/HyperEntraStore';
 import { forwardRef, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowLeft, Eye, EyeOff, Mail, Settings, VenetianMask } from 'lucide-react';
 import { TitleBar } from '@/components/app/window-controls';
@@ -105,6 +107,7 @@ export function SignInScreen() {
 function MainPage({ push }: { push: (page: Page) => void }) {
   const { tr } = useTr();
   const env = useAppStore((s) => s.env);
+  const entraBusy = useHyperEntraStore(state => ['broker', 'exchange', 'handoff'].includes(state.phase));
   const emailRef = useRef<AFTextFieldHandle>(null);
   const emailError = useSignInStore((s) => s.emailError);
   const successOrFail = useSignInStore((s) => s.successOrFail);
@@ -134,7 +137,8 @@ function MainPage({ push }: { push: (page: Page) => void }) {
     <div className="flex min-h-0 flex-1 flex-col">
       <HyperFormColumn>
         <HyperTitleLogo title={tr('welcomeText')} description={env && isAuthEnabled(env) ? 'Sign in to your collaboration server' : undefined} />
-        <div className="flex flex-col gap-3">
+        <HyperEntraSignIn />
+        <div className="flex flex-col gap-3" inert={entraBusy}>
           <HyperAuthField ref={emailRef} hintText={tr('signIn.pleaseInputYourEmail')} type="email" autoComplete="email" onSubmitted={continueWithEmail} />
           <Button size="lg" className="h-10 w-full" onClick={continueWithEmail}>{tr('signIn.continueWithEmail')}</Button>
           <Button variant="outline" size="lg" className="h-10 w-full" onClick={() => withValidEmail((email) => push({ name: 'password', email }))}>{tr('signIn.continueWithPassword')}</Button>

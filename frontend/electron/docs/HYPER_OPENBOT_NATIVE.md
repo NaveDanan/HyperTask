@@ -16,7 +16,7 @@ The feature lives under `src/renderer/features/hyper-openbot`. Its [reuse map](.
 
 ## Connection and identity
 
-The main process owns an SSH connection to the authorized development VM, authenticated using the existing OS SSH key/known-host configuration. It creates a randomly named private `0700` directory and Unix socket. HTTP and Phoenix WebSocket traffic use that socket exclusively; the original public reference forward on port 3010 is untouched. Fixed routes, original Origin checks, request-size limits and finite deadlines apply. Binary bodies remain bytes across IPC.
+The main process owns an SSH connection to the authorized development VM, authenticated using the existing OS SSH key/known-host configuration. On Linux it creates a randomly named private `0700` directory and Unix socket. On Windows it uses an OS named pipe relayed through Windows OpenSSH stdin/stdout with `-W 127.0.0.1:3010`. HTTP and Phoenix WebSocket traffic use this private IPC connection exclusively; the original public reference forward on port 3010 is untouched. Fixed routes, original Origin checks, request-size limits and finite deadlines apply. Binary bodies remain bytes across IPC.
 
 The trusted main process pairs `GetUserProfile` with the additive native-core `HyperGetNativeIdentity` query. This query returns the current session UUID and an explicit local domain only in local core mode. The personal development connection permits local profiles only: the current core does not persist the authenticated server's origin, so remote accounts fail closed. The supported local-profile lifecycle connection and this remaining provenance limitation are documented in [the lifecycle note](HYPER_OPENBOT_LIFECYCLE.md). Numeric IDs, renderer identity arguments and current environment URLs cannot establish ownership.
 
@@ -26,7 +26,7 @@ Native sign-out and authentication transitions invalidate leases and cancel HTTP
 
 Generic renderer filesystem IPC cannot read, write, inspect or create directories under Electron's private user-data directory. The guard checks normalized paths and canonical existing ancestors to reject directory and file symlink aliases, including targets not yet created. This protects owner files and cookie partitions from renderer file operations. Ordinary imports, media and exports outside that private directory keep their existing API.
 
-The current transport is a Linux development configuration for `agent@100.104.170.51`. It is not a portable production connection manager. Original OpenBot, Intelligence and model credentials stay on the VM. No API key or Intelligence credential is placed in the renderer.
+The transport connects to the same development VM from Linux through `agent@100.104.170.51`, and from Windows through its internal hostname `agent@mmems-mems01`. Windows requires the built-in OpenSSH client, internal DNS/network access and the existing user SSH key/known-host configuration. It does not open a local TCP listener. Original OpenBot, Intelligence and model credentials stay on the VM. No API key or Intelligence credential is placed in the renderer.
 
 ## Actual native observations
 

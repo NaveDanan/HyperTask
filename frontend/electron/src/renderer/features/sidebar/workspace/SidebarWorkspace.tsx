@@ -1,3 +1,4 @@
+import { hyperEntraRecordSignOut } from '@/features/hyper-entra/HyperEntraStore';
 // Collab-mode header: SidebarWorkspace (workspace/sidebar_workspace.dart), the switcher popup
 // WorkspacesMenu (_sidebar_workspace_menu.dart), WorkspaceIcon (_sidebar_workspace_icon.dart),
 // WorkspaceMoreActionList (_sidebar_workspace_actions.dart) and NotionImporter.
@@ -424,6 +425,7 @@ function WorkspaceMoreActionList({ workspace, myRole, mutex }: { workspace: User
 function WorkspaceMoreButton({ mutex: _mutex }: { mutex: PopoverMutex }) {
   const { tr } = useTr();
   return <MenuRow icon={<LogOut />} label={tr('button.logout')} onClick={async () => {
+    await hyperEntraRecordSignOut();
     await UserEventSignOut();
     await runHypertask();
   }} />;

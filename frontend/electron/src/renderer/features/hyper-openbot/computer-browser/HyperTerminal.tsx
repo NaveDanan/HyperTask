@@ -17,6 +17,7 @@ import {
 import { socketUrl } from "./HyperScreenGeometry";
 import { HyperOpenBotSocket } from "../socket";
 import { TERMINAL_THEME } from "./HyperTerminalTheme";
+import { useTerminalTypography } from "@/features/settings/appearance/font-families";
 
 /**
  * The Bot's live shell, drawn by xterm.js.
@@ -46,20 +47,6 @@ const SHOW_CURSOR = "\x1b[?47h\x1b[?47l";
 /** Acknowledged in batches: after this many bytes, or a moment after the last write. */
 const ACK_EVERY_BYTES = 32 * 1024;
 const ACK_AFTER_MS = 100;
-
-/** Tailwind's monospace stack, which the rest of the app's code is set in. */
-function monospace(): string {
-  const declared =
-    typeof document === "undefined"
-      ? ""
-      : getComputedStyle(document.documentElement)
-          .getPropertyValue("--font-mono")
-          .trim();
-  return (
-    declared ||
-    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-  );
-}
 
 export type HyperTerminalHandle = { focus: () => void };
 
@@ -112,6 +99,9 @@ function HyperLiveTerminal({
   const reconnectingRef = useRef(onReconnecting);
   reconnectingRef.current = onReconnecting;
   const [live, setLive] = useState(false);
+  // The font and size follow the Appearance settings; a change reaches a live terminal (see below).
+  const { family: fontFamily, size: fontSize } = useTerminalTypography();
+  const refitRef = useRef<(() => void) | null>(null);
 
   useImperativeHandle(ref, () => ({
     focus: () => focusTerminal(terminalRef.current),
@@ -127,8 +117,8 @@ function HyperLiveTerminal({
       cursorStyle: "block",
       cursorInactiveStyle: "outline",
       disableStdin: !drivingRef.current,
-      fontFamily: monospace(),
-      fontSize: 13,
+      fontFamily,
+      fontSize,
       lineHeight: 1.2,
       scrollback: 5_000,
       theme: TERMINAL_THEME,
@@ -160,6 +150,7 @@ function HyperLiveTerminal({
     };
     const observer = new ResizeObserver(() => refit());
     observer.observe(element);
+    refitRef.current = refit;
 
     let drawn = 0;
     let ackTimer: ReturnType<typeof setTimeout> | undefined;
@@ -246,6 +237,7 @@ function HyperLiveTerminal({
       observer.disconnect();
       clearTimeout(ackTimer);
       terminalRef.current = null;
+      refitRef.current = null;
       terminal.dispose();
     };
   }, [computerId, retryKey]);
@@ -271,6 +263,20 @@ function HyperLiveTerminal({
     terminal.options.cursorBlink = driving;
     if (driving) focusTerminal(terminal);
   }, [driving]);
+
+  // A font or size change from the Appearance settings reaches the live terminal, and the grid is
+  // refitted so the shell is told the new size. The terminal was created with these values, so the
+  // first run does nothing.
+  const appliedFont = useRef({ fontFamily, fontSize });
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    const applied = appliedFont.current;
+    if (!terminal || (applied.fontFamily === fontFamily && applied.fontSize === fontSize)) return;
+    appliedFont.current = { fontFamily, fontSize };
+    terminal.options.fontFamily = fontFamily;
+    terminal.options.fontSize = fontSize;
+    refitRef.current?.();
+  }, [fontFamily, fontSize]);
 
   return (
     <section

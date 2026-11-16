@@ -1,3 +1,4 @@
+// Ported from t3code (apps/web/src/components/ui/toggle-group.tsx), Copyright (c) 2026 T3 Tools Inc., MIT License. See features/settings/appearance/NOTICE.md.
 import * as React from "react"
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle"
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group"

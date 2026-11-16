@@ -108,7 +108,6 @@ unsafe impl Send for Task {}
 struct CoreHost {
   core: Option<HypertaskCore>,
   sender: Option<mpsc::UnboundedSender<Task>>,
-  local_identity: bool,
 }
 
 impl CoreHost {
@@ -142,7 +141,6 @@ impl CoreHost {
         return -1;
       },
     };
-    let local_identity = configuration.authenticator_type == AuthenticatorType::Local;
     configuration.write_env();
 
     if configuration.authenticator_type == AuthenticatorType::HypertaskCloud {
@@ -183,7 +181,6 @@ impl CoreHost {
     let cloned_runtime = runtime.clone();
     self.core =
       Some(runtime.block_on(async move { HypertaskCore::new(config, cloned_runtime, None).await }));
-    self.local_identity = local_identity;
     0
   }
 
@@ -199,12 +196,17 @@ impl CoreHost {
     // The main process pairs this session UUID with GetUserProfile, permits local
     // accounts only, and never accepts an identity supplied by the renderer.
     if request.event == "HyperGetNativeIdentity" {
-      if !self.local_identity {
-        send_response(request.id, STATUS_INTERNAL, b"Authenticated server identity is unavailable");
-        return;
-      }
       match core.user_manager.get_session() {
         Ok(session) if !session.user_uuid.is_nil() => {
+          // Server connection settings may be present while a local profile is open.
+          // Authorize the stored native profile, never the configured server mode.
+          let local_profile = core.user_manager.db_connection(session.user_id)
+            .and_then(|mut connection| hyper_user_pub::sql::select_user_auth_type(session.user_id, &mut connection))
+            .is_ok_and(|auth_type| auth_type == hyper_user_pub::entities::AuthType::Local);
+          if !local_profile {
+            send_response(request.id, STATUS_INTERNAL, b"Authenticated server identity is unavailable");
+            return;
+          }
           let identity = serde_json::json!({
             "version": 1,
             "domain": "local",

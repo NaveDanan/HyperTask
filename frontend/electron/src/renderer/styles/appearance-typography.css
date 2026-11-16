@@ -1,0 +1,26 @@
+/* Ported from t3code (apps/web/src/index.css, apps/web/src/appearanceFonts.ts), Copyright (c) 2026 T3 Tools Inc., MIT License. See NOTICE.md in this folder. */
+
+/* The interface size sets the root, so rem-based type and spacing follow it, as in t3code.
+   applyAppearancePrefs() writes --font-size-interface on the document root. */
+html {
+  font-size: var(--font-size-interface, 16px);
+}
+
+/* Code block size, scoped to the markdown of the transcript (HyperMarkdown, class hyper-markdown).
+   Inline code stays relative to its sentence. Diffs and previews take it through the same variable. */
+.hyper-markdown pre,
+.hyper-markdown pre code {
+  font-size: var(--font-size-code, 13px);
+}
+
+/* Font smoothing. Only macOS honours these; the other platforms ignore them. The attribute is
+   set by applyAppearancePrefs(). The body carries antialiased in the base layer, so the off state
+   overrides it here, unlayered. */
+html[data-font-smoothing='true'] {
+  -webkit-font-smoothing: antialiased;
+}
+
+html[data-font-smoothing='false'],
+html[data-font-smoothing='false'] body {
+  -webkit-font-smoothing: auto;
+}

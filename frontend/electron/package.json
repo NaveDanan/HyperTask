@@ -21,10 +21,14 @@
     "harness:shot": "node scripts/web-harness/screenshot.mjs",
     "harness:seed": "node scripts/web-harness/hyper-views.mjs seed",
     "harness:view": "node scripts/web-harness/hyper-views.mjs shot",
-    "harness:smoke": "vitest run --config scripts/web-harness/live.config.ts"
+    "harness:smoke": "vitest run --config scripts/web-harness/live.config.ts",
+    "build:desktop": "npm run build && electron-builder --dir",
+    "dev:jwt": "node scripts/HyperDevJwtLogin.mjs"
   },
   "dependencies": {
     "@ag-ui/core": "1.0.2",
+    "@azure/msal-node": "7.2.2",
+    "@azure/msal-node-extensions": "5.6.2",
     "@base-ui/react": "^1.9.0",
     "@bufbuild/protobuf": "^2.17.0",
     "@copilotkit/react-core": "1.85.0",
@@ -35,6 +39,8 @@
     "@dnd-kit/utilities": "3.2.2",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@noble/hashes": "^1.8.0",
     "@streamdown/code": "2.0.0",
     "@tanstack/react-table": "9.3.1",
     "@tanstack/react-virtual": "3.14.26",
@@ -43,7 +49,10 @@
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "cn": "^0.5.2",
+    "culori": "^4.0.2",
     "date-fns": "4.4.0",
+    "jsonc-parser": "^3.3.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^1.70.0",
     "react": "^19.3.1",
     "react-day-picker": "10.0.2",
@@ -59,12 +68,14 @@
     "@bufbuild/buf": "^1.75.0",
     "@bufbuild/protoc-gen-es": "^2.17.0",
     "@tailwindcss/vite": "^4.3.5",
+    "@types/culori": "^4.0.1",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/ws": "8.18.1",
     "@vitejs/plugin-react": "^6.3.0",
     "electron": "44.10.2",
+    "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
     "shadcn": "^4.23.0",
     "tailwindcss": "^4.3.5",
@@ -74,6 +85,8 @@
     "vitest": "^5.1.0"
   },
   "allowScripts": {
-    "electron@44.10.2": true
+    "electron@44.10.2": true,
+    "keytar@7.9.0": true,
+    "@azure/msal-node-extensions@5.6.2": true
   }
 }

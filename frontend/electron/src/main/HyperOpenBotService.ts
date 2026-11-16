@@ -33,7 +33,7 @@ export class HyperOpenBotService {
     ++this.version;
     this.operation?.controller.abort(); this.operation = undefined;
     const wasReady = this.state.ready;
-    this.update({ ready: false, phase: 'idle', problem: 'signed_out', checks: [], checkedAt: null });
+    this.update({ ready: false, phase: 'idle', problem: this.dependencies.supported ? 'signed_out' : 'unsupported', checks: [], checkedAt: null });
     if (!wasReady) this.dependencies.disconnect();
   }
   async configure(autoStart: boolean) {

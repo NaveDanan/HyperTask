@@ -1,0 +1,96 @@
+{{- if and .Values.keycloak.enabled (not (regexMatch "^https://[^/]+/realms/[^/?#]+/?$" .Values.keycloak.issuerUrl)) -}}
+{{- fail "keycloak.issuerUrl must be the internal HTTPS realm URL, e.g. https://sso.company.internal/realms/company" -}}
+{{- end -}}
+{{- if and .Values.keycloak.enabled (not .Values.keycloak.clientId) -}}{{- fail "keycloak.clientId is required" -}}{{- end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hypertask.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "hypertask.labels" . | nindent 4 }}
+data:
+  init.sql: |
+    CREATE SCHEMA IF NOT EXISTS auth;
+    CREATE EXTENSION IF NOT EXISTS vector;
+  nginx.conf: |
+    events { worker_connections 1024; }
+    http {
+      include /etc/nginx/mime.types;
+      map $http_upgrade $connection_upgrade { default upgrade; '' close; }
+      map $http_x_forwarded_proto $hyper_forwarded_proto { default $scheme; https https; http http; }
+      upstream hyper_cloud { server {{ include "hypertask.fullname" . }}-cloud:8000; }
+      upstream hyper_auth { server {{ include "hypertask.fullname" . }}-gotrue:9999; }
+      {{- if .Values.admin.enabled }}
+      upstream hyper_admin { server {{ include "hypertask.fullname" . }}-admin:3000; }
+      {{- end }}
+      upstream hyper_storage { server {{ include "hypertask.fullname" . }}-storage:9000; }
+      {{- if .Values.web.enabled }}
+      upstream hyper_web { server {{ include "hypertask.fullname" . }}-web:80; }
+      {{- end }}
+      server {
+        listen 8080;
+        client_max_body_size {{ .Values.proxy.maxBodySize }};
+        underscores_in_headers on;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Proto $hyper_forwarded_proto;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        location = /healthz { access_log off; return 200 'HyperTask backend ready\n'; }
+        location = /health { proxy_pass http://hyper_cloud; }
+        location = /verify { access_log off; proxy_pass http://hyper_auth; }
+        location /gotrue/ {
+          access_log off;
+          rewrite ^/gotrue(/.*)$ $1 break;
+          proxy_pass http://hyper_auth;
+        }
+        location /ws {
+          proxy_set_header X-Forwarded-Proto $hyper_forwarded_proto;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          access_log off;
+          proxy_pass http://hyper_cloud;
+          proxy_http_version 1.1;
+          proxy_set_header Host $http_host;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection $connection_upgrade;
+          proxy_read_timeout 86400s;
+        }
+        location /api {
+          proxy_set_header X-Forwarded-Proto $hyper_forwarded_proto;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          access_log off;
+          proxy_pass http://hyper_cloud;
+          proxy_set_header Host $http_host;
+          proxy_set_header X-Request-Id $request_id;
+          proxy_http_version 1.1;
+          proxy_set_header Connection '';
+          proxy_buffering off;
+          proxy_request_buffering off;
+          proxy_read_timeout 600s;
+        }
+        location /minio-api/ {
+          proxy_set_header X-Forwarded-Proto $hyper_forwarded_proto;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          access_log off;
+          rewrite ^/minio-api/(.*) /$1 break;
+          proxy_pass http://hyper_storage;
+          proxy_set_header Host {{ include "hypertask.fullname" . }}-storage:9000;
+          proxy_http_version 1.1;
+          proxy_set_header Connection '';
+          proxy_request_buffering off;
+        }
+        {{- if .Values.admin.enabled }}
+        location /console { proxy_pass http://hyper_admin; }
+        {{- end }}
+        {{- if .Values.web.enabled }}
+        location /app {
+          rewrite ^/app/?(.*)$ /$1 break;
+          proxy_pass http://hyper_web;
+        }
+        {{- end }}
+        location = / {
+          default_type text/html;
+          return 200 '<!doctype html><title>HyperTask</title><h1>HyperTask backend</h1><p>Configure this HTTPS origin in the desktop app.</p>';
+        }
+        location / { return 404; }
+      }
+    }

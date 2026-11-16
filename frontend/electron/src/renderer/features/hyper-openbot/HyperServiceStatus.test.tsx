@@ -16,3 +16,18 @@ it('allows stopping the remaining Intelligence node or an unhealthy managed serv
   expect(stopDisabled(stopped)).toBe(true);
   expect(stopDisabled({ ...stopped, phase: 'stopping', checks: [{ id: 'deployment', state: 'ready' }] })).toBe(true);
 });
+import { HYPER_OPENBOT_SERVICE_MESSAGES } from '@shared/HyperOpenBotService';
+
+it.each(['unsupported', 'signed_out', 'profile_required'] as const)('shows %s instead of checking when no readiness timestamp exists', (problem) => {
+  const html = renderToStaticMarkup(<HyperServiceStatus state={{ ...stopped, checkedAt: null, problem }} />);
+  expect(html).toContain(HYPER_OPENBOT_SERVICE_MESSAGES[problem]);
+  expect(html).not.toContain('Checking AI services');
+  expect(html).not.toContain('Checking OpenBot services');
+  expect(html).not.toContain('Checking the configured private backend');
+});
+
+it('explains that Chat backend readiness is separate from the configured LLM endpoint', () => {
+  const html = renderToStaticMarkup(<HyperServiceStatus state={{ ...stopped, problem: 'unsupported', checkedAt: null }} />);
+  expect(html).toContain('Settings &gt; AI');
+  expect(html).toContain('does not configure this connection');
+});

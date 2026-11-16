@@ -1,0 +1,6 @@
+# Apply after your ingress profile only when the controller has the matching
+# wildcard certificate configured as its default certificate.
+ingress:
+  tls:
+    secretName: ""
+    useControllerDefaultCertificate: true

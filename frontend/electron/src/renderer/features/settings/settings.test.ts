@@ -31,7 +31,7 @@ describe('SettingsMenu visibility', () => {
   it('local mode shows the custom pages and no Members/Sites/Plan', () => {
     expect(visibleSettingsPages({ workspaceType: WorkspaceTypePB.LocalW, role: AFRolePB.Owner, isBillingEnabled: true, debug: false })).toEqual([
       SettingsPage.account,
-      SettingsPage.workspace,
+      SettingsPage.appearance,
       SettingsPage.manageData,
       SettingsPage.notifications,
       SettingsPage.cloud,
@@ -41,9 +41,10 @@ describe('SettingsMenu visibility', () => {
     ]);
   });
 
-  it('server members see Members after Workspace and Sites after AI; debug adds Feature Flags', () => {
+  it('server members see Appearance, then Workspace, then Members; Sites after AI; debug adds Feature Flags', () => {
     expect(visibleSettingsPages({ workspaceType: WorkspaceTypePB.ServerW, role: AFRolePB.Member, isBillingEnabled: false, debug: true })).toEqual([
       SettingsPage.account,
+      SettingsPage.appearance,
       SettingsPage.workspace,
       SettingsPage.member,
       SettingsPage.manageData,

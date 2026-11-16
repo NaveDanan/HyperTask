@@ -28,6 +28,8 @@ export interface AppInfo {
   version: string;
   platform: string;
   isPackaged: boolean;
+  /** Explicit unverified-JWT development launch; always false in packaged apps. */
+  developmentJwt?: boolean;
   /** Electron's app.getPath values, plus `support`: Flutter's application support directory. */
   paths: { appData: string; documents: string; home: string; temp: string; userData: string; support: string };
 }
@@ -84,6 +86,9 @@ export interface OpenAIEndpointTestRequest {
   protectedKey: string;
 }
 
+/** Model discovery needs only an endpoint and credential, before a model is selected. */
+export type HyperEndpointModelsRequest = Pick<OpenAIEndpointTestRequest, 'baseUrl' | 'protectedKey'>;
+
 /** A `<name>.hyper_plugin` theme folder: the raw light and dark JSON texts. */
 export interface CustomThemeFiles {
   name: string;
@@ -102,7 +107,34 @@ export interface GoogleFontFace {
 export interface HyperOpenBotRequest { id: string; path: string; method: string; body?: string | Uint8Array; contentType?: string }
 export interface HyperOpenBotChunk { id: string; chunk?: Uint8Array; done?: boolean; error?: string }
 export interface HyperOpenBotSocketEvent { id: string; type: 'open' | 'message' | 'error' | 'close'; data?: string | Uint8Array; code?: number; reason?: string }
+export interface HyperOutlookAttendee { name: string; email: string; type: number; response: number }
+export interface HyperOutlookStatus { available: boolean; userName: string; email: string; reason?: string }
+export interface HyperOutlookEvent {
+  id: string; subject: string; start: string; end: string; allDay: boolean; location: string; body: string;
+  organizer: string; isOrganizer: boolean; responseStatus: number; attendees: HyperOutlookAttendee[]; attendeeCount: number;
+  busyStatus: number; isRecurring: boolean; recurrenceState: number; isCancelled: boolean; isPrivate: boolean; joinUrl: string | null; lastModified: string;
+}
+export interface HyperOutlookRange { start: string; end: string }
+export interface HyperOutlookFields extends HyperOutlookRange { subject: string; allDay: boolean; location: string; body: string }
+export interface HyperOutlookCreate extends HyperOutlookFields { attendees: string[]; send: boolean }
+export interface HyperOutlookUpdate { id: string; expectedLastModified: string; patch: Partial<HyperOutlookFields>; send: boolean }
+export interface HyperOutlookDelete { id: string; send: boolean }
+export interface HyperOutlookRespond extends HyperOutlookDelete { response: 'accept' | 'tentative' | 'decline' }
+export interface HyperPerson { name: string; email: string; title: string; department: string; phone: string; office: string; company: string; photo?: string; source: 'ad' | 'outlook' }
+export interface HyperOutlookApi {
+  people: { search(args: { query: string; limit?: number }): Promise<IpcResult<HyperPerson[]>>; lookup(args: { email: string }): Promise<IpcResult<HyperPerson | null>> };
+  status(): Promise<IpcResult<HyperOutlookStatus>>;
+  list(range: HyperOutlookRange): Promise<IpcResult<HyperOutlookEvent[]>>;
+  create(args: HyperOutlookCreate): Promise<IpcResult<HyperOutlookEvent>>;
+  update(args: HyperOutlookUpdate): Promise<IpcResult<HyperOutlookEvent>>;
+  delete(args: HyperOutlookDelete): Promise<IpcResult<null>>;
+  respond(args: HyperOutlookRespond): Promise<IpcResult<null>>;
+  open(args: { id: string }): Promise<IpcResult<null>>;
+}
+
 export interface HypertaskApi {
+  auth: { devJwtSession(): Promise<string | null>; entraIdToken(config: import('./HyperEntra').HyperEntraConfig): Promise<IpcResult<import('./HyperEntra').HyperEntraToken>>; entraCancel(): Promise<void> };
+  outlook: HyperOutlookApi;
   hyperOpenBot: {
     callbackKey(input: { action: HyperCallbackKeyAction; agentId: string }): Promise<HyperCallbackKeyResult>;
     onNativeDestination(listener: (destination: HyperNativeDestination) => void): () => void;
@@ -210,6 +242,8 @@ export interface HypertaskApi {
     writeSettings(json: string): Promise<IpcResult<string>>;
     /** POST <base>/chat/completions, 30 s timeouts, redirects not followed, vendor hosts refused. */
     test(request: OpenAIEndpointTestRequest): Promise<IpcResult<void>>;
+    /** GET <base>/models, with the same credential and redirect policy as testing. */
+    listModels(request: HyperEndpointModelsRequest): Promise<IpcResult<string[]>>;
   };
   /** CompanyCertificateStore over the Windows CurrentUser Root store (C.9). */
   certificates: {
@@ -234,6 +268,18 @@ export interface HypertaskApi {
 }
 
 export const IpcChannel = {
+  AuthDevJwtSession: 'auth:hyper-dev-jwt-session',
+  AuthEntraIdToken: 'auth.entraIdToken',
+  AuthEntraCancel: 'auth.entraCancel',
+  OutlookPeopleSearch: 'outlook.people.search',
+  OutlookPeopleLookup: 'outlook.people.lookup',
+  OutlookStatus: 'outlook:status',
+  OutlookList: 'outlook:list',
+  OutlookCreate: 'outlook:create',
+  OutlookUpdate: 'outlook:update',
+  OutlookDelete: 'outlook:delete',
+  OutlookRespond: 'outlook:respond',
+  OutlookOpen: 'outlook:open',
   CoreInit: 'core:init',
   CoreRequest: 'core:request',
   CoreLog: 'core:log',
@@ -280,6 +326,7 @@ export const IpcChannel = {
   JiraCredentialsPersistent: 'jira:credentials-persistent',
   AiEndpointWriteSettings: 'ai-endpoint:write-settings',
   AiEndpointTest: 'ai-endpoint:test',
+  HyperAiEndpointModels: 'ai-endpoint:list-models',
   CertificatesList: 'certificates:list',
   CertificatesInspectFile: 'certificates:inspect-file',
   CertificatesImport: 'certificates:import',

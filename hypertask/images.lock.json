@@ -1,0 +1,12 @@
+{
+  "platform": "linux/amd64",
+  "images": {
+    "postgres": "pgvector/pgvector:0.8.0-pg16@sha256:a132765ec351c65111b5b675928a3a0515a466a40f97277329db8b8209ad8bc9",
+    "redis": "redis:7.4.2-alpine@sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952",
+    "storage": "chrislusf/seaweedfs:3.85@sha256:49312939c00c01e5ee6afbd7d728b18027821d3764c35a797a72acd4fdf3296a",
+    "gotrue": "appflowyinc/gotrue:0.8.0@sha256:c4a12b7adc41b0872604b9aec5af0649d576dd4d914468896048c88192e1ec0c",
+    "cloud": "appflowyinc/appflowy_cloud:0.9.51@sha256:8509c1faf1777e339f91bf2f4303e13ec466d23575b1ccd1dbd9fc0055a2d430",
+    "admin": "appflowyinc/admin_frontend:0.9.51@sha256:6ab50d27544f66e381f835a403744f9d4ae913e5c2e4925b72de97c75929d6f6",
+    "proxy": "nginx:1.26.3-alpine@sha256:1eadbb07820339e8bbfed18c771691970baee292ec4ab2558f1453d26153e22d"
+  }
+}

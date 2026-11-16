@@ -1,0 +1,13 @@
+# Use this instead of values.tls.example.yaml on a Traefik cluster.
+global:
+  host: hypertask.apps.company.internal
+  storageClassName: longhorn
+ingress:
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  tls:
+    secretName: wildcard-apps-tls
+    useControllerDefaultCertificate: false
+networkPolicy:
+  ingressControllerNamespaces: [kube-system]

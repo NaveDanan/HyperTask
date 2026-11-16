@@ -1,3 +1,4 @@
+import { hyperEntraRecordSignOut } from '@/features/hyper-entra/HyperEntraStore';
 import { useEffect, useState } from 'react';
 import { ChevronDown, FolderOpen, Globe, TriangleAlert } from 'lucide-react';
 import { UserEventGetAnonUser, UserEventOpenAnonUser, UserEventSignOut } from '@/backend/events';
@@ -156,7 +157,8 @@ export function WorkspaceErrorScreen({ error }: { error: HyperError }) {
           </EmptyHeader>
           <EmptyContent>
             <Button size="lg" className="h-10 w-full" onClick={async () => {
-              await UserEventSignOut();
+              await hyperEntraRecordSignOut();
+        await UserEventSignOut();
               await runHypertask();
             }}>{tr('settings.menu.logout')}</Button>
           </EmptyContent>

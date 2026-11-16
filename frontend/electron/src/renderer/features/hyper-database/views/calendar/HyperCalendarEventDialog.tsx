@@ -1,4 +1,9 @@
-import { useId, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { FieldType } from '@shared/protobuf/hyper-database2/field_entities_pb';
+import { HyperMentionInput, HyperMentionTextarea } from '@/features/hyper-people/HyperMentionInput';
+import { HyperPeoplePicker } from '@/features/hyper-people/HyperPeoplePicker';
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
+import { useId, useState, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,6 +20,7 @@ import { HyperCalendarDeleteDialog } from './HyperCalendarDeleteDialog';
 
 interface HyperCalendarDialogProps {
   initial: HyperCalendarDraft;
+  saveTo?: (draft: HyperCalendarDraft) => ReactNode;
   controller: HyperDatabaseController;
   dateField: HyperField;
   primaryField?: HyperField;
@@ -23,9 +29,15 @@ interface HyperCalendarDialogProps {
   onClose: () => void;
   onSaved: () => void;
 }
-export function HyperCalendarEventDialog({ initial, controller, dateField, primaryField, colorField, timeZone, onClose, onSaved }: HyperCalendarDialogProps) {
+export function HyperCalendarEventDialog({ initial, controller, dateField, primaryField, colorField, timeZone, onClose, onSaved, saveTo }: HyperCalendarDialogProps) {
+  const [state, setState] = useState(controller.state);
+  useEffect(() => controller.store.subscribe(next => setState(next)), [controller]);
   const id = useId();
   const [draft, setDraft] = useState(initial);
+  const [peopleValues, setPeopleValues] = useState<Record<string, string>>({});
+  const descriptionField = controller.state.fields.find(field => field.type === FieldType.RichText && !field.isPrimary && !hyperIsPeopleField(field.proto) && /description|notes/i.test(field.name));
+  const [description, setDescription] = useState(''); const descriptionDirty = useRef(false);
+  useEffect(() => { if (!initial.rowId) return; let alive = true; void controller.loadRows([initial.rowId]).then(() => { const cell = descriptionField ? controller.state.cells[initial.rowId!]?.[descriptionField.id] : undefined; if (alive && !descriptionDirty.current) setDescription(cell?.kind === 'text' ? cell.text : ''); }).catch(() => {}); return () => { alive = false; }; }, [controller, initial.rowId, descriptionField?.id]);
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const dates = hyperCalendarDraftDates(draft, timeZone);
@@ -37,6 +49,8 @@ export function HyperCalendarEventDialog({ initial, controller, dateField, prima
     try {
       const rowId = draft.rowId ?? (createdId = (await controller.createRow()).id);
       if (primaryField) await controller.updateCell(rowId, primaryField.id, { kind: 'text', text: draft.title.trim() || 'Untitled' });
+      if (descriptionDirty.current) { const field = descriptionField ?? await controller.createField('Description', FieldType.RichText); await controller.updateCell(rowId, field.id, { kind: 'text', text: description }); }
+      for (const [fieldId, text] of Object.entries(peopleValues)) await controller.updateCell(rowId, fieldId, { kind: 'text', text });
       await controller.updateCell(rowId, dateField.id, { kind: 'date', timestamp: hyperCalendarSeconds(dates.start), includeTime: !draft.allDay, isRange: draft.isRange,
         ...(dates.end ? { endTimestamp: hyperCalendarSeconds(dates.end) } : {}) });
       if (colorField) {
@@ -64,8 +78,11 @@ export function HyperCalendarEventDialog({ initial, controller, dateField, prima
     <DialogContent className="max-h-[calc(100%-2rem)] overflow-y-auto rounded-xl shadow-xl sm:max-w-md" showCloseButton={!busy}>
       <DialogHeader><DialogTitle>{draft.rowId ? 'Edit event' : 'New event'}</DialogTitle><DialogDescription className="sr-only">Set the title, dates and colour for this database row.</DialogDescription></DialogHeader>
       <form className="flex flex-col gap-4" onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.target instanceof HTMLInputElement) { event.preventDefault(); void save(); } }} onSubmit={event => { event.preventDefault(); void save(); }}>
+        {!draft.rowId && saveTo?.(draft)}
         <fieldset disabled={busy || draft.readOnly} className="flex min-w-0 flex-col gap-4">
-          <Field><FieldLabel htmlFor={`${id}-title`}>Title</FieldLabel><Input id={`${id}-title`} autoFocus value={draft.title} onChange={event => patch({ title: event.target.value })} placeholder="Untitled" disabled={!primaryField} /></Field>
+          <Field><FieldLabel htmlFor={`${id}-title`}>Title</FieldLabel><HyperMentionInput id={`${id}-title`} autoFocus value={draft.title} onChange={event => patch({ title: event.target.value })} placeholder="Untitled" disabled={!primaryField || busy || draft.readOnly} /></Field>
+          <Field><FieldLabel htmlFor={id + "-description"}>Description</FieldLabel><HyperMentionTextarea id={id + "-description"} value={description} disabled={busy || draft.readOnly} onChange={event => { descriptionDirty.current = true; setDescription(event.target.value); }} placeholder="Add a description…" /></Field>
+          {state.fields.filter(field => hyperIsPeopleField(field.proto)).map(field => <Field key={field.id}><FieldLabel>{field.name}</FieldLabel><HyperPeoplePicker label={field.name} value={peopleValues[field.id] ?? state.cells[draft.rowId ?? ""]?.[field.id]?.display ?? ""} onChange={value => setPeopleValues(previous => ({ ...previous, [field.id]: value }))} disabled={busy || draft.readOnly || Boolean(draft.rowId && (!state.cells[draft.rowId]?.[field.id] || state.cells[draft.rowId]?.[field.id]?.error))} /></Field>)}
           <Field orientation="horizontal"><FieldLabel htmlFor={`${id}-all-day`}>All day</FieldLabel><Switch id={`${id}-all-day`} checked={draft.allDay} onCheckedChange={allDay => patch({ allDay })} /></Field>
           <Field><FieldLabel htmlFor={`${id}-start-date`}>Start</FieldLabel><div className="flex gap-2"><Input id={`${id}-start-date`} type="date" value={draft.startDate} onChange={event => patch({ startDate: event.target.value, ...(!draft.isRange ? { endDate: event.target.value } : {}) })} className="min-w-0 flex-1" />{!draft.allDay && <Input aria-label="Start time" type="time" value={draft.startTime} onChange={event => patch({ startTime: event.target.value })} className="w-32" />}</div></Field>
           <Field orientation="horizontal"><FieldLabel htmlFor={`${id}-range`}>End date</FieldLabel><Switch id={`${id}-range`} checked={draft.isRange} onCheckedChange={isRange => patch({ isRange })} /></Field>

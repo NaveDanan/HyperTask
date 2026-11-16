@@ -27,3 +27,7 @@ The core build generates Rust and protobuf types; run it before `npm run gen`. T
 The application retains the existing Windows support directory and preference keys to read existing workspaces. Avoid running two applications against the same local data directory simultaneously. For isolated development, set `HYPERTASK_SUPPORT_DIR` to a scratch directory; `HYPERTASK_CORE_BINARY` selects a different core executable.
 
 See [STATUS.md](docs/STATUS.md) for implemented features and known gaps.
+
+## Development JWT login
+
+Run `npm run dev:jwt` for the explicitly opted-in mems01 development authentication helper, or `npm run dev:jwt -- --jwt-file C:\path\to\development.jwt` for another token. It uses isolated desktop data and a real GoTrue session; arbitrary JWTs are not accepted by the normal API. See [development JWT instructions](../../doc/hyper-dev-jwt.md).

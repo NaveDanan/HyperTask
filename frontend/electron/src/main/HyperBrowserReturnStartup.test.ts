@@ -1,3 +1,5 @@
+vi.mock('./HyperOutlookIpc', () => ({ registerHyperOutlookIpc: vi.fn() }));
+vi.mock('./HyperOutlookBridge', () => ({ HyperOutlookBridge: class { stop = vi.fn(); } }));
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { IpcChannel as C } from '@shared/api';
 const f = vi.hoisted(() => ({ handlers: new Map<string, (...args: any[]) => any>(), readyCallback: undefined as undefined | (() => Promise<void>), ready: false, listeners: new Set<(state: any) => void>(), window: undefined as any, acquire: vi.fn(), dialog: vi.fn() }));

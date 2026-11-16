@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
 import os from 'node:os';
 import path from 'node:path';
 import { create, fromBinary, toBinary, type DescMessage, type MessageInitShape } from '@bufbuild/protobuf';
@@ -170,4 +171,24 @@ describeWithCore('core process (real binary)', () => {
     const cellAfter = await call('GetCell', CellPBSchema, [CellIdPBSchema, cell]);
     expect(cellAfter.data).toEqual(cellBefore.data);
   });
+  it('keeps a local profile identifiable when server connection settings are enabled', async () => {
+    const before = await core.request('HyperGetNativeIdentity', new Uint8Array());
+    expect(before.status).toBe(Status.Ok);
+    expect(await core.init({ ...configuration, authenticator_type: 2, hypertask_cloud_config: { base_url: 'http://127.0.0.1:9', ws_base_url: 'ws://127.0.0.1:9/ws', gotrue_url: 'http://127.0.0.1:9/gotrue' } })).toBe(0);
+    const profile = await call('GetUserProfile', UserProfilePBSchema);
+    expect(profile.userAuthType).toBe(AuthTypePB.Local);
+    const after = await core.request('HyperGetNativeIdentity', new Uint8Array());
+    expect(after.status).toBe(Status.Ok);
+    expect(after.payload).toEqual(before.payload);
+    // A real server profile remains ineligible, regardless of initialization mode.
+    const database = new DatabaseSync(path.join(dataDir, profile.id.toString(), 'hyper-database.db'));
+    try {
+      database.prepare('UPDATE user_table SET auth_type = 1 WHERE id = ?').run(profile.id.toString());
+      expect((await core.request('HyperGetNativeIdentity', new Uint8Array())).status).not.toBe(Status.Ok);
+    } finally {
+      database.prepare('UPDATE user_table SET auth_type = 0 WHERE id = ?').run(profile.id.toString());
+      database.close();
+    }
+  });
+
 });

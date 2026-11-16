@@ -1,0 +1,43 @@
+{{- $root := . -}}
+{{- range $component, $port := dict "postgres" 5432 "redis" 6379 "storage" 9000 "gotrue" 9999 "cloud" 8000 "admin" 3000 "proxy" 8080 "web" 80 }}
+{{- if or (not (has $component (list "admin" "web"))) (index $root.Values $component).enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hypertask.fullname" $root }}-{{ $component }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "hypertask.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "hypertask.selector" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+  ports:
+    - name: {{ $component }}
+      port: {{ if eq $component "proxy" }}80{{ else }}{{ $port }}{{ end }}
+      targetPort: {{ $port }}
+{{- if has $component (list "postgres" "redis" "storage") }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hypertask.fullname" $root }}-{{ $component }}-headless
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "hypertask.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "hypertask.selector" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+  ports:
+    - name: {{ $component }}
+      port: {{ $port }}
+      targetPort: {{ $port }}
+{{- end }}
+{{- end }}
+{{- end }}

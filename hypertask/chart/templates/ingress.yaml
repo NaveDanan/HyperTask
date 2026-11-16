@@ -1,0 +1,36 @@
+{{- if .Values.ingress.enabled }}
+{{- if and .Values.ingress.tls.useControllerDefaultCertificate .Values.ingress.tls.secretName -}}
+{{- fail "Set ingress.tls.secretName empty when using the ingress controller default certificate" -}}
+{{- end -}}
+{{- if and (not .Values.ingress.tls.useControllerDefaultCertificate) (not .Values.ingress.tls.secretName) -}}
+{{- fail "Set the existing wildcard TLS secret name, or explicitly enable the ingress controller default certificate" -}}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "hypertask.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "hypertask.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts: [{{ .Values.global.host | quote }}]
+      {{- if .Values.ingress.tls.secretName }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+      {{- end }}
+  rules:
+    - host: {{ .Values.global.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hypertask.fullname" . }}-proxy
+                port: {number: 80}
+{{- end }}

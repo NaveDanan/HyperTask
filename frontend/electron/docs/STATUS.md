@@ -37,7 +37,7 @@ The planned OpenBot integration is tracked in [epic #2](https://github.com/NaveD
 - Layout with sidebar resize/collapse, notification panel, help bubble, home shortcuts (Ctrl+\\, Ctrl+Shift+L, Ctrl+W, Ctrl+PageUp/Down, F2, zoom, Ctrl+O, Ctrl+N, Ctrl+,, Ctrl+P).
 - Sidebar: workspace switcher and actions, Search, New page, Jira and Templates entries, Favorites, spaces and the Personal section, the page tree with `+` and `···` menus, rename, move to, drag and drop, Trash, import of Markdown/text and CSV.
 - Tabs (pin, close, close others), page header with breadcrumbs, favorite, share/publish/export menu, more menu, lock, the Trash page, the side view, and the command palette with live search.
-- Settings dialog: Account, Workspace and appearance, Members, Manage data, Notifications, Storage & server, Certificates, Shortcuts, AI settings (endpoint file and DPAPI key compatible with the Flutter build), Sites, Feature flags.
+- Settings dialog: Account, Appearance (ported from t3code: its color tokens and themes T3 Code, T3 Chat, Grove, Ocean, Ember and Iris with separate light and dark picks, the theme editor, theme import from JSON, VS Code files and Open VSX, interface and typography settings; plus text, document and date settings), Workspace (name, icon, Delete or Leave), Members, Manage data, Notifications, Storage & server, Certificates, Shortcuts, AI settings (endpoint file and DPAPI key compatible with the Flutter build), Sites, Feature flags.
 
 ## Placeholders and simplified parts
 

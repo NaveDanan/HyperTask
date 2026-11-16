@@ -14,6 +14,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DialogHost } from '@/ui/Dialog';
 import { ToastHost } from '@/ui/toast';
+import { ThemeEditorHost } from '@/features/settings/appearance/HyperThemeEditorHost';
 
 function Routes() {
   const route = useAppStore((s) => s.route);
@@ -40,6 +41,7 @@ let started = false;
 /** ApplicationWidget: the routed screens plus the dialog and toast overlays. */
 export function App() {
   const launchId = useAppStore((s) => s.launchId);
+  const developmentJwt = useAppStore((s) => s.info?.developmentJwt);
 
   useEffect(() => {
     if (!started) {
@@ -55,8 +57,11 @@ export function App() {
       <div key={launchId} className="h-full">
         <Routes />
         <DialogHost />
+        {/* The Appearance theme editor (ported from t3code), above the settings dialog as at t3code's root. */}
+        <ThemeEditorHost />
         <ToastHost />
       </div>
+      {developmentJwt && <div role="status" className="pointer-events-none fixed left-1/2 top-1 z-[2000] -translate-x-1/2 rounded bg-destructive px-2 py-1 text-xs font-medium text-destructive-foreground">DEV JWT · identity is not verified</div>}
       <Toaster position="bottom-center" />
     </TooltipProvider>
   );

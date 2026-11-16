@@ -1,3 +1,4 @@
+import { hyperMentionPeople, hyperMentionText } from '@/features/hyper-people/hyperMentions';
 import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
 import type { GanttEvent, GanttResource, GanttScale } from '@/components/reui/gantt/gantt-types';
 import { viewExtra } from '@/features/view/view-ext';
@@ -48,7 +49,8 @@ export const hyperGanttSeconds = (date: Date) => BigInt(Math.floor(date.getTime(
 export function hyperGanttDateCell(cell?: HyperCell) { return cell?.kind === 'date' ? cell : undefined; }
 export function hyperGanttAssignees(cell?: HyperCell): string[] {
   if (cell?.kind === 'singleSelect' || cell?.kind === 'multiSelect') return cell.selected.map(o => o.name);
-  return cell?.display.trim() ? [cell.display.trim()] : [];
+  if (cell?.kind === 'text' && hyperMentionPeople(cell.text).length) return hyperMentionPeople(cell.text).map(person => person.name);
+  return cell?.display.trim() ? [hyperMentionText(cell.display.trim())] : [];
 }
 export function hyperGanttFraction(state: HyperDatabaseState, fieldId: string | null) {
   const values = state.rowIds.flatMap(id => {
@@ -105,11 +107,11 @@ export function hyperGanttMap(state: HyperDatabaseState, config: HyperGanttConfi
       const last = due && due >= start ? due : start;
       // The database's end day is inclusive; ReUI's end is exclusive. Equal days stay milestones.
       const milestone = date?.includeTime ? last.getTime() === start.getTime() : startOfDay(last).getTime() === startOfDay(start).getTime();
-      task.event = { id: rowId, resourceId: rowId, title, start, end: milestone ? start : date?.includeTime ? last : addDays(startOfDay(last), 1), allDay: !date?.includeTime, color, progress };
+      task.event = { id: rowId, resourceId: rowId, title: hyperMentionText(title), start, end: milestone ? start : date?.includeTime ? last : addDays(startOfDay(last), 1), allDay: !date?.includeTime, color, progress };
       events.push(task.event);
     }
     tasks.set(rowId, task);
-    resources.push({ id: rowId, title, color });
+    resources.push({ id: rowId, title: hyperMentionText(title), color });
   }
   return { tasks, events, resources, fraction };
 }

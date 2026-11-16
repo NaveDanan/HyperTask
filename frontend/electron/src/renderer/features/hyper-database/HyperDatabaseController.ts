@@ -1,3 +1,4 @@
+import { HyperPeopleFieldIcon, hyperIsPeopleField } from '../hyper-people/HyperPeopleProperty';
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf';
 import { createStore } from 'zustand/vanilla';
 import { unwrap } from '@/backend/dispatch';
@@ -112,7 +113,7 @@ export class HyperDatabaseController {
           });
           for (const f of orderedFields) {
             const old = previousFields.get(f.id);
-            if (old && (old.type !== f.type || old.proto.typeOptionData.toString() !== f.proto.typeOptionData.toString())) {
+            if (old && (old.type !== f.type || old.proto.typeOptionData.toString() !== f.proto.typeOptionData.toString() || old.proto.icon !== f.proto.icon)) {
               for (const key of this.pendingCells.keys()) if (key.endsWith(`:${f.id}`)) this.versions.set(key, (this.versions.get(key) ?? 0) + 1);
             }
           }
@@ -125,7 +126,7 @@ export class HyperDatabaseController {
             const cached = previous.cells[meta.id]; if (!cached) continue;
             const retained = Object.fromEntries(orderedFields.flatMap(f => {
               const old = previousFields.get(f.id);
-              const same = old?.type === f.type && old.proto.typeOptionData.toString() === f.proto.typeOptionData.toString();
+              const same = old?.type === f.type && old.proto.typeOptionData.toString() === f.proto.typeOptionData.toString() && old.proto.icon === f.proto.icon;
               return same && cached[f.id] ? [[f.id, cached[f.id]]] : [];
             }));
             if (Object.keys(retained).length) cells[meta.id] = retained;
@@ -352,7 +353,21 @@ export class HyperDatabaseController {
   deleteField(fieldId: string) { return this.mutate(this.backend.DatabaseEventDeleteField({ viewId: this.viewId, fieldId }).then(unwrap)); }
   duplicateField(fieldId: string) { return this.mutate(this.backend.DatabaseEventDuplicateField({ viewId: this.viewId, fieldId }).then(unwrap)); }
   moveField(fromFieldId: string, toFieldId: string) { return this.mutate(this.backend.DatabaseEventMoveField({ viewId: this.viewId, fromFieldId, toFieldId }).then(unwrap)); }
-  changeFieldType(fieldId: string, fieldType: FieldType) { return this.mutate(this.backend.DatabaseEventUpdateFieldType({ viewId: this.viewId, fieldId, fieldType }).then(unwrap)); }
+  async createHyperPeopleField(name = 'People') {
+    // The Rust CreateFieldPayload -> CreateFieldParams conversion drops field_icon.
+    // UpdateField writes it into the database-wide Field CRDT instead.
+    const field = await this.createField(name, FieldType.RichText);
+    await this.mutate(this.backend.DatabaseEventUpdateField({ viewId: this.viewId, fieldId: field.id, oneOfIcon: { case: 'icon', value: HyperPeopleFieldIcon } }).then(unwrap));
+    return { ...field, icon: HyperPeopleFieldIcon };
+  }
+  async changeFieldType(fieldId: string, fieldType: FieldType, people = false) {
+    const field = this.state.fields.find(item => item.id === fieldId);
+    return this.mutate((async () => {
+      const result = unwrap(await this.backend.DatabaseEventUpdateFieldType({ viewId: this.viewId, fieldId, fieldType }));
+      if (people || (field && hyperIsPeopleField(field.proto))) unwrap(await this.backend.DatabaseEventUpdateField({ viewId: this.viewId, fieldId, oneOfIcon: { case: 'icon', value: people ? HyperPeopleFieldIcon : '' } }));
+      return result;
+    })());
+  }
   updateFieldTypeOptions(fieldId: string, typeOptionData: Uint8Array) { return this.mutate(this.backend.DatabaseEventUpdateFieldTypeOption({ viewId: this.viewId, fieldId, typeOptionData }).then(unwrap)); }
   updateFieldSettings(fieldId: string, patch: Partial<Pick<FieldSettingsPB, 'width' | 'visibility' | 'wrapCellContent'>>) {
     return this.mutate(this.backend.DatabaseEventUpdateFieldSettings({ viewId: this.viewId, fieldId,
@@ -496,7 +511,8 @@ export class HyperDatabaseController {
   /** Duplicate view settings within this database, preserving extra keys (including Gantt). */
   async duplicateView(view: ViewPB) {
     const created = await this.addView(hyperLayout(view), `${view.name} (copy)`);
-    const extra = mergeViewExtra(created, viewExtra(view) ?? {}); unwrap(await this.backend.views.updateView({ viewId: created.id, extra }));
+    const copied = { ...(viewExtra(view) ?? {}) }; delete copied.hyper_general_calendar;
+    const extra = mergeViewExtra(created, copied); unwrap(await this.backend.views.updateView({ viewId: created.id, extra }));
     const settings = unwrap(await this.backend.DatabaseEventGetDatabaseSetting({ value: view.id }));
     for (const f of settings.fieldSettings?.items ?? []) unwrap(await this.backend.DatabaseEventUpdateFieldSettings({ viewId: created.id, fieldId: f.fieldId, oneOfWidth: { case: 'width', value: f.width }, oneOfVisibility: { case: 'visibility', value: f.visibility }, oneOfWrapCellContent: { case: 'wrapCellContent', value: f.wrapCellContent } }));
     if (settings.layoutSetting) unwrap(await this.backend.DatabaseEventSetLayoutSetting({ viewId: created.id, layoutType: settings.layoutSetting.layoutType, oneOfBoard: settings.layoutSetting.oneOfBoard, oneOfCalendar: settings.layoutSetting.oneOfCalendar }));

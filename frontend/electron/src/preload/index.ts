@@ -8,6 +8,17 @@ function on<T>(channel: string, listener: (value: T) => void): () => void {
 }
 
 const api: HypertaskApi = {
+  auth: { devJwtSession: () => ipcRenderer.invoke(C.AuthDevJwtSession), entraIdToken: config => ipcRenderer.invoke(C.AuthEntraIdToken, config), entraCancel: () => ipcRenderer.invoke(C.AuthEntraCancel) },
+  outlook: {
+    people: { search: args => ipcRenderer.invoke(C.OutlookPeopleSearch, args), lookup: args => ipcRenderer.invoke(C.OutlookPeopleLookup, args) },
+    status: () => ipcRenderer.invoke(C.OutlookStatus),
+    list: args => ipcRenderer.invoke(C.OutlookList, args),
+    create: args => ipcRenderer.invoke(C.OutlookCreate, args),
+    update: args => ipcRenderer.invoke(C.OutlookUpdate, args),
+    delete: args => ipcRenderer.invoke(C.OutlookDelete, args),
+    respond: args => ipcRenderer.invoke(C.OutlookRespond, args),
+    open: args => ipcRenderer.invoke(C.OutlookOpen, args),
+  },
   hyperOpenBot: {
     callbackKey: input => ipcRenderer.invoke('hyper-openbot:callback-key', input),
     onNativeDestination: listener => on('hyper-openbot:native-destination', listener),
@@ -98,6 +109,7 @@ const api: HypertaskApi = {
   aiEndpoint: {
     writeSettings: (json) => ipcRenderer.invoke(C.AiEndpointWriteSettings, json),
     test: (request) => ipcRenderer.invoke(C.AiEndpointTest, request),
+    listModels: (request) => ipcRenderer.invoke(C.HyperAiEndpointModels, request),
   },
   certificates: {
     list: () => ipcRenderer.invoke(C.CertificatesList),

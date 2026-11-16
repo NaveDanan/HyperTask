@@ -1,0 +1,123 @@
+{{- $root := . -}}
+{{- range $component := list "postgres" "redis" "storage" }}
+{{- $config := index $root.Values $component }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "hypertask.fullname" $root }}-{{ $component }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "hypertask.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  serviceName: {{ include "hypertask.fullname" $root }}-{{ $component }}-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hypertask.selector" $root | nindent 6 }}
+      app.kubernetes.io/component: {{ $component }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $root.Template.BasePath "/configmap.yaml") $root | sha256sum }}
+      labels:
+        {{- include "hypertask.selector" $root | nindent 8 }}
+        app.kubernetes.io/component: {{ $component }}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/arch: amd64, kubernetes.io/os: linux}
+      {{- include "hypertask.pullSecrets" $root | nindent 6 }}
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: {{ $component }}
+          image: {{ include "hypertask.image" (dict "root" $root "component" $component) | quote }}
+          imagePullPolicy: IfNotPresent
+          resources:
+            {{- toYaml $config.resources | nindent 12 }}
+          {{- if eq $component "postgres" }}
+          env:
+            - {name: POSTGRES_DB, value: {{ $root.Values.postgres.database | quote }}}
+            - {name: POSTGRES_USER, value: {{ $root.Values.postgres.username | quote }}}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: POSTGRES_PASSWORD}
+          ports: [{name: postgres, containerPort: 5432}]
+          startupProbe:
+            exec: {command: [sh, -ec, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']}
+            periodSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            exec: {command: [sh, -ec, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']}
+            periodSeconds: 10
+          livenessProbe:
+            exec: {command: [sh, -ec, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']}
+            periodSeconds: 20
+            failureThreshold: 6
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+            - {name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true}
+          {{- else if eq $component "redis" }}
+          args: [redis-server, --appendonly, "yes"]
+          ports: [{name: redis, containerPort: 6379}]
+          startupProbe:
+            exec: {command: [redis-cli, ping]}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec: {command: [redis-cli, ping]}
+            periodSeconds: 10
+          livenessProbe:
+            exec: {command: [redis-cli, ping]}
+            periodSeconds: 20
+            failureThreshold: 6
+          volumeMounts:
+            - {name: data, mountPath: /data}
+          {{- else }}
+          workingDir: /data
+          args:
+            - server
+            - -dir=/data
+            - -ip=$(POD_IP)
+            - -ip.bind=0.0.0.0
+            - -s3
+            - -s3.port=9000
+            - -s3.config=/etc/seaweedfs/s3.json
+            - -volume.max=32
+            - -volume.fileSizeLimitMB=1024
+          env:
+            - name: POD_IP
+              valueFrom: {fieldRef: {fieldPath: status.podIP}}
+          ports: [{name: s3, containerPort: 9000}]
+          startupProbe:
+            tcpSocket: {port: s3}
+            periodSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            tcpSocket: {port: s3}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: s3}
+            periodSeconds: 20
+            failureThreshold: 6
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: s3-config, mountPath: /etc/seaweedfs, readOnly: true}
+          {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-%s-data" (include "hypertask.fullname" $root) $component) $config.existingClaim }}
+        {{- if eq $component "postgres" }}
+        - name: init
+          configMap:
+            name: {{ include "hypertask.fullname" $root }}-config
+            items: [{key: init.sql, path: init.sql}]
+        {{- else if eq $component "storage" }}
+        - name: s3-config
+          secret:
+            secretName: {{ $root.Values.global.existingSecret }}
+            items: [{key: S3_CONFIG_JSON, path: s3.json}]
+        {{- end }}
+{{- end }}

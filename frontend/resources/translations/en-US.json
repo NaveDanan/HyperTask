@@ -2274,7 +2274,7 @@
     "showOnCard": "Show on card detail",
     "setting": "Setting",
     "propertyName": "Property name",
-    "menuName": "Board",
+    "menuName": "Hyper-Kanban",
     "showUngrouped": "Show ungrouped items",
     "ungroupedButtonText": "Ungrouped",
     "ungroupedButtonTooltip": "Contains cards that don't belong in any group",
@@ -2307,7 +2307,7 @@
     }
   },
   "calendar": {
-    "menuName": "Calendar",
+    "menuName": "Hyper-Event",
     "defaultNewCalendarTitle": "Untitled",
     "newEventButtonTooltip": "Add a new event",
     "navigation": {

@@ -44,6 +44,7 @@ vi.mock('react', async importOriginal => {
 });
 vi.mock('./views/grid/HyperGridContext', async importOriginal => ({ ...await importOriginal<typeof import('./views/grid/HyperGridContext')>(), useHyperGrid: () => hooks.grid }));
 vi.mock('@tanstack/react-table', async importOriginal => ({ ...await importOriginal<typeof import('@tanstack/react-table')>(), useTable: (options: any) => { hooks.tableOptions = options; return hooks.table; } }));
+vi.mock('@/features/hyper-outlook/useHyperOutlookEvents', () => ({ useHyperOutlookEvents: () => ({ events: [], onRangeChange: vi.fn(), refresh: vi.fn() }) }));
 vi.mock('./views/calendar/useHyperCalendarEvents', () => ({ useHyperCalendarEvents: () => hooks.calendar }));
 vi.mock('@/ui', () => ({ showToast: vi.fn() }));
 vi.mock('@/ui/toast', () => ({ showToast: vi.fn() }));
@@ -232,4 +233,21 @@ it('hydrates a controlled Gantt assignee and saves only successful-read user cha
   controller.store.setState({ cells: { 'row-0': { assignee: { kind: 'text', text: 'Refreshed', display: 'Refreshed' } } } });
   input(); expect(input().props.value).toBe('Ada, Lin'); input().props.onBlur(); await settle();
   expect(save).toHaveBeenCalledWith('row-0', 'assignee', { kind: 'text', text: 'Ada, Lin' });
+});
+
+it('stages People on a new Calendar event and saves them only with the event', async () => {
+  const { fields } = setup(1);
+  const people = field('people', FieldType.RichText); people.proto.icon = 'hyper:people:v1';
+  controller.store.setState({ fields: [...fields, people] });
+  const { HyperPeoplePicker } = await import('../hyper-people/HyperPeoplePicker');
+  const save = vi.spyOn(controller, 'updateCell').mockResolvedValue(undefined);
+  vi.spyOn(controller, 'createRow').mockResolvedValue(create(RowMetaPBSchema, { id: 'created' }));
+  const onSaved = vi.fn();
+  const work = () => HyperCalendarEventDialog({ initial: { title: 'New event', allDay: true, startDate: '2026-11-16', endDate: '2026-11-16', startTime: '09:00', endTime: '10:00', isRange: false, optionId: '' }, controller, dateField: fields[1], primaryField: fields[0], timeZone: 'UTC', onClose: vi.fn(), onSaved });
+  const token = '@[Employee](mailto:employee@example.test)';
+  find(render(work), e => e.type === HyperPeoplePicker).props.onChange(token);
+  expect(save).not.toHaveBeenCalled();
+  const tree = render(work); expect(find(tree, e => e.type === HyperPeoplePicker).props.value).toBe(token);
+  find(tree, e => e.type === 'form').props.onSubmit({ preventDefault: vi.fn() }); await settle();
+  expect(save).toHaveBeenCalledWith('created', 'people', { kind: 'text', text: token }); expect(onSaved).toHaveBeenCalledOnce();
 });

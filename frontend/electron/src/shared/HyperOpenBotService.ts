@@ -23,7 +23,7 @@ export interface HyperOpenBotServiceState {
 export const HYPER_OPENBOT_SERVICE_MESSAGES: Record<HyperOpenBotServiceProblem, string> = {
   none: 'AI services are ready.', signed_out: 'Sign in to the connected HyperTask profile before using AI.',
   profile_required: 'This AI connection requires its original local HyperTask profile. Switch back to that profile and retry. Remote profiles and ownership transfer are not supported by this development connection.',
-  unsupported: 'This development connection currently requires Linux and a supported native profile.',
+  unsupported: 'This development connection requires Windows or Linux, OS OpenSSH access to the configured VM, and a supported local profile.',
   ssh_unavailable: 'The configured backend cannot be reached. Check the VM, Tailscale and your SSH access, then retry.',
   docker_unavailable: 'Docker is unavailable on the backend. Start its Docker engine or restore access, then retry.',
   setup_required: 'The backend needs the documented OpenBot and Intelligence installation. Provision it on the VM before starting AI.',

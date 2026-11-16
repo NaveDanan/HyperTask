@@ -1,3 +1,7 @@
+import { HyperMentionText } from '@/features/hyper-people/HyperMentionText';
+import { HyperPeopleDisplay } from '@/features/hyper-people/HyperPeoplePicker';
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
+import { hyperMentionText } from '@/features/hyper-people/hyperMentions';
 import { useEffect, useRef } from 'react';
 import type { HyperDatabaseController } from '../../HyperDatabaseController';
 import { CalendarDays, Link, Link2, ListChecks, Paperclip } from 'lucide-react';
@@ -39,7 +43,7 @@ function HyperBoardMeta({ cell }: { cell: HyperCell }) {
   }
   if (cell.kind === 'media') return cell.files.length ? <span className="flex items-center gap-1"><Paperclip className={iconClass} />{cell.files.length}</span> : null;
   if (cell.kind === 'relation') return cell.rowIds.length ? <span className="flex items-center gap-1"><Link className={iconClass} />{cell.rowIds.length}</span> : null;
-  return <span className="max-w-32 truncate">{cell.display}</span>;
+  return <HyperMentionText className="max-w-32 truncate" value={cell.display} />;
 }
 export function HyperBoardCard({ controller, state, rowId, fields, groupFieldId, overlay = false, columnOverlay = false, dragging = false, disabled, onOpen }: HyperBoardCardProps) {
   const node = useRef<HTMLDivElement>(null);
@@ -71,15 +75,15 @@ export function HyperBoardCard({ controller, state, rowId, fields, groupFieldId,
   const content = <div className={cn("flex flex-col gap-2", dragging && "opacity-40")}>
     <div className={cn('text-sm font-medium line-clamp-2', title && !title.display && 'text-muted-foreground')}>
       {state.rows[rowId]?.icon ? <span className="mr-1 text-sm">{state.rows[rowId].icon}</span> : null}
-      {title ? title.display || 'Untitled' : <Skeleton className="h-4 w-3/4" />}
+      {title ? <HyperMentionText value={title.display || 'Untitled'} /> : <Skeleton className="h-4 w-3/4" />}
     </div>
     {badges.length ? <div className="flex flex-wrap gap-1">{badges.slice(0, 3).map(({ key, option }) => <Badge key={key} size="sm" className={hyperBoardOptionColor(option.color).badge}>{option.name}</Badge>)}{badges.length > 3 ? <Badge variant="secondary" size="sm">+{badges.length - 3}</Badge> : null}</div> : null}
-    {metadata.length ? <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">{metadata.map(({ field, cell }) => <HyperBoardMeta key={field.id} cell={cell} />)}</div> : null}
+    {metadata.length ? <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">{metadata.map(({ field, cell }) => <span key={field.id} className="min-w-0 max-w-48">{hyperIsPeopleField(field.proto) && cell.kind === 'text' ? <HyperPeopleDisplay value={cell.text} /> : <HyperBoardMeta cell={cell} />}</span>)}</div> : null}
     {checklist?.kind === 'checklist' ? <Progress aria-label="Checklist progress" className="h-1.5 [&_[data-slot=progress-track]]:h-1.5" value={Math.min(100, Math.max(0, checklist.progress * 100))} /> : null}
   </div>;
   if (overlay) return <div className={className}>{content}</div>;
   return <KanbanItem value={rowId} disabled={disabled} role="presentation" tabIndex={-1} className={cn('shrink-0', dragging && 'opacity-100!')}>
-    <KanbanItemHandle ref={node} role="button" tabIndex={0} aria-label={title?.display || 'Untitled card'} aria-roledescription="draggable card" className={className}
+    <KanbanItemHandle ref={node} role="button" tabIndex={0} aria-label={hyperMentionText(title?.display || 'Untitled card')} aria-roledescription="draggable card" className={className}
       onClick={event => onOpen?.(rowId, event.currentTarget)}
       onKeyDownCapture={event => { if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); onOpen?.(rowId, event.currentTarget); } }}>
       {content}

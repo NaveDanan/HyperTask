@@ -350,3 +350,10 @@ it('commits queued extras from the update acknowledgement without a fragile read
   expect(JSON.parse(persisted)).toMatchObject({ a: 1, b: 2 });
   expect(backend.views.updateView).not.toHaveBeenCalled();
 });
+it('strips the General calendar marker from a duplicated view while retaining unrelated extra', async () => {
+  const { controller, backend, view, open } = fixture(); await open();
+  view.oneOfExtra = { case: 'extra', value: JSON.stringify({ hyper_general_calendar: true, font: 'Geist', custom: 1 }) };
+  const duplicated = await controller.duplicateView(view);
+  expect(JSON.parse(duplicated.oneOfExtra.value ?? '{}')).toEqual({ font: 'Geist', custom: 1 });
+  expect(backend.views.updateView).toHaveBeenCalledWith({ viewId: 'new', extra: JSON.stringify({ font: 'Geist', custom: 1 }) });
+});

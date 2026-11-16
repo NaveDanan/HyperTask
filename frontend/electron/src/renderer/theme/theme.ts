@@ -13,12 +13,6 @@ export interface ThemeOptions {
   rtl: boolean;
 }
 
-/** Platform default family Flutter's Material 2014 typography resolves to. */
-const PLATFORM_FONT = navigator.userAgent.includes('Windows')
-  ? '"Segoe UI"'
-  : navigator.userAgent.includes('Mac')
-    ? 'system-ui, -apple-system'
-    : 'Roboto, Ubuntu, Cantarell, "DejaVu Sans", "Liberation Sans", Arial';
 
 /**
  * CSS variables for one color scheme, named after the Flutter accessors:
@@ -101,32 +95,15 @@ export function themeVariables(colors: HyperColorScheme, brightness: Brightness)
 
 const quote = (family: string) => (/^[\w-]+$/.test(family) ? family : `"${family}"`);
 
-const SANS_FALLBACK = `"Geist Variable", ${PLATFORM_FONT}, sans-serif`;
-const MONO_FALLBACK = '"Geist Mono Variable", ui-monospace, monospace';
+// t3code's default stacks (apps/web/src/index.css @theme), Copyright (c) 2026 T3 Tools Inc., MIT License.
+const SANS_FALLBACK = '-apple-system, BlinkMacSystemFont, "Inter Variable", "Segoe UI", system-ui, sans-serif';
+const MONO_FALLBACK = 'ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace';
 
-/** Shadcn tokens a color scheme overrides; the Default scheme keeps the monochrome values in app.css. */
+/**
+ * Shadcn tokens a color scheme used to override. The Appearance themes (HyperThemeLibrary, ported from t3code) own
+ * the accent now, so applyTheme clears them.
+ */
 const ACCENT_VARS = ['--primary', '--primary-foreground', '--ring', '--sidebar-primary', '--sidebar-primary-foreground', '--sidebar-ring'];
-
-/** Near-black or near-white, whichever reads better on a #RRGGBB background. */
-function readableOn(hex: string): string {
-  const value = hex.replace('#', '').slice(-6);
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6 ? 'oklch(0.21 0.006 285.885)' : 'oklch(0.985 0 0)';
-}
-
-/** The scheme's primary color as the shadcn accent; null for Default. */
-export function accentVariables(schemeName: string, colors: HyperColorScheme): Record<string, string> | null {
-  if (schemeName === 'Default' || !colors.primary) return null;
-  const foreground = readableOn(colors.primary);
-  return {
-    '--primary': colors.primary,
-    '--primary-foreground': foreground,
-    '--ring': colors.primary,
-    '--sidebar-primary': colors.primary,
-    '--sidebar-primary-foreground': foreground,
-    '--sidebar-ring': colors.primary,
-  };
-}
 
 export function applyTheme(options: ThemeOptions): void {
   const schemeName = builtInColorSchemes[options.scheme] ? options.scheme : 'Default';
@@ -135,11 +112,7 @@ export function applyTheme(options: ThemeOptions): void {
   for (const [name, value] of Object.entries(themeVariables(scheme[options.brightness], options.brightness))) {
     root.style.setProperty(name, value);
   }
-  const accent = accentVariables(schemeName, scheme[options.brightness]);
-  for (const name of ACCENT_VARS) {
-    if (accent) root.style.setProperty(name, accent[name]);
-    else root.style.removeProperty(name);
-  }
+  for (const name of ACCENT_VARS) root.style.removeProperty(name);
   root.dataset.theme = options.brightness;
   root.style.colorScheme = options.brightness;
   const sans = options.font ? `${quote(options.font)}, ${SANS_FALLBACK}` : SANS_FALLBACK;

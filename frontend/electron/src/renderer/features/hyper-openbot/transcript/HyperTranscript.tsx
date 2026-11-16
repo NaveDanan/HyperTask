@@ -92,7 +92,7 @@ export function HyperTranscript({ messages, busy = false, restoring = false, sto
       const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
       following.current = near; setAtEnd(near);
     }}>
-      <div ref={body} className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-4" aria-busy={busy}>
+      <div ref={body} className="mx-auto flex w-full max-w-[var(--chat-content-max-width,46rem)] flex-col gap-5 p-4" aria-busy={busy}>
         {intro}
         {restoring && !messages.length ? <div role="status" aria-label="Loading this conversation" className="space-y-3">{[0, 1, 2].map(n => <Skeleton aria-hidden="true" key={n} className="h-4 w-full motion-reduce:animate-none" />)}</div> : messages.map(message => <HyperTranscriptRow key={message.id} message={message} onOpenLink={onOpenLink} renderTool={renderTool} />)}
         {busy && <div role="status" className="flex items-center gap-2 text-sm text-muted-foreground">{working ?? <><LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />{messages.some(message => message.streaming) ? 'Responding' : 'Thinking'}</>}</div>}

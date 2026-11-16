@@ -22,7 +22,7 @@ describe('exportLogs', () => {
 
     const out = path.join(dir, 'unzipped');
     if (process.platform === 'win32') {
-      execFileSync('powershell', ['-NoProfile', '-Command', `Expand-Archive -LiteralPath '${zip}' -DestinationPath '${out}'`]);
+      execFileSync('powershell', ['-NoProfile', '-Command', `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('${zip}', '${out}')`]);
     } else {
       execFileSync('unzip', ['-q', zip!, '-d', out]);
     }

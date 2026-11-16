@@ -1,11 +1,11 @@
-//! User-configured inference with no discovery or hosted fallback.
+//! User-configured inference with no hosted fallback.
 use base64::{Engine, engine::general_purpose::STANDARD};
+use futures::{StreamExt, stream::BoxStream};
 use hyper_ai_pub::cloud::{
   CompleteTextParams, CompletionStreamValue, CompletionType, QuestionStreamValue, ResponseFormat,
   StreamAnswer, StreamComplete,
 };
 use hyper_error::{HyperError, HyperResult};
-use futures::{StreamExt, stream::BoxStream};
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -108,13 +108,37 @@ impl EndpointConfig {
       .json(&json!({"model": self.model, "messages": messages, "stream": true}));
     let key = self.key()?;
     if !key.is_empty() {
-      request = request.bearer_auth(key);
+      request = request.bearer_auth(&key);
     }
-    let response = request.send().await.map_err(|_| {
+    let mut response = request.send().await.map_err(|_| {
       invalid("Cannot reach the AI endpoint. Check its URL, network, and certificate.")
     })?;
+    let mut responses = false;
     if !response.status().is_success() {
-      return Err(http_error(response.status().as_u16()));
+      let status = response.status().as_u16();
+      let mut error_bytes = Vec::new();
+      let mut chunks = response.bytes_stream();
+      while let Some(Ok(chunk)) = chunks.next().await {
+        if error_bytes.len() + chunk.len() > 64 * 1024 {
+          break;
+        }
+        error_bytes.extend_from_slice(&chunk);
+      }
+      if !should_use_responses(status, &String::from_utf8_lossy(&error_bytes)) {
+        return Err(http_error(status));
+      }
+      let mut request = client.post(self.api_url("responses")?)
+        .json(&json!({"model": self.model, "input": responses_messages(&messages), "stream": true, "store": false}));
+      if !key.is_empty() {
+        request = request.bearer_auth(&key);
+      }
+      response = request.send().await.map_err(|_| {
+        invalid("Cannot reach the AI endpoint. Check its URL, network, and certificate.")
+      })?;
+      if !response.status().is_success() {
+        return Err(http_error(response.status().as_u16()));
+      }
+      responses = true;
     }
     let ct = response
       .headers()
@@ -127,11 +151,7 @@ impl EndpointConfig {
         .json()
         .await
         .map_err(|_| invalid("The endpoint returned neither SSE nor a chat completion."))?;
-      let content = body
-        .pointer("/choices/0/message/content")
-        .and_then(Value::as_str)
-        .ok_or_else(|| invalid("The endpoint returned no text. Choose a text-capable chat model."))?
-        .to_string();
+      let content = completion_text(&body, responses)?;
       return Ok(futures::stream::once(async move { Ok(content) }).boxed());
     }
     let mut bytes = response.bytes_stream();
@@ -503,13 +523,124 @@ fn http_error(status: u16) -> HyperError {
     _ => "AI endpoint returned an error. Check the provider's service status.",
   })
 }
+
+// Compatibility with endpoints whose Chat Completions adapter cannot translate input.
+fn should_use_responses(status: u16, text: &str) -> bool {
+  if matches!(status, 404 | 405 | 501) {
+    return true;
+  }
+  if status != 400 {
+    return false;
+  }
+  let Ok(body) = serde_json::from_str::<Value>(text) else {
+    return false;
+  };
+  body.pointer("/error/code").and_then(Value::as_str) == Some("invalid_request_body")
+    && body
+      .pointer("/error/message")
+      .and_then(Value::as_str)
+      .is_some_and(|message| message.contains("'input'") && message.contains("expected a string"))
+}
+
+fn responses_messages(messages: &[Value]) -> Vec<Value> {
+  messages
+    .iter()
+    .map(|message| {
+      let mut message = message.clone();
+      let assistant = message.get("role").and_then(Value::as_str) == Some("assistant");
+      if let Some(parts) = message.get_mut("content").and_then(Value::as_array_mut) {
+        for part in parts {
+          match part.get("type").and_then(Value::as_str) {
+            Some("text") => {
+              part["type"] = json!(if assistant {
+                "output_text"
+              } else {
+                "input_text"
+              });
+            },
+            Some("image_url") => {
+              let url = part
+                .pointer("/image_url/url")
+                .cloned()
+                .unwrap_or(Value::Null);
+              let detail = part.pointer("/image_url/detail").cloned();
+              *part = json!({"type":"input_image", "image_url":url});
+              if let Some(detail) = detail {
+                part["detail"] = detail;
+              }
+            },
+            _ => {},
+          }
+        }
+      }
+      message
+    })
+    .collect()
+}
+
+fn completion_text(body: &Value, responses: bool) -> HyperResult<String> {
+  if body.get("error").is_some()
+    || matches!(
+      body.get("status").and_then(Value::as_str),
+      Some("failed" | "incomplete")
+    )
+  {
+    return Err(invalid("The endpoint could not complete the response."));
+  }
+  let text = if responses {
+    body
+      .get("output")
+      .and_then(Value::as_array)
+      .into_iter()
+      .flatten()
+      .filter(|item| item.get("type").and_then(Value::as_str) == Some("message"))
+      .flat_map(|item| {
+        item
+          .get("content")
+          .and_then(Value::as_array)
+          .into_iter()
+          .flatten()
+      })
+      .filter(|part| part.get("type").and_then(Value::as_str) == Some("output_text"))
+      .filter_map(|part| part.get("text").and_then(Value::as_str))
+      .collect::<String>()
+  } else {
+    body
+      .pointer("/choices/0/message/content")
+      .and_then(Value::as_str)
+      .unwrap_or_default()
+      .to_string()
+  };
+  if text.is_empty() {
+    Err(invalid(
+      "The endpoint returned no text. Choose a text-capable chat model.",
+    ))
+  } else {
+    Ok(text)
+  }
+}
+
 fn parse_delta(data: &str) -> HyperResult<Option<String>> {
   let value: Value = serde_json::from_str(data)
     .map_err(|_| invalid("The endpoint returned malformed stream data."))?;
-  if value.get("error").is_some() {
+  if value.get("error").is_some()
+    || matches!(
+      value.get("type").and_then(Value::as_str),
+      Some("response.failed" | "response.incomplete" | "error")
+    )
+  {
     return Err(invalid(
       "The endpoint reported a generation error. Check the provider and model.",
     ));
+  }
+  if value.get("type").and_then(Value::as_str) == Some("response.output_text.delta") {
+    return Ok(
+      value
+        .get("delta")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+        .map(str::to_string),
+    );
   }
   Ok(
     value
@@ -841,5 +972,94 @@ mod tests {
         .unwrap()
         .starts_with("POST /api/v1/images/generations ")
     );
+  }
+}
+
+#[cfg(test)]
+mod hyper_responses_tests {
+  use super::*;
+  use std::io::{Read, Write};
+
+  async fn run_fallback(content_type: &str, body: &str) {
+    let server = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    server.set_nonblocking(true).unwrap();
+    let address = server.local_addr().unwrap();
+    let content_type = content_type.to_owned();
+    let body = body.to_owned();
+    let worker = std::thread::spawn(move || {
+      let mut requests = Vec::new();
+      for (status, content_type, body) in [
+        (400, "application/json".to_string(), json!({"error":{"code":"invalid_request_body","message":"Invalid type for 'input': expected a string, but got an object instead."}}).to_string()),
+        (200, content_type, body),
+      ] {
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        let mut connection = loop {
+          if let Ok((connection, _)) = server.accept() { break connection; }
+          assert!(std::time::Instant::now() < deadline, "expected a request");
+          std::thread::sleep(Duration::from_millis(5));
+        };
+        connection.set_read_timeout(Some(Duration::from_secs(3))).unwrap();
+        let mut request = Vec::new();
+        let mut buffer = [0u8; 8192];
+        loop {
+          let n = connection.read(&mut buffer).unwrap();
+          assert!(n > 0);
+          request.extend_from_slice(&buffer[..n]);
+          if let Some(end) = request.windows(4).position(|part| part == b"\r\n\r\n") {
+            let headers = String::from_utf8_lossy(&request[..end]);
+            let length: usize = headers.lines().find_map(|line| line.to_lowercase().strip_prefix("content-length:").map(|v| v.trim().parse().unwrap())).unwrap();
+            if request.len() >= end + 4 + length { break; }
+          }
+        }
+        requests.push(String::from_utf8(request).unwrap());
+        connection.write_all(format!("HTTP/1.1 {status} Test\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).as_bytes()).unwrap();
+      }
+      requests
+    });
+    let config = EndpointConfig {
+      base_url: format!("http://{address}/custom/v1"),
+      model: "gpt-6.1-sol".into(),
+      embedding_model: String::new(),
+      image_model: String::new(),
+      protected_key: String::new(),
+      enabled: true,
+    };
+    let mut stream = config.stream(vec![json!({"role":"system","content":"Keep the context."}),json!({"role":"user","content":[{"type":"text","text":"Reply with OK."},{"type":"image_url","image_url":{"url":"data:image/png;base64,fixture"}}]})]).await.unwrap();
+    let mut text = String::new();
+    while let Some(chunk) = stream.next().await {
+      text.push_str(&chunk.unwrap());
+    }
+    assert_eq!(text, "OK שלום");
+    let requests = worker.join().unwrap();
+    assert!(requests[0].starts_with("POST /custom/v1/chat/completions "));
+    assert!(requests[1].starts_with("POST /custom/v1/responses "));
+    let payload: Value =
+      serde_json::from_str(requests[1].split("\r\n\r\n").nth(1).unwrap()).unwrap();
+    assert_eq!(payload["model"], "gpt-6.1-sol");
+    assert_eq!(payload["input"][0]["role"], "system");
+    assert_eq!(payload["input"][1]["content"][0]["type"], "input_text");
+    assert_eq!(
+      payload["input"][1]["content"][1]["image_url"],
+      "data:image/png;base64,fixture"
+    );
+  }
+
+  #[tokio::test]
+  async fn responses_fallback_accepts_json_completions() {
+    run_fallback("application/json", &json!({"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"OK שלום"}]}]}).to_string()).await;
+  }
+  #[tokio::test]
+  async fn responses_fallback_accepts_streaming_text() {
+    run_fallback("text/event-stream", "event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"OK שלום\"}\n\nevent: response.completed\ndata: {\"type\":\"response.completed\"}\n\n").await;
+  }
+  #[test]
+  fn responses_failure_events_are_errors() {
+    assert!(
+      parse_delta(
+        r#"{"type":"response.failed","response":{"error":{"message":"private-details"}}}"#
+      )
+      .is_err()
+    );
+    assert!(parse_delta(r#"{"type":"response.incomplete"}"#).is_err());
   }
 }

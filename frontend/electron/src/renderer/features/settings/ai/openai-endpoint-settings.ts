@@ -1,4 +1,4 @@
-import type { IpcResult } from '@shared/api';
+import type { HyperEndpointModelsRequest, IpcResult } from '@shared/api';
 import { validateEndpoint } from '@shared/openai-endpoint';
 import { AIEventGetLocalAISetting, AIEventUpdateLocalAISetting } from '@/backend/events';
 
@@ -115,6 +115,11 @@ export async function testEndpointConnection(settings: OpenAIEndpointSettings): 
   unwrapIpc(
     await window.hypertask.aiEndpoint.test({ baseUrl: settings.baseUrl, model: settings.model, protectedKey: settings.protectedKey }),
   );
+}
+
+/** Discovery works before selecting a model and never persists a plaintext key. */
+export async function discoverEndpointModels(request: HyperEndpointModelsRequest): Promise<string[]> {
+  return unwrapIpc(await window.hypertask.aiEndpoint.listModels(request));
 }
 
 /** The page's catch: FormatException/StateError → message, else the generic text. */

@@ -7,7 +7,6 @@ use collab_database::rows::CreateRowParams;
 use collab_database::views::{DatabaseLayout, LayoutSettings};
 
 use crate::entities::FieldType;
-use crate::services::cell::{insert_select_option_cell, insert_text_cell};
 use crate::services::field::FieldBuilder;
 use crate::services::field_settings::default_field_settings_for_fields;
 use crate::services::setting::{BoardLayoutSetting, CalendarLayoutSetting};
@@ -67,34 +66,18 @@ pub fn make_default_board(view_id: &str, name: &str) -> CreateDatabaseParams {
     .name("Description")
     .primary(true)
     .build();
-  let text_field_id = text_field.id.clone();
 
-  // single select
+  // single select: the board groups (No status / To Do / Doing / Done) come from these options
   let to_do_option = SelectOption::with_color("To Do", SelectOptionColor::Purple);
   let doing_option = SelectOption::with_color("Doing", SelectOptionColor::Orange);
   let done_option = SelectOption::with_color("Done", SelectOptionColor::Yellow);
   let mut single_select_type_option = SingleSelectTypeOption::default();
   single_select_type_option
     .options
-    .extend(vec![to_do_option.clone(), doing_option, done_option]);
+    .extend(vec![to_do_option, doing_option, done_option]);
   let single_select = FieldBuilder::new(FieldType::SingleSelect, single_select_type_option)
     .name("Status")
     .build();
-  let single_select_field_id = single_select.id.clone();
-
-  let mut rows = vec![];
-  for i in 0..3 {
-    let mut row = CreateRowParams::new(gen_row_id(), database_id.clone());
-    row.cells.insert(
-      single_select_field_id.clone(),
-      insert_select_option_cell(vec![to_do_option.id.clone()], &single_select),
-    );
-    row.cells.insert(
-      text_field_id.clone(),
-      insert_text_cell(format!("Card {}", i + 1), &text_field),
-    );
-    rows.push(row);
-  }
 
   let fields = vec![text_field, single_select];
 
@@ -119,7 +102,7 @@ pub fn make_default_board(view_id: &str, name: &str) -> CreateDatabaseParams {
       modified_at: timestamp,
       ..Default::default()
     }],
-    rows,
+    rows: vec![],
     fields,
   }
 }
@@ -173,5 +156,22 @@ pub fn make_default_calendar(view_id: &str, name: &str) -> CreateDatabaseParams 
     }],
     rows: vec![],
     fields,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use collab_database::views::DatabaseLayout;
+
+  use super::make_default_board;
+
+  #[test]
+  fn default_board_starts_without_rows() {
+    let params = make_default_board("view_id", "Board");
+
+    assert!(params.rows.is_empty());
+    assert_eq!(params.views.len(), 1);
+    assert_eq!(params.views[0].layout, DatabaseLayout::Board);
+    assert_eq!(params.fields.len(), 2);
   }
 }

@@ -1,4 +1,5 @@
 "use no memo";
+import { hyperMentionPeople } from '@/features/hyper-people/hyperMentions';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTable } from '@tanstack/react-table';
 import type { ColumnPinningState, ColumnSizingState, ExpandedState, RowSelectionState, Row } from '@tanstack/react-table';
@@ -49,6 +50,10 @@ export function HyperGridView(
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
   const [option, setOption] = useState('');
+  const [personField, setPersonField] = useState('');
+  const [personValue, setPersonValue] = useState('');
+  const personEmail = hyperMentionPeople(personValue)[0]?.email;
+  const person = personEmail && state.fields.some(field => field.id === personField) ? { fieldId: personField, email: personEmail } : undefined;
 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -100,7 +105,7 @@ export function HyperGridView(
     await run(async () => { await controller.moveField(from, to); await controller.updateViewExtra({ hyper_grid_column_order: next }); });
   };
 
-  const write = useCallback(async (rowId: string, fieldId: string, mutation: HyperCellMutation, value?: HyperCell) => {
+  const write = useCallback(async (rowId: string, fieldId: string, mutation: HyperCellMutation, value?: HyperCell, rejectOnError = false) => {
     const key = `${rowId}:${fieldId}`;
     const version = (versions.current.get(key) ?? 0) + 1;
     versions.current.set(key, version);
@@ -110,7 +115,7 @@ export function HyperGridView(
       [key]: value,
     }));
 
-    await run(() => controller.updateCell(rowId, fieldId, mutation));
+    const saved = await run(() => controller.updateCell(rowId, fieldId, mutation));
 
     if (versions.current.get(key) === version) setOptimistic(old => {
       const next = {
@@ -120,6 +125,7 @@ export function HyperGridView(
       delete next[key];
       return next;
     });
+    if (!saved && rejectOnError) throw new Error("Could not save this cell. Try again.");
   }, [controller, run]);
 
   useEffect(() => {
@@ -137,20 +143,20 @@ export function HyperGridView(
 
   const firstSelect = orderedFields.find(field => field.type === FieldType.SingleSelect);
 
-  const scan = useHyperDatabaseScan(controller, state, state.rowIds, search.trim() ? state.fields.map(f => f.id) : firstSelect ? [firstSelect.id] : [], Boolean(search.trim() || option));
+  const scan = useHyperDatabaseScan(controller, state, state.rowIds, search.trim() || person ? state.fields.map(f => f.id) : firstSelect ? [firstSelect.id] : [], Boolean(search.trim() || option || person));
 
   // Local search filters rowIds below; the header always counts the core's full loaded row list.
   const databaseRowCount = state.rowIds.length;
 
   const rowIds = useMemo(
-    () => search.trim() || option ? HyperGridFilterRows({ ...state, cells: scan.cells }, search, firstSelect?.id, option) : state.rowIds,
+    () => search.trim() || option || person ? HyperGridFilterRows({ ...state, cells: scan.cells }, search, firstSelect?.id, option, person) : state.rowIds,
     [
       state.rowIds,
       state.fields,
       scan.cells,
       search,
       option,
-      firstSelect?.id,
+      firstSelect?.id, personField, personEmail,
     ],
   );
 
@@ -508,6 +514,8 @@ export function HyperGridView(
                 <Plus className='size-4' />New row</Button>
             </div>
             <HyperGridToolbar
+              personField={personField} personValue={personValue}
+              setPersonFilter={(fieldId, value) => { setPersonField(fieldId); setPersonValue(value); setPagination(old => ({ ...old, pageIndex: 0 })); }}
               query={query}
               setQuery={setQuery}
               option={option}

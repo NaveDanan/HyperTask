@@ -15,6 +15,7 @@ export default defineConfig({
     build: { externalizeDeps: true },
   },
   renderer: {
+    cacheDir: process.env.HYPER_DEV_JWT_VITE_CACHE,
     root: resolve(__dirname, 'src/renderer'),
     resolve: {
       alias: {

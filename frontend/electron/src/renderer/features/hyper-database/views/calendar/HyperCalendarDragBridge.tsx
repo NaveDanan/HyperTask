@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useEventCalendar } from '@/components/reui/event-calendar/event-calendar';
 import type { EventCalendarProposedUpdate } from '@/components/reui/event-calendar/event-calendar-types';
-import { hyperCalendarTypeOnlyUpdate, type HyperCalendarEventData } from './HyperCalendarData';
+import type { HyperOutlookCalendarData } from '@/features/hyper-outlook/HyperOutlookData';
+import { hyperCalendarTypeOnlyUpdate } from './HyperCalendarData';
 
 /** ReUI skips equal-date drops even when the all-day flag changed. */
-export function HyperCalendarDragBridge({ onEventUpdate }: { onEventUpdate: (update: EventCalendarProposedUpdate<HyperCalendarEventData>) => boolean }) {
-  const calendar = useEventCalendar<HyperCalendarEventData>();
+export function HyperCalendarDragBridge({ onEventUpdate }: { onEventUpdate: (update: EventCalendarProposedUpdate<HyperOutlookCalendarData>) => boolean }) {
+  const calendar = useEventCalendar<HyperOutlookCalendarData>();
   useEffect(() => {
     const onPointerUp = (event: PointerEvent) => {
       if (!event.isPrimary || event.button !== 0) return;

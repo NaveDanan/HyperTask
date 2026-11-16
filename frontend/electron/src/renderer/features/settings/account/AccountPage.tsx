@@ -1,3 +1,4 @@
+import { hyperEntraRecordSignOut } from '@/features/hyper-entra/HyperEntraStore';
 import { useEffect, useRef, useState } from 'react';
 import { AuthTypePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
@@ -128,6 +129,7 @@ function SignInOutSection({ signIn, didLogout, didLogin }: { signIn: boolean; di
       style: 'cancelAndOk',
       confirmLabel: tr('button.yes'),
       onConfirm: async () => {
+        await hyperEntraRecordSignOut();
         await UserEventSignOut();
         didLogout();
       },

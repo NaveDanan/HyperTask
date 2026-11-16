@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/hyper-folder/view_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { tr, useTr } from '@/i18n';
-import { FileText, LayoutTemplate, SquareCheckBig, Trash2 } from 'lucide-react';
+import { FileText, House, LayoutTemplate, SquareCheckBig, Trash2 } from 'lucide-react';
 import { MenuSeparator } from '@/components/app/menu-row';
 import { cn } from '@/lib/utils';
 import { PluginType, type Plugin } from '../tabs/plugin';
@@ -23,6 +23,7 @@ import { HyperDatabasePage } from '../hyper-database/HyperDatabasePage';
 import { hyperLayout } from '../hyper-database/HyperDatabaseController';
 import { HyperOpenBotPage } from '../hyper-openbot/HyperOpenBotPage';
 import { JiraDashboardPage } from '../jira/ui/JiraDashboardPage';
+import { HyperHomePage } from '../hyper-home/HyperHomePage';
 
 /** PluginContext: onDeleted(view, index) and the user (null in the secondary view). */
 export interface PluginContext {
@@ -163,11 +164,11 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
     case 'localTool':
       return {
         viewName: plugin.title,
-        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs">{plugin.toolId === 'jira' ? <SquareCheckBig className="size-4 text-muted-foreground" /> : <LayoutTemplate className="size-4 text-muted-foreground" />}{!shortForm && <span className="truncate">{plugin.title}</span>}</span>,
+        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs">{plugin.toolId === 'home' ? <House className="size-4 text-muted-foreground" /> : plugin.toolId === 'jira' ? <SquareCheckBig className="size-4 text-muted-foreground" /> : <LayoutTemplate className="size-4 text-muted-foreground" />}{!shortForm && <span className="truncate">{plugin.title}</span>}</span>,
         leftBarItem: <MediumLabel text={plugin.title} />,
         rightBarItem: null,
         contentPadding: 0,
-        buildWidget: (context) => plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : plugin.toolId === 'jira' ? <JiraDashboardPage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
+        buildWidget: (context) => plugin.toolId === 'home' ? <HyperHomePage /> : plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : plugin.toolId === 'jira' ? <JiraDashboardPage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
       };
     case 'databaseDocument':
       return {

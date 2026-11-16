@@ -303,6 +303,22 @@ impl ModelSource for LocalAiSource {
   }
 
   async fn list_chat_models(&self, _workspace_id: &Uuid) -> Vec<Model> {
+    let setting = self.controller.get_local_ai_setting();
+    if setting
+      .ollama_server_url
+      .starts_with(crate::openai_endpoint::CONFIG_PREFIX)
+    {
+      // OpenAI endpoints do not have an Ollama client. Register the configured
+      // model locally so saving and selecting it does not depend on discovery.
+      return crate::openai_endpoint::EndpointConfig::load(&setting.ollama_server_url)
+        .map(|config| {
+          vec![AIModel::local(
+            config.model,
+            "OpenAI-compatible endpoint".to_string(),
+          )]
+        })
+        .unwrap_or_default();
+    }
     match self.controller.ollama.load_full() {
       None => vec![],
       Some(ollama) => ollama

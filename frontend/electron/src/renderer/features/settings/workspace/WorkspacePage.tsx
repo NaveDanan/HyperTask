@@ -4,26 +4,14 @@ import { AFRolePB, WorkspaceTypePB } from '@shared/protobuf/hyper-user/workspace
 import type { UserWorkspacePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { UserEventChangeWorkspaceIcon, UserEventRenameWorkspace } from '@/backend/events';
 import { useTr } from '@/i18n';
-import { HypertaskPopover, Spinner, showConfirmDialog, showToast } from '@/ui';
+import { HypertaskPopover, Spinner, showConfirmDialog } from '@/ui';
 import { Button } from '@/components/ui/button';
 import { SettingsGroup, SettingsRow, SettingsSection } from '@/components/app/settings-layout';
 import { EmojiPicker } from '../emoji/EmojiPicker';
-import { LanguageDropdown } from '../LanguageDropdown';
 import type { SettingsPageProps } from '../page-props';
 import { deleteWorkspace, fetchWorkspaces, leaveWorkspace } from '../settings-workspace-store';
 import { SettingsBody } from '../shared';
 import { SettingsInputField } from '../shared-widgets';
-import {
-  AppearanceSelector,
-  DateTimeSettings,
-  DocumentColorSetting,
-  DocumentWidthSetting,
-  EnableRTLItemsSwitcher,
-  FontSelectorDropdown,
-  LayoutDirectionSelect,
-  TextDirectionSelect,
-  ThemeDropdown,
-} from './appearance-controls';
 import { workspaceIconColors } from './appearance-utils';
 
 /** WorkspaceSettingsBloc (workspace/application/settings/workspace/workspace_settings_bloc.dart). */
@@ -134,12 +122,11 @@ function WorkspaceIconSetting({ enableEdit }: { enableEdit: boolean }) {
   );
 }
 
-/** SettingsWorkspaceView (pages/settings_workspace_view.dart). */
+/** SettingsWorkspaceView (pages/settings_workspace_view.dart): workspace name, icon and Delete/Leave. */
 export function WorkspacePage({ user, role, closeDialog, restartApp }: SettingsPageProps) {
   const { tr } = useTr();
   const isOwner = role === AFRolePB.Owner;
   const showWorkspace = user.workspaceType !== WorkspaceTypePB.LocalW;
-  const [, rebuild] = useState(0);
 
   useEffect(() => void initialWorkspaceSettings(), []);
 
@@ -165,18 +152,6 @@ export function WorkspacePage({ user, role, closeDialog, restartApp }: SettingsP
       <SettingsRow label={tr('settings.workspacePage.workspaceName.title')}><WorkspaceNameSetting role={role} /></SettingsRow>
       <SettingsRow label={tr('settings.workspacePage.workspaceIcon.title')} description={tr('settings.workspacePage.workspaceIcon.description')} control={<WorkspaceIconSetting enableEdit={isOwner} />} />
     </SettingsGroup></SettingsSection>}
-    <SettingsSection key="appearance" title={tr('settings.workspacePage.appearance.title')} description={tr('settings.workspacePage.theme.description')}>
-      <SettingsGroup><div className="p-4"><AppearanceSelector /></div></SettingsGroup>
-      <SettingsGroup>
-        <ThemeDropdown onUploaded={() => { showToast({ message: tr('settings.appearance.themeUpload.uploadSuccess') }); rebuild((n) => n + 1); }} />
-        <DocumentColorSetting kind="cursor" /><DocumentColorSetting kind="selection" /><DocumentWidthSetting />
-      </SettingsGroup>
-    </SettingsSection>
-    <SettingsSection key="text"><SettingsGroup>
-      <FontSelectorDropdown /><TextDirectionSelect /><EnableRTLItemsSwitcher /><LayoutDirectionSelect />
-      <SettingsRow label={tr('settings.workspacePage.language.title')} control={<LanguageDropdown />} />
-    </SettingsGroup></SettingsSection>
-    <DateTimeSettings key="datetime" />
     {showWorkspace && <SettingsSection key="manage" title={tr('settings.workspacePage.manageWorkspace.title')}><SettingsGroup className="border-destructive/30"><SettingsRow
       label={tr(isOwner ? 'settings.workspacePage.deleteWorkspacePrompt.title' : 'settings.workspacePage.leaveWorkspacePrompt.title')}
       description={tr(isOwner ? 'settings.workspacePage.deleteWorkspacePrompt.content' : 'settings.workspacePage.leaveWorkspacePrompt.content')}

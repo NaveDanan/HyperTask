@@ -59,7 +59,7 @@ it('keeps an established conversation attached during a healthy readiness refres
 it('reports unsupported platforms without executing or authorizing a backend command', async () => {
   const { dependencies } = setup(); dependencies.supported = false;
   const service = new HyperOpenBotService(dependencies, true); await service.run('ensure');
-  expect(service.snapshot().problem).toBe('unsupported'); expect(dependencies.execute).not.toHaveBeenCalled(); expect(dependencies.authorize).not.toHaveBeenCalled();
+  expect(service.snapshot().problem).toBe('unsupported'); service.invalidate(); expect(service.snapshot().problem).toBe('unsupported'); expect(dependencies.execute).not.toHaveBeenCalled(); expect(dependencies.authorize).not.toHaveBeenCalled();
 });
 it('refuses lifecycle commands when the native backend owner cannot be verified', async () => {
   const { service, dependencies } = setup();

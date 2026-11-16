@@ -1,3 +1,7 @@
+import { registerHyperEntraIpc } from './HyperEntraIpc';
+import { HyperDevJwtBootstrap } from './HyperDevJwtBootstrap';
+import { HyperOutlookBridge } from './HyperOutlookBridge';
+import { registerHyperOutlookIpc } from './HyperOutlookIpc';
 import { hyperClassifyBrowserReturn } from './HyperBrowserReturn';
 import { HyperBrowserReturnQueue } from './HyperBrowserReturnQueue';
 import type { HyperOpenBotService } from './HyperOpenBotService';
@@ -6,6 +10,8 @@ import { registerHyperOpenBotServiceIpc } from './HyperOpenBotServiceIpc';
 import { createHyperOpenBotSession, hyperReadCoreIdentity, hyperNativeCoreRequest } from './HyperOpenBotSession';
 import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
 import os from 'node:os';
+import { existsSync } from 'node:fs';
+import { supportPath } from './support-path';
 import path from 'node:path';
 import { app, BrowserWindow, clipboard, dialog, ipcMain, net, session, shell } from 'electron';
 import { IpcChannel as C, type AppInfo, type CoreInitConfig, type FileFilter } from '@shared/api';
@@ -13,6 +19,7 @@ import { isVendorUrl } from '@shared/self-hosted-policy';
 import { scheduleCapture } from './capture';
 import { coreBinaryPath } from './core/binary';
 import { CoreProcess } from './core/process';
+import { createCoreOutputWriter } from './core/output';
 import { readDeviceId } from './device-id';
 import { exportLogs } from './logs';
 import { SharedPreferences } from './prefs';
@@ -29,14 +36,14 @@ const DEEP_LINK_SCHEME = 'hypertask-flutter';
 function supportDirectory(): string {
   // Development/testing: point the app at a scratch directory instead of the real data.
   if (process.env.HYPERTASK_SUPPORT_DIR && !app.isPackaged) return process.env.HYPERTASK_SUPPORT_DIR;
-  if (process.platform === 'win32') return path.join(app.getPath('appData'), 'io.hypertask', 'Hypertask');
-  if (process.platform === 'darwin') return path.join(app.getPath('appData'), 'io.hypertask.hypertask');
-  return path.join(os.homedir(), '.local', 'share', 'io.hypertask.hypertask');
+  return supportPath(process.platform, app.getPath('appData'), os.homedir(), existsSync);
 }
 
 const appRoot = path.resolve(__dirname, '../..');
 const prefs = new SharedPreferences(path.join(supportDirectory(), 'shared_preferences.json'));
 const core = new CoreProcess(coreBinaryPath(appRoot, app.isPackaged));
+const hyperOutlook = new HyperOutlookBridge();
+const hyperDevJwt = new HyperDevJwtBootstrap({ packaged: app.isPackaged, rendererUrl: process.env.ELECTRON_RENDERER_URL, enabled: process.env.HYPER_DEV_JWT_ENABLED, sessionFile: process.env.HYPER_DEV_JWT_SESSION_FILE });
 let coreStarted: Promise<void> | null = null;
 let mainWindow: BrowserWindow | null = null;
 let launchDeepLink: string | null = findDeepLink(process.argv);
@@ -61,10 +68,10 @@ function findDeepLink(argv: string[]): string | null {
   return argv.find((arg) => (arg.startsWith(`${DEEP_LINK_SCHEME}:`) || /^openbot:/i.test(arg))) ?? null;
 }
 
+const writeCoreOutput = app.isPackaged ? () => {} : createCoreOutputWriter(process.stdout);
+
 function startCore(): Promise<void> {
-  coreStarted ??= core.start((chunk) => {
-    if (!app.isPackaged) process.stdout.write(chunk);
-  });
+  coreStarted ??= core.start(writeCoreOutput);
   return coreStarted;
 }
 
@@ -95,7 +102,7 @@ async function createWindow() {
     frame: process.platform === 'darwin',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : undefined,
     backgroundColor: '#FFFFFF',
-    title: 'HyperTask',
+    title: hyperDevJwt.enabled ? 'HyperTask — DEV JWT' : 'HyperTask',
     icon: path.join(appRoot, 'resources/hypertask.ico'),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
@@ -140,6 +147,8 @@ function focusWindow() {
 }
 
 function registerIpc() {
+  registerHyperOutlookIpc(hyperOutlook, () => mainWindow);
+  registerHyperEntraIpc(() => mainWindow);
   const openBotSessions = createHyperOpenBotSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
   let openBotService: HyperOpenBotService | undefined;
   const openBotBridge = registerHyperOpenBotIpc(() => mainWindow, openBotSessions, () => openBotService?.snapshot().ready === true);
@@ -173,6 +182,7 @@ function registerIpc() {
     await transition.cleared;
     const result = await core.init(config);
     openBotSessions.completeNativeTransition(transition.version, result === 0);
+    if (hyperDevJwt.enabled) hyperDevJwt.coreReady(result === 0 && config.authenticator_type === 2 ? config.hypertask_cloud_config.base_url : null);
     return result;
   });
   ipcMain.handle(C.CoreRequest, (_, event: string, payload: Uint8Array) => hyperNativeCoreRequest(openBotSessions, event, async () => {
@@ -185,6 +195,7 @@ function registerIpc() {
     version: app.getVersion(),
     platform: process.platform,
     isPackaged: app.isPackaged,
+    developmentJwt: hyperDevJwt.enabled,
     paths: {
       appData: app.getPath('appData'),
       documents: app.getPath('documents'),
@@ -211,6 +222,11 @@ function registerIpc() {
     const link = launchDeepLink;
     launchDeepLink = null;
     return link;
+  });
+  ipcMain.handle(C.AuthDevJwtSession, async (event) => {
+    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) return null;
+    try { return await hyperDevJwt.take(); }
+    catch { throw new Error('Development JWT session did not match the initialized server. Restart with npm run dev:jwt.'); }
   });
 
   ipcMain.handle(C.AppExportLogs, () => exportLogs(supportDirectory()));
@@ -317,6 +333,7 @@ if (!app.requestSingleInstanceLock()) {
     if (quitting) return;
     event.preventDefault();
     quitting = true;
+    hyperOutlook.stop();
     void core.stop().finally(() => app.quit());
   });
   app.on('window-all-closed', () => app.quit());

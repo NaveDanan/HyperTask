@@ -1,3 +1,5 @@
+import { HyperPeoplePicker } from '@/features/hyper-people/HyperPeoplePicker';
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
 import { useState } from 'react';
 import { ArrowDown, ArrowUp, Copy, GripVertical, Plus, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import { FieldType } from '@shared/protobuf/hyper-database2/field_entities_pb';
@@ -15,6 +17,7 @@ import { HyperGridSelectColor } from './selectColor';
 
 export function HyperGridToolbar(
   {
+    personField, personValue, setPersonFilter,
     query,
     setQuery,
     option,
@@ -22,6 +25,7 @@ export function HyperGridToolbar(
     selected,
     clearSelection,
   }: {
+    personField: string; personValue: string; setPersonFilter: (fieldId: string, value: string) => void;
     query: string;
     setQuery: (value: string) => void;
     option: string;
@@ -73,7 +77,7 @@ export function HyperGridToolbar(
           <SelectItem value=''>All {firstSelect.name}</SelectItem>{firstSelect.options.map(item => <SelectItem key={item.id} value={item.id}>
             <Badge variant={HyperGridSelectColor(item.color)} size='sm'>{item.name}</Badge>
           </SelectItem>)}</SelectContent>
-      </Select> : null}<Popover>
+      </Select> : null}{grid.state.fields.some(field => hyperIsPeopleField(field.proto)) && <Popover><PopoverTrigger render={<Button variant="outline" />}><span>{personValue ? 'Person filter active' : 'Contains person'}</span></PopoverTrigger><PopoverContent align="start" className="w-72 gap-2 p-3"><p className="text-xs font-medium">Contains person</p><Select value={personField} items={grid.state.fields.filter(field => hyperIsPeopleField(field.proto)).map(field => ({ value: field.id, label: field.name }))} onValueChange={value => setPersonFilter(value ?? '', '')}><SelectTrigger aria-label="People field" className="w-full"><SelectValue placeholder="Choose a People field" /></SelectTrigger><SelectContent>{grid.state.fields.filter(field => hyperIsPeopleField(field.proto)).map(field => <SelectItem key={field.id} value={field.id}>{field.name}</SelectItem>)}</SelectContent></Select>{personField && <HyperPeoplePicker value={personValue} single label="person filter" onChange={value => setPersonFilter(personField, value)} />}{personValue && <Button variant="ghost" onClick={() => setPersonFilter('', '')}>Clear person filter</Button>}</PopoverContent></Popover>}<Popover>
         <PopoverTrigger render={<Button variant='outline' className='ml-auto bg-background' />}>
           <SlidersHorizontal className='size-4' />View settings</PopoverTrigger>
         <PopoverContent className='w-72 p-0' align='end'>
@@ -106,7 +110,7 @@ export function HyperGridToolbar(
                 className='cursor-grab text-muted-foreground disabled:opacity-30'>
                 <GripVertical className='size-3.5' />
               </button>
-              <HyperGridFieldIcon type={field.type} />
+              <HyperGridFieldIcon type={field.type} people={hyperIsPeopleField(field.proto)} />
               <span className='min-w-0 flex-1 truncate text-sm'>{field.name}</span>{!field.isPrimary ? <span className='flex'>
                 <Button
                   variant='ghost'

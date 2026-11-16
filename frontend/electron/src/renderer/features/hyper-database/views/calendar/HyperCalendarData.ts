@@ -89,7 +89,7 @@ export function hyperCalendarError(error: unknown) {
   return 'The calendar could not be updated. Please try again.';
 }
 
-export function hyperCalendarTypeOnlyUpdate(drag: EventCalendarDragState<HyperCalendarEventData> | null): EventCalendarProposedUpdate<HyperCalendarEventData> | null {
+export function hyperCalendarTypeOnlyUpdate<T>(drag: EventCalendarDragState<T> | null): EventCalendarProposedUpdate<T> | null {
   if (!drag || !drag.valid || drag.kind !== 'move' || drag.occurrence.event.readOnly || drag.proposedAllDay === drag.occurrence.allDay) return null;
   if (drag.proposedStart.getTime() !== drag.occurrence.start.getTime() || drag.proposedEnd.getTime() !== drag.occurrence.end.getTime()) return null;
   return { event: drag.occurrence.event, occurrence: drag.occurrence, start: drag.proposedStart, end: drag.proposedEnd, allDay: drag.proposedAllDay, source: 'drag' };

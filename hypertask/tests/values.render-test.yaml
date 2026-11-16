@@ -1,0 +1,12 @@
+# Render-only image tags. These are never deployed or pushed.
+global:
+  host: hypertask.apps.example.internal
+images:
+  postgres: {tag: render-test-20261116, digest: ""}
+  redis: {tag: render-test-20261116, digest: ""}
+  storage: {tag: render-test-20261116, digest: ""}
+  gotrue: {tag: render-test-20261116, digest: ""}
+  cloud: {tag: render-test-20261116, digest: ""}
+  admin: {tag: render-test-20261116, digest: ""}
+  proxy: {tag: render-test-20261116, digest: ""}
+  web: {tag: render-test-20261116, digest: ""}

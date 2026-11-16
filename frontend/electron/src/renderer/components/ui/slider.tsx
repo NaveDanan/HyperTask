@@ -1,3 +1,4 @@
+// Ported from t3code (apps/web/src/index.css), Copyright (c) 2026 T3 Tools Inc., MIT License. See features/settings/appearance/NOTICE.md.
 import { Slider as SliderPrimitive } from "@base-ui/react/slider"
 import { cn } from "cn"
 
@@ -40,7 +41,7 @@ function Slider({
           <SliderPrimitive.Thumb
             data-slot="slider-thumb"
             key={index}
-            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
+            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[scale,box-shadow] duration-[120ms] ease-[ease] select-none after:absolute after:-inset-2 hover:scale-[1.08] hover:shadow-[0_1px_3px_color-mix(in_srgb,var(--contrast-foreground)_20%,transparent)] focus-visible:ring-3 focus-visible:outline-hidden active:scale-[0.94] disabled:pointer-events-none disabled:opacity-50"
           />
         ))}
       </SliderPrimitive.Control>

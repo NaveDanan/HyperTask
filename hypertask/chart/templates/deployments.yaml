@@ -1,0 +1,264 @@
+{{- $root := . -}}
+{{- range $component := list "gotrue" "cloud" "admin" "proxy" "web" }}
+{{- $config := index $root.Values (ternary "auth" $component (eq $component "gotrue")) }}
+{{- if or (not (has $component (list "admin" "web"))) $config.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hypertask.fullname" $root }}-{{ $component }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "hypertask.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  replicas: {{ $config.replicas }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "hypertask.selector" $root | nindent 6 }}
+      app.kubernetes.io/component: {{ $component }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $root.Template.BasePath "/configmap.yaml") $root | sha256sum }}
+      labels:
+        {{- include "hypertask.selector" $root | nindent 8 }}
+        app.kubernetes.io/component: {{ $component }}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/arch: amd64, kubernetes.io/os: linux}
+      {{- include "hypertask.pullSecrets" $root | nindent 6 }}
+      terminationGracePeriodSeconds: 60
+      {{- if has $component (list "gotrue" "cloud") }}
+      initContainers:
+        - name: wait-postgres
+          image: {{ include "hypertask.image" (dict "root" $root "component" "postgres") | quote }}
+          command: [sh, -ec]
+          args: ['until pg_isready -h {{ include "hypertask.fullname" $root }}-postgres -U {{ $root.Values.postgres.username }} -d {{ $root.Values.postgres.database }}; do sleep 3; done']
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 250m, memory: 128Mi}
+        {{- if eq $component "cloud" }}
+        - name: wait-backend
+          image: {{ include "hypertask.image" (dict "root" $root "component" "proxy") | quote }}
+          command: [sh, -ec]
+          args:
+            - >-
+              until wget -q -O /dev/null http://{{ include "hypertask.fullname" $root }}-gotrue:9999/health
+              && nc -z {{ include "hypertask.fullname" $root }}-redis 6379
+              && nc -z {{ include "hypertask.fullname" $root }}-storage 9000;
+              do sleep 3; done
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 250m, memory: 64Mi}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ $component }}
+          image: {{ include "hypertask.image" (dict "root" $root "component" $component) | quote }}
+          imagePullPolicy: IfNotPresent
+          resources:
+            {{- toYaml $config.resources | nindent 12 }}
+          {{- if has $component (list "gotrue" "cloud" "admin") }}
+          env:
+          {{- if eq $component "gotrue" }}
+            - name: GOTRUE_DB_DRIVER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: POSTGRES_PASSWORD}
+            - name: DATABASE_URL
+              value: {{ printf "postgres://%s:$(POSTGRES_PASSWORD)@%s-postgres:5432/%s?search_path=auth" $root.Values.postgres.username (include "hypertask.fullname" $root) $root.Values.postgres.database | quote }}
+            - name: PORT
+              value: "9999"
+            - name: GOTRUE_API_HOST
+              value: "0.0.0.0"
+            - name: API_EXTERNAL_URL
+              value: {{ printf "%s/gotrue" (include "hypertask.origin" $root) | quote }}
+            - name: GOTRUE_SITE_URL
+              value: {{ $root.Values.auth.siteUrl | quote }}
+            - name: GOTRUE_URI_ALLOW_LIST
+              value: {{ join "," (concat (list (printf "%s/**" (include "hypertask.origin" $root))) $root.Values.auth.additionalRedirects) | quote }}
+            - name: GOTRUE_JWT_SECRET
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: JWT_SECRET}
+            - name: GOTRUE_JWT_EXP
+              value: {{ $root.Values.auth.jwtExpirySeconds | quote }}
+            - name: GOTRUE_JWT_AUD
+              value: "authenticated"
+            - name: GOTRUE_JWT_ADMIN_GROUP_NAME
+              value: "supabase_admin"
+            - name: GOTRUE_DISABLE_SIGNUP
+              value: {{ not $root.Values.auth.allowSignup | quote }}
+            - name: GOTRUE_EXTERNAL_EMAIL_ENABLED
+              value: {{ $root.Values.auth.emailEnabled | quote }}
+            - name: GOTRUE_MAILER_AUTOCONFIRM
+              value: {{ $root.Values.auth.emailAutoConfirm | quote }}
+            - name: GOTRUE_SMTP_HOST
+              value: {{ ternary $root.Values.smtp.host "smtp-disabled" $root.Values.smtp.enabled | quote }}
+            - name: GOTRUE_SMTP_PORT
+              value: {{ ternary $root.Values.smtp.port 25 $root.Values.smtp.enabled | quote }}
+            - name: GOTRUE_SMTP_ADMIN_EMAIL
+              value: {{ $root.Values.smtp.from | quote }}
+            - name: GOTRUE_SMTP_SENDER_NAME
+              value: "HyperTask"
+            - name: GOTRUE_SMTP_USER
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: SMTP_USERNAME, optional: true}
+            - name: GOTRUE_SMTP_PASS
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: SMTP_PASSWORD, optional: true}
+            - name: GOTRUE_MAILER_URLPATHS_CONFIRMATION
+              value: "/gotrue/verify"
+            - name: GOTRUE_MAILER_URLPATHS_RECOVERY
+              value: "/gotrue/verify"
+            - name: GOTRUE_MAILER_URLPATHS_INVITE
+              value: "/gotrue/verify"
+            - name: GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE
+              value: "/gotrue/verify"
+            - name: GOTRUE_EXTERNAL_KEYCLOAK_ENABLED
+              value: {{ $root.Values.keycloak.enabled | quote }}
+            - name: GOTRUE_EXTERNAL_AZURE_ENABLED
+              value: "false"
+            - name: GOTRUE_EXTERNAL_GOOGLE_ENABLED
+              value: "false"
+            - name: GOTRUE_EXTERNAL_GITHUB_ENABLED
+              value: "false"
+            - name: GOTRUE_EXTERNAL_DISCORD_ENABLED
+              value: "false"
+            - name: GOTRUE_EXTERNAL_APPLE_ENABLED
+              value: "false"
+            - name: GOTRUE_SAML_ENABLED
+              value: "false"
+            {{- if $root.Values.keycloak.enabled }}
+            - {name: GOTRUE_EXTERNAL_KEYCLOAK_URL, value: {{ trimSuffix "/" $root.Values.keycloak.issuerUrl | quote }}}
+            - {name: GOTRUE_EXTERNAL_KEYCLOAK_CLIENT_ID, value: {{ $root.Values.keycloak.clientId | quote }}}
+            - {name: GOTRUE_EXTERNAL_KEYCLOAK_REDIRECT_URI, value: {{ printf "%s/gotrue/callback" (include "hypertask.origin" $root) | quote }}}
+            - name: GOTRUE_EXTERNAL_KEYCLOAK_SECRET
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: KEYCLOAK_CLIENT_SECRET}
+            {{- end }}
+          {{- else if eq $component "cloud" }}
+            - name: RUST_LOG
+              value: "info"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: POSTGRES_PASSWORD}
+            - name: APPFLOWY_ENVIRONMENT
+              value: {{ $root.Values.cloud.environment | quote }}
+            - name: APPFLOWY_DATABASE_URL
+              value: {{ printf "postgres://%s:$(POSTGRES_PASSWORD)@%s-postgres:5432/%s" $root.Values.postgres.username (include "hypertask.fullname" $root) $root.Values.postgres.database | quote }}
+            - name: APPFLOWY_REDIS_URI
+              value: {{ printf "redis://%s-redis:6379" (include "hypertask.fullname" $root) | quote }}
+            - name: APPFLOWY_GOTRUE_BASE_URL
+              value: {{ printf "http://%s-gotrue:9999" (include "hypertask.fullname" $root) | quote }}
+            - name: APPFLOWY_GOTRUE_JWT_SECRET
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: JWT_SECRET}
+            - name: APPFLOWY_GOTRUE_JWT_EXP
+              value: {{ $root.Values.auth.jwtExpirySeconds | quote }}
+            - name: APPFLOWY_ACCESS_CONTROL
+              value: "true"
+            - name: APPFLOWY_DATABASE_MAX_CONNECTIONS
+              value: "30"
+            - name: APPFLOWY_S3_CREATE_BUCKET
+              value: "true"
+            - name: APPFLOWY_S3_USE_MINIO
+              value: "true"
+            - name: APPFLOWY_S3_MINIO_URL
+              value: {{ printf "http://%s-storage:9000" (include "hypertask.fullname" $root) | quote }}
+            - name: APPFLOWY_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: S3_ACCESS_KEY}
+            - name: APPFLOWY_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: S3_SECRET_KEY}
+            - name: APPFLOWY_S3_BUCKET
+              value: {{ $root.Values.storage.bucket | quote }}
+            - name: APPFLOWY_S3_REGION
+              value: {{ $root.Values.storage.region | quote }}
+            - name: APPFLOWY_S3_PRESIGNED_URL_ENDPOINT
+              value: {{ printf "%s/minio-api" (include "hypertask.origin" $root) | quote }}
+            - name: APPFLOWY_WEB_URL
+              value: {{ include "hypertask.origin" $root | quote }}
+            - name: APPFLOWY_INDEXER_ENABLED
+              value: "false"
+            - name: APPFLOWY_MAILER_SMTP_HOST
+              value: {{ ternary $root.Values.smtp.host "smtp-disabled" $root.Values.smtp.enabled | quote }}
+            - name: APPFLOWY_MAILER_SMTP_PORT
+              value: {{ ternary $root.Values.smtp.port 25 $root.Values.smtp.enabled | quote }}
+            - name: APPFLOWY_MAILER_SMTP_USERNAME
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: SMTP_USERNAME, optional: true}
+            - name: APPFLOWY_MAILER_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ $root.Values.global.existingSecret }}, key: SMTP_PASSWORD, optional: true}
+            - name: APPFLOWY_MAILER_SMTP_EMAIL
+              value: {{ $root.Values.smtp.from | quote }}
+            - name: APPFLOWY_MAILER_SMTP_TLS_KIND
+              value: {{ ternary $root.Values.smtp.tlsKind "none" $root.Values.smtp.enabled | quote }}
+            - name: AI_SERVER_HOST
+              value: "127.0.0.1"
+            - name: AI_SERVER_PORT
+              value: "5001"
+          {{- else }}
+            - name: RUST_LOG
+              value: "info"
+            - name: ADMIN_FRONTEND_REDIS_URL
+              value: {{ printf "redis://%s-redis:6379" (include "hypertask.fullname" $root) | quote }}
+            - name: ADMIN_FRONTEND_GOTRUE_URL
+              value: {{ printf "http://%s-gotrue:9999" (include "hypertask.fullname" $root) | quote }}
+            - name: ADMIN_FRONTEND_APPFLOWY_CLOUD_URL
+              value: {{ printf "http://%s-cloud:8000" (include "hypertask.fullname" $root) | quote }}
+            - name: ADMIN_FRONTEND_PATH_PREFIX
+              value: "/console"
+          {{- end }}
+            {{- if $root.Values.global.trustedCa.existingConfigMap }}
+            - {name: SSL_CERT_FILE, value: /etc/hyper-ca/ca-bundle.crt}
+            - {name: CURL_CA_BUNDLE, value: /etc/hyper-ca/ca-bundle.crt}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ index (dict "gotrue" 9999 "cloud" 8000 "admin" 3000 "proxy" 8080 "web" 80) $component }}
+          startupProbe:
+            {{- if eq $component "admin" }}
+            tcpSocket: {port: http}
+            {{- else }}
+            httpGet: {path: {{ index (dict "gotrue" "/health" "cloud" "/health" "proxy" "/healthz" "web" "/") $component }}, port: http}
+            {{- end }}
+            periodSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            {{- if eq $component "admin" }}
+            tcpSocket: {port: http}
+            {{- else }}
+            httpGet: {path: {{ index (dict "gotrue" "/health" "cloud" "/health" "proxy" "/healthz" "web" "/") $component }}, port: http}
+            {{- end }}
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 20
+            failureThreshold: 6
+          {{- if or (eq $component "proxy") (and (has $component (list "gotrue" "cloud" "admin")) $root.Values.global.trustedCa.existingConfigMap) }}
+          volumeMounts:
+            {{- if eq $component "proxy" }}
+            - {name: nginx, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf, readOnly: true}
+            {{- else }}
+            - {name: trusted-ca, mountPath: /etc/hyper-ca, readOnly: true}
+            {{- end }}
+      volumes:
+        {{- if eq $component "proxy" }}
+        - name: nginx
+          configMap: {name: {{ include "hypertask.fullname" $root }}-config}
+        {{- else }}
+        - name: trusted-ca
+          configMap:
+            name: {{ $root.Values.global.trustedCa.existingConfigMap }}
+            items: [{key: {{ $root.Values.global.trustedCa.key }}, path: ca-bundle.crt}]
+        {{- end }}
+          {{- end }}
+{{- end }}
+{{- end }}

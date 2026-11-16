@@ -1,0 +1,24 @@
+appId: io.hypertask.hypertask
+productName: HyperTask
+asar: true
+# All native broker/runtime DLLs stay beside their Node addons after packaging.
+asarUnpack:
+  - node_modules/@azure/msal-node-runtime/**
+  - node_modules/@azure/msal-node-extensions/bin/**
+  - node_modules/keytar/**
+files:
+  - out/**
+  - resources/assets/**
+  - resources/hypertask.ico
+  - package.json
+extraResources:
+  - from: ../../LICENSE
+    to: LICENSE
+  - from: ../rust-lib/target/x86_64-pc-windows-msvc/debug/hypertask_core.exe
+    to: hypertask_core.exe
+npmRebuild: false
+directories:
+  output: .cache/hyper-people/desktop-build
+win:
+  target: dir
+  signAndEditExecutable: false

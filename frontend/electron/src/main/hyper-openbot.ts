@@ -1,3 +1,4 @@
+import net from 'node:net';
 import { registerHyperNativeCredentials } from './HyperNativeCredentials';
 import { HyperVoiceBroker } from './HyperVoiceBroker';
 import { hyperTriggerSecretRequest, hyperConfirmTriggerSecret, hyperProtectTriggerResponse } from './HyperNativeTriggerSecrets';
@@ -138,7 +139,7 @@ export function registerHyperOpenBotIpc(window: () => BrowserWindow | null, sess
     lease.assertCurrent();
     if (event.sender.isDestroyed() || opening.cancelled) throw new Error('Renderer closed or socket cancelled');
      const voice = path.startsWith('/api/voice/socket/') ? voiceBroker.take(path, event.sender.id) : undefined;
-     const socket = new WebSocket(voice ? voice.destination : `ws+unix://${socketPath}:${path}`, voice ? [`xai-client-secret.${voice.secret}`] : protocols, { origin: ORIGIN, headers: voice ? {} : { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
+     const socket = new WebSocket(voice ? voice.destination : `ws://127.0.0.1:3010${path}`, voice ? [`xai-client-secret.${voice.secret}`] : protocols, { ...(voice ? {} : { createConnection: () => net.createConnection({ path: socketPath }) }), origin: ORIGIN, headers: voice ? {} : { cookie: cookie }, handshakeTimeout: 15000, maxPayload: MAX_BYTES, followRedirects: false });
     sockets.set(id, socket);
     if (voice) voiceSockets.add(id);
     const abort = () => socket.terminate();

@@ -12,7 +12,7 @@ export interface HyperGridContextValue extends HyperDatabaseViewProps {
   moveField: (from: string, to: string) => Promise<void>;
   editing: HyperGridAddress | null;
   edit: (address: HyperGridAddress | null, tabDirection?: number) => void;
-  write: (rowId: string, fieldId: string, mutation: HyperCellMutation, optimistic?: HyperCell) => Promise<void>;
+  write: (rowId: string, fieldId: string, mutation: HyperCellMutation, optimistic?: HyperCell, rejectOnError?: boolean) => Promise<void>;
   run: (action: () => Promise<unknown>) => Promise<boolean>;
   expand: (rowId: string) => void;
   cell: (rowId: string, fieldId: string) => HyperCell | undefined;

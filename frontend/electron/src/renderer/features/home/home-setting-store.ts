@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { appearanceActions, useAppearanceStore } from '@/theme/appearance-store';
+import { useAppearancePrefsStore } from '@/features/settings/appearance/appearance-prefs';
 
 export enum MenuStatus {
   hidden = 'hidden',
@@ -85,6 +86,9 @@ export const SIDEBAR_RAIL_WIDTH = 56;
 /** HomeLayout (home/home_layout.dart). */
 export function useHomeLayout(windowWidth: number) {
   const state = useHomeSettingStore();
+  // Panel animations (Appearance settings): the slide duration, 0 under reduced motion.
+  const panelAnimationMs = useAppearancePrefsStore((s) => s.panelAnimationDurationMs);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const menuWidth = Math.max(MINIMUM_SIDEBAR_WIDTH + state.resizeOffset, MINIMUM_SIDEBAR_WIDTH);
   const showMenu = state.menuStatus === MenuStatus.expanded;
   const menuIsDrawer = showMenu && windowWidth <= 768;
@@ -95,7 +99,7 @@ export function useHomeLayout(windowWidth: number) {
     railWidth: SIDEBAR_RAIL_WIDTH,
     homePageLOffset: showMenu && !menuIsDrawer ? menuWidth : SIDEBAR_RAIL_WIDTH,
     menuSpacing: !showMenu && navigator.userAgent.includes('Mac') ? 80 : 0,
-    animDuration: state.resizeType === 'drag' ? 30 : 350,
+    animDuration: state.resizeType === 'drag' ? 30 : reducedMotion ? 0 : panelAnimationMs,
     showNotificationPanel: !state.isNotificationPanelCollapsed,
   };
 }

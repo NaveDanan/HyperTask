@@ -1,3 +1,4 @@
+import { hyperOpenBotSshTarget } from './HyperOpenBotSsh';
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -20,7 +21,8 @@ export function hyperRunBackend(action: 'check' | 'start' | 'stop' | 'restart', 
   if (!['check', 'start', 'stop', 'restart'].includes(action)) return Promise.reject(new HyperOpenBotServiceError('operation_failed'));
   return new Promise((resolve, reject) => {
     signal.throwIfAborted();
-    const child = spawn('/usr/bin/ssh', ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=15', '-o', 'ServerAliveCountMax=2', 'agent@100.104.170.51', `python3 - ${action}`], { stdio: ['pipe', 'pipe', 'ignore'] });
+    const target = hyperOpenBotSshTarget();
+    const child = spawn(target.command, ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=15', '-o', 'ServerAliveCountMax=2', target.host, `python3 - ${action}`], { stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
     let output = '', settled = false;
     const timer = setTimeout(() => finish('timeout'), action === 'check' ? 45000 : 360000);
     const abort = () => finish('signed_out');
@@ -44,7 +46,7 @@ export function createHyperOpenBotService(userData: string, sessions: HyperOpenB
   let autoStart = true;
   try { const value = JSON.parse(fs.readFileSync(file, 'utf8')); autoStart = value.version === 1 && typeof value.autoStart === 'boolean' ? value.autoStart : false; }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') autoStart = false; }
-  const service = new HyperOpenBotService({ supported: process.platform === 'linux', authorize: () => sessions.acquire(), execute: hyperRunBackend, disconnect,
+  const service = new HyperOpenBotService({ supported: process.platform === 'linux' || process.platform === 'win32', authorize: () => sessions.acquire(), execute: hyperRunBackend, disconnect,
     saveAutoStart: async value => {
       await fsp.mkdir(directory, { recursive: true, mode: 0o700 }); await fsp.chmod(directory, 0o700);
       const temporary = path.join(directory, `config-${randomUUID()}.tmp`);

@@ -6,6 +6,7 @@ import { useAppStore } from '@/startup/app-store';
 /** SettingsPage, in the enum declaration order of settings_dialog_bloc.dart (companyCertificates is custom). */
 export enum SettingsPage {
   account = 'account',
+  appearance = 'appearance',
   workspace = 'workspace',
   manageData = 'manageData',
   shortcuts = 'shortcuts',
@@ -51,7 +52,9 @@ export function visibleSettingsPages({
   debug: boolean;
 }): SettingsPage[] {
   const serverMember = workspaceType === WorkspaceTypePB.ServerW && role !== null && role !== AFRolePB.Guest;
-  const pages: SettingsPage[] = [SettingsPage.account, SettingsPage.workspace];
+  const pages: SettingsPage[] = [SettingsPage.account, SettingsPage.appearance];
+  // The Workspace page holds the name, icon and Delete/Leave, which a local workspace does not have.
+  if (workspaceType !== WorkspaceTypePB.LocalW) pages.push(SettingsPage.workspace);
   // FeatureFlag.membersSettings is always on (released flag).
   if (serverMember) pages.push(SettingsPage.member);
   pages.push(

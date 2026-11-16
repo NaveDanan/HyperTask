@@ -1,0 +1,26 @@
+{{- $root := . -}}
+{{- range $component := list "postgres" "redis" "storage" }}
+{{- $config := index $root.Values $component }}
+{{- if not $config.existingClaim }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "hypertask.fullname" $root }}-{{ $component }}-data
+  namespace: {{ $root.Release.Namespace }}
+  annotations:
+    helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+  labels:
+    {{- include "hypertask.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with $root.Values.global.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $config.storage }}
+{{- end }}
+{{- end }}

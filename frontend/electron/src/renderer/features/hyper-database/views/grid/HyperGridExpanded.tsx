@@ -1,3 +1,6 @@
+import { HyperMentionTextarea } from '@/features/hyper-people/HyperMentionInput';
+import { HyperMentionText } from '@/features/hyper-people/HyperMentionText';
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
 import { useEffect, useRef, useState } from 'react';
 import { ListChecks, Plus, X } from 'lucide-react';
 import { FieldType } from '@shared/protobuf/hyper-database2/field_entities_pb';
@@ -7,7 +10,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Item } from '@/components/ui/item';
 import { Progress } from '@/components/ui/progress';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HyperCell, HyperField } from '../../HyperDatabaseTypes';
 import { HyperGridCell } from './HyperGridCell';
@@ -195,7 +197,7 @@ function HyperGridNotes(
   }, [cell.text]);
 
   return (
-    <label className='block space-y-2 text-xs text-muted-foreground'>Notes · {field.name}<Textarea
+    <label className='block space-y-2 text-xs text-muted-foreground'>Notes · {field.name}<HyperMentionTextarea
         aria-label={`Notes: ${field.name}`}
         value={draft}
         onChange={event => setDraft(event.target.value)}
@@ -252,21 +254,21 @@ export function HyperGridExpanded(
     <div
       data-hyper-grid-expanded={rowId}
       className='w-[calc(100cqw-2px)] max-w-full border-b bg-muted/20 py-3 pr-4 pl-18'>
-      <div className='mb-3 flex items-center gap-2 text-sm font-medium'>{rows[rowId]?.icon ? <span>{rows[rowId].icon}</span> : null}<span className='truncate'>{title || 'Untitled row'}</span>
+      <div className='mb-3 flex items-center gap-2 text-sm font-medium'>{rows[rowId]?.icon ? <span>{rows[rowId].icon}</span> : null}<span className='truncate'><HyperMentionText value={title || 'Untitled row'} /></span>
       </div>
       <div className='grid grid-cols-1 gap-6 @min-[900px]/hyper-grid:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]'>
         <section className='min-w-0 space-y-3'>
           <h3 className='text-xs font-medium text-muted-foreground'>Properties</h3>{hidden.length ? <div className='space-y-1'>{hidden.map(
               field => <div key={field.id} className='grid min-h-8 grid-cols-[8rem_minmax(0,1fr)] items-center gap-2'>
                 <span className='flex items-center gap-2 text-xs text-muted-foreground'>
-                  <HyperGridFieldIcon type={field.type} />
+                  <HyperGridFieldIcon type={field.type} people={hyperIsPeopleField(field.proto)} />
                   <span className='truncate'>{field.name}</span>
                 </span>
                 <HyperGridCell rowId={rowId} field={field} property />
               </div>,
             )}</div> : <p className='text-sm text-muted-foreground'>All fields are shown in the grid.</p>}{fields.map(field => {
             const cell = grid.cell(rowId, field.id);
-            return cell?.kind === 'text' && cell.text.length > 80 ? <HyperGridNotes key={field.id} rowId={rowId} field={field} cell={cell} /> : null;
+            return cell?.kind === 'text' && !hyperIsPeopleField(field.proto) && !field.isPrimary ? <HyperGridNotes key={field.id} rowId={rowId} field={field} cell={cell} /> : null;
           })}</section>
         <div className='min-w-0 space-y-4'>{checklists.length ? checklists.map(field => <HyperGridChecklist key={field.id} rowId={rowId} field={field} />) : <Item variant='outline' size='sm' className='bg-background'>
             <ListChecks className='size-4 text-muted-foreground' />

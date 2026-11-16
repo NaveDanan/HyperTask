@@ -1,3 +1,4 @@
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
 import { FieldType } from '@shared/protobuf/hyper-database2/field_entities_pb';
 import { FieldVisibility } from '@shared/protobuf/hyper-database2/field_settings_entities_pb';
 import { OrderObjectPositionTypePB } from '@shared/protobuf/hyper-database2/position_entities_pb';
@@ -27,7 +28,7 @@ export function hyperBoardFieldsInitialized(state: HyperDatabaseState) {
 export function hyperBoardDefaultFields(fields: HyperField[]) {
   const date = fields.find(field => field.type === FieldType.DateTime)?.id;
   const checklist = fields.find(field => field.type === FieldType.Checklist)?.id;
-  return fields.filter(field => field.isPrimary || field.type === FieldType.SingleSelect || field.type === FieldType.MultiSelect || field.id === date || field.id === checklist);
+  return fields.filter(field => field.isPrimary || hyperIsPeopleField(field.proto) || field.type === FieldType.SingleSelect || field.type === FieldType.MultiSelect || field.id === date || field.id === checklist);
 }
 export function hyperBoardVisibleFields(state: HyperDatabaseState) {
   return hyperBoardFieldsInitialized(state)

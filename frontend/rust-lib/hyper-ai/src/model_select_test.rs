@@ -432,3 +432,114 @@ async fn test_global_active_model_fallback_with_local_source() {
   // Should get the global model
   assert_eq!(active, local_model);
 }
+
+// Exercises the same controller -> local source -> selection path as saving an endpoint.
+struct HyperEndpointTestUser;
+
+#[async_trait]
+impl hyper_ai_pub::user_service::AIUserService for HyperEndpointTestUser {
+  fn user_id(&self) -> Result<i64, HyperError> {
+    Ok(1)
+  }
+  async fn is_local_model(&self) -> Result<bool, HyperError> {
+    Ok(true)
+  }
+  fn workspace_id(&self) -> Result<Uuid, HyperError> {
+    Ok(Uuid::nil())
+  }
+  fn workspace_type(&self) -> Result<hyper_user_pub::entities::WorkspaceType, HyperError> {
+    Ok(hyper_user_pub::entities::WorkspaceType::Local)
+  }
+  fn sqlite_connection(&self, _uid: i64) -> Result<hyper_sqlite::DBConnection, HyperError> {
+    Err(HyperError::internal())
+  }
+  fn application_root_dir(&self) -> Result<std::path::PathBuf, HyperError> {
+    Err(HyperError::internal())
+  }
+}
+
+#[tokio::test]
+async fn test_openai_endpoint_model_can_be_selected_after_saving() {
+  use crate::local_ai::controller::{LocalAIController, LocalAISetting};
+  use crate::model_select::{GLOBAL_ACTIVE_MODEL_KEY, LocalAiSource, LocalModelStorageImpl};
+  use std::sync::Arc;
+  let directory = tempfile::tempdir().unwrap();
+  let store = Arc::new(
+    hyper_sqlite::kv::KVStorePreferences::new(directory.path().to_str().unwrap()).unwrap(),
+  );
+  let controller = Arc::new(LocalAIController::new(
+    Arc::downgrade(&store),
+    Arc::new(HyperEndpointTestUser),
+  ));
+  let path = directory.path().join("endpoint.json");
+  let model = AIModel::local(
+    "claude-haiku-5-5".into(),
+    "OpenAI-compatible endpoint".into(),
+  );
+  std::fs::write(
+    &path,
+    serde_json::json!({"base_url": "http://127.0.0.1:1/v1", "model": model.name, "enabled": true})
+      .to_string(),
+  )
+  .unwrap();
+  controller
+    .update_local_ai_setting(LocalAISetting {
+      ollama_server_url: format!("openai+file:{}", path.display()),
+      chat_model_name: model.name.clone(),
+      embedding_model_name: String::new(),
+    })
+    .await
+    .unwrap();
+  controller
+    .reload_ollama_client(&Uuid::nil().to_string())
+    .await;
+  let mut control = ModelSelectionControl::new();
+  control.add_source(Box::new(LocalAiSource::new(controller.clone())));
+  control.set_local_storage(LocalModelStorageImpl(store));
+  let result = control
+    .set_active_model(
+      &Uuid::nil(),
+      &SourceKey::new(GLOBAL_ACTIVE_MODEL_KEY.into()),
+      model.clone(),
+    )
+    .await;
+  assert!(
+    result.is_ok(),
+    "A valid saved endpoint model must be selectable: {:?}",
+    result
+  );
+  assert_eq!(control.get_global_active_model(&Uuid::nil()).await, model);
+
+  // The settings pointer stays the same when the model changes or AI is disabled.
+  let replacement = AIModel::local("new-chat-model".into(), "OpenAI-compatible endpoint".into());
+  std::fs::write(&path, serde_json::json!({"base_url": "http://127.0.0.1:1/v1", "model": replacement.name, "enabled": true}).to_string()).unwrap();
+  assert_eq!(
+    control.get_local_models(&Uuid::nil()).await,
+    vec![replacement.clone()]
+  );
+  control
+    .set_active_model(
+      &Uuid::nil(),
+      &SourceKey::new(GLOBAL_ACTIVE_MODEL_KEY.into()),
+      replacement.clone(),
+    )
+    .await
+    .unwrap();
+  assert_eq!(
+    control.get_global_active_model(&Uuid::nil()).await,
+    replacement
+  );
+
+  std::fs::write(&path, serde_json::json!({"base_url": "http://127.0.0.1:1/v1", "model": replacement.name, "enabled": false}).to_string()).unwrap();
+  assert!(control.get_local_models(&Uuid::nil()).await.is_empty());
+  assert!(
+    control
+      .set_active_model(
+        &Uuid::nil(),
+        &SourceKey::new(GLOBAL_ACTIVE_MODEL_KEY.into()),
+        replacement
+      )
+      .await
+      .is_err()
+  );
+}

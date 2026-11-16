@@ -1,0 +1,26 @@
+# Example only: commit site/image values first. Do not commit credentials.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hypertask
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: ssh://git@git.company.internal/team/HyperTask.git
+    targetRevision: main
+    path: hypertask/chart
+    helm:
+      releaseName: hypertask
+      valueFiles:
+        - ../values.site.yaml
+        - ../values.images.json
+        # - ../values.keycloak.site.yaml
+        # - ../values.controller-default-tls.example.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hypertask
+  # Deliberately manual sync; create namespace and Secrets before syncing.
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

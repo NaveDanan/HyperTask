@@ -1,3 +1,6 @@
+import { HyperPeopleDisplay } from '@/features/hyper-people/HyperPeoplePicker';
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
+import { HyperMentionText } from '@/features/hyper-people/HyperMentionText';
 import './gantt/HyperGanttView.css';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { addDays, format, startOfDay } from 'date-fns';
@@ -41,13 +44,15 @@ export function HyperGanttView(props: HyperDatabaseViewProps) {
       requestAnimationFrame(() => { rootRef.current?.querySelector(`[data-gantt-row-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'nearest' }); });
     }).catch(() => showToast({ type: 'error', message: "Couldn't create task" })).finally(() => setCreating(false));
   };
+  const primaryId = state.fields.find(field => field.isPrimary)?.id ?? '';
+  const mentionTitle = (id: string, fallback: string) => data.tasks.get(id)?.title || state.cells[id]?.[primaryId]?.display || fallback;
   const columns = useMemo<GanttColumn[]>(() => [
     { id: 'due', title: 'Due', width: 96, className: 'text-xs', render: ({ resource }) => {
       const task = data.tasks.get(resource.id);
       return <span className={cn('tabular-nums text-muted-foreground', task?.due && startOfDay(task.due) < startOfDay(new Date()) && !task.done && 'text-destructive')}>{task?.due ? format(task.due, 'MMM d') : '—'}</span>;
     } },
-    { id: 'assignee', title: 'Assignee', width: 80, render: ({ resource }) => <HyperGanttAvatars names={data.tasks.get(resource.id)?.assignees ?? []} /> },
-  ], [data.tasks]);
+    { id: 'assignee', title: 'Assignee', width: 80, render: ({ resource }) => { const field = state.fields.find(item => item.id === data.config.assignee_field_id), cell = field ? state.cells[resource.id]?.[field.id] : undefined; return field && hyperIsPeopleField(field.proto) && cell?.kind === 'text' ? <HyperPeopleDisplay value={cell.text} /> : <HyperGanttAvatars names={data.tasks.get(resource.id)?.assignees ?? []} />; } },
+  ], [data.tasks, state.fields, state.cells, data.config.assignee_field_id]);
   const menu = (id: string) => {
     const index = state.rowIds.indexOf(id);
     return <HyperGanttMenu
@@ -155,15 +160,16 @@ export function HyperGanttView(props: HyperDatabaseViewProps) {
 
     onResourceReorder={proposal => { const index = proposal.resources.findIndex(r => r.id === proposal.resourceId); const target = state.rowIds[index]; if (target && target !== proposal.resourceId) run(() => controller.moveRow(proposal.resourceId, target), "Couldn't reorder task"); }}
 
+    renderEvent={({ occurrence }) => <span className="min-w-0 truncate"><HyperMentionText value={mentionTitle(occurrence.event.id, occurrence.event.title)} /></span>}
     renderEventMenu={({ occurrence }) => menu(occurrence.event.id)}
     renderResourceMenu={({ resource }) => menu(resource.id)}
 
     renderResourceLabel={({ resource }) => <span className="flex min-w-0 items-center gap-2">
-      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: resource.color }} />{state.rows[resource.id]?.icon && <span className="shrink-0">{state.rows[resource.id].icon}</span>}<span className="truncate">{resource.title}</span>
+      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: resource.color }} />{state.rows[resource.id]?.icon && <span className="shrink-0">{state.rows[resource.id].icon}</span>}<span className="truncate"><HyperMentionText value={mentionTitle(resource.id, resource.title)} /></span>
     </span>}
 
     renderDragPreview={({ occurrence, valid }) => <div data-hyper-gantt-drag-preview data-valid={valid} className="flex h-full items-center px-2 text-foreground">
-      <span className="truncate font-medium">{occurrence.event.title}</span>
+      <span className="truncate font-medium"><HyperMentionText value={mentionTitle(occurrence.event.id, occurrence.event.title)} /></span>
     </div>}
 
     renderScheduleHint={({ resource, start, end }) => <Button

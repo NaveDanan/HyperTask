@@ -1,7 +1,7 @@
 import { useHyperOpenBotService } from '../hyper-openbot/HyperServiceStatus';
 // Sidebar entries: search, new page, Jira, Templates and Trash.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
+import { House, LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
 import { ViewLayoutPB, ViewSectionPB } from '@shared/protobuf/hyper-folder/view_pb';
 import { NavItem } from '@/components/app/nav';
 import { ShortcutKeys } from '@/components/app/shortcut';
@@ -45,6 +45,13 @@ export function SidebarNewPageButton() {
   useEffect(() => createNewPage.on(() => createNewPageInSidebar()), []);
   return <NavItem icon={<SquarePen />} label={tr('newPageText')}
     trailing={<ShortcutKeys keys={isMac ? '⌘+N' : 'Ctrl+N'} />} onClick={() => createNewPageInSidebar()} />;
+}
+
+/** HyperHome: the Hyper-Kanban + Hyper-Event startup page. */
+export function HyperHomeButton() {
+  const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:home');
+  return <NavItem icon={<House />} label="Home" active={active}
+    onClick={() => tabsActions.openPlugin(localToolPlugin('home'))} />;
 }
 
 export function JiraButton() {

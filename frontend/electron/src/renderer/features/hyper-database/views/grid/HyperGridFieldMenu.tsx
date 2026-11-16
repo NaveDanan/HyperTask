@@ -1,3 +1,4 @@
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
 "use no memo";
 import { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -127,7 +128,7 @@ export function HyperGridFieldMenu(
               event.preventDefault();
               setOpen(true);
             }} />}>
-          <HyperGridFieldIcon type={field.type} />
+          <HyperGridFieldIcon type={field.type} people={hyperIsPeopleField(field.proto)} />
           <span className={`truncate ${sort ? 'text-foreground' : ''}`}>{field.name}</span>{sort ? sort.condition === SortConditionPB.Ascending ? <ArrowUp className='size-3.5 shrink-0 text-foreground' /> : <ArrowDown className='size-3.5 shrink-0 text-foreground' /> : null}</DropdownMenuTrigger>
         <DropdownMenuContent className='w-56'>
           <DropdownMenuItem
@@ -137,10 +138,10 @@ export function HyperGridFieldMenu(
             }}>
             <PencilLine />Rename</DropdownMenuItem>{!field.isPrimary ? <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <HyperGridFieldIcon type={field.type} />Type</DropdownMenuSubTrigger>
+              <HyperGridFieldIcon type={field.type} people={hyperIsPeopleField(field.proto)} />Type</DropdownMenuSubTrigger>
             <DropdownMenuSubContent className='max-h-80 overflow-y-auto'>{HyperGridFieldTypes.map(item => <DropdownMenuItem
-                key={item.type}
-                onClick={() => void grid.run(() => grid.controller.changeFieldType(field.id, item.type))}>
+                key={item.label}
+                onClick={() => void grid.run(() => grid.controller.changeFieldType(field.id, item.type, item.people))}>
                 <item.icon />{item.label}</DropdownMenuItem>)}</DropdownMenuSubContent>
           </DropdownMenuSub> : null}<DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => void grid.run(() => HyperGridSetSort(grid.controller, field, false))}>
@@ -198,14 +199,14 @@ export function HyperGridAddField(
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const create = async (type: FieldType) => {
+  const create = async (type: FieldType, people = false) => {
     if (busy)
       return;
 
     setBusy(true);
 
     const success = await grid.run(async () => {
-      const field = await grid.controller.createField(name.trim() || HyperGridFieldTypes.find(item => item.type === type)?.label || 'Field', type);
+      const field = people ? await grid.controller.createHyperPeopleField(name.trim() || 'People') : await grid.controller.createField(name.trim() || HyperGridFieldTypes.find(item => item.type === type)?.label || 'Field', type);
       onCreated?.(field.id);
     });
 
@@ -233,9 +234,9 @@ export function HyperGridAddField(
               void create(FieldType.RichText);
           }} />
         <div className='max-h-72 overflow-y-auto p-1'>{HyperGridFieldTypes.map(item => <MenuRow
-            key={item.type}
+            key={item.label}
             disabled={busy}
-            onClick={() => void create(item.type)}
+            onClick={() => void create(item.type, item.people)}
             icon={<item.icon className='size-4 text-muted-foreground' />}
             label={item.label} />)}</div>
       </PopoverContent>

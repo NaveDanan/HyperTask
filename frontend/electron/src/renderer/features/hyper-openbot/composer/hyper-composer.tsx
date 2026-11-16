@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type Ref, type Dispatch, type SetStateActi
 import { ArrowUp, Paperclip, Square, X, FileText, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { usePromptFontStyle } from '@/features/settings/appearance/font-families';
 import { cn } from '@/lib/utils';
 import { HyperModelPicker, type HyperModelPickerProps } from './hyper-model-picker';
 import { HyperScreenPickedFiles, HyperMAX_ATTACHMENTS_PER_MESSAGE, type HyperRejectedFile } from './hyper-files';
@@ -88,6 +89,8 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
   const text = value ?? localText;
   const setText = value !== undefined && onTextChange ? onTextChange : setLocalText;
   const [submitting, setSubmitting] = useState(false);
+  // The prompt box's font and size follow the Appearance settings (Typography).
+  const promptFont = usePromptFontStyle();
   const [stopping, setStopping] = useState(false);
   const [staging, setStaging] = useState(0);
   const [error, setError] = useState<string>();
@@ -246,6 +249,7 @@ export function HyperComposer({ onSubmit, onFiles, attachments = EMPTY_ATTACHMEN
     {!!availableAttachments.length && <HyperAttachmentStrip attachments={availableAttachments} onRemove={onRemoveAttachment ? id => actions.current.remove(id) : undefined} disabled={disabled || submitting} />}
     <Textarea data-slot="composer-input" aria-label="Message" placeholder={placeholder} disabled={disabled} value={text}
       ref={(element) => { input.current = element; if (typeof textareaRef === 'function') textareaRef(element); else if (textareaRef) textareaRef.current = element; }}
+      style={promptFont}
       className="max-h-64 min-h-24 resize-none border-0 bg-transparent shadow-none"
       onChange={(event) => { dictationGeneration.current++; dictationStop.current?.(true); setText(event.target.value); }}
       onPaste={(event) => {

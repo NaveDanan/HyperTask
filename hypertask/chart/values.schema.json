@@ -1,0 +1,307 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "global",
+    "images",
+    "ingress"
+  ],
+  "properties": {
+    "global": {
+      "type": "object",
+      "required": [
+        "host",
+        "existingSecret",
+        "imageRegistryPrefix",
+        "imagePullSecrets"
+      ],
+      "properties": {
+        "host": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$",
+          "maxLength": 253
+        },
+        "existingSecret": {
+          "type": "string",
+          "minLength": 1
+        },
+        "storageClassName": {
+          "type": "string"
+        },
+        "imageRegistryPrefix": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "/$"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "trustedCa": {
+          "type": "object",
+          "required": [
+            "existingConfigMap",
+            "key"
+          ],
+          "properties": {
+            "existingConfigMap": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "images": {
+      "type": "object",
+      "required": [
+        "postgres",
+        "redis",
+        "storage",
+        "gotrue",
+        "cloud",
+        "admin",
+        "proxy",
+        "web"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "repository",
+          "tag",
+          "digest"
+        ],
+        "properties": {
+          "repository": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^(|sha256:[a-f0-9]{64})$"
+          }
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tls": {
+          "type": "object",
+          "required": [
+            "secretName",
+            "useControllerDefaultCertificate"
+          ],
+          "properties": {
+            "secretName": {
+              "type": "string"
+            },
+            "useControllerDefaultCertificate": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "keycloak": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "issuerUrl": {
+          "type": "string"
+        },
+        "clientId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "jwtExpirySeconds": {
+          "type": "integer",
+          "minimum": 300
+        },
+        "emailEnabled": {
+          "type": "boolean"
+        },
+        "emailAutoConfirm": {
+          "type": "boolean"
+        },
+        "allowSignup": {
+          "type": "boolean"
+        },
+        "siteUrl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "additionalRedirects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "ingressControllerNamespaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "smtp": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "tlsKind": {
+          "enum": [
+            "none",
+            "starttls",
+            "wrapper"
+          ]
+        }
+      }
+    },
+    "postgres": {
+      "type": "object",
+      "properties": {
+        "storage": {
+          "type": "string",
+          "pattern": "^[0-9]+(Mi|Gi|Ti)$"
+        },
+        "existingClaim": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "object"
+        },
+        "database": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$",
+          "maxLength": 63
+        },
+        "username": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$",
+          "maxLength": 63
+        }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "properties": {
+        "storage": {
+          "type": "string",
+          "pattern": "^[0-9]+(Mi|Gi|Ti)$"
+        },
+        "existingClaim": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "object"
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "properties": {
+        "storage": {
+          "type": "string",
+          "pattern": "^[0-9]+(Mi|Gi|Ti)$"
+        },
+        "existingClaim": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "object"
+        }
+      }
+    },
+    "cloud": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "admin": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "proxy": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "web": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

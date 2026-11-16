@@ -10,6 +10,7 @@ import {
   FolderEventGetCurrentWorkspaceSetting,
   UserEventGetUserProfile,
   UserEventSignOut,
+  UserEventOauthSignIn,
   UserEventSignUp,
   UserEventUpdateNetworkState,
 } from '@/backend/events';
@@ -126,6 +127,14 @@ export async function runHypertask({ isAnon = false }: { isAnon?: boolean } = {}
       envs: {},
     });
     if (code !== 0) throw new Error('Failed to initialize the SDK');
+
+    if (info.developmentJwt && !info.isPackaged) {
+      const callback = await window.hypertask.auth.devJwtSession();
+      if (callback) {
+        const signedIn = await UserEventOauthSignIn({ map: { sign_in_url: callback, device_id: deviceId }, authType: AuthTypePB.Server });
+        if (!signedIn.ok) throw new Error('Development JWT session could not sign in to the dev server.');
+      }
+    }
 
     disposers.push(startFileStorageService());
     await loadAppearance();

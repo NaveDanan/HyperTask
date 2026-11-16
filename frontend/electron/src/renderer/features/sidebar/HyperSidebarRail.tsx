@@ -1,6 +1,6 @@
 // HyperSidebarRail: the 56px icon rail the sidebar collapses to (as in CPA-Desktop). Built on the
 // shared ReUI/base-ui primitives: base-ui Tooltip, the app's sidebar tokens and nav icons.
-import { SquareCheckBig, LayoutTemplate, PanelLeftOpen, Search, SquarePen, Trash2 } from 'lucide-react';
+import { House, SquareCheckBig, LayoutTemplate, PanelLeftOpen, Search, SquarePen, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AFRolePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
@@ -87,6 +87,8 @@ export function HyperSidebarRail({ user }: { user: UserProfilePB }) {
           }}
           tooltip={name}
         />
+        <HyperRailButton label="Home" icon={<House />} active={activeTab === 'local-tool:home'}
+          onClick={() => tabsActions.openPlugin(localToolPlugin('home'))} tooltip="Home" />
         <HyperRailButton
           label={tr('search.label')} icon={<Search />}
           onClick={() => toggleCommandPalette.emit()}

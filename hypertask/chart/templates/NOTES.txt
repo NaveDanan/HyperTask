@@ -1,0 +1,21 @@
+HyperTask backend: {{ include "hypertask.origin" . }}
+Keycloak callback: {{ include "hypertask.origin" . }}/gotrue/callback
+
+Inspect resources:
+  kubectl -n {{ .Release.Namespace }} get pods,svc,ingress,pvc
+
+Check HTTPS:
+  curl --fail {{ include "hypertask.origin" . }}/healthz
+  curl --fail {{ include "hypertask.origin" . }}/gotrue/health
+  curl --fail {{ include "hypertask.origin" . }}/health
+
+Electron runs on employee computers. Set Storage & server to the backend origin above.
+{{- if .Values.keycloak.enabled }}
+
+Keycloak provider is enabled on the backend. Its realm/client must already exist.
+The current Electron implementation still needs the Keycloak browser SSO integration;
+enabling these Helm values alone does not provide automatic Keycloak desktop login.
+{{- end }}
+
+Keep the existing application Secret and PVCs on upgrades. This chart does not migrate
+the Compose deployment or revoke existing sessions when a provider is disabled.

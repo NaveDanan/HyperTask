@@ -65,7 +65,7 @@ export function isEndpointVendorHost(host: string): boolean {
 }
 
 /** OpenAIEndpointSettings.validate(): throws an EndpointError of kind 'format'. */
-export function validateEndpoint(baseUrl: string, model: string): void {
+export function validateEndpointUrl(baseUrl: string): void {
   const uri = parseEndpointUri(baseUrl);
   if (
     uri === null ||
@@ -83,6 +83,10 @@ export function validateEndpoint(baseUrl: string, model: string): void {
   if (isEndpointVendorHost(uri.host)) {
     throw new EndpointError('format', 'Hypertask hosted services are disabled. Use your own AI endpoint.');
   }
+}
+
+export function validateEndpoint(baseUrl: string, model: string): void {
+  validateEndpointUrl(baseUrl);
   if (model.trim() === '') {
     throw new EndpointError('format', "Enter the endpoint's chat model ID.");
   }
@@ -118,5 +122,39 @@ export function parseCompletionBody(text: string): void {
   }
   if (!choices || choices.length === 0) {
     throw new EndpointError('format', 'Endpoint returned no chat completion.');
+  }
+}
+
+/** OpenAI model IDs are opaque: preserve their spelling and include every model type. */
+export function parseEndpointModels(text: string): string[] {
+  let body: unknown;
+  try { body = JSON.parse(text); } catch { throw new EndpointError('format', 'Endpoint returned an invalid model list.'); }
+  if (!body || typeof body !== 'object' || !('data' in body) || !Array.isArray(body.data)) {
+    throw new EndpointError('format', 'Endpoint returned an invalid model list.');
+  }
+  return [...new Set(body.data.flatMap((entry: unknown) =>
+    entry && typeof entry === 'object' && 'id' in entry && typeof entry.id === 'string' && entry.id.trim() !== '' ? [entry.id] : [],
+  ))];
+}
+
+/** Retry only API-shape mismatches; model, permission and quota errors keep their meaning. */
+export function shouldUseResponses(status: number, text: string): boolean {
+  if ([404, 405, 501].includes(status)) return true;
+  if (status !== 400) return false;
+  try {
+    const error = JSON.parse(text)?.error;
+    return error?.code === 'invalid_request_body' && typeof error.message === 'string'
+      && error.message.includes("'input'") && error.message.includes('expected a string');
+  } catch { return false; }
+}
+
+export function parseResponsesBody(text: string): void {
+  const body = JSON.parse(text);
+  if (body?.error || ['failed', 'incomplete'].includes(body?.status)) {
+    throw new EndpointError('state', 'The endpoint could not complete the test response.');
+  }
+  if (!Array.isArray(body?.output) || !body.output.some((item: { content?: { type?: string; text?: string }[] }) =>
+    Array.isArray(item?.content) && item.content.some(part => part?.type === 'output_text' && typeof part.text === 'string' && part.text.length > 0))) {
+    throw new EndpointError('format', 'Endpoint returned no text response.');
   }
 }

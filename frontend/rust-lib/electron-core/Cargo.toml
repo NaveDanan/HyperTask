@@ -26,6 +26,7 @@ hyper-core = { workspace = true }
 hyper-notification.workspace = true
 hyper-document.workspace = true
 hyper-user.workspace = true
+hyper-user-pub.workspace = true
 hyper-date.workspace = true
 hyper-server = { workspace = true }
 hyper-server-pub = { workspace = true }

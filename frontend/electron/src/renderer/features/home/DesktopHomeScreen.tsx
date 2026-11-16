@@ -1,3 +1,6 @@
+import { sidebarSpace } from '@/features/sidebar/stores/space-store';
+import { ensureHyperGeneralCalendar } from '@/features/hyper-outlook/HyperGeneralCalendar';
+import { showToast } from '@/ui';
 import { useEffect, useState } from 'react';
 import type { WorkspaceLatestPB } from '@shared/protobuf/hyper-folder/workspace_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
@@ -10,7 +13,7 @@ import { HomeStack } from '@/features/tabs/HomeStack';
 import { CommandPaletteHost } from '@/features/search/CommandPalette';
 import { SettingsDialogHost } from '@/features/settings/SettingsDialog';
 import { Spinner } from '@/components/ui/spinner';
-import { PluginType, viewPlugin } from '../tabs/plugin';
+import { PluginType, localToolPlugin, viewPlugin } from '../tabs/plugin';
 import { tabsActions, useTabsStore } from '../tabs/tabs-store';
 import { homeSettingActions, useHomeLayout } from './home-setting-store';
 import { startHome, useHomeStore } from './home-store';
@@ -60,13 +63,25 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
 
   useEffect(() => {
     tabsActions.reset();
+    // HyperHome (Hyper-Kanban + Hyper-Event) is the startup page instead of the last opened page.
+    tabsActions.openPlugin(localToolPlugin('home'), undefined, false);
     homeSettingActions.initialize();
     return startHome(user, setting);
   }, [user, setting]);
 
   useEffect(() => homeSettingActions.checkScreenSize(width), [width]);
+  useEffect(() => {
+    const attempted = new Set<string>();
+    const ensure = () => {
+      const space = sidebarSpace.store.getState(), workspaceId = sidebarSpace.actions.workspaceId;
+      if (!space.isInitialized || !workspaceId || attempted.has(workspaceId)) return;
+      attempted.add(workspaceId);
+      void ensureHyperGeneralCalendar(workspaceId).catch(error => { console.error('General calendar could not be initialized', error); showToast({ type: 'error', message: 'General calendar could not be initialized. Reopen the workspace to retry.' }); });
+    };
+    const stop = sidebarSpace.store.subscribe(ensure); ensure(); return stop;
+  }, [user]);
 
-  // The workspace's last page opens in a blank tab, and the sidebar shows its space.
+  // The workspace's last page opens in a blank tab (startup shows HyperHome instead), and the sidebar shows its space.
   useEffect(() => {
     if (!latestView) return;
     const { tabs, currentIndex } = useTabsStore.getState();

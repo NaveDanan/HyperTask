@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { UserEventGetUserProfile } from '@/backend/events';
-import { Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Server, ShieldCheck, Sparkles, UserRound, Users, X } from 'lucide-react';
+import { Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Palette, Server, ShieldCheck, Sparkles, UserRound, Users, X } from 'lucide-react';
 import { NavItem } from '@/components/app/nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,9 +32,13 @@ import {
 import { fetchWorkspaces, startSettingsWorkspace, useSettingsWorkspaceStore } from './settings-workspace-store';
 import { ShortcutsPage } from './shortcuts/ShortcutsPage';
 import { WorkspacePage } from './workspace/WorkspacePage';
+import { HyperAppearancePage } from './appearance/HyperAppearancePage';
+import { SettingsBreadcrumbBar } from './appearance/appearance-layout';
 
 const MENU: Record<SettingsPage, { label: (tr: (key: string) => string) => string; icon: () => ReactNode }> = {
   [SettingsPage.account]: { label: (tr) => tr('settings.accountPage.menuLabel'), icon: () => <UserRound className="size-4" /> },
+  // [CUSTOM] hard-coded English label. The Workspace page used to be this entry, see HyperAppearancePage.
+  [SettingsPage.appearance]: { label: () => 'Appearance', icon: () => <Palette className="size-4" /> },
   [SettingsPage.workspace]: { label: (tr) => tr('settings.workspacePage.menuLabel'), icon: () => <LayoutDashboard className="size-4" /> },
   [SettingsPage.member]: { label: (tr) => tr('settings.appearance.members.label'), icon: () => <Users className="size-4" /> },
   [SettingsPage.manageData]: { label: (tr) => tr('settings.manageDataPage.menuLabel'), icon: () => <Database className="size-4" /> },
@@ -79,6 +83,8 @@ function SettingsView({ page, props }: { page: SettingsPage; props: SettingsPage
   switch (page) {
     case SettingsPage.account:
       return <AccountPage {...props} snapshotAuthType={props.snapshot.userAuthType} />;
+    case SettingsPage.appearance:
+      return <HyperAppearancePage />;
     case SettingsPage.workspace:
       return <WorkspacePage {...props} />;
     case SettingsPage.manageData:
@@ -114,6 +120,7 @@ function SettingsDialog({ close }: { close: () => void }) {
   const liveUser = useSettingsWorkspaceStore((s) => s.user);
   const workspace = useSettingsWorkspaceStore((s) => s.current);
   const { width, height } = useWindowSize();
+  const { tr } = useTr();
   if (!open) return null;
 
   // Menu: the profile and role snapshot taken when the dialog opened (ambiguity A2).
@@ -146,15 +153,27 @@ function SettingsDialog({ close }: { close: () => void }) {
     <div className="flex overflow-hidden rounded-xl bg-background text-foreground shadow-2xl ring-1 ring-foreground/10"
       style={{ width: dialogWidth, height: Math.min(height * 0.7, height - 48) }}>
       <SettingsMenu pages={pages} current={page} />
-      <div className="relative h-full min-w-0 flex-1">
-        <ScrollArea key={page} className="h-full">
-          <div className="mx-auto w-full max-w-3xl px-10 py-8">
-            {/* Page-local state resets on switch. */}
-            <SettingsView key={page} page={page} props={pageProps} />
-          </div>
-        </ScrollArea>
-        <Button variant="ghost" size="icon-sm" className="absolute top-3 right-3" aria-label="Close" onClick={close}><X className="size-4" /></Button>
-      </div>
+      {page === SettingsPage.appearance ? (
+        // Appearance is laid out as t3code's settings pages: a breadcrumb bar, then WorkspacePageContainer ("readable" width).
+        <div className="flex h-full min-w-0 flex-1 flex-col">
+          <SettingsBreadcrumbBar root={tr('settings.title')} section="Appearance" onClose={close} />
+          <ScrollArea key={page} className="min-h-0 flex-1">
+            <div className="mx-auto w-full max-w-4xl px-5 pt-6 pb-12 sm:px-6">
+              <SettingsView key={page} page={page} props={pageProps} />
+            </div>
+          </ScrollArea>
+        </div>
+      ) : (
+        <div className="relative h-full min-w-0 flex-1">
+          <ScrollArea key={page} className="h-full">
+            <div className="mx-auto w-full max-w-3xl px-10 py-8">
+              {/* Page-local state resets on switch. */}
+              <SettingsView key={page} page={page} props={pageProps} />
+            </div>
+          </ScrollArea>
+          <Button variant="ghost" size="icon-sm" className="absolute top-3 right-3" aria-label="Close" onClick={close}><X className="size-4" /></Button>
+        </div>
+      )}
     </div>
   );
 }

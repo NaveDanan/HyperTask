@@ -1,3 +1,6 @@
+import { hyperIsPeopleField } from '@/features/hyper-people/HyperPeopleProperty';
+import { HyperMentionInput } from '@/features/hyper-people/HyperMentionInput';
+import { HyperPeopleTextProperty } from '@/features/hyper-people/HyperPeopleTextProperty';
 import { useEffect, useRef, useState } from 'react';
 import { addDays, format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
@@ -6,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
@@ -79,7 +81,7 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
         </Alert>}
         <Field>
           <FieldLabel htmlFor="hyper-gantt-task-title">Name</FieldLabel>
-          <Input
+          <HyperMentionInput
             id="hyper-gantt-task-title"
             autoFocus
             disabled={!primary || busy}
@@ -136,7 +138,7 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
         </Field>}
         {assigneeField && <Field>
           <FieldLabel htmlFor="hyper-gantt-task-assignee">Assignee</FieldLabel>
-          {assigneeField.type === FieldType.RichText ? <Input
+          {hyperIsPeopleField(assigneeField.proto) ? <HyperPeopleTextProperty controller={controller} rowId={rowId} field={assigneeField} value={assigneeDisplay} disabled={busy || !assigneeReady} /> : assigneeField.type === FieldType.RichText ? <HyperMentionInput
             id="hyper-gantt-task-assignee"
             disabled={busy || !assigneeReady}
             value={assignee}
@@ -163,6 +165,7 @@ export function HyperGanttRowDetail({ rowId, state, controller, config, task, fr
           </Popover>}
 
         </Field>}
+        {state.fields.filter(field => field.type === FieldType.RichText && !field.isPrimary && field.id !== assigneeField?.id).map(field => <Field key={field.id}><FieldLabel>{field.name}</FieldLabel><HyperPeopleTextProperty controller={controller} rowId={rowId} field={field} value={cells[field.id]?.display ?? ''} disabled={busy} /></Field>)}
         {progressField && <Field>
           <FieldLabel htmlFor="hyper-gantt-task-progress">Progress <span className="ml-auto tabular-nums text-muted-foreground">{Math.round(progress)}%</span>
           </FieldLabel>

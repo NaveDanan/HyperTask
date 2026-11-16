@@ -1,4 +1,7 @@
 import fs from 'node:fs/promises';
+import net from 'node:net';
+import { randomUUID } from 'node:crypto';
+import { hyperOpenBotSshTarget } from './HyperOpenBotSsh';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -11,14 +14,19 @@ let starting: Promise<string> | undefined;
 let generation = 0;
 let child: ChildProcess | undefined;
 let directory: string | undefined;
+let pipeServer: net.Server | undefined;
+const relayChildren = new Set<ChildProcess>();
 const connections = new Set<{ destroy(error?: Error): unknown }>();
-/** Fixed authorized development VM. The main process owns a private Unix SSH forward;
- * the public 3010 reference tunnel is never used by this transport. */
+/** Private IPC to the authorized VM: Unix sockets or Windows named pipes.
+ * No local TCP listener or public reference forward is used. */
 export function closeHyperOpenBotTunnel() {
   generation++;
   const process = child; child = undefined; starting = undefined;
   for (const connection of connections) connection.destroy(new Error('OpenBot tunnel closed'));
   connections.clear(); process?.kill('SIGTERM');
+  const server = pipeServer; pipeServer = undefined; server?.close(() => {});
+  for (const relay of relayChildren) relay.kill('SIGTERM');
+  relayChildren.clear();
   const old = directory; directory = undefined; if (old) void fs.rm(old, { recursive: true, force: true });
 }
 export function hyperOpenBotSocketPath(): Promise<string> {
@@ -26,16 +34,45 @@ export function hyperOpenBotSocketPath(): Promise<string> {
   const version = generation;
   let ownedDirectory: string | undefined;
   let ownedChild: ChildProcess | undefined;
+  let ownedPipeServer: net.Server | undefined;
   const assertCurrent = () => { if (version !== generation) throw new Error('Private OpenBot SSH startup cancelled'); };
   starting = (async () => {
-    if (process.platform !== 'linux') throw new Error('Private OpenBot SSH transport currently requires Linux');
+    if (process.platform === 'win32') {
+      const pipePath = '\\\\.\\pipe\\hypertask-openbot-' + randomUUID();
+      const server = net.createServer(socket => {
+        if (version !== generation) { socket.destroy(); return; }
+        const target = hyperOpenBotSshTarget();
+        const relay = spawn(target.command, ['-T', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=3', '-W', '127.0.0.1:3010', target.host], { stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
+        relayChildren.add(relay); connections.add(socket);
+        const fail = () => socket.destroy(new Error('Private OpenBot SSH connection failed'));
+        socket.on('error', () => {});
+        relay.once('error', fail);
+        relay.once('exit', code => { relayChildren.delete(relay); if (code !== 0) fail(); else socket.end(); });
+        relay.stdin?.on('error', fail); relay.stdout?.on('error', fail);
+        socket.once('close', () => { connections.delete(socket); relayChildren.delete(relay); relay.kill('SIGTERM'); });
+        if (relay.stdin && relay.stdout) { socket.pipe(relay.stdin); relay.stdout.pipe(socket); }
+        else fail();
+      });
+      ownedPipeServer = server; pipeServer = server;
+      await new Promise<void>((resolve, reject) => {
+        const cancelled = () => reject(new Error('Private OpenBot SSH startup cancelled'));
+        server.once('error', reject); server.once('close', cancelled);
+        server.listen({ path: pipePath, readableAll: false, writableAll: false }, () => {
+          server.off('close', cancelled); resolve();
+        });
+      });
+      assertCurrent();
+      return pipePath;
+    }
+    if (process.platform !== 'linux') throw new Error('Private OpenBot SSH transport requires Windows or Linux');
     ownedDirectory = await fs.mkdtemp(path.join(os.tmpdir(), 'hypertask-openbot-'));
     assertCurrent();
     await fs.chmod(ownedDirectory, 0o700);
     assertCurrent();
     directory = ownedDirectory;
     const socketPath = path.join(ownedDirectory, 'gateway.sock');
-    const ssh = spawn('/usr/bin/ssh', ['-NT', '-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=3', '-L', `${socketPath}:127.0.0.1:3010`, 'agent@100.104.170.51'], { stdio: 'ignore' });
+    const target = hyperOpenBotSshTarget();
+    const ssh = spawn(target.command, ['-NT', '-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=3', '-L', `${socketPath}:127.0.0.1:3010`, target.host], { stdio: 'ignore', windowsHide: true });
     ownedChild = ssh; child = ssh;
     ssh.once('exit', () => { if (child === ssh) closeHyperOpenBotTunnel(); });
     await new Promise<void>((resolve, reject) => {
@@ -50,7 +87,7 @@ export function hyperOpenBotSocketPath(): Promise<string> {
   })().catch(async error => {
     // An obsolete startup cleans up only its own resources, never a newer attempt's globals.
     if (version === generation) closeHyperOpenBotTunnel();
-    else { ownedChild?.kill('SIGTERM'); if (ownedDirectory) await fs.rm(ownedDirectory, { recursive: true, force: true }); }
+    else { ownedPipeServer?.close(() => {}); ownedChild?.kill('SIGTERM'); if (ownedDirectory) await fs.rm(ownedDirectory, { recursive: true, force: true }); }
     throw error;
   });
   return starting;

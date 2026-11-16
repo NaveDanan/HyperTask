@@ -1,3 +1,5 @@
+import { hyperMentionPeople } from '@/features/hyper-people/hyperMentions';
+import { Users } from 'lucide-react';
 import { format } from 'date-fns';
 
 import {
@@ -24,6 +26,8 @@ export const HyperGridFieldTypes = [{
   type: FieldType.RichText,
   label: 'Text',
   icon: Type,
+}, {
+  type: FieldType.RichText, label: 'People', icon: Users, people: true,
 }, {
   type: FieldType.Number,
   label: 'Number',
@@ -85,13 +89,13 @@ export const HyperGridFieldTypes = [{
 export function HyperGridFieldIcon(
   {
     type,
-    className = 'size-3.5',
+    className = 'size-3.5', people = false,
   }: {
-    type: FieldType;
+    type: FieldType; people?: boolean;
     className?: string;
   },
 ) {
-  const Icon = HyperGridFieldTypes.find(item => item.type === type)?.icon ?? Type;
+  const Icon = people ? Users : HyperGridFieldTypes.find(item => item.type === type)?.icon ?? Type;
   return <Icon className={className} aria-hidden='true' />;
 }
 
@@ -99,7 +103,7 @@ export function HyperGridVisibleFields(fields: HyperField[]) {
   return fields.filter(field => field.isPrimary || field.settings.visibility !== FieldVisibility.AlwaysHidden);
 }
 
-export function HyperGridFilterRows(state: HyperDatabaseState, query: string, fieldId?: string, optionId?: string) {
+export function HyperGridFilterRows(state: HyperDatabaseState, query: string, fieldId?: string, optionId?: string, person?: { fieldId: string; email: string }) {
   const search = query.trim().toLocaleLowerCase();
 
   return state.rowIds.filter(id => {
@@ -108,6 +112,8 @@ export function HyperGridFilterRows(state: HyperDatabaseState, query: string, fi
     if (search && !state.fields.some(field => cells?.[field.id]?.display.toLocaleLowerCase().includes(search)))
       return false;
 
+    const peopleCell = person ? cells?.[person.fieldId] : undefined;
+    if (person && (peopleCell?.kind !== 'text' || !hyperMentionPeople(peopleCell.text).some(item => item.email === person.email.toLowerCase()))) return false;
     const cell = fieldId ? cells?.[fieldId] : undefined;
     return !optionId || (cell?.kind === 'singleSelect' && cell.selected.some(option => option.id === optionId));
   });

@@ -1,11 +1,11 @@
 import { ipcMain, type BrowserWindow } from 'electron';
-import { IpcChannel as C, type CompanyCertificate, type CustomThemeFiles, type JiraCredentials, type OpenAIEndpointTestRequest } from '@shared/api';
+import { IpcChannel as C, type CompanyCertificate, type CustomThemeFiles, type JiraCredentials, type HyperEndpointModelsRequest, type OpenAIEndpointTestRequest } from '@shared/api';
 import { CompanyCertificateStore } from './certificates';
 import { installCustomTheme, listCustomThemes, readPluginDirectory, removeCustomTheme } from './custom-themes';
 import { protect } from './dpapi';
 import { loadGoogleFont } from './google-fonts';
 import { JiraCredentialFiles } from './jira-credentials';
-import { testEndpoint, writeEndpointSettings } from './openai-endpoint';
+import { listEndpointModels, testEndpoint, writeEndpointSettings } from './openai-endpoint';
 import { toIpcResult } from './settings-error';
 
 export interface SettingsIpcDeps {
@@ -33,6 +33,7 @@ export function registerSettingsIpc(deps: SettingsIpcDeps): void {
   ipcMain.handle(C.AiEndpointWriteSettings, (_, json: string) =>
     toIpcResult(() => writeEndpointSettings(deps.supportDirectory(), json)),
   );
+  ipcMain.handle(C.HyperAiEndpointModels, (_, request: HyperEndpointModelsRequest) => toIpcResult(() => listEndpointModels(request)));
   ipcMain.handle(C.AiEndpointTest, (_, request: OpenAIEndpointTestRequest) => toIpcResult(() => testEndpoint(request)));
 
   ipcMain.handle(C.CertificatesList, () => toIpcResult(() => certificates.list()));

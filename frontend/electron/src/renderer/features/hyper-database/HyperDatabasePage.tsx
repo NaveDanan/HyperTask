@@ -20,7 +20,7 @@ import { HyperCalendarView } from './views/HyperCalendarView';
 import { HyperGanttView } from './views/HyperGanttView';
 
 const layouts: HyperLayout[] = ['grid', 'board', 'calendar', 'gantt'];
-const labels = { grid: 'Grid', board: 'Board', calendar: 'Calendar', gantt: 'Gantt' };
+const labels = { grid: 'Grid', board: 'Hyper-Kanban', calendar: 'Hyper-Event', gantt: 'Gantt' };
 /** Each executor owns its file and any files in its own adjacent subfolder. */
 export function HyperDatabaseLayout(props: HyperDatabaseViewProps) {
   switch (hyperLayout(props.view)) {

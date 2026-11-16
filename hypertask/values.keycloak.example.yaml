@@ -1,0 +1,10 @@
+# Apply after the ingress values. This configures the backend provider only.
+auth:
+  emailEnabled: false
+  emailAutoConfirm: false
+  allowSignup: true
+keycloak:
+  enabled: true
+  issuerUrl: https://sso.company.internal/realms/company
+  clientId: hypertask-gotrue
+# Put KEYCLOAK_CLIENT_SECRET in the existing application Secret, never in values.

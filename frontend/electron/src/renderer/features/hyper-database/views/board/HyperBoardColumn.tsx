@@ -1,3 +1,4 @@
+import { HyperMentionInput, type HyperMentionHandle } from '@/features/hyper-people/HyperMentionInput';
 import { useRef, useState } from 'react';
 import { EyeOff, GripVertical, MoreHorizontal, PencilLine, Plus, Trash2 } from 'lucide-react';
 import { KanbanColumn, KanbanColumnContent, KanbanColumnHandle } from '@/components/reui/kanban';
@@ -24,7 +25,7 @@ interface HyperBoardColumnProps {
 function HyperBoardInlineCard({ controller, groupId, top, onCancel }: { controller: HyperDatabaseController; groupId: string; top: boolean; onCancel: () => void }) {
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
+  const input = useRef<HyperMentionHandle>(null);
   const submit = async () => {
     if (!title.trim() || saving) return;
     setSaving(true);
@@ -32,7 +33,7 @@ function HyperBoardInlineCard({ controller, groupId, top, onCancel }: { controll
     catch { toast.error('Could not add card'); }
     finally { setSaving(false); requestAnimationFrame(() => input.current?.focus()); }
   };
-  return <div className="shrink-0 rounded-lg border border-border bg-card p-2 shadow-xs" data-hyper-board-inline-add="true"><Input ref={input} autoFocus aria-label="New card title" placeholder="Enter a title…" value={title} disabled={saving} onChange={event => setTitle(event.target.value)} onBlur={() => { if (!title.trim() && !saving) onCancel(); }} onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); void submit(); } if (event.key === 'Escape') { event.preventDefault(); onCancel(); } }} /><p className="px-1 pt-2 text-2xs text-muted-foreground">Enter to add · Esc to cancel</p></div>;
+  return <div className="shrink-0 rounded-lg border border-border bg-card p-2 shadow-xs" data-hyper-board-inline-add="true"><HyperMentionInput ref={input} autoFocus aria-label="New card title" placeholder="Enter a title…" value={title} disabled={saving} onChange={event => setTitle(event.target.value)} onBlur={() => { if (!title.trim() && !saving) onCancel(); }} onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); void submit(); } if (event.key === 'Escape') { event.preventDefault(); onCancel(); } }} /><p className="px-1 pt-2 text-2xs text-muted-foreground">Enter to add · Esc to cancel</p></div>;
 }
 export function HyperBoardColumn({ controller, state, group, rowIds, fields, groupField, search, over, overlay = false, busy, draggedRowId, addPosition, onAdd, onOpen }: HyperBoardColumnProps) {
   const checkbox = groupField.type === FieldType.Checkbox;
