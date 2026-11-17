@@ -22,13 +22,13 @@ export interface PluginArguments {
   rowId?: string;
 }
 
-export type LocalToolId = 'home' | 'jira' | 'templates';
+export type LocalToolId = 'home' | 'jira' | 'templates' | 'nod' | 'bots';
 
 /**
  * What a tab shows. Tab identity is `id`: the view id for view plugins, "TrashStack",
  * "local-tool:<toolId>", the row id for row pages, "" for the blank page.
  */
-export type Plugin =
+export type Plugin = (
   | { kind: 'blank'; id: ''; type: PluginType.blank }
   | { kind: 'trash'; id: 'TrashStack'; type: PluginType.trash }
   | { kind: 'view'; id: string; type: PluginType; view: ViewPB; args?: PluginArguments }
@@ -42,7 +42,8 @@ export type Plugin =
       documentId?: string;
     }
   // LocalToolPlugin reports PluginType.blank, so it never sets the latest view.
-  | { kind: 'localTool'; id: `local-tool:${LocalToolId}`; type: PluginType.blank; toolId: LocalToolId; title: string };
+  | { kind: 'localTool'; id: `local-tool:${LocalToolId}`; type: PluginType.blank; toolId: LocalToolId; title: string }
+) & { prefersCollapsedMenu?: boolean };
 
 export const blankPlugin = (): Plugin => ({ kind: 'blank', id: '', type: PluginType.blank });
 export const trashPlugin = (): Plugin => ({ kind: 'trash', id: 'TrashStack', type: PluginType.trash });
@@ -51,7 +52,8 @@ export const localToolPlugin = (toolId: LocalToolId): Plugin => ({
   id: `local-tool:${toolId}`,
   type: PluginType.blank,
   toolId,
-  title: toolId === 'home' ? 'Home' : toolId === 'jira' ? 'Jira' : 'Templates',
+  prefersCollapsedMenu: toolId === 'bots',
+  title: toolId === 'home' ? 'Home' : toolId === 'jira' ? 'Jira' : toolId === 'nod' ? 'Nod assistant' : toolId === 'bots' ? 'Hyper-Bot' : 'Templates',
 });
 
 export function pluginTypeForLayout(layout: ViewLayoutPB): PluginType {

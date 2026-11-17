@@ -50,3 +50,15 @@ it('surfaces unavailable and failed Outlook requests without throwing into the d
   client.status.mockResolvedValueOnce({ available: false, userName: '', email: '', reason: 'Classic Outlook required' }); render(); await settle(); expect(render()).toMatchObject({ error: 'Classic Outlook required', refreshing: false }); expect(client.list).not.toHaveBeenCalled();
   render().onRangeChange(range); client.list.mockRejectedValueOnce(new Error('COM unavailable')); render(); await settle(); expect(render()).toMatchObject({ error: 'COM unavailable', status: { available: false } });
 });
+
+it('clears stale events immediately on closure and reloads as soon as presence reconnects', async () => {
+  let presence!: (value: { installed: boolean; running: boolean; connected: boolean }) => void;
+  const unsubscribe = vi.fn();
+  Object.assign(window, { hypertask: { outlook: { onPresence: (listener: typeof presence) => { presence = listener; return unsubscribe; } } } });
+  render().onRangeChange(range); render(); await settle(); expect(render().events).toHaveLength(1);
+  client.list.mockClear(); presence({ installed: true, running: false, connected: false });
+  expect(render()).toMatchObject({ events: [], refreshing: false, status: { available: false }, error: 'Outlook is closed. Open Outlook to use your calendar and mail.' });
+  presence({ installed: true, running: true, connected: true }); render(); await settle();
+  expect(client.list).toHaveBeenCalledOnce(); expect(render().events).toHaveLength(1);
+  for (const effect of hooks.effects) effect?.cleanup?.(); hooks.effects = []; expect(unsubscribe).toHaveBeenCalled();
+});

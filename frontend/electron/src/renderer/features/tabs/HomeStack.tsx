@@ -3,6 +3,7 @@ import type { ViewPB } from '@shared/protobuf/hyper-folder/view_pb';
 import { TitleBar } from '@/components/app/window-controls';
 import { cn } from '@/lib/utils';
 import { MenuStatus, useHomeSettingStore } from '../home/home-setting-store';
+import { HyperChromePanelScope, useHyperChromePanelStore } from '../home/HyperChromePanel';
 import { useHomeStore } from '../home/home-store';
 import { PageStack, usePluginScope } from '../plugins/PageStack';
 import { pluginWidgets } from '../plugins/registry';
@@ -20,6 +21,9 @@ function TabPage({ tab, active }: { tab: Tab; active: boolean }) {
   const user = useHomeStore((s) => s.user);
   const scope = usePluginScope(tab.plugin, true);
   const builder = pluginWidgets(tab.plugin);
+  // A page that prefers the collapsed menu titles its own panel; the top bar would repeat it while that panel sits in the card.
+  const inChrome = useHyperChromePanelStore((s) => s.claim?.owner === tab.key);
+  const topBar = !tab.plugin.prefersCollapsedMenu || inChrome;
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -34,11 +38,13 @@ function TabPage({ tab, active }: { tab: Tab; active: boolean }) {
   return (
     <div ref={ref} className={cn("absolute inset-0", active ? "flex" : "hidden")}>
       <div className="flex min-w-0 flex-1 flex-col">
-        <ProvideViewScope scope={scope}>
+        {topBar && <ProvideViewScope scope={scope}>
           <HomeTopBar key={`${tab.plugin.kind}:${tab.plugin.id}`} leftBarItem={builder.leftBarItem} rightBarItem={builder.rightBarItem} />
-        </ProvideViewScope>
+        </ProvideViewScope>}
         <div className="min-h-0 flex-1">
-          <PageStack plugin={tab.plugin} scope={scope} context={{ onDeleted, userProfile: user }} />
+          <HyperChromePanelScope owner={active ? tab.key : null}>
+            <PageStack plugin={tab.plugin} scope={scope} context={{ onDeleted, userProfile: user }} />
+          </HyperChromePanelScope>
         </div>
       </div>
       <SecondaryView tab={tab} adaptedPercentageWidth={(width * 3) / 7} />

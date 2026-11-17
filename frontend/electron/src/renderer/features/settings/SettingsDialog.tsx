@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { UserEventGetUserProfile } from '@/backend/events';
-import { Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Palette, Server, ShieldCheck, Sparkles, UserRound, Users, X } from 'lucide-react';
+import { Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Palette, Server, ShieldCheck, Sparkles, SquareCheckBig, UserRound, Users, X } from 'lucide-react';
 import { NavItem } from '@/components/app/nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,6 +15,7 @@ import { AIPage } from './ai/AIPage';
 import { CertificatesPage } from './certificates/CertificatesPage';
 import { ManageDataPage } from './manage-data/ManageDataPage';
 import { NotificationsPage } from './notifications/NotificationsPage';
+import { HyperJiraSettingsPage } from './jira/HyperJiraSettingsPage';
 import type { SettingsPageProps } from './page-props';
 import { FeatureFlagsPage } from './pages/FeatureFlagsPage';
 import { MembersPage } from './pages/MembersPage';
@@ -43,6 +44,7 @@ const MENU: Record<SettingsPage, { label: (tr: (key: string) => string) => strin
   [SettingsPage.member]: { label: (tr) => tr('settings.appearance.members.label'), icon: () => <Users className="size-4" /> },
   [SettingsPage.manageData]: { label: (tr) => tr('settings.manageDataPage.menuLabel'), icon: () => <Database className="size-4" /> },
   [SettingsPage.notifications]: { label: (tr) => tr('settings.menu.notifications'), icon: () => <Bell className="size-4" /> },
+  [SettingsPage.jira]: { label: () => 'Jira', icon: () => <SquareCheckBig className="size-4" /> },
   // [CUSTOM] hard-coded English labels.
   [SettingsPage.cloud]: { label: () => 'Storage & server', icon: () => <Server className="size-4" /> },
   [SettingsPage.companyCertificates]: { label: () => 'Certificates', icon: () => <ShieldCheck className="size-4" /> },
@@ -91,6 +93,8 @@ function SettingsView({ page, props }: { page: SettingsPage; props: SettingsPage
       return <ManageDataPage {...props} />;
     case SettingsPage.notifications:
       return <NotificationsPage {...props} />;
+    case SettingsPage.jira:
+      return <HyperJiraSettingsPage key={String(props.user.id)} {...props} />;
     case SettingsPage.cloud:
       // SettingCloud → SelfHostedSettingsView [CUSTOM].
       return <SelfHostedSettingsView restartApp={props.restartApp} />;

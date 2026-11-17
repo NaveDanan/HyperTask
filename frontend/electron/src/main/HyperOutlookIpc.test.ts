@@ -24,3 +24,6 @@ it('serializes status and bridge errors as IpcResult', async () => {
   bridge.request.mockRejectedValueOnce(new Error('Outlook unavailable') as never);
   expect(await mock.handlers.get(C.OutlookOpen)!(event, { id: 'ABCD|2026-11-16T12:00:00.0000000Z' })).toMatchObject({ ok: false, message: 'Outlook unavailable' });
 });
+it('gives the renderer the calendar view operations only: no mail, invitation or HyperBots-only channel', () => {
+  expect([...mock.handlers.keys()].sort()).toEqual([C.OutlookPeopleSearch, C.OutlookPeopleLookup, C.OutlookStatus, C.OutlookList, C.OutlookCreate, C.OutlookUpdate, C.OutlookDelete, C.OutlookRespond, C.OutlookOpen].sort());
+});

@@ -1,16 +1,18 @@
 # HyperTask Jira data layer
 
-Ported from Flutter Jira sources and tests at commit 5a5db3717. No UI is included.
+Ported from Flutter Jira sources and tests at commit 5a5db3717.
 Import the public API from @/features/jira. Product implementations use Hyper
 prefixes; Jira aliases retain the source integration's terminology.
 
 Create a stable user-scoped hook after loadKeyValueStorage has completed:
 
-    const useJira = createHyperJiraStore({ userId: String(user.id) });
+    import { getHyperJiraStore } from './logic/HyperJiraRegistry';
+    const useJira = getHyperJiraStore(String(user.id));
     await useJira.getState().load();
 
 In React, keep the hook instance stable for a user and subscribe to individual
-fields. Do not create a hook inside every render. An injected repository and
+fields. The desktop shell owns its background scheduler; see docs/HYPER_JIRA_KANBAN.md.
+Use the factory only for isolated tests or alternative hosts. An injected repository and
 optional database mapper support tests and alternative hosts. Passing
 databaseMapper: null disables the mirror action.
 
@@ -43,7 +45,8 @@ Every field and action also has a one-line comment in logic/jira-store.ts.
 
 | Action | Behavior |
 | --- | --- |
-| load() | Loads cached data first, then syncs incrementally if connected. |
+| load(syncOnLoad = true) | Loads once; optionally syncs on that initial load. The background owner passes false. |
+| setKanbanEnabled(enabled) | Persists the per-user board-copy preference without changing Jira connection settings. |
 | sync(full = false) | Fetches and merges updates; full=true replaces the JQL result. |
 | fullRefresh() | Full sync, including reporting issues removed from the JQL result. |
 | saveSettings(config, credentials?) | Saves settings, retains the same-account secret if omitted, then full-syncs if connected. |

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createStore, useStore } from 'zustand';
+import { HyperOutlookClosed } from '@shared/HyperOutlookPresence';
 import type { HyperOutlookEvent, HyperOutlookStatus } from '@shared/api';
 import type { EventCalendarRangeInfo } from '@/components/reui/event-calendar/event-calendar-types';
 import { hyperCalendarError } from '@/features/hyper-database/views/calendar/HyperCalendarData';
@@ -43,6 +44,16 @@ export function useHyperOutlookEvents(viewId: string, enabled: boolean, timeZone
     window.addEventListener('focus', tick); document.addEventListener('visibilitychange', tick);
     return () => { clearInterval(timer); window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick); };
   }, [enabled, refresh, visible, store]);
+  useEffect(() => {
+    if (!enabled) return;
+    return window.hypertask?.outlook?.onPresence?.(presence => {
+      if (presence.connected) refresh();
+      else if (!presence.running) {
+        request.current++;
+        store.setState({ items: [], refreshing: false, error: HyperOutlookClosed, status: { available: false, userName: '', email: '', reason: HyperOutlookClosed } });
+      }
+    });
+  }, [enabled, refresh, store]);
   const events = useMemo(() => enabled && shown ? hyperOutlookMapEvents(state.items, timeZone) : [], [enabled, shown, state.items, timeZone]);
   return { ...state, events, shown, toggle, refresh, onRangeChange };
 }

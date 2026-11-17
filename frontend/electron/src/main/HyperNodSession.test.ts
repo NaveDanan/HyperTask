@@ -1,0 +1,66 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, expect, it, vi } from 'vitest';
+import { HyperNodSession, createHyperNodSession, hyperNodNativeCoreRequest } from './HyperNodSession';
+const roots: string[] = [];
+afterEach(async () => { for (const root of roots.splice(0)) await fs.rm(root, { recursive: true, force: true }); });
+const scratch = async () => { const root = await fs.mkdtemp(path.join(os.tmpdir(), 'hyper-nod-session-')); roots.push(root); return root; };
+it('binds the first native owner and refuses another local profile', async () => {
+  const root = await scratch();
+  let identity: string | null = '["local","a"]';
+  const sessions = createHyperNodSession(root, async () => identity);
+  const lease = await sessions.acquire();
+  expect(JSON.parse(await fs.readFile(path.join(root, 'hyper-nod-session', 'owner.json'), 'utf8'))).toMatchObject({ version: 1, backend: 'nod:mmems-mems01:127.0.0.1:4311', owner: expect.stringMatching(/^[a-f0-9]{64}$/) });
+  identity = '["local","b"]';
+  await expect(sessions.acquire()).rejects.toMatchObject({ problem: 'profile_required' });
+  expect(lease.signal.aborted).toBe(true);
+  await expect(createHyperNodSession(root, async () => identity).acquire()).rejects.toMatchObject({ problem: 'profile_required' });
+  identity = '["local","a"]';
+  await expect(createHyperNodSession(root, async () => identity).acquire()).resolves.toBeDefined();
+  identity = null;
+  await expect(createHyperNodSession(root, async () => identity).acquire()).rejects.toMatchObject({ problem: 'signed_out' });
+});
+it('fails closed on an unreadable owner record without replacing it', async () => {
+  const root = await scratch();
+  await fs.mkdir(path.join(root, 'hyper-nod-session'));
+  await fs.writeFile(path.join(root, 'hyper-nod-session', 'owner.json'), '{"version":2}');
+  await expect(createHyperNodSession(root, async () => '["local","a"]').acquire()).rejects.toMatchObject({ problem: 'profile_required' });
+  expect(await fs.readFile(path.join(root, 'hyper-nod-session', 'owner.json'), 'utf8')).toBe('{"version":2}');
+});
+it('blocks leases during native transitions until authentication succeeds', async () => {
+  const listener = vi.fn();
+  const sessions = new HyperNodSession({ readIdentity: async () => '["local","a"]', bindOwner: async () => {} });
+  sessions.onInvalidate(listener);
+  const lease = await sessions.acquire();
+  const version = sessions.beginNativeTransition();
+  expect(lease.signal.aborted).toBe(true);
+  expect(() => lease.assertCurrent()).toThrow();
+  expect(listener).toHaveBeenCalledOnce();
+  await expect(sessions.acquire()).rejects.toMatchObject({ problem: 'signed_out' });
+  sessions.completeNativeTransition(version, false);
+  await expect(sessions.acquire()).rejects.toMatchObject({ problem: 'signed_out' });
+  sessions.completeNativeTransition(version, true);
+  await expect(sessions.acquire()).resolves.toBeDefined();
+});
+it('rejects a lease when the identity changes while binding', async () => {
+  let release: (() => void) | undefined;
+  const sessions = new HyperNodSession({ readIdentity: async () => '["local","a"]', bindOwner: () => new Promise<void>(resolve => { release = resolve; }) });
+  const pending = sessions.acquire();
+  await vi.waitFor(() => expect(release).toBeDefined());
+  sessions.beginNativeTransition();
+  release!();
+  await expect(pending).rejects.toMatchObject({ problem: 'signed_out' });
+});
+it('wraps only authentication events and keeps sign-out blocking', async () => {
+  const sessions = new HyperNodSession({ readIdentity: async () => '["local","a"]', bindOwner: async () => {} });
+  const request = vi.fn(async () => ({ status: 0 }));
+  await hyperNodNativeCoreRequest(sessions, 'GetUserProfile', request);
+  await expect(sessions.acquire()).resolves.toBeDefined();
+  await hyperNodNativeCoreRequest(sessions, 'SignOut', request);
+  await expect(sessions.acquire()).rejects.toMatchObject({ problem: 'signed_out' });
+  await hyperNodNativeCoreRequest(sessions, 'SignInWithEmailPassword', async () => ({ status: 3 }));
+  await expect(sessions.acquire()).rejects.toMatchObject({ problem: 'signed_out' });
+  await hyperNodNativeCoreRequest(sessions, 'SignInWithEmailPassword', request);
+  await expect(sessions.acquire()).resolves.toBeDefined();
+});

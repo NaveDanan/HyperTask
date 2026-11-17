@@ -26,6 +26,9 @@ export class HyperJiraLocalStore {
   constructor(readonly userId: string, private readonly storage: JiraKeyValueStorage = KeyValueStorage) {}
   get configKey(): string { return 'hypertask.jira.' + this.userId + '.config'; }
   get cacheKey(): string { return 'hypertask.jira.' + this.userId + '.cache'; }
+  get kanbanKey(): string { return 'hypertask.jira.' + this.userId + '.addToHyperKanban'; }
+  async readKanbanEnabled(): Promise<boolean> { return await this.storage.get(this.kanbanKey) !== 'false'; }
+  writeKanbanEnabled(enabled: boolean): Promise<void> { return this.storage.set(this.kanbanKey, String(enabled)); }
   async readConfig(): Promise<JiraConfig | null> {
     const raw = await this.storage.get(this.configKey); if (raw == null) return null;
     try { const p: unknown = JSON.parse(raw); return p && typeof p === 'object' && !Array.isArray(p) ? JiraConfig.fromJson(jsonObject(p)) : null; } catch { return null; }

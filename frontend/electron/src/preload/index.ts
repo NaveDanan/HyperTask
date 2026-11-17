@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import { IpcChannel as C, type HypertaskApi } from '@shared/api';
+import { HyperBotsChannel as B } from '@shared/HyperBots';
 
 function on<T>(channel: string, listener: (value: T) => void): () => void {
   const handler = (_: IpcRendererEvent, value: T) => listener(value);
@@ -12,12 +13,35 @@ const api: HypertaskApi = {
   outlook: {
     people: { search: args => ipcRenderer.invoke(C.OutlookPeopleSearch, args), lookup: args => ipcRenderer.invoke(C.OutlookPeopleLookup, args) },
     status: () => ipcRenderer.invoke(C.OutlookStatus),
+    presence: () => ipcRenderer.invoke(C.OutlookPresenceRead),
+    launch: () => ipcRenderer.invoke(C.OutlookLaunch),
+    onPresence: listener => on(C.OutlookPresence, listener),
     list: args => ipcRenderer.invoke(C.OutlookList, args),
     create: args => ipcRenderer.invoke(C.OutlookCreate, args),
     update: args => ipcRenderer.invoke(C.OutlookUpdate, args),
     delete: args => ipcRenderer.invoke(C.OutlookDelete, args),
     respond: args => ipcRenderer.invoke(C.OutlookRespond, args),
     open: args => ipcRenderer.invoke(C.OutlookOpen, args),
+  },
+  hyperNod: {
+    status: () => ipcRenderer.invoke(C.NodStatus),
+    state: () => ipcRenderer.invoke(C.NodState),
+    history: cursor => ipcRenderer.invoke(C.NodHistory, cursor),
+    send: input => ipcRenderer.invoke(C.NodSend, input),
+    stop: () => ipcRenderer.invoke(C.NodStop),
+    subscribe: () => ipcRenderer.invoke(C.NodSubscribe),
+    unsubscribe: () => ipcRenderer.send(C.NodUnsubscribe),
+    onEvent: listener => on(C.NodEvent, listener),
+  },
+  hyperBots: {
+    // Only the room travels: main reads who is signed in from the core.
+    open: args => ipcRenderer.invoke(B.Open, args?.roomId === undefined ? {} : { roomId: args.roomId }),
+    snapshot: args => ipcRenderer.invoke(B.Snapshot, args),
+    post: input => ipcRenderer.invoke(B.Post, input),
+    decide: args => ipcRenderer.invoke(B.Decide, args),
+    saveSettings: settings => ipcRenderer.invoke(B.SaveSettings, settings),
+    models: () => ipcRenderer.invoke(B.Models),
+    onEvent: listener => on(B.Event, listener),
   },
   hyperOpenBot: {
     callbackKey: input => ipcRenderer.invoke('hyper-openbot:callback-key', input),

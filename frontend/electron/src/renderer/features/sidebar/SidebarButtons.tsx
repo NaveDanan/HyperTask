@@ -1,7 +1,7 @@
 import { useHyperOpenBotService } from '../hyper-openbot/HyperServiceStatus';
 // Sidebar entries: search, new page, Jira, Templates and Trash.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { House, LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
+import { Bot, BotMessageSquare, House, LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
 import { ViewLayoutPB, ViewSectionPB } from '@shared/protobuf/hyper-folder/view_pb';
 import { NavItem } from '@/components/app/nav';
 import { ShortcutKeys } from '@/components/app/shortcut';
@@ -58,6 +58,20 @@ export function JiraButton() {
   const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:jira');
   return <NavItem icon={<SquareCheckBig />} label="Jira" active={active}
     onClick={() => tabsActions.openPlugin(localToolPlugin('jira'))} />;
+}
+
+/** The Nod personal assistant: one durable conversation on the configured VM. */
+export function HyperNodButton() {
+  const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:nod');
+  return <NavItem icon={<Bot />} label="Nod assistant" active={active}
+    onClick={() => tabsActions.openPlugin(localToolPlugin('nod'))} />;
+}
+
+/** HyperBots: bots in a room that read Outlook and file Jira issues, each tool call approved by the owner. */
+export function HyperBotsButton() {
+  const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:bots');
+  return <NavItem icon={<BotMessageSquare />} label="Hyper-Bot" active={active}
+    onClick={() => tabsActions.openPlugin(localToolPlugin('bots'))} />;
 }
 
 export function HyperTemplatesButton() {

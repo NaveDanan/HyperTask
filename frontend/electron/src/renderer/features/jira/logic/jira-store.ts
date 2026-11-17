@@ -3,12 +3,14 @@ import { JiraDashboardStats } from '../data/jira-dashboard-stats';
 import { JiraDatabaseMapper, type JiraDatabaseSyncReport } from '../data/jira-database-mapper';
 import { JiraException, asJiraException } from '../data/jira-exception';
 import { JiraCacheSnapshot, JiraLocalStore } from '../data/jira-local-store';
-import { JiraRepository, type JiraConnectionResult, type JiraIssueTransitionOptions } from '../data/jira-repository';
+import { JiraRepository, stripOrderBy, type JiraConnectionResult, type JiraIssueTransitionOptions } from '../data/jira-repository';
 import { JiraConfig, JiraCredentials } from '../data/models/jira-config';
 import { JiraIssue, JiraIssueDraft, type JiraIssueType, JiraStatusCategory, type JiraTransition } from '../data/models/jira-issue';
 export interface HyperJiraState {
   /** True until initial settings, credential availability, and cached issues load. */
   isLoading: boolean;
+  /** Whether successful syncs may add/update cards on the Home board (default on). */
+  kanbanEnabled: boolean;
   /** Non-secret connection settings for this Hypertask user, or null on first run. */
   config: JiraConfig | null;
   /** Whether credentials exist for the exact configured account. */
@@ -17,7 +19,7 @@ export interface HyperJiraState {
   credentialsPersist: boolean;
   /** Last cached issues and sync attempt/success/error metadata. */
   snapshot: JiraCacheSnapshot;
-  /** True while fetching a full or incremental Jira search. */
+  /** True while fetching issues and copying the successful result to Home. */
   isSyncing: boolean;
   /** Unique issue count loaded in the current search. */
   syncLoaded: number;
@@ -45,8 +47,10 @@ export interface HyperJiraState {
   visibleIssues: JiraIssue[];
 }
 export interface HyperJiraActions {
-  /** Loads cache/settings and performs incremental background sync when connected. */
-  load(): Promise<void>;
+  /** Loads cache/settings once; syncOnLoad=false leaves startup timing to the shell. */
+  load(syncOnLoad?: boolean): Promise<void>;
+  /** Persists the per-user board-copy preference without touching connection settings. */
+  setKanbanEnabled(enabled: boolean): Promise<void>;
   /** Syncs incrementally by default; full=true replaces the entire JQL result. */
   sync(full?: boolean): Promise<void>;
   /** Fetches the complete JQL result and reports cache removals. */
@@ -83,7 +87,10 @@ export interface HyperJiraActions {
   dismissMessage(): void;
 }
 export type HyperJiraStore = HyperJiraState & HyperJiraActions;
-export interface HyperJiraStoreOptions { userId?: string; repository?: JiraRepository; databaseMapper?: JiraDatabaseMapper | null }
+export interface HyperJiraStoreOptions {
+  userId?: string; repository?: JiraRepository; databaseMapper?: JiraDatabaseMapper | null; localStore?: JiraLocalStore;
+  afterSync?: (config: JiraConfig, issues: JiraIssue[]) => Promise<void>;
+}
 type Derived = Pick<HyperJiraState, 'isConfigured' | 'canSync' | 'stats' | 'visibleIssues'>;
 function derive(s: Omit<HyperJiraState, keyof Derived>): Derived {
   const isConfigured = s.config?.isComplete ?? false, q = s.query.trim().toLowerCase();
@@ -94,7 +101,7 @@ function derive(s: Omit<HyperJiraState, keyof Derived>): Derived {
       (!q || [i.key, i.summary, i.statusName, i.assigneeLabel].some(v => v.toLowerCase().includes(q)))) };
 }
 /**
- * Create one hook per Hypertask user/dashboard, after KeyValueStorage startup.
+ * Create one hook per Hypertask user (shared by the registry), after KeyValueStorage startup.
  * Keep the returned hook stable and select individual fields in React.
  * Dialog actions return values and rethrow typed errors; load/sync/settings/database
  * actions report errors in state. On conflict, use error.remote as the new editor
@@ -102,7 +109,8 @@ function derive(s: Omit<HyperJiraState, keyof Derived>): Derived {
  */
 export function createHyperJiraStore(options: HyperJiraStoreOptions): UseBoundStore<StoreApi<HyperJiraStore>> {
   if (!options.repository && !options.userId) throw new Error('HyperJiraStore requires userId or repository.');
-  const repository = options.repository ?? new JiraRepository({ store: new JiraLocalStore(options.userId!) });
+  const localStore = options.localStore ?? (options.userId ? new JiraLocalStore(options.userId) : null);
+  const repository = options.repository ?? new JiraRepository({ store: localStore! });
   const mapper = options.databaseMapper === undefined ? new JiraDatabaseMapper() : options.databaseMapper;
   return create<HyperJiraStore>((set, get) => {
     const patch = (p: Partial<HyperJiraState>) => set(s => {
@@ -117,21 +125,22 @@ export function createHyperJiraStore(options: HyperJiraStoreOptions): UseBoundSt
     });
     const reload = async () => {
       const config = await repository.loadConfig();
-      const [hasCredentials, snapshot, credentialsPersist] = await Promise.all([repository.hasCredentials(), repository.loadCache(), repository.credentialsPersist()]);
-      patch({ isLoading: false, config, hasCredentials, snapshot, credentialsPersist });
+      const [hasCredentials, snapshot, credentialsPersist, kanbanEnabled] = await Promise.all([repository.hasCredentials(), repository.loadCache(), repository.credentialsPersist(), localStore?.readKanbanEnabled() ?? true]);
+      patch({ isLoading: false, config, hasCredentials, snapshot, credentialsPersist, kanbanEnabled });
     };
     const dialog = async <T,>(run: () => Promise<T>): Promise<T> => {
       patch({ error: null });
       try { return await run(); } catch (e) { const error = asJiraException(e); patch({ error }); throw error; }
     };
-    let loading: Promise<void> | null = null;
-    const initial = { isLoading: true, config: null, hasCredentials: false, credentialsPersist: false,
+    let loading: Promise<void> | null = null, refreshAfterSettings = false;
+    const initial = { isLoading: true, kanbanEnabled: true, config: null, hasCredentials: false, credentialsPersist: false,
       snapshot: new JiraCacheSnapshot({ scopeId: '', jql: '', issues: [] }), isSyncing: false, syncLoaded: 0, syncTotal: 0,
       error: null, message: null, categoryFilter: null, assigneeFilter: null, query: '', isDatabaseSyncing: false };
     return { ...initial, ...derive(initial),
-      load: () => {
+      load: (syncOnLoad = true) => {
         if (loading) return loading;
-        loading = (async () => { try { await reload(); if (get().canSync) await get().sync(false); }
+        if (!get().isLoading) return Promise.resolve();
+        loading = (async () => { try { await reload(); if (syncOnLoad && get().canSync) await get().sync(false); }
           catch (e) { patch({ isLoading: false, error: asJiraException(e) }); } })().finally(() => { loading = null; });
         return loading;
       },
@@ -140,15 +149,30 @@ export function createHyperJiraStore(options: HyperJiraStoreOptions): UseBoundSt
         patch({ isSyncing: true, syncLoaded: 0, syncTotal: 0, error: null });
         try {
           const result = await repository.sync({ full, onProgress: (syncLoaded, syncTotal) => patch({ syncLoaded, syncTotal }) });
-          patch({ isSyncing: false, snapshot: result.snapshot, message: 'Synced ' + result.snapshot.issues.length + ' issues (' + result.added + ' new, ' + result.updated + ' updated' + (result.removed ? ', ' + result.removed + ' no longer matched' : '') + ')' });
+          patch({ snapshot: result.snapshot, message: 'Synced ' + result.snapshot.issues.length + ' issues (' + result.added + ' new, ' + result.updated + ' updated' + (result.removed ? ', ' + result.removed + ' no longer matched' : '') + ')' });
+          const config = repository.config;
+          if (config && config.scopeId === result.snapshot.scopeId && stripOrderBy(config.effectiveJql) === result.snapshot.jql && get().kanbanEnabled) {
+            try { await options.afterSync?.(config, result.snapshot.issues); } catch { /* retry board copy on the next sync */ }
+          }
         } catch (e) {
           let snapshot = get().snapshot; try { snapshot = await repository.loadCache(); } catch { /* keep visible cache */ }
-          patch({ isSyncing: false, snapshot, error: asJiraException(e) });
+          patch({ snapshot, error: asJiraException(e) });
+        } finally {
+          patch({ isSyncing: false });
+          if (refreshAfterSettings) { refreshAfterSettings = false; await get().sync(true); }
         }
+      },
+      setKanbanEnabled: async enabled => {
+        const previous = get().kanbanEnabled;
+        patch({ kanbanEnabled: enabled });
+        try { await localStore?.writeKanbanEnabled(enabled); }
+        catch (e) { patch({ kanbanEnabled: previous, error: asJiraException(e) }); }
       },
       fullRefresh: () => get().sync(true),
       saveSettings: async (config, credentials) => {
-        try { await repository.saveConfig(config, credentials); await reload(); patch({ error: null, message: 'Settings saved' }); if (get().canSync) await get().fullRefresh(); }
+        try { await repository.saveConfig(config, credentials); await reload(); patch({ error: null, message: 'Settings saved' });
+          if (get().canSync) await get().fullRefresh();
+          else if (get().isSyncing && get().isConfigured && get().hasCredentials) refreshAfterSettings = true; }
         catch (e) { patch({ error: asJiraException(e) }); }
       },
       testConnection: (c, credentials) => dialog(() => repository.testConnection(c, credentials)),

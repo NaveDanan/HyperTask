@@ -13,7 +13,7 @@ import { resetRecentViews } from '@/features/search/recent-views-store';
 import { showLoading } from './components';
 import { SidebarFolder } from './folder/SidebarFolder';
 import { SidebarTopMenu, SidebarUser } from './header/SidebarHeader';
-import { HyperHomeButton, JiraButton, HyperChatButton, HyperTemplatesButton, SidebarFooter, SidebarNewPageButton, SidebarSearchButton } from './SidebarButtons';
+import { HyperHomeButton, JiraButton, HyperChatButton, HyperNodButton, HyperBotsButton, HyperTemplatesButton, SidebarFooter, SidebarNewPageButton, SidebarSearchButton } from './SidebarButtons';
 import { SidebarSpace } from './space/SidebarSpace';
 import { useSpaceState } from './space/space-context';
 import { favoriteActions } from './stores/favorite-store';
@@ -129,6 +129,8 @@ function SidebarBody({ user }: { user: UserProfilePB }) {
         <SidebarSearchButton />
         {role !== AFRolePB.Guest && <SidebarNewPageButton />}
         <HyperChatButton />
+        <HyperNodButton />
+        <HyperBotsButton />
         <JiraButton />
         <HyperTemplatesButton />
       </div>

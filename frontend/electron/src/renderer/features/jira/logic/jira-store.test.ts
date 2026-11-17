@@ -77,3 +77,47 @@ describe('Flutter dashboard behavior as store contract (UI rendering deferred)',
     expect(await store.getState().updateDatabase()).toBeNull(); expect(store.getState().error?.kind).toBe('notConfigured'); expect(store.getState().isDatabaseSyncing).toBe(false);
   });
 });
+
+it('loads once for the background owner and dashboard, then copies the full cached issue set after each successful sync', async () => {
+  const jira = pageJira(), copied: string[][] = [];
+  const store = createHyperJiraStore({ repository: await configuredRepository(jira), afterSync: async (_config, issues) => { copied.push(issues.map(i => i.key)); } });
+  await store.getState().load(false); await store.getState().load(false); expect(jira.requests).toHaveLength(0);
+  await store.getState().sync(); expect(copied).toEqual([['DEMO-1', 'DEMO-2', 'DEMO-3']]);
+  store.getState().setQuery('DEMO-2'); await store.getState().load(); expect(copied).toHaveLength(1);
+  await store.getState().sync(); expect(copied[1]).toHaveLength(3);
+  await store.getState().setKanbanEnabled(false); await store.getState().fullRefresh(); expect(copied).toHaveLength(2);
+});
+it('keeps the sync lock through the board copy and treats a board failure as a successful Jira sync', async () => {
+  const jira = pageJira(); let release!: () => void, copied!: () => void, calls = 0;
+  const pending = new Promise<void>(resolve => { release = resolve; }), started = new Promise<void>(resolve => { copied = resolve; });
+  const store = createHyperJiraStore({ repository: await configuredRepository(jira), afterSync: async () => { calls++; copied(); await pending; throw new Error('board unavailable'); } });
+  await store.getState().load(false);
+  const run = store.getState().sync();
+  await started;
+  expect(calls).toBe(1); expect(store.getState().canSync).toBe(false);
+  await store.getState().sync(); expect(calls).toBe(1);
+  release(); await run; expect(store.getState().error).toBeNull(); expect(store.getState().snapshot.hasSynced).toBe(true); expect(store.getState().canSync).toBe(true);
+});
+
+it('persists the board opt-out through a new store without changing Jira connection config', async () => {
+  const storage = new HyperFakeKeyValue(), localStore = new JiraLocalStore('preference-user', storage), jira = pageJira();
+  const repo = await configuredRepository(jira);
+  const first = createHyperJiraStore({ repository: repo, localStore }); await first.getState().load(false);
+  await first.getState().setKanbanEnabled(false);
+  let copies = 0;
+  const second = createHyperJiraStore({ repository: repo, localStore, afterSync: async () => { copies++; } });
+  await second.getState().load(); expect(second.getState().kanbanEnabled).toBe(false); expect(copies).toBe(0);
+  expect(second.getState().config?.toJson()).toEqual(testConfig.toJson());
+});
+
+it('queues a full refresh when connection settings change during a background board copy', async () => {
+  const jira = pageJira(); let release!: () => void, copied!: () => void, copies = 0;
+  const pending = new Promise<void>(resolve => { release = resolve; }), started = new Promise<void>(resolve => { copied = resolve; });
+  const store = createHyperJiraStore({ repository: await configuredRepository(jira), afterSync: async () => { if (++copies === 1) { copied(); await pending; } } });
+  await store.getState().load(false);
+  const sync = store.getState().sync(); await started;
+  const changed = testConfig.copyWith({ customJql: 'project = "DEMO" AND status = Open' });
+  await store.getState().saveSettings(changed); expect(store.getState().isSyncing).toBe(true);
+  release(); await sync;
+  expect(copies).toBe(2); expect(store.getState().snapshot.jql).toBe(changed.effectiveJql); expect(store.getState().isSyncing).toBe(false);
+});

@@ -1,0 +1,53 @@
+import net from 'node:net';
+import { EventEmitter } from 'node:events';
+import { PassThrough } from 'node:stream';
+import { afterEach, expect, it, vi } from 'vitest';
+const mocks = vi.hoisted(() => ({ spawn: vi.fn() }));
+vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
+import { HyperNodTunnel, hyperNodSshArgs } from './HyperNodTunnel';
+const tunnels: HyperNodTunnel[] = [];
+afterEach(() => { for (const tunnel of tunnels.splice(0)) tunnel.close(); vi.clearAllMocks(); });
+function relay() {
+  const child = Object.assign(new EventEmitter(), { stdin: new PassThrough(), stdout: new PassThrough(), kill: vi.fn() });
+  mocks.spawn.mockReturnValueOnce(child);
+  return child;
+}
+const tunnel = () => { const value = new HyperNodTunnel(() => ({ command: 'ssh', host: 'agent@vm' })); tunnels.push(value); return value; };
+it('relays each private connection through its own ssh -W child to the fixed loopback port', async () => {
+  const child = relay();
+  const nod = tunnel();
+  const endpoint = await nod.socketPath();
+  expect(await nod.socketPath()).toBe(endpoint);
+  const socket = net.createConnection({ path: endpoint });
+  await new Promise(resolve => socket.once('connect', resolve));
+  await vi.waitFor(() => expect(mocks.spawn).toHaveBeenCalledOnce());
+  expect(mocks.spawn).toHaveBeenCalledWith('ssh', hyperNodSshArgs('agent@vm'), expect.objectContaining({ stdio: ['pipe', 'pipe', 'ignore'] }));
+  expect(hyperNodSshArgs('agent@vm')).toEqual(['-T', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=3', '-W', '127.0.0.1:4311', 'agent@vm']);
+  const upstream: Buffer[] = []; child.stdin.on('data', (chunk: Buffer) => upstream.push(chunk));
+  socket.write('GET / HTTP/1.1\r\n\r\n');
+  await vi.waitFor(() => expect(Buffer.concat(upstream).toString()).toBe('GET / HTTP/1.1\r\n\r\n'));
+  const downstream: Buffer[] = []; socket.on('data', (chunk: Buffer) => downstream.push(chunk));
+  child.stdout.write('HTTP/1.1 200 OK\r\n');
+  await vi.waitFor(() => expect(Buffer.concat(downstream).toString()).toBe('HTTP/1.1 200 OK\r\n'));
+  socket.destroy();
+  await vi.waitFor(() => expect(child.kill).toHaveBeenCalledWith('SIGTERM'));
+});
+it('closes the endpoint, kills relays and drops the client socket when SSH fails', async () => {
+  const child = relay();
+  const nod = tunnel();
+  const endpoint = await nod.socketPath();
+  const socket = net.createConnection({ path: endpoint });
+  socket.on('error', () => {});
+  const closed = new Promise(resolve => socket.once('close', resolve));
+  await vi.waitFor(() => expect(mocks.spawn).toHaveBeenCalledOnce());
+  child.emit('exit', 255);
+  await closed;
+  const second = relay();
+  const other = net.createConnection({ path: endpoint });
+  other.on('error', () => {});
+  await vi.waitFor(() => expect(mocks.spawn).toHaveBeenCalledTimes(2));
+  nod.close();
+  expect(second.kill).toHaveBeenCalledWith('SIGTERM');
+  await expect(new Promise((resolve, reject) => net.createConnection({ path: endpoint }).once('connect', resolve).once('error', reject))).rejects.toThrow();
+  expect(await nod.socketPath()).not.toBe(endpoint);
+});

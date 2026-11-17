@@ -11,7 +11,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Badge } from '@/components/reui/badge';
 import { floatingSurfaceClass } from '@/components/app/menu-row';
 import { cn } from '@/lib/utils';
-import { createHyperJiraStore, JiraStatusCategory, jiraStatusCategoryLabels, type JiraDashboardStats, type JiraIssue } from '..';
+import { JiraStatusCategory, jiraStatusCategoryLabels, type JiraDashboardStats, type JiraIssue } from '..';
+import { getHyperJiraStore } from '../logic/HyperJiraRegistry';
 import { HyperJiraSettingsDialog } from './dialogs/JiraSettingsDialog';
 import { HyperJiraIssueDialog } from './dialogs/JiraIssueDialog';
 import { HyperJiraTransitionDialog } from './dialogs/JiraTransitionDialog';
@@ -20,7 +21,7 @@ import { formatHyperJiraRelative, HyperJiraAvatar, HyperJiraError, HyperJiraIcon
 
 export function HyperJiraDashboardPage({ userProfile }: { userProfile?: UserProfilePB | null }) {
   const userId = userProfile?.id.toString();
-  const store = useMemo(() => userId ? createHyperJiraStore({ userId }) : null, [userId]);
+  const store = useMemo(() => userId ? getHyperJiraStore(userId) : null, [userId]);
   return store ? <HyperJiraDashboardView key={userId} store={store} /> : null;
 }
 
