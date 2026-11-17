@@ -1,4 +1,5 @@
-{{- if and .Values.keycloak.enabled (not (regexMatch "^https://[^/]+/realms/[^/?#]+/?$" .Values.keycloak.issuerUrl)) -}}
+{{- if and .Values.smtp.enabled (not .Values.smtp.host) -}}{{- fail "smtp.host is required when SMTP is enabled" -}}{{- end -}}
+{{- if and .Values.keycloak.enabled (not (regexMatch "^https://[^/?#]+(/[^/?#]+)*/realms/[^/?#]+/?$" .Values.keycloak.issuerUrl)) -}}
 {{- fail "keycloak.issuerUrl must be the internal HTTPS realm URL, e.g. https://sso.company.internal/realms/company" -}}
 {{- end -}}
 {{- if and .Values.keycloak.enabled (not .Values.keycloak.clientId) -}}{{- fail "keycloak.clientId is required" -}}{{- end -}}

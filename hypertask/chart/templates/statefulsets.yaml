@@ -84,8 +84,8 @@ spec:
             - -s3
             - -s3.port=9000
             - -s3.config=/etc/seaweedfs/s3.json
-            - -volume.max=32
-            - -volume.fileSizeLimitMB=1024
+            - {{ printf "-volume.max=%v" $root.Values.storage.maxVolumes | quote }}
+            - {{ printf "-volume.fileSizeLimitMB=%v" $root.Values.storage.fileSizeLimitMB | quote }}
           env:
             - name: POD_IP
               valueFrom: {fieldRef: {fieldPath: status.podIP}}

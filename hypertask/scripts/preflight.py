@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -113,7 +114,15 @@ def main():
                     kind, data = secret(tls['secretName'])
                     check(kind == 'kubernetes.io/tls' and data.get('tls.crt') and data.get('tls.key'), 'TLS Secret needs tls.crt and tls.key')
                     certificate = data['tls.crt'].decode()
-                    run(['openssl', 'x509', '-noout', '-checkhost', host, '-checkend', '0'], certificate)
+                    # Trust this leaf solely for local hostname/expiry validation.
+                    # Clients must independently trust the actual company issuing CA.
+                    with tempfile.TemporaryDirectory(prefix='hyper-public-cert-') as folder:
+                        cert_path = Path(folder) / 'certificate.pem'
+                        cert_path.write_text(certificate)
+                        try:
+                            run(['openssl', 'verify', '-trusted', str(cert_path), '-partial_chain', '-verify_hostname', host, str(cert_path)])
+                        except ValueError:
+                            raise ValueError('TLS certificate is invalid, expired, or does not cover ' + host) from None
                 else:
                     print('Controller default certificate selected: verify the served certificate with curl after installation.')
     print('PASS: rendered API schemas, registry image digests, pull/application secrets, storage, ingress and named TLS certificate.')

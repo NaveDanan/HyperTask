@@ -13,10 +13,7 @@ spec:
     helm:
       releaseName: hypertask
       valueFiles:
-        - ../values.site.yaml
-        - ../values.images.json
-        # - ../values.keycloak.site.yaml
-        # - ../values.controller-default-tls.example.yaml
+        - ../prod-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: hypertask

@@ -49,6 +49,8 @@ redis:
     requests: {cpu: 100m, memory: 128Mi}
     limits: {cpu: "1", memory: 512Mi}
 storage:
+  maxVolumes: 32
+  fileSizeLimitMB: 1024
   bucket: appflowy
   region: us-east-1
   storage: 50Gi
@@ -105,4 +107,5 @@ smtp:
   host: ""
   port: 587
   from: hypertask@localhost.local
-  tlsKind: starttls
+  # Upstream cloud accepts required (STARTTLS), wrapper, opportunistic, none.
+  tlsKind: required

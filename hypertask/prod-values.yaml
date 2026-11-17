@@ -1,0 +1,164 @@
+# Complete production deployment values; no additional -f files are required.
+# Published backend image release: 0.9.51-20261116T130531Z (linux/amd64).
+# EDIT for your cluster: global.host, global.storageClassName,
+# ingress.className / controller namespace, ingress.tls.secretName,
+# keycloak.issuerUrl and keycloak.clientId. Examples below are not discovered values.
+# Existing Secrets in namespace hypertask: hypertask-secrets and nave-pull-secret.
+# hypertask-secrets needs POSTGRES_PASSWORD, JWT_SECRET, S3_ACCESS_KEY,
+# S3_SECRET_KEY, S3_CONFIG_JSON, and KEYCLOAK_CLIENT_SECRET.
+# Generate credentials once with: python3 scripts/generate-secrets.py --keycloak
+# Never put credentials into this values file or regenerate them during upgrades.
+# Apply with: helm upgrade --install hypertask ./chart -n hypertask -f prod-values.yaml --wait --timeout 15m
+# Backend Keycloak support does not implement the pending Electron browser login.
+fullnameOverride: ""
+global:
+  # EDIT: DNS name covered by your existing wildcard certificate.
+  host: hypertask.apps.company.internal
+  # Existing application credentials; keep this Secret across upgrades.
+  existingSecret: hypertask-secrets
+  # EDIT: installed StorageClass; use local-path only if node-local storage is intended.
+  storageClassName: longhorn
+  # Optional PEM CA bundle for internal Keycloak HTTPS (public certificates only).
+  trustedCa: {existingConfigMap: "", key: ca-bundle.crt}
+  imageRegistryPrefix: artifactory.rafael.co.il/mems-docker-local-ww/danan/
+  imagePullSecrets:
+    - name: nave-pull-secret
+
+images:
+  postgres:
+    repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-postgres
+    tag: 0.9.51-20261116T130531Z
+    digest: sha256:c72df104202409108a1660ecccd2b7ffac6b17e44c31b2636d10e983f410f8eb
+  redis:
+    repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-redis
+    tag: 0.9.51-20261116T130531Z
+    digest: sha256:519f0189dfdee3bc0bad61fb265fe73d864b5c64020e6579ad48a45c49965635
+  storage:
+    repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-storage
+    tag: 0.9.51-20261116T130531Z
+    digest: sha256:d67f9b5586f73b6623c143489849c958ae0ec36a698bf4243a19df07cfa28c22
+  gotrue:
+    repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-gotrue
+    tag: 0.9.51-20261116T130531Z
+    digest: sha256:da24d8c256dbda866c4feeb1eaaf602555aec72fa717fec4f6c3172b5d596a04
+  cloud:
+    repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-cloud
+    tag: 0.9.51-20261116T130531Z
+    digest: sha256:0a0386ce25a285cb60802a4b25a2630ebd588fec8affb0bf9132774df1ab9499
+  admin:
+    repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-admin
+    tag: 0.9.51-20261116T130531Z
+    digest: sha256:52f4ad51e3c19363d8a519d4776d1b280eefddc3d69ccdd339dfddb891e0bfe8
+  proxy:
+    repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-proxy
+    tag: 0.9.51-20261116T130531Z
+    digest: sha256:b17b00f7ef0038aeb11362157f49006a130628ee711cefcced871405d046f114
+  # Optional web client is disabled and was not published. Mirror an image before enabling it.
+  web:
+    repository: artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-web
+    tag: REPLACE_WITH_MIRRORED_WEB_IMAGE
+    digest: ""
+
+ingress:
+  enabled: true
+  # For Traefik set className: traefik, use its annotations, and change
+  # networkPolicy.ingressControllerNamespaces to [kube-system].
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "2g"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "86400"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "86400"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  tls:
+    # EDIT: existing kubernetes.io/tls Secret in the hypertask namespace.
+    secretName: wildcard-apps-tls
+    # True only when the ingress controller already serves the correct wildcard
+    # certificate as its default. Then secretName must be empty.
+    useControllerDefaultCertificate: false
+
+networkPolicy:
+  enabled: true
+  ingressControllerNamespaces: [ingress-nginx]
+
+postgres:
+  database: appflowy
+  username: appflowy
+  storage: 20Gi
+  existingClaim: ""
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "2", memory: 2Gi}
+redis:
+  storage: 2Gi
+  existingClaim: ""
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+storage:
+  maxVolumes: 32
+  fileSizeLimitMB: 1024
+  bucket: appflowy
+  region: us-east-1
+  storage: 50Gi
+  existingClaim: ""
+  resources:
+    requests: {cpu: 250m, memory: 256Mi}
+    limits: {cpu: "2", memory: 2Gi}
+auth:
+  replicas: 1
+  jwtExpirySeconds: 7200
+  # Company identity only. Accounts are created on first successful Keycloak login.
+  emailEnabled: false
+  emailAutoConfirm: false
+  allowSignup: true
+  siteUrl: hypertask-flutter://login-callback
+  # Retain the upstream desktop protocol as well as HyperTask's current one.
+  additionalRedirects: [hypertask-flutter://**, appflowy-flutter://**]
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+keycloak:
+  enabled: true
+  # EDIT: your internal realm URL; a /auth prefix is also supported.
+  issuerUrl: https://sso.company.internal/realms/company
+  clientId: hypertask-gotrue
+  # Client secret: KEYCLOAK_CLIENT_SECRET in global.existingSecret.
+  # Keycloak client: authentication On, standard flow On, Authorization Off.
+  # Valid redirect URI: https://<global.host>/gotrue/callback
+  # Private CA: set global.trustedCa.existingConfigMap to your PEM CA-bundle ConfigMap.
+cloud:
+  replicas: 1
+  # Preserve the tested upstream self-hosted mode; ingress terminates HTTPS.
+  environment: local
+  resources:
+    requests: {cpu: 500m, memory: 512Mi}
+    limits: {cpu: "2", memory: 2Gi}
+admin:
+  enabled: true
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+proxy:
+  replicas: 1
+  maxBodySize: 2g
+  resources:
+    requests: {cpu: 100m, memory: 64Mi}
+    limits: {cpu: "1", memory: 256Mi}
+web:
+  # Optional web client image built for same-origin /app routing. Electron
+  # requires only the backend and does not run inside Kubernetes.
+  enabled: false
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 64Mi}
+    limits: {cpu: "1", memory: 256Mi}
+smtp:
+  # Optional internal SMTP. Add SMTP_USERNAME / SMTP_PASSWORD to the application Secret.
+  enabled: false
+  host: ""
+  port: 587
+  from: hypertask@localhost.local
+  # Upstream cloud accepts required (STARTTLS), wrapper, opportunistic, none.
+  tlsKind: required

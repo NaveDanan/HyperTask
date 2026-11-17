@@ -206,8 +206,9 @@
         "tlsKind": {
           "enum": [
             "none",
-            "starttls",
-            "wrapper"
+            "required",
+            "wrapper",
+            "opportunistic"
           ]
         }
       }
@@ -264,6 +265,14 @@
         },
         "resources": {
           "type": "object"
+        },
+        "maxVolumes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fileSizeLimitMB": {
+          "type": "integer",
+          "minimum": 1
         }
       }
     },

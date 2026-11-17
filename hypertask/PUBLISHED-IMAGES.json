@@ -1,0 +1,49 @@
+{
+  "tag": "0.9.51-20261116T130531Z",
+  "platform": "linux/amd64",
+  "verifiedAt": "2026-11-16T13:11:09.856602+00:00",
+  "images": {
+    "postgres": {
+      "reference": "artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-postgres:0.9.51-20261116T130531Z",
+      "digest": "sha256:c72df104202409108a1660ecccd2b7ffac6b17e44c31b2636d10e983f410f8eb",
+      "source": "pgvector/pgvector:0.8.0-pg16@sha256:a132765ec351c65111b5b675928a3a0515a466a40f97277329db8b8209ad8bc9",
+      "artifactoryPath": "mems-docker-local-ww/danan/hypertask-postgres/0.9.51-20261116T130531Z/manifest.json"
+    },
+    "redis": {
+      "reference": "artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-redis:0.9.51-20261116T130531Z",
+      "digest": "sha256:519f0189dfdee3bc0bad61fb265fe73d864b5c64020e6579ad48a45c49965635",
+      "source": "redis:7.4.2-alpine@sha256:02419de7eddf55aa5bcf49efb74e88fa8d931b4d77c07eff8a6b2144472b6952",
+      "artifactoryPath": "mems-docker-local-ww/danan/hypertask-redis/0.9.51-20261116T130531Z/manifest.json"
+    },
+    "storage": {
+      "reference": "artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-storage:0.9.51-20261116T130531Z",
+      "digest": "sha256:d67f9b5586f73b6623c143489849c958ae0ec36a698bf4243a19df07cfa28c22",
+      "source": "chrislusf/seaweedfs:3.85@sha256:49312939c00c01e5ee6afbd7d728b18027821d3764c35a797a72acd4fdf3296a",
+      "artifactoryPath": "mems-docker-local-ww/danan/hypertask-storage/0.9.51-20261116T130531Z/manifest.json"
+    },
+    "gotrue": {
+      "reference": "artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-gotrue:0.9.51-20261116T130531Z",
+      "digest": "sha256:da24d8c256dbda866c4feeb1eaaf602555aec72fa717fec4f6c3172b5d596a04",
+      "source": "appflowyinc/gotrue:0.8.0@sha256:c4a12b7adc41b0872604b9aec5af0649d576dd4d914468896048c88192e1ec0c",
+      "artifactoryPath": "mems-docker-local-ww/danan/hypertask-gotrue/0.9.51-20261116T130531Z/manifest.json"
+    },
+    "cloud": {
+      "reference": "artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-cloud:0.9.51-20261116T130531Z",
+      "digest": "sha256:0a0386ce25a285cb60802a4b25a2630ebd588fec8affb0bf9132774df1ab9499",
+      "source": "appflowyinc/appflowy_cloud:0.9.51@sha256:8509c1faf1777e339f91bf2f4303e13ec466d23575b1ccd1dbd9fc0055a2d430",
+      "artifactoryPath": "mems-docker-local-ww/danan/hypertask-cloud/0.9.51-20261116T130531Z/manifest.json"
+    },
+    "admin": {
+      "reference": "artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-admin:0.9.51-20261116T130531Z",
+      "digest": "sha256:52f4ad51e3c19363d8a519d4776d1b280eefddc3d69ccdd339dfddb891e0bfe8",
+      "source": "appflowyinc/admin_frontend:0.9.51@sha256:6ab50d27544f66e381f835a403744f9d4ae913e5c2e4925b72de97c75929d6f6",
+      "artifactoryPath": "mems-docker-local-ww/danan/hypertask-admin/0.9.51-20261116T130531Z/manifest.json"
+    },
+    "proxy": {
+      "reference": "artifactory.rafael.co.il/mems-docker-local-ww/danan/hypertask-proxy:0.9.51-20261116T130531Z",
+      "digest": "sha256:b17b00f7ef0038aeb11362157f49006a130628ee711cefcced871405d046f114",
+      "source": "nginx:1.26.3-alpine@sha256:1eadbb07820339e8bbfed18c771691970baee292ec4ab2558f1453d26153e22d",
+      "artifactoryPath": "mems-docker-local-ww/danan/hypertask-proxy/0.9.51-20261116T130531Z/manifest.json"
+    }
+  }
+}

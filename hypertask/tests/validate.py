@@ -21,6 +21,8 @@ def main():
         'traefik-tls': ['-f', str(ROOT / 'values.traefik.example.yaml')],
         'controller-default-tls': ['-f', str(ROOT / 'values.controller-default-tls.example.yaml')],
         'keycloak': ['-f', str(ROOT / 'values.keycloak.example.yaml')],
+        'keycloak-context-path': ['-f', str(ROOT / 'values.keycloak.example.yaml'), '--set', 'keycloak.issuerUrl=https://sso.company.internal/auth/realms/company'],
+        'smtp': ['--set', 'smtp.enabled=true,smtp.host=smtp.company.internal,smtp.tlsKind=required'],
         'private-ca-no-admin': ['-f', str(ROOT / 'values.keycloak.example.yaml'), '--set', 'global.trustedCa.existingConfigMap=company-ca,admin.enabled=false'],
         'web': ['--set', 'web.enabled=true'],
         'existing-claims': ['--set', 'postgres.existingClaim=pg-data,redis.existingClaim=redis-data,storage.existingClaim=file-data'],
@@ -81,6 +83,7 @@ def main():
         'missing TLS': base + ['--set', 'ingress.tls.secretName='],
         'conflicting TLS': base + ['--set', 'ingress.tls.useControllerDefaultCertificate=true'],
         'invalid Keycloak issuer': base + ['--set', 'keycloak.enabled=true,keycloak.issuerUrl=http://example.internal/realm'],
+        'missing SMTP host': base + ['--set', 'smtp.enabled=true'],
         'unsafe database identifier': base + ['--set-string', 'postgres.username=bad;name'],
     }
     for name, command in failures.items():
