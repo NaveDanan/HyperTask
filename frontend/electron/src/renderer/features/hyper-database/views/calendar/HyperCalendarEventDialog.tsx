@@ -75,9 +75,11 @@ export function HyperCalendarEventDialog({ initial, controller, dateField, prima
     finally { setBusy(false); }
   };
   return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
-    <DialogContent className="max-h-[calc(100%-2rem)] overflow-y-auto rounded-xl shadow-xl sm:max-w-md" showCloseButton={!busy}>
-      <DialogHeader><DialogTitle>{draft.rowId ? 'Edit event' : 'New event'}</DialogTitle><DialogDescription className="sr-only">Set the title, dates and colour for this database row.</DialogDescription></DialogHeader>
-      <form className="flex flex-col gap-4" onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.target instanceof HTMLInputElement) { event.preventDefault(); void save(); } }} onSubmit={event => { event.preventDefault(); void save(); }}>
+    <DialogContent className="flex max-h-[calc(100dvh_-_2rem)] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-xl sm:max-w-md" showCloseButton={!busy}>
+      <DialogHeader className="shrink-0 border-b px-4 py-3 pr-12"><DialogTitle>{draft.rowId ? 'Edit event' : 'New event'}</DialogTitle>
+<DialogDescription className="sr-only">Set the title, dates and colour for this database row.</DialogDescription></DialogHeader>
+      <form className="flex min-h-0 flex-1 flex-col" onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.target instanceof HTMLInputElement) { event.preventDefault(); void save(); } }} onSubmit={event => { event.preventDefault(); void save(); }}>
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
         {!draft.rowId && saveTo?.(draft)}
         <fieldset disabled={busy || draft.readOnly} className="flex min-w-0 flex-col gap-4">
           <Field><FieldLabel htmlFor={`${id}-title`}>Title</FieldLabel><HyperMentionInput id={`${id}-title`} autoFocus value={draft.title} onChange={event => patch({ title: event.target.value })} placeholder="Untitled" disabled={!primaryField || busy || draft.readOnly} /></Field>
@@ -93,7 +95,8 @@ export function HyperCalendarEventDialog({ initial, controller, dateField, prima
         </fieldset>
         {dates.error && <FieldError>{dates.error}</FieldError>}
         {draft.readOnly && <p className="text-xs text-muted-foreground">This row has a property error and cannot be edited.</p>}
-        <DialogFooter>
+        </div>
+        <DialogFooter className="mx-0 mb-0 shrink-0 rounded-none px-4 py-3">
           {draft.rowId && <Button type="button" variant="ghost" className="mr-auto text-destructive hover:text-destructive" disabled={busy || draft.readOnly} onClick={() => setDeleteOpen(true)}><Trash2 className="size-4" />Delete</Button>}
           <Button type="button" variant="outline" disabled={busy} onClick={onClose}>Cancel</Button><Button type="submit" disabled={busy || draft.readOnly || Boolean(dates.error)}>{busy ? 'Saving…' : 'Save'}</Button>
         </DialogFooter>

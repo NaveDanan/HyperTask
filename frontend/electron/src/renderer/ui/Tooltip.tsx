@@ -97,7 +97,7 @@ function TooltipBubble({
   return createPortal(
     <div
       ref={ref}
-      className="pointer-events-none fixed z-[100] max-w-xs whitespace-pre-line rounded-md bg-foreground px-3 py-1.5 text-xs text-background animate-in fade-in-0 zoom-in-95 duration-100"
+      className="pointer-events-none fixed z-[100] max-w-xs whitespace-pre-line rounded-md bg-foreground px-3 py-1.5 text-xs text-background animate-in fade-in-0 animation-duration-100"
       style={{ left: pos?.left ?? -9999, top: pos?.top ?? -9999 }}
     >
       {children}

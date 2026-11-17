@@ -52,6 +52,7 @@ function Hyper-Map($item) {
     if ($match.Success) { $join = $match.Value }
     if ($body.Length -gt 8192) { $body = $body.Substring(0,8192) }
   }
+  $categories = @(); if (!$private) { $categories = @(Hyper-Categories $item) }
   return @{
     id = $key; subject = $(if ($private) { 'Private' } elseif ($item.Subject) { [string]$item.Subject } else { 'Untitled' })
     start = $(if ($allDay) { $item.Start.ToString('yyyy-MM-dd') } else { Hyper-Utc $item.Start })
@@ -60,7 +61,7 @@ function Hyper-Map($item) {
     organizer = $(if ($private) { '' } else { [string]$item.Organizer }); isOrganizer = ([int]$item.MeetingStatus -in @(0,1))
     responseStatus = [int]$item.ResponseStatus; attendees = @($people); attendeeCount = $count; busyStatus = [int]$item.BusyStatus
     isRecurring = [bool]$item.IsRecurring; recurrenceState = $recurrence; isCancelled = ([int]$item.MeetingStatus -in @(5,7)); isPrivate = $private
-    joinUrl = $join; lastModified = (Hyper-Utc $item.LastModificationTime)
+    joinUrl = $join; categories = @($categories); lastModified = (Hyper-Utc $item.LastModificationTime)
   }
 }
 function Hyper-Resolve([string]$key) {
@@ -76,6 +77,22 @@ function Hyper-Own($item) {
 function Hyper-CheckSend($item, $a) {
   if ($item.Recipients.Count -gt 0 -and !$a.send) { throw 'Confirm sending to attendees first.' }
 }
+function Hyper-Categories($item) { return @(([string]$item.Categories).Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
+# Outlook has one master category list; HyperTask keeps its colour category's Outlook colour in step with the colour the user chose.
+function Hyper-Category([string]$name, [int]$color) {
+  $categories = $ns.Categories
+  for ($i = 1; $i -le $categories.Count; $i++) {
+    $category = $categories.Item($i)
+    if ([string]$category.Name -eq $name) { if ([int]$category.Color -ne $color) { $category.Color = $color }; return }
+  }
+  [void]$categories.Add($name, $color)
+}
+# The chosen colour goes first (Outlook colours an event by its first category); other HyperTask colours and the user's own categories are kept.
+function Hyper-Color($item, $color) {
+  $owned = @($color.owned); $names = @(Hyper-Categories $item | Where-Object { $owned -notcontains $_ })
+  if ($color.name) { Hyper-Category ([string]$color.name) ([int]$color.outlook); $names = @([string]$color.name) + $names }
+  $item.Categories = $names -join ', '
+}
 function Hyper-Fields($item, $patch) {
   $names = @($patch.PSObject.Properties.Name)
   $allDay = if ($names -contains 'allDay') { [bool]$patch.allDay } else { [bool]$item.AllDayEvent }
@@ -88,6 +105,7 @@ function Hyper-Fields($item, $patch) {
     if ($item.EntryID -and ([string]$item.Body).Length -gt 8192) { throw 'Open in Outlook to edit this long description.' }
     $item.Body = $patch.body
   }
+  if ($names -contains 'color') { Hyper-Color $item $patch.color }
   $item.AllDayEvent = $allDay; $item.Start = $start; $item.End = $end
 }
 
@@ -179,10 +197,15 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
         $value = Hyper-Map $item
       }
       'update' {
-        $item = Hyper-Resolve $a.id; Hyper-Own $item; Hyper-CheckSend $item $a
+        $item = Hyper-Resolve $a.id
+        # A colour-only change is the user's own category: invitations can be coloured too, and it saves without re-sending the meeting.
+        $content = @($a.patch.PSObject.Properties.Name | Where-Object { $_ -ne 'color' }).Count -gt 0
+        if ($content) { Hyper-Own $item; Hyper-CheckSend $item $a }
+        elseif ([int]$item.RecurrenceState -eq 1) { throw 'Open the series in Outlook. Changes here apply to one occurrence only.' }
         if ((Hyper-Utc $item.LastModificationTime) -ne $a.expectedLastModified) { throw 'hyper_conflict' }
-        Hyper-Fields $item $a.patch; $item.Save()
-        if ($item.Recipients.Count -gt 0) { $item.Send() }
+        if ($content) { Hyper-Fields $item $a.patch } else { Hyper-Color $item $a.patch.color }
+        $item.Save()
+        if ($content -and $item.Recipients.Count -gt 0) { $item.Send() }
         $value = Hyper-Map $item
       }
       'delete' {

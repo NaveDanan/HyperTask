@@ -8,8 +8,19 @@ import { powerShellExecutable, stripClixml } from './powershell';
 import { SettingsError } from './settings-error';
 import { HyperOutlookScript } from './HyperOutlookScript';
 import { HyperOutlookArgs, HyperOutlookReply, HyperOutlookValues, type HyperOutlookOp } from './HyperOutlookSchema';
+import { hyperOutlookColorWire, type HyperOutlookColorId } from '@shared/HyperOutlookColor';
 export const HyperOutlookUnavailable = 'Classic Outlook for Windows is required. Run HyperTask and Outlook as the same Windows user without elevation.';
 interface HyperOutlookPending { op: HyperOutlookOp; resolve: (value: any) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }
+// Colour ids become the Outlook category write here, so the renderer never handles Outlook colour numbers.
+function hyperOutlookWire(op: HyperOutlookOp, args: unknown): unknown {
+  const wire = (fields: object) => {
+    const color = (fields as { color?: HyperOutlookColorId | null }).color;
+    return color === undefined ? fields : { ...fields, color: hyperOutlookColorWire(color) };
+  };
+  if (op === 'create') return wire(args as object);
+  if (op === 'update') return { ...(args as object), patch: wire((args as { patch: object }).patch) };
+  return args;
+}
 export class HyperOutlookBridge {
   private child: ChildProcessWithoutNullStreams | null = null;
   private pending = new Map<string, HyperOutlookPending>();
@@ -79,7 +90,7 @@ export class HyperOutlookBridge {
         this.failPending(new SettingsError('state', 'Outlook timed out. Refresh to check whether the change completed before retrying.')); child.kill();
       }, op === 'list' ? 60000 : 30000);
       this.pending.set(id, { op, resolve, reject, timer });
-      try { child.stdin.write(JSON.stringify({ id, op, args: valid.data ?? {} }) + '\n'); }
+      try { child.stdin.write(JSON.stringify({ id, op, args: hyperOutlookWire(op, valid.data) ?? {} }) + '\n'); }
       catch { if (this.child === child) this.child = null; this.failPending(new SettingsError('state', 'Outlook connection closed. Refresh to reconnect.')); child.kill(); }
     });
   }

@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { format } from 'date-fns';
-import { hyperIsOutlook, hyperOutlookDraft, hyperOutlookFields, hyperOutlookMapEvents } from './HyperOutlookData';
+import { hyperIsOutlook, hyperOutlookColorToken, hyperOutlookDraft, hyperOutlookFields, hyperOutlookMapEvents } from './HyperOutlookData';
 import { HyperOutlookFixture as item } from './test/HyperOutlookFixture';
 it('maps timed instants, Outlook ids and the source while preserving the database id namespace', () => {
   const [event] = hyperOutlookMapEvents([item], 'America/New_York');
@@ -22,4 +22,9 @@ it('round trips inclusive all-day editor dates and validates timed durations', (
   expect(draft.endDate).toBe('2026-11-17'); expect(hyperOutlookFields(draft, '', '', 'Asia/Jerusalem')).toMatchObject({ start: allDay.start, end: allDay.end, allDay: true });
   const timed = hyperOutlookDraft(item, 'UTC'); expect(hyperOutlookFields({ ...timed, endTime: timed.startTime }, '', '', 'UTC')).toBeNull();
   expect(hyperOutlookFields(timed, item.location, item.body, 'UTC')).toMatchObject({ subject: 'Planning', start: '2026-11-16T08:00:00.000Z', end: '2026-11-16T09:00:00.000Z' });
+});
+it('paints each event with its HyperTask colour token, and the Outlook default when it has none', () => {
+  const [plain] = hyperOutlookMapEvents([item], 'UTC'), [blue] = hyperOutlookMapEvents([{ ...item, categories: ['Work', 'HyperTask Blue'] }], 'UTC');
+  expect(plain.color).toBe('var(--hyper-outlook-color, var(--color-sky-500))'); expect(blue.color).toBe('var(--color-blue-500)');
+  expect(hyperOutlookColorToken('gray')).toBe('var(--color-gray-500)'); expect(hyperOutlookColorToken(null)).toBe(plain.color);
 });

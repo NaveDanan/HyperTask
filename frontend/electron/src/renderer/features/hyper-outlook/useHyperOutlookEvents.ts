@@ -44,5 +44,7 @@ export function useHyperOutlookEvents(viewId: string, enabled: boolean, timeZone
     return () => { clearInterval(timer); window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick); };
   }, [enabled, refresh, visible, store]);
   const events = useMemo(() => enabled && shown ? hyperOutlookMapEvents(state.items, timeZone) : [], [enabled, shown, state.items, timeZone]);
-  return { ...state, events, shown, toggle, refresh, onRangeChange };
+  // A write returns the event as Outlook now holds it; swapping it in updates the chip without a list round trip.
+  const replace = useCallback((item: HyperOutlookEvent) => store.setState(current => ({ items: current.items.map(row => row.id === item.id ? item : row) })), [store]);
+  return { ...state, events, shown, toggle, refresh, onRangeChange, replace };
 }

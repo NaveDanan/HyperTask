@@ -76,6 +76,35 @@ export function layoutPopover(
   };
 }
 
+// Entry animation per direction: the popup grows out of its anchor edge. The classes set only the
+// animation duration; a `duration-*` class would also make `left`/`top` transition (transition-property
+// defaults to `all`), so the popup would sweep in from where it was measured.
+const ENTER_FROM: Record<PopoverDirection, string> = {
+  topLeft: 'origin-bottom-right slide-in-from-bottom-1',
+  topRight: 'origin-bottom-left slide-in-from-bottom-1',
+  bottomLeft: 'origin-top-right slide-in-from-top-1',
+  bottomRight: 'origin-top-left slide-in-from-top-1',
+  center: 'origin-center',
+  topWithLeftAligned: 'origin-bottom-left slide-in-from-bottom-1',
+  topWithCenterAligned: 'origin-bottom slide-in-from-bottom-1',
+  topWithRightAligned: 'origin-bottom-right slide-in-from-bottom-1',
+  bottomWithLeftAligned: 'origin-top-left slide-in-from-top-1',
+  bottomWithCenterAligned: 'origin-top slide-in-from-top-1',
+  bottomWithRightAligned: 'origin-top-right slide-in-from-top-1',
+  rightWithTopAligned: 'origin-top-left slide-in-from-left-1',
+  rightWithCenterAligned: 'origin-left slide-in-from-left-1',
+  rightWithBottomAligned: 'origin-bottom-left slide-in-from-left-1',
+  leftWithTopAligned: 'origin-top-right slide-in-from-right-1',
+  leftWithCenterAligned: 'origin-right slide-in-from-right-1',
+  leftWithBottomAligned: 'origin-bottom-right slide-in-from-right-1',
+};
+
+/** Anchored popups slide and scale out of their anchor; context menus at the cursor only fade. */
+export function popoverEnterClass(direction: PopoverDirection, atCursor: boolean): string {
+  if (atCursor) return 'animate-in fade-in-0 animation-duration-100';
+  return cn('animate-in fade-in-0 zoom-in-95 ease-out animation-duration-150', ENTER_FROM[direction]);
+}
+
 // The global popover stack (root overlay): an outside click pops entries until a barrier.
 interface Entry {
   id: number;
@@ -363,7 +392,7 @@ function PopoverOverlay({
       )}
       <div
         ref={ref}
-        className={cn(floatingSurfaceClass, 'fixed z-50 animate-in fade-in-0 zoom-in-95 duration-100', containerClassName)}
+        className={cn(floatingSurfaceClass, 'fixed z-50', popoverEnterClass(direction, cursor !== null), containerClassName)}
         style={{
           left: pos?.x ?? 0,
           top: pos?.y ?? 0,

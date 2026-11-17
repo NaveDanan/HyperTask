@@ -138,7 +138,7 @@ function HyperCalendarViewContent(props: HyperDatabaseViewProps) {
       <HyperCalendarDragBridge onEventUpdate={onEventUpdate} /><EventCalendarContent />
     </EventCalendar>
     {draft && calendar.dateField && (!general || draft.rowId || saveTo === 'calendar') && !outlookItem && <HyperCalendarEventDialog saveTo={general && !draft.rowId ? draft => destination('calendar', draft) : undefined} initial={draft} controller={controller} dateField={calendar.dateField} primaryField={calendar.primaryField} colorField={calendar.colorField} timeZone={timeZone} onClose={close} onSaved={calendar.refetch} />}
-    {general && draft && (outlookItem || (!draft.rowId && saveTo === 'outlook')) && <HyperOutlookEventDialog initial={draft} item={outlookItem ?? undefined} timeZone={timeZone} onClose={close} onSaved={outlook.refresh} confirmSend={send.confirm} saveTo={draft => destination('outlook', draft)} />}
+    {general && draft && (outlookItem || (!draft.rowId && saveTo === 'outlook')) && <HyperOutlookEventDialog initial={draft} item={outlookItem ?? undefined} timeZone={timeZone} onClose={close} onSaved={outlook.refresh} onItemChange={outlook.replace} confirmSend={send.confirm} saveTo={draft => destination('outlook', draft)} />}
     {send.dialog}
   </div>;
 }

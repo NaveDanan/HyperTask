@@ -67,6 +67,35 @@ it('keeps a truncated long description read-only so an edit cannot discard unsee
   expect(visit(node).find(element => element.type === Textarea).props.readOnly).toBe(true);
 });
 
+const swatch = (node: any, label: string) => visit(node).find(element => element.props?.['aria-label'] === label);
+const settleAll = async () => { for (let i = 0; i < 15; i++) await Promise.resolve(); };
+it('applies a colour to an existing event at once, without re-sending the meeting or asking to confirm', async () => {
+  const own = { ...item, attendeeCount: 2 }, saved = { ...own, categories: ['HyperTask Blue'], lastModified: '2026-11-16T07:30:00Z' }, confirm = vi.fn(async () => true), onItemChange = vi.fn();
+  harness.client.update.mockResolvedValueOnce(saved);
+  const node = tree({ item: own, confirmSend: confirm, onItemChange }); swatch(node, 'Blue').props.onClick(); await settleAll();
+  expect(harness.client.update).toHaveBeenCalledWith({ id: item.id, expectedLastModified: item.lastModified, patch: { color: 'blue' }, send: false });
+  expect(confirm).not.toHaveBeenCalled(); expect(onItemChange).toHaveBeenNthCalledWith(1, expect.objectContaining({ categories: ['HyperTask Blue'] })); expect(onItemChange).toHaveBeenLastCalledWith(saved);
+});
+it('saves later edits with the lastModified returned by the colour write, so the save is not refused as a conflict', async () => {
+  const saved = { ...item, categories: ['HyperTask Blue'], lastModified: '2026-11-16T07:30:00Z' };
+  harness.client.update.mockResolvedValueOnce(saved);
+  let node = tree({ item }); swatch(node, 'Blue').props.onClick(); await settleAll();
+  node = tree({ item }); visit(node).find(element => element.props?.placeholder === 'Untitled').props.onChange({ target: { value: 'Changed' } });
+  node = tree({ item }); save(node); await settleAll();
+  expect(harness.client.update).toHaveBeenLastCalledWith({ id: item.id, expectedLastModified: saved.lastModified, patch: { subject: 'Changed' }, send: false });
+});
+it('puts a colour picked on a new event into the create request', async () => {
+  let node = tree({ item: undefined }); swatch(node, 'Green').props.onClick();
+  node = tree({ item: undefined }); save(node); await settleAll();
+  expect(harness.client.create).toHaveBeenCalledWith(expect.objectContaining({ color: 'green', attendees: [], send: false }));
+});
+it('bounds the dialog by the viewport with a scrolling body and pinned header and footer', () => {
+  const node = tree();
+  const content = visit(node).find(element => String(element.props?.className).includes('max-h-[calc(100dvh_-_2rem)]'));
+  expect(content.props.className).toContain('overflow-hidden');
+  expect(visit(node).some(element => element.type === 'div' && String(element.props?.className).includes('overflow-y-auto'))).toBe(true);
+  expect(visit(node).find(element => element.props?.['data-slot'] === 'dialog-footer' || String(element.props?.className).includes('shrink-0 rounded-none'))).toBeDefined();
+});
 it('words the send confirmation for each Outlook action', async () => {
   const { hyperOutlookSendCopy } = await import('./HyperOutlookSendConfirm');
   expect(hyperOutlookSendCopy('invite', 1).title).toBe('Send invitation to 1 attendee?');
@@ -74,3 +103,10 @@ it('words the send confirmation for each Outlook action', async () => {
   expect(hyperOutlookSendCopy('cancel', 2)).toMatchObject({ title: 'Cancel meeting for 2 attendees?', action: 'Send cancellation' });
   expect(hyperOutlookSendCopy('response', 1).title).toBe('Send response to the organizer?');
 });
+it('colours an invitation, since the colour is the user\'s own category', async () => {
+  const invite = { ...item, isOrganizer: false, responseStatus: 3 }, saved = { ...invite, categories: ['HyperTask Red'] };
+  harness.client.update.mockResolvedValueOnce(saved);
+  swatch(tree({ item: invite }), 'Red').props.onClick(); await settleAll();
+  expect(harness.client.update).toHaveBeenCalledWith({ id: item.id, expectedLastModified: item.lastModified, patch: { color: 'red' }, send: false });
+});
+it('does not colour a series master', () => { expect(swatch(tree({ item: { ...item, recurrenceState: 1 } }), 'Red').props.disabled).toBe(true); });

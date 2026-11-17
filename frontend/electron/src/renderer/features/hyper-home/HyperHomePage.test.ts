@@ -1,4 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+// HyperHomePage imports DOM-only UI and feature modules; the split math needs none of them, so stub the imports for this Node test.
+vi.mock('@/components/ui/button', () => ({}));
+vi.mock('@/components/ui/empty', () => ({}));
+vi.mock('@/components/ui/skeleton', () => ({}));
+vi.mock('@/features/sidebar/stores/space-store', () => ({}));
+vi.mock('@/features/tabs/tabs-store', () => ({}));
+vi.mock('@/features/hyper-outlook/HyperGeneralCalendar', () => ({}));
+vi.mock('@/features/hyper-database/HyperDatabasePage', () => ({}));
+vi.mock('@/features/hyper-database/useHyperDatabase', () => ({}));
+vi.mock('./HyperGeneralKanban', () => ({}));
 import { clampHyperHomeSplit, hyperHomeSplitDefault, hyperHomeTopBasis, readHyperHomeSplit } from './HyperHomePage';
 
 // Each section keeps 120px; the handle centre sits at the split, so the edge is (120 + 4) / height.

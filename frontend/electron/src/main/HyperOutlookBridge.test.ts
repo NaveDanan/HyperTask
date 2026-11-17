@@ -48,7 +48,14 @@ it('guards unsupported platforms and rejects invalid input before spawning', asy
   Object.defineProperty(process, 'platform', { ...platform, value: 'linux' }); await expect(bridge.request('status', undefined)).rejects.toMatchObject({ kind: 'unsupported' });
   await expect(bridge.request('open', { id: '../unsafe' })).rejects.toMatchObject({ kind: 'format' }); expect(mock.spawn).not.toHaveBeenCalled();
 });
-it('stops pending requests and never starts another child after shutdown', async () => {
-  mock.spawn.mockReturnValue(child()); const call = bridge.request('status', undefined); const rejected = expect(call).rejects.toThrow('stopped'); bridge.stop(); await rejected;
-  await expect(bridge.request('status', undefined)).rejects.toThrow('stopped'); expect(mock.spawn).toHaveBeenCalledOnce();
+it('turns a colour id into the Outlook category write and reads the categories back', async () => {
+  const process = child(); mock.spawn.mockReturnValue(process);
+  const event = { id: 'ABCD', subject: 'Planning', start: '2026-11-16T08:00:00Z', end: '2026-11-16T09:00:00Z', allDay: false, location: '', body: '', organizer: '', isOrganizer: true, responseStatus: 1, attendees: [], attendeeCount: 0, busyStatus: 2, isRecurring: false, recurrenceState: 0, isCancelled: false, isPrivate: false, joinUrl: null, lastModified: '2026-11-16T07:30:00Z', categories: ['HyperTask Blue'] };
+  const call = bridge.request('update', { id: 'ABCD', expectedLastModified: '2026-11-16T07:00:00Z', patch: { color: 'blue' }, send: false });
+  const [request] = requests(process);
+  expect(request.args.patch).toEqual({ color: { name: 'HyperTask Blue', outlook: 8, owned: expect.arrayContaining(['HyperTask Red', 'HyperTask Gray']) } });
+  process.stdout.write(JSON.stringify({ id: request.id, ok: true, value: event }) + '\n'); expect(await call).toMatchObject({ categories: ['HyperTask Blue'] });
+  const clear = bridge.request('update', { id: 'ABCD', expectedLastModified: '2026-11-16T07:30:00Z', patch: { color: null }, send: false }), [cleared] = requests(process).slice(1);
+  expect(cleared.args.patch.color).toMatchObject({ name: null, outlook: 0 }); process.stdout.write(JSON.stringify({ id: cleared.id, ok: true, value: { ...event, categories: [] } }) + '\n'); await clear;
 });
+

@@ -2,6 +2,7 @@ export type HyperCallbackKeyAction = 'create' | 'rotate' | 'revoke';
 export interface HyperCallbackKeyResult { status: 'issued' | 'revoked' | 'cancelled' | 'refused' | 'failed' }
 export interface HyperNativeDestination { kind: 'connections'; confirmation: 'native-confirmed'; serverId?: string }
 import type { HyperOpenBotServiceAction, HyperOpenBotServiceState } from './HyperOpenBotService';
+import type { HyperOutlookColorId } from './HyperOutlookColor';
 // The API the preload script exposes to the renderer as `window.hypertask`.
 
 export interface CoreReply {
@@ -113,11 +114,14 @@ export interface HyperOutlookEvent {
   id: string; subject: string; start: string; end: string; allDay: boolean; location: string; body: string;
   organizer: string; isOrganizer: boolean; responseStatus: number; attendees: HyperOutlookAttendee[]; attendeeCount: number;
   busyStatus: number; isRecurring: boolean; recurrenceState: number; isCancelled: boolean; isPrivate: boolean; joinUrl: string | null; lastModified: string;
+  /** Outlook category names; the HyperTask colour is the first owned colour category (see HyperOutlookColor.ts). */
+  categories: string[];
 }
 export interface HyperOutlookRange { start: string; end: string }
 export interface HyperOutlookFields extends HyperOutlookRange { subject: string; allDay: boolean; location: string; body: string }
-export interface HyperOutlookCreate extends HyperOutlookFields { attendees: string[]; send: boolean }
-export interface HyperOutlookUpdate { id: string; expectedLastModified: string; patch: Partial<HyperOutlookFields>; send: boolean }
+export interface HyperOutlookEditFields extends HyperOutlookFields { color?: HyperOutlookColorId | null }
+export interface HyperOutlookCreate extends HyperOutlookEditFields { attendees: string[]; send: boolean }
+export interface HyperOutlookUpdate { id: string; expectedLastModified: string; patch: Partial<HyperOutlookEditFields>; send: boolean }
 export interface HyperOutlookDelete { id: string; send: boolean }
 export interface HyperOutlookRespond extends HyperOutlookDelete { response: 'accept' | 'tentative' | 'decline' }
 export interface HyperPerson { name: string; email: string; title: string; department: string; phone: string; office: string; company: string; photo?: string; source: 'ad' | 'outlook' }

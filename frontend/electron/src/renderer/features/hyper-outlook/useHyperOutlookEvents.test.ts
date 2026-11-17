@@ -50,3 +50,8 @@ it('surfaces unavailable and failed Outlook requests without throwing into the d
   client.status.mockResolvedValueOnce({ available: false, userName: '', email: '', reason: 'Classic Outlook required' }); render(); await settle(); expect(render()).toMatchObject({ error: 'Classic Outlook required', refreshing: false }); expect(client.list).not.toHaveBeenCalled();
   render().onRangeChange(range); client.list.mockRejectedValueOnce(new Error('COM unavailable')); render(); await settle(); expect(render()).toMatchObject({ error: 'COM unavailable', status: { available: false } });
 });
+it('swaps a written event in place so its chip takes the new colour without another list call', async () => {
+  render().onRangeChange(range); render(); await settle(); client.list.mockClear();
+  render().replace({ ...item, categories: ['HyperTask Red'], lastModified: '2026-11-16T07:30:00Z' }); render(); await settle();
+  expect(client.list).not.toHaveBeenCalled(); expect(render().events).toHaveLength(1); expect(render().events[0].color).toBe('var(--color-red-500)'); expect(render().items[0].lastModified).toBe('2026-11-16T07:30:00Z');
+});

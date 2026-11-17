@@ -1,9 +1,12 @@
 import { z } from 'zod';
+import { HyperOutlookColorIds } from '@shared/HyperOutlookColor';
 const instant = z.iso.datetime({ offset: true });
 const date = z.iso.date();
 const dateTime = z.union([instant, date]);
 const id = z.string().regex(/^[A-Fa-f0-9]+(?:\|\d{4}-\d{2}-\d{2}T[\d:.]+Z)?$/).max(2048);
-const fields = z.strictObject({ subject: z.string().trim().min(1).max(255), start: dateTime, end: dateTime, allDay: z.boolean(), location: z.string().max(2048), body: z.string().max(8192) });
+const content = z.strictObject({ subject: z.string().trim().min(1).max(255), start: dateTime, end: dateTime, allDay: z.boolean(), location: z.string().max(2048), body: z.string().max(8192) });
+// Colour is an id from HyperOutlookColors; null clears it. The bridge turns it into the Outlook category write.
+const fields = content.extend({ color: z.enum(HyperOutlookColorIds).nullable().optional() });
 function dates(value: { start: string; end: string; allDay?: boolean }) {
   return Date.parse(value.end) > Date.parse(value.start) && (value.allDay === undefined || (value.allDay ? value.start.length === 10 && value.end.length === 10 : value.start.length > 10 && value.end.length > 10));
 }
@@ -19,10 +22,11 @@ export const HyperOutlookArgs = {
   respond: z.strictObject({ id, response: z.enum(['accept', 'tentative', 'decline']), send: z.boolean() }),
   open: z.strictObject({ id }),
 };
-export const HyperOutlookEventSchema = fields.extend({
+export const HyperOutlookEventSchema = content.extend({
   id, organizer: z.string(), isOrganizer: z.boolean(), responseStatus: z.number().int(),
   attendees: z.array(z.strictObject({ name: z.string(), email: z.string(), type: z.number().int(), response: z.number().int() })).max(200), attendeeCount: z.number().int().nonnegative(),
   busyStatus: z.number().int(), isRecurring: z.boolean(), recurrenceState: z.number().int(), isCancelled: z.boolean(), isPrivate: z.boolean(), joinUrl: z.string().url().nullable(), lastModified: instant,
+  categories: z.array(z.string().max(255)).max(100),
 });
 export const HyperOutlookValues = {
   'people.search': z.array(HyperPersonSchema).max(20),

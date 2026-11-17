@@ -2,32 +2,7 @@
 import * as React from "react"
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover"
 import { cn } from "cn"
-
-const PLACEMENT_KEYS = ["position", "top", "right", "bottom", "left", "transform"] as const
-
-type Placement = Pick<React.CSSProperties, (typeof PLACEMENT_KEYS)[number]>
-
-// Ported from t3code's closing-positioner.tsx (same folder). Keeps the last open placement while the
-// popup closes, so its exit transition does not jump to the window origin.
-function ClosingPositioner({
-  open,
-  style,
-  ...props
-}: React.ComponentProps<"div"> & { open: boolean }) {
-  const [openPlacement, setOpenPlacement] = React.useState<Placement>({})
-  if (open && style && PLACEMENT_KEYS.some((key) => style[key] !== openPlacement[key])) {
-    const { position, top, right, bottom, left, transform } = style
-    setOpenPlacement({ position, top, right, bottom, left, transform })
-  }
-  return <div {...props} style={open ? style : { ...style, ...openPlacement }} />
-}
-
-export function renderClosingPositioner(
-  props: React.ComponentProps<"div">,
-  state: { open: boolean }
-) {
-  return <ClosingPositioner {...props} open={state.open} />
-}
+import { renderClosingPositioner } from "@/components/ui/closing-positioner"
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
@@ -56,13 +31,13 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50 transition-transform data-instant:transition-none"
+        className="isolate z-50"
         render={renderClosingPositioner}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            "dropdown-glass z-50 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg p-2.5 text-sm text-popover-foreground shadow-[0_16px_40px_-18px_rgb(0_0_0/55%)] outline-hidden transition-[width,height,scale,opacity] data-ending-style:scale-98 data-starting-style:scale-98 data-ending-style:opacity-0 data-starting-style:opacity-0 dark:shadow-[0_18px_44px_-18px_rgb(0_0_0/80%)]",
+            "dropdown-glass z-50 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg p-2.5 text-sm text-popover-foreground shadow-[0_16px_40px_-18px_rgb(0_0_0/55%)] outline-hidden transition-[opacity,scale] duration-150 ease-out data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 data-ending-style:duration-100 dark:shadow-[0_18px_44px_-18px_rgb(0_0_0/80%)]",
             className
           )}
           {...props}
