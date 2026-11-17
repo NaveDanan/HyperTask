@@ -55,3 +55,15 @@ it('swaps a written event in place so its chip takes the new colour without anot
   render().replace({ ...item, categories: ['HyperTask Red'], lastModified: '2026-11-16T07:30:00Z' }); render(); await settle();
   expect(client.list).not.toHaveBeenCalled(); expect(render().events).toHaveLength(1); expect(render().events[0].color).toBe('var(--color-red-500)'); expect(render().items[0].lastModified).toBe('2026-11-16T07:30:00Z');
 });
+
+it('clears stale events immediately on closure and reloads as soon as presence reconnects', async () => {
+  let presence!: (value: { installed: boolean; running: boolean; connected: boolean }) => void;
+  const unsubscribe = vi.fn();
+  Object.assign(window, { hypertask: { outlook: { onPresence: (listener: typeof presence) => { presence = listener; return unsubscribe; } } } });
+  render().onRangeChange(range); render(); await settle(); expect(render().events).toHaveLength(1);
+  client.list.mockClear(); presence({ installed: true, running: false, connected: false });
+  expect(render()).toMatchObject({ events: [], refreshing: false, status: { available: false }, error: 'Outlook is closed. Open Outlook to use your calendar and mail.' });
+  presence({ installed: true, running: true, connected: true }); render(); await settle();
+  expect(client.list).toHaveBeenCalledOnce(); expect(render().events).toHaveLength(1);
+  for (const effect of hooks.effects) effect?.cleanup?.(); hooks.effects = []; expect(unsubscribe).toHaveBeenCalled();
+});

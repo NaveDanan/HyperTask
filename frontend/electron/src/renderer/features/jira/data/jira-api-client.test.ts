@@ -18,6 +18,7 @@ describe('Flutter API client cases', () => {
   it('uses context path and bearer auth', async () => {
     const api = client(async r => {
       expect(r.url).toBe('https://host/jira/rest/api/2/myself'); expect(r.headers.authorization).toBe('Bearer ' + testToken);
+      expect(r.headers['user-agent']).toBe('HyperTask');
       return jsonResponse({ name: 'nave', displayName: 'Nave' });
     }, testConfig.copyWith({ baseUrl: 'https://host/jira/' }));
     expect((await api.getMyself()).displayName).toBe('Nave');

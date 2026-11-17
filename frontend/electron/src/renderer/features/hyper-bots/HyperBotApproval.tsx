@@ -1,0 +1,63 @@
+// Ported from bot-hq (web/src/styles/cards.css), Copyright (c) 2026 Nick Vasilescu, MIT License. See features/hyper-bots/NOTICE.md.
+import { LoaderCircle } from 'lucide-react';
+import { HYPER_BOTS_TOOLS, type HyperBotsApproval, type HyperBotsApprovalStatus, type HyperBotsCardRow, type HyperBotsDelivery, type HyperBotsSettings } from '@shared/HyperBots';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { HyperBotToolLogo } from './HyperBotBrandLogos';
+const botName = (settings: HyperBotsSettings, id: string) => settings.bots.find(bot => bot.id === id)?.name ?? id;
+const STATUS_LABEL: Record<HyperBotsApprovalStatus, string> = { pending: 'waiting', approved: 'approved', executing: 'running', done: 'done', denied: 'denied', failed: 'failed', unknown: 'unknown', skipped: 'skipped — the bot no longer has this tool' };
+export function HyperBotsApprovalCard({ approval, botName, busy, onDecide }: { approval: HyperBotsApproval; botName: string; busy: boolean; onDecide: (id: string, approved: boolean, delivery?: HyperBotsDelivery) => void }) {
+  const tool = HYPER_BOTS_TOOLS[approval.tool as keyof typeof HYPER_BOTS_TOOLS];
+  const write = approval.access === 'write';
+  const rows = approval.card ?? [];
+  const spinner = busy && <LoaderCircle className="animate-spin motion-reduce:animate-none" />;
+  return <section aria-label={`${botName} needs your approval`} className={cn('card approval-card space-y-2 rounded-lg border bg-card p-3 text-sm', write ? 'border-warning/50' : 'border-border')}>
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="font-medium">{botName}</span>
+      <span className="hb-tool-name text-muted-foreground"><HyperBotToolLogo tool={approval.tool} />{tool?.label ?? approval.tool}</span>
+      <span className={cn('ml-auto rounded px-1.5 py-0.5 text-xs font-medium', write ? 'border border-warning/50 bg-warning-surface text-warning-foreground' : 'bg-secondary text-secondary-foreground')}>{write ? 'Write' : 'Read'}</span>
+    </div>
+    {approval.destination && <p className="rounded-md bg-muted px-2 py-1 text-xs"><span className="text-muted-foreground">{rows.length ? 'Via: ' : 'To: '}</span><span className="font-medium break-words">{approval.destination}</span></p>}
+    <p className="break-words whitespace-pre-wrap">{approval.summary}</p>
+    {!!rows.length && <HyperBotsCardRows rows={rows} />}
+    <details className="text-xs">
+      <summary className="cursor-pointer text-muted-foreground">Details</summary>
+      <pre className="mt-1 max-h-60 overflow-auto rounded-md bg-muted p-2 font-mono break-words whitespace-pre-wrap">{JSON.stringify(approval.args, null, 2)}</pre>
+    </details>
+    <div className="flex flex-wrap justify-end gap-2">
+      <Button variant="ghost" size="sm" disabled={busy} onClick={() => onDecide(approval.id, false)}>Deny</Button>
+      {tool?.delivery
+        ? <>
+          <Button variant="secondary" size="sm" disabled={busy} onClick={() => onDecide(approval.id, true, 'draft')}>Save to Drafts</Button>
+          <Button size="sm" disabled={busy} onClick={() => onDecide(approval.id, true, 'send')}>{spinner}Send</Button>
+        </>
+        : <Button size="sm" disabled={busy} onClick={() => onDecide(approval.id, true)}>{spinner}Approve</Button>}
+    </div>
+  </section>;
+}
+/** What the owner approves, line by line. Each value takes its own direction, so Hebrew reads right to left. */
+function HyperBotsCardRows({ rows }: { rows: HyperBotsCardRow[] }) {
+  return <dl className="divide-y divide-border overflow-hidden rounded-md border border-border text-xs">
+    {rows.map((row, index) => <div key={index} className={cn('px-2 py-1.5', row.long ? 'space-y-1' : 'grid grid-cols-[minmax(5rem,8rem)_1fr] gap-2', row.tone === 'warning' && 'bg-warning-surface text-warning-foreground')}>
+      <dt className={cn('font-medium', row.tone === 'warning' ? '' : 'text-muted-foreground')}>{row.label}</dt>
+      <dd className={cn('min-w-0 break-words text-start [unicode-bidi:plaintext]', row.long && 'max-h-56 overflow-y-auto rounded bg-muted px-2 py-1.5 text-sm whitespace-pre-wrap')}>{row.value}</dd>
+    </div>)}
+  </dl>;
+}
+const outcome = (approval: HyperBotsApproval) => approval.status === 'done' && approval.delivery ? approval.delivery === 'draft' ? 'saved to Drafts' : 'sent' : STATUS_LABEL[approval.status];
+/** `flat`: the bare list, for the details panel, whose section already says "Recent decisions". */
+export function HyperBotsDecided({ approvals, settings, flat }: { approvals: HyperBotsApproval[]; settings: HyperBotsSettings; flat?: boolean }) {
+  const list = <ul className={cn('space-y-1', !flat && 'mt-1')}>
+      {approvals.map(approval => <li key={approval.id} className="flex flex-wrap gap-x-2">
+        <span className="font-medium text-foreground">{botName(settings, approval.botId)}</span>
+        <span className="hb-tool-name"><HyperBotToolLogo tool={approval.tool} />{HYPER_BOTS_TOOLS[approval.tool as keyof typeof HYPER_BOTS_TOOLS]?.label ?? approval.tool}</span>
+        <span className={cn(approval.status === 'failed' || approval.status === 'unknown' ? 'text-destructive' : approval.status === 'denied' ? 'text-warning' : '')}>{outcome(approval)}{approval.decidedBy === 'policy' ? ' (allowed by policy)' : ''}</span>
+        {approval.destination && <span className="min-w-0 break-words">to {approval.destination}</span>}
+        {approval.error && <span className="min-w-0 break-words">{approval.error}</span>}
+      </li>)}
+    </ul>;
+  return flat ? <div className="text-xs text-muted-foreground">{list}</div> : <details className="text-xs text-muted-foreground">
+    <summary className="cursor-pointer">Recent decisions ({approvals.length})</summary>
+    {list}
+  </details>;
+}

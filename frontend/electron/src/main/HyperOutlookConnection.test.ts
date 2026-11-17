@@ -1,0 +1,17 @@
+import { expect, it } from 'vitest';
+import { hyperOutlookDisconnected } from './HyperOutlookConnection';
+import { HyperOutlookScript } from './HyperOutlookScript';
+it.each(['0x80010108', '0x800706BA', '0x800706be', '0x800401FD', '0x80010007', '0x80010012', 'RPC_E_DISCONNECTED', 'RPC_S_SERVER_UNAVAILABLE', 'CO_E_OBJNOTCONNECTED', 'RPC_S_CALL_FAILED', 'The object invoked has disconnected from its clients.', 'Outlook is closed. Open Outlook to use your calendar and mail.'])('recognizes disconnect: %s', reason => expect(hyperOutlookDisconnected(reason)).toBe(true));
+it.each(['Changed in Outlook', 'Invalid date', 'The meeting no longer exists', 'Employee directory is unavailable', 'Permission denied'])('does not classify a business or validation failure as disconnection: %s', reason => expect(hyperOutlookDisconnected(reason)).toBe(false));
+it('uses ROT attachment only, including the directory fallback, and checks session process presence before attaching', () => {
+  expect(HyperOutlookScript).not.toMatch(/New-Object\s+-ComObject\s+Outlook|CreateInstance|CreateObject\(/i);
+  expect(HyperOutlookScript.match(/GetActiveObject\('Outlook.Application'\)/g)).toHaveLength(1);
+  const connect = HyperOutlookScript.slice(HyperOutlookScript.indexOf('function Connect-Hyper'), HyperOutlookScript.indexOf('function Hyper-Utc'));
+  expect(connect.indexOf('Get-Process')).toBeLessThan(connect.indexOf('GetActiveObject')); expect(connect).toContain('SessionId -eq $session');
+  expect(connect).toContain("Hyper-ComGet $calendar 'EntryID'");
+  expect(HyperOutlookScript).toContain("Hyper-ComGet $ns 'CurrentUser'");
+  const gal = HyperOutlookScript.slice(HyperOutlookScript.indexOf('function Hyper-GalPeople'), HyperOutlookScript.indexOf('function Hyper-People'));
+  expect(gal).toContain('Connect-Hyper');
+  expect(HyperOutlookScript).toContain('if (Hyper-Disconnected $_.Exception) { Reset-Hyper;');
+  expect(HyperOutlookScript).not.toMatch(/\$outlook\.Quit|\$script:outlook\.Quit/i);
+});

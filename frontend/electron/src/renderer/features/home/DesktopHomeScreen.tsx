@@ -1,3 +1,4 @@
+import { HyperOutlookPresenceNotice } from '@/features/hyper-outlook/HyperOutlookPresenceNotice';
 import { sidebarSpace } from '@/features/sidebar/stores/space-store';
 import { ensureHyperGeneralCalendar } from '@/features/hyper-outlook/HyperGeneralCalendar';
 import { showToast } from '@/ui';
@@ -10,8 +11,10 @@ import { NotificationPanel } from '@/features/sidebar/notifications/Notification
 import { HomeSideBar } from '@/features/sidebar/Sidebar';
 import { HyperSidebarRail } from '../sidebar/HyperSidebarRail';
 import { HomeStack } from '@/features/tabs/HomeStack';
+import { HyperChromePanel, useHyperChromePanelStore } from './HyperChromePanel';
 import { CommandPaletteHost } from '@/features/search/CommandPalette';
 import { SettingsDialogHost } from '@/features/settings/SettingsDialog';
+import { HyperJiraBackgroundSync } from '@/features/jira/ui/HyperJiraBackgroundSync';
 import { Spinner } from '@/components/ui/spinner';
 import { PluginType, localToolPlugin, viewPlugin } from '../tabs/plugin';
 import { tabsActions, useTabsStore } from '../tabs/tabs-store';
@@ -57,7 +60,9 @@ function useWindowWidth() {
 
 function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLatestPB }) {
   const width = useWindowWidth();
-  const layout = useHomeLayout(width);
+  const activeTabKey = useTabsStore((s) => s.tabs[s.currentIndex]?.key ?? null);
+  const chromeClaim = useHyperChromePanelStore((s) => s.claim);
+  const layout = useHomeLayout(width, chromeClaim?.owner === activeTabKey ? chromeClaim.width : 0);
   const latestView = useHomeStore((s) => s.latestView);
   useHomeHotKeys();
 
@@ -67,6 +72,15 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
     tabsActions.openPlugin(localToolPlugin('home'), undefined, false);
     homeSettingActions.initialize();
     return startHome(user, setting);
+  }, [user, setting]);
+
+  useEffect(() => {
+    const update = () => {
+      const { tabs, currentIndex } = useTabsStore.getState(), tab = tabs[currentIndex];
+      homeSettingActions.preferCollapsedMenu(tab?.plugin.prefersCollapsedMenu ? tab.key : null);
+    };
+    const stop = useTabsStore.subscribe(update); update();
+    return () => { stop(); homeSettingActions.preferCollapsedMenu(null); };
   }, [user, setting]);
 
   useEffect(() => homeSettingActions.checkScreenSize(width), [width]);
@@ -98,6 +112,7 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
   const ease = (ms: number) => `${ms}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
   return (
     <div className="relative h-full overflow-hidden bg-sidebar text-foreground">
+      <HyperChromePanel available={layout.chromePanelAvailable} activeOwner={activeTabKey} width={layout.chromePanelWidth} left={layout.railWidth} transition={`width ${ease(layout.animDuration)}`}>
       <div
         className="absolute inset-y-0 right-0 min-w-0"
         style={{
@@ -108,6 +123,7 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
         <HomeStack />
       </div>
       <QuestionBubble />
+      <HyperOutlookPresenceNotice />
       {layout.showNotificationPanel && (
         <NotificationPanel left={layout.showMenu ? layout.menuWidth : layout.railWidth} top={layout.showMenu ? 0 : 52} />
       )}
@@ -126,6 +142,8 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
       {layout.showMenu && <SidebarResizer left={layout.menuWidth} />}
       <CommandPaletteHost />
       <SettingsDialogHost user={user} />
+      <HyperJiraBackgroundSync userId={String(user.id)} />
+      </HyperChromePanel>
     </div>
   );
 }

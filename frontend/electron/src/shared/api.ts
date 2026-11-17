@@ -3,6 +3,8 @@ export interface HyperCallbackKeyResult { status: 'issued' | 'revoked' | 'cancel
 export interface HyperNativeDestination { kind: 'connections'; confirmation: 'native-confirmed'; serverId?: string }
 import type { HyperOpenBotServiceAction, HyperOpenBotServiceState } from './HyperOpenBotService';
 import type { HyperOutlookColorId } from './HyperOutlookColor';
+import type { HyperNodEvent, HyperNodHistoryCursor, HyperNodHistoryPage, HyperNodSendInput, HyperNodSnapshot, HyperNodStatus, HyperNodSubmitted } from './HyperNod';
+import type { HyperBotsApi } from './HyperBots';
 // The API the preload script exposes to the renderer as `window.hypertask`.
 
 export interface CoreReply {
@@ -109,6 +111,7 @@ export interface HyperOpenBotRequest { id: string; path: string; method: string;
 export interface HyperOpenBotChunk { id: string; chunk?: Uint8Array; done?: boolean; error?: string }
 export interface HyperOpenBotSocketEvent { id: string; type: 'open' | 'message' | 'error' | 'close'; data?: string | Uint8Array; code?: number; reason?: string }
 export interface HyperOutlookAttendee { name: string; email: string; type: number; response: number }
+export type { HyperOutlookPresenceState } from './HyperOutlookPresence';
 export interface HyperOutlookStatus { available: boolean; userName: string; email: string; reason?: string }
 export interface HyperOutlookEvent {
   id: string; subject: string; start: string; end: string; allDay: boolean; location: string; body: string;
@@ -128,6 +131,9 @@ export interface HyperPerson { name: string; email: string; title: string; depar
 export interface HyperOutlookApi {
   people: { search(args: { query: string; limit?: number }): Promise<IpcResult<HyperPerson[]>>; lookup(args: { email: string }): Promise<IpcResult<HyperPerson | null>> };
   status(): Promise<IpcResult<HyperOutlookStatus>>;
+  presence(): Promise<IpcResult<import('./HyperOutlookPresence').HyperOutlookPresenceState>>;
+  launch(): Promise<IpcResult<void>>;
+  onPresence(listener: (state: import('./HyperOutlookPresence').HyperOutlookPresenceState) => void): () => void;
   list(range: HyperOutlookRange): Promise<IpcResult<HyperOutlookEvent[]>>;
   create(args: HyperOutlookCreate): Promise<IpcResult<HyperOutlookEvent>>;
   update(args: HyperOutlookUpdate): Promise<IpcResult<HyperOutlookEvent>>;
@@ -136,9 +142,26 @@ export interface HyperOutlookApi {
   open(args: { id: string }): Promise<IpcResult<null>>;
 }
 
+export interface HyperNodApi {
+  status(): Promise<IpcResult<HyperNodStatus>>;
+  state(): Promise<IpcResult<HyperNodSnapshot>>;
+  history(cursor: HyperNodHistoryCursor): Promise<IpcResult<HyperNodHistoryPage>>;
+  send(input: HyperNodSendInput): Promise<IpcResult<HyperNodSubmitted>>;
+  /** Stops every session and task of the assistant. */
+  stop(): Promise<IpcResult<void>>;
+  /** Opens the live event stream, which ends with a disconnected event. Reload state after each connect. */
+  subscribe(): Promise<IpcResult<void>>;
+  unsubscribe(): void;
+  onEvent(listener: (event: HyperNodEvent) => void): () => void;
+}
+
 export interface HypertaskApi {
   auth: { devJwtSession(): Promise<string | null>; entraIdToken(config: import('./HyperEntra').HyperEntraConfig): Promise<IpcResult<import('./HyperEntra').HyperEntraToken>>; entraCancel(): Promise<void> };
   outlook: HyperOutlookApi;
+  /** The Nod personal assistant on the VM. Main owns its token and transport. */
+  hyperNod: HyperNodApi;
+  /** HyperBots: bots in rooms. Main owns the runtime, storage, approvals and connectors. */
+  hyperBots: HyperBotsApi;
   hyperOpenBot: {
     callbackKey(input: { action: HyperCallbackKeyAction; agentId: string }): Promise<HyperCallbackKeyResult>;
     onNativeDestination(listener: (destination: HyperNativeDestination) => void): () => void;
@@ -277,6 +300,9 @@ export const IpcChannel = {
   AuthEntraCancel: 'auth.entraCancel',
   OutlookPeopleSearch: 'outlook.people.search',
   OutlookPeopleLookup: 'outlook.people.lookup',
+  OutlookPresence: 'hyper-outlook:presence',
+  OutlookPresenceRead: 'hyper-outlook:presence-read',
+  OutlookLaunch: 'hyper-outlook:launch',
   OutlookStatus: 'outlook:status',
   OutlookList: 'outlook:list',
   OutlookCreate: 'outlook:create',
@@ -284,6 +310,14 @@ export const IpcChannel = {
   OutlookDelete: 'outlook:delete',
   OutlookRespond: 'outlook:respond',
   OutlookOpen: 'outlook:open',
+  NodStatus: 'hyper-nod:status',
+  NodState: 'hyper-nod:state',
+  NodHistory: 'hyper-nod:history',
+  NodSend: 'hyper-nod:send',
+  NodStop: 'hyper-nod:stop',
+  NodSubscribe: 'hyper-nod:subscribe',
+  NodUnsubscribe: 'hyper-nod:unsubscribe',
+  NodEvent: 'hyper-nod:event',
   CoreInit: 'core:init',
   CoreRequest: 'core:request',
   CoreLog: 'core:log',

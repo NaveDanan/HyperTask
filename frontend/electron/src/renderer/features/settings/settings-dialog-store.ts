@@ -15,6 +15,7 @@ export enum SettingsPage {
   billing = 'billing',
   sites = 'sites',
   notifications = 'notifications',
+  jira = 'jira',
   cloud = 'cloud',
   companyCertificates = 'companyCertificates',
   member = 'member',
@@ -60,6 +61,7 @@ export function visibleSettingsPages({
   pages.push(
     SettingsPage.manageData,
     SettingsPage.notifications,
+    SettingsPage.jira,
     SettingsPage.cloud,
     SettingsPage.companyCertificates,
     SettingsPage.shortcuts,

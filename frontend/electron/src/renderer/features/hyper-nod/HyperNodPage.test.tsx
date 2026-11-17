@@ -1,0 +1,66 @@
+import { renderToStaticMarkup } from 'react-dom/server';
+import { expect, it, vi } from 'vitest';
+import type { HyperNodMessage, HyperNodSnapshot } from '@shared/HyperNod';
+import { HYPER_NOD_NO_STREAMS } from './HyperNodStore';
+import type { HyperNodViewState } from './HyperNodController';
+import { HyperNodView, type HyperNodActions } from './HyperNodPage';
+const THREAD = '11111111-1111-4111-8111-111111111111';
+const TURN = '22222222-2222-4222-8222-222222222222';
+const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+const message = (n: number, patch: Partial<HyperNodMessage> = {}): HyperNodMessage => ({ id: id(n), role: 'assistant', text: `Message ${n}`, turnId: TURN, createdAt: `2026-11-16T10:00:${String(n).padStart(2, '0')}.000Z`, streamId: null, attachments: [], choicesPending: false, ...patch });
+const snapshot = (patch: Partial<HyperNodSnapshot> = {}): HyperNodSnapshot => ({ threadId: THREAD, messages: [message(1)], turns: [], hasEarlierMessages: false, activity: [], hiddenMessageIds: [], hiddenMessageCount: 0, pendingQuestionIds: null, ...patch });
+const base: HyperNodViewState = { phase: 'ready', status: { ready: true, problem: 'none', model: 'gpt-x' }, retrying: false, snapshot: snapshot(), older: [], retired: [], streams: HYPER_NOD_NO_STREAMS, activity: [], connection: 'live', loadingOlder: false, sending: false, stopping: false };
+const actions: HyperNodActions = { retry: vi.fn(), reload: vi.fn(), loadOlder: vi.fn(), send: vi.fn(), stop: vi.fn(), answerChoices: vi.fn(), answerWritten: vi.fn(), answerApproval: vi.fn() };
+const render = (patch: Partial<HyperNodViewState>) => renderToStaticMarkup(<HyperNodView state={{ ...base, ...patch }} actions={actions} />);
+const turn = (status: 'running' | 'queued' | 'waiting' | 'failed', error: string | null = null) => ({ id: TURN, status, createdAt: '2026-11-16T10:00:00.000Z', finishedAt: null, error });
+it('explains why Nod is unavailable with its specific reason, and says when it retries by itself', () => {
+  const html = render({ phase: 'unavailable', snapshot: null, status: { ready: false, problem: 'unsafe_deployment', detail: 'PORT must be 4311 in the Nod .env.' } });
+  expect(html).toContain('does not match the private deployment HyperTask expects');
+  expect(html).toContain('PORT must be 4311 in the Nod .env.');
+  expect(html).toContain('Retry now');
+  expect(html).not.toContain('Retrying automatically');
+  expect(html).not.toContain('Message Nod');
+  expect(render({ phase: 'unavailable', retrying: true, snapshot: null, status: { ready: false, problem: 'unreachable' } })).toContain('Retrying automatically.');
+  expect(render({ phase: 'checking', snapshot: null })).toContain('Connecting to Nod…');
+});
+it('shows the model, connection, transcript, earlier-history control and composer', () => {
+  const html = render({ snapshot: snapshot({ hasEarlierMessages: true }) });
+  expect(html).toContain('Nod assistant');
+  expect(html).toContain('gpt-x');
+  expect(html).toContain('Live');
+  expect(html).toContain('Message 1');
+  expect(html).toContain('Load earlier messages');
+  expect(html).toContain('aria-label="Message Nod"');
+  expect(html).not.toContain('Stop Nod');
+  expect(render({ olderHasMore: false, snapshot: snapshot({ hasEarlierMessages: true }) })).not.toContain('Load earlier messages');
+  expect(render({ connection: 'reconnecting', connectionError: 'lost' })).toContain('Reconnecting…');
+});
+it('offers Stop while Nod works and shows the latest failure and errors, with a reload when state is missing', () => {
+  expect(render({ snapshot: snapshot({ turns: [turn('running')] }), activity: [{ turnId: TURN, title: null, step: 'Reading the page', doing: 'tool' }] })).toContain('Reading the page');
+  expect(render({ snapshot: snapshot({ turns: [turn('queued')] }) })).toContain('aria-label="Stop Nod&#x27;s work"');
+  expect(render({ snapshot: snapshot({ turns: [turn('failed', 'Rate limited by the provider')] }) })).toContain('Rate limited by the provider');
+  expect(render({ error: 'The Nod request failed. Nod returned 500 for POST /api/messages.' })).toContain('Nod returned 500 for POST /api/messages.');
+  const html = render({ snapshot: null, syncError: 'Nod is not responding on the VM.' });
+  expect(html).toContain('The conversation could not be reloaded. Nod is not responding on the VM. Retrying automatically.');
+  expect(html).toMatch(/<button[^>]*>.*Reload<\/button>/);
+  expect(html).not.toContain('Loading this conversation');
+});
+it('shows approval details exactly as Nod gives them, with Nod\'s labels', () => {
+  const html = render({ snapshot: snapshot({ messages: [message(3, { approval: { id: id(12), state: 'pending', title: 'Delete invoice', app: 'Drive', fields: [{ label: 'To', value: 'anna@example.com' }], body: 'Dear Anna,\nThe invoice…', bodyCut: true } })] }) });
+  expect(html).toContain('Drive: Delete invoice');
+  expect(html).toMatch(/<dt[^>]*>To<\/dt><dd[^>]*>anna@example.com<\/dd>/);
+  expect(html).toContain('Dear Anna,\nThe invoice…');
+  expect(html).toContain('Only the start is shown. The rest is included too.');
+  expect(html).toMatch(/<button[^>]*>Cancel<\/button>/);
+  expect(html).toMatch(/<button[^>]*>Delete<\/button>/);
+});
+it('renders choice questions with a written answer, including ones found in loaded history', () => {
+  const choices = { multiple: false, options: [{ id: id(10), label: 'Tomorrow', description: 'At 9:00' }, { id: id(11), label: 'Friday' }] };
+  const html = render({ older: [message(0, { choices, choicesPending: false })], snapshot: snapshot({ pendingQuestionIds: [id(0)] }) });
+  expect(html).toContain('Choose one, or answer in your own words.');
+  expect(html).toContain('Tomorrow');
+  expect(html).toContain('aria-label="Your own answer"');
+  expect(html).toMatch(/<button[^>]*>Answer<\/button>/);
+  expect(render({ snapshot: snapshot({ messages: [message(4, { choicesPending: true, choices: { multiple: true, options: [{ id: id(13), label: 'A' }] } })] }) })).toContain('Send choices');
+  expect(render({ snapshot: snapshot({ turns: [turn('waiting')] }) })).toContain('Nod is waiting for your reply.');
+});

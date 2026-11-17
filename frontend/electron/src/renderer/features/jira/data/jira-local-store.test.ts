@@ -28,3 +28,14 @@ it('roundtrips REST-shaped issues including optional dates/users and configurati
   expect(JiraConfig.fromJson({ authType: 'future' }).authType).toBe('personalAccessToken');
   expect(new JiraIssueDraft({ assigneeName: '', summary: null }).toFields()).toEqual({ assignee: null });
 });
+
+it('defaults Kanban copying on and persists an independent per-user opt-out', async () => {
+  const storage = new HyperFakeKeyValue(), first = new JiraLocalStore('first', storage), second = new JiraLocalStore('second', storage);
+  expect(await first.readKanbanEnabled()).toBe(true);
+  await first.writeKanbanEnabled(false);
+  expect(storage.values['hypertask.jira.first.addToHyperKanban']).toBe('false');
+  expect(await new JiraLocalStore('first', storage).readKanbanEnabled()).toBe(false);
+  expect(await second.readKanbanEnabled()).toBe(true);
+  await first.writeConfig(testConfig); expect(await first.readKanbanEnabled()).toBe(false);
+  await first.writeKanbanEnabled(true); expect(await first.readKanbanEnabled()).toBe(true);
+});

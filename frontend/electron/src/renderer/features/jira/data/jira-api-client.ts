@@ -10,6 +10,8 @@ export type JiraHttpTransport = (request: JiraHttpRequest) => Promise<JiraHttpRe
 export type JiraSyncProgress = (loaded: number, total: number) => void;
 export interface JiraApiClientOptions { config: JiraConfig; credentials: JiraCredentials; transport?: JiraHttpTransport; timeout?: number; maxIssues?: number }
 export interface JiraTransitionOptions { transitionId: string; resolutionId?: string | null; comment?: string | null }
+/** Jira 11 fails POSTs with 403 "XSRF check failed" for a browser User-Agent despite X-Atlassian-Token; net.fetch sends Chromium's. */
+export const JIRA_USER_AGENT = 'HyperTask';
 /** Server/DC REST v2 client; main-process transport never follows redirects. */
 export class HyperJiraApiClient {
   readonly config: JiraConfig;
@@ -40,7 +42,7 @@ export class HyperJiraApiClient {
     try {
       response = await Promise.race([
         this.transport({ url: url.toString(), method, headers: { accept: 'application/json', 'content-type': 'application/json; charset=utf-8',
-          authorization: this.credentials.authorizationHeader(this.config.authType), 'X-Atlassian-Token': 'no-check' },
+          authorization: this.credentials.authorizationHeader(this.config.authType), 'X-Atlassian-Token': 'no-check', 'user-agent': JIRA_USER_AGENT },
           ...(body === undefined ? {} : { body: JSON.stringify(body) }) }),
         new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), this.timeout); }),
       ]);

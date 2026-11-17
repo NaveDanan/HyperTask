@@ -5,8 +5,9 @@ import { HyperOutlookArgs, type HyperOutlookOp } from './HyperOutlookSchema';
 import { SettingsError, toIpcResult } from './settings-error';
 export function registerHyperOutlookIpc(bridge: HyperOutlookBridge, window: () => BrowserWindow | null) {
   const trusted = (event: IpcMainInvokeEvent) => event.sender === window()?.webContents && event.senderFrame === event.sender.mainFrame;
-  const channels = { 'people.search': C.OutlookPeopleSearch, 'people.lookup': C.OutlookPeopleLookup, status: C.OutlookStatus, list: C.OutlookList, create: C.OutlookCreate, update: C.OutlookUpdate, delete: C.OutlookDelete, respond: C.OutlookRespond, open: C.OutlookOpen };
-  for (const op of Object.keys(channels) as HyperOutlookOp[]) ipcMain.handle(channels[op], (event, args: unknown) => toIpcResult(async () => {
+  // Calendar view ops only. Mail and the other HyperBots ops (HyperBotsOutlookTools) have no renderer channel.
+  const channels = { 'people.search': C.OutlookPeopleSearch, 'people.lookup': C.OutlookPeopleLookup, status: C.OutlookStatus, list: C.OutlookList, create: C.OutlookCreate, update: C.OutlookUpdate, delete: C.OutlookDelete, respond: C.OutlookRespond, open: C.OutlookOpen } satisfies Partial<Record<HyperOutlookOp, string>>;
+  for (const op of Object.keys(channels) as (keyof typeof channels)[]) ipcMain.handle(channels[op], (event, args: unknown) => toIpcResult(async () => {
     if (!trusted(event)) throw new SettingsError('state', 'Untrusted Outlook caller refused.');
     const valid = HyperOutlookArgs[op].safeParse(args);
     if (!valid.success) throw new SettingsError('format', valid.error.issues[0]?.message ?? 'Invalid Outlook request.');
