@@ -33,12 +33,14 @@ describe('SettingsMenu visibility', () => {
       SettingsPage.account,
       SettingsPage.appearance,
       SettingsPage.manageData,
+      SettingsPage.archived,
       SettingsPage.notifications,
       SettingsPage.jira,
       SettingsPage.cloud,
       SettingsPage.companyCertificates,
       SettingsPage.shortcuts,
       SettingsPage.ai,
+      SettingsPage.voice,
     ]);
   });
 
@@ -49,12 +51,14 @@ describe('SettingsMenu visibility', () => {
       SettingsPage.workspace,
       SettingsPage.member,
       SettingsPage.manageData,
+      SettingsPage.archived,
       SettingsPage.notifications,
       SettingsPage.jira,
       SettingsPage.cloud,
       SettingsPage.companyCertificates,
       SettingsPage.shortcuts,
       SettingsPage.ai,
+      SettingsPage.voice,
       SettingsPage.sites,
       SettingsPage.featureFlags,
     ]);

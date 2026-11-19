@@ -6,6 +6,11 @@ asarUnpack:
   - node_modules/@azure/msal-node-runtime/**
   - node_modules/@azure/msal-node-extensions/bin/**
   - node_modules/keytar/**
+  # Voice input: the speech worker is a plain Node process (ELECTRON_RUN_AS_NODE) that requires transcribe-cpp, its
+  # native libraries (loaded by koffi outside the ASAR-aware filesystem) and koffi itself from real files.
+  - node_modules/transcribe-cpp/**
+  - node_modules/@transcribe-cpp/**
+  - node_modules/koffi/**
 files:
   - out/**
   - resources/assets/**

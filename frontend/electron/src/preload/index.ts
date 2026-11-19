@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import { IpcChannel as C, type HypertaskApi } from '@shared/api';
 import { HyperBotsChannel as B } from '@shared/HyperBots';
+import { HyperVoiceChannel as V } from '@shared/hyper-voice/api';
 
 function on<T>(channel: string, listener: (value: T) => void): () => void {
   const handler = (_: IpcRendererEvent, value: T) => listener(value);
@@ -42,6 +43,31 @@ const api: HypertaskApi = {
     saveSettings: settings => ipcRenderer.invoke(B.SaveSettings, settings),
     models: () => ipcRenderer.invoke(B.Models),
     onEvent: listener => on(B.Event, listener),
+  },
+  hyperVoice: {
+    status: () => ipcRenderer.invoke(V.Status),
+    models: includeBenchmarks => ipcRenderer.invoke(V.Models, includeBenchmarks),
+    downloadModel: modelId => ipcRenderer.invoke(V.DownloadModel, modelId),
+    selectModel: modelId => ipcRenderer.invoke(V.SelectModel, modelId),
+    cancelModelDownload: modelId => ipcRenderer.invoke(V.CancelModelDownload, modelId),
+    removeModel: modelId => ipcRenderer.invoke(V.RemoveModel, modelId),
+    linkModels: path => ipcRenderer.invoke(V.LinkModels, path),
+    pickModelPath: kind => ipcRenderer.invoke(V.PickModelPath, kind),
+    prepareModel: () => ipcRenderer.invoke(V.PrepareModel),
+    updateAcceleration: acceleration => ipcRenderer.invoke(V.UpdateAcceleration, acceleration),
+    updateModelUnloadTimeout: timeout => ipcRenderer.invoke(V.UpdateModelUnloadTimeout, timeout),
+    transcribe: (pcm, options) => ipcRenderer.invoke(V.Transcribe, pcm, options),
+    streamStart: options => ipcRenderer.invoke(V.StreamStart, options),
+    streamFeed: (streamId, pcm) => ipcRenderer.invoke(V.StreamFeed, streamId, pcm),
+    streamFinish: streamId => ipcRenderer.invoke(V.StreamFinish, streamId),
+    streamCancel: streamId => ipcRenderer.send(V.StreamCancel, streamId),
+    cloudKeys: () => ipcRenderer.invoke(V.CloudKeys),
+    setCloudKey: (provider, key) => ipcRenderer.invoke(V.SetCloudKey, provider, key),
+    cloudModels: () => ipcRenderer.invoke(V.CloudModels),
+    transcribeCloud: (provider, pcm, options, model) => ipcRenderer.invoke(V.TranscribeCloud, provider, pcm, options, model),
+    postProcess: request => ipcRenderer.invoke(V.PostProcess, request),
+    cleanupModels: () => ipcRenderer.invoke(V.CleanupModels),
+    setCleanupModel: model => ipcRenderer.invoke(V.SetCleanupModel, model),
   },
   hyperOpenBot: {
     callbackKey: input => ipcRenderer.invoke('hyper-openbot:callback-key', input),

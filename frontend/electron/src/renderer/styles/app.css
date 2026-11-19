@@ -19,6 +19,7 @@
 @import './global.css' layer(legacy);
 @import './appearance-motion.css';
 @import './appearance-typography.css';
+@import './hyper-stage-backdrop.css';
 
 /* applyTheme() sets data-theme="light|dark" on <html>. */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));

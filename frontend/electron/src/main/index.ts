@@ -22,6 +22,7 @@ import { HyperBotsOpenAIEngine, hyperBotsReadEndpoint } from './HyperBotsEngine'
 import { HyperBotsRuntime } from './HyperBotsRuntime';
 import { HyperBotsTools, hyperBotsConnections, hyperBotsJiraTool, hyperBotsOutlookTools, hyperBotsReadJira } from './HyperBotsConnectors';
 import { registerHyperBotsIpc, registerHyperBotsUnavailable } from './HyperBotsIpc';
+import { registerHyperVoiceIpc, type HyperVoiceMain } from './hyper-voice/HyperVoiceIpc';
 import { HYPER_BOTS_SIGN_IN, HyperBotsHub, hyperBotsReadIdentity, type HyperBotsUser } from './HyperBotsHub';
 import { JiraCredentialFiles } from './jira-credentials';
 import { unprotect } from './dpapi';
@@ -65,6 +66,8 @@ const hyperNodTunnel = new HyperNodTunnel();
 const hyperDevJwt = new HyperDevJwtBootstrap({ packaged: app.isPackaged, rendererUrl: process.env.ELECTRON_RENDERER_URL, enabled: process.env.HYPER_DEV_JWT_ENABLED, sessionFile: process.env.HYPER_DEV_JWT_SESSION_FILE });
 let coreStarted: Promise<void> | null = null;
 let hyperBots: HyperBotsHub | null = null;
+/** Voice input (local speech models, cloud transcription, transcript cleanup), ported from t3code. */
+let hyperVoice: HyperVoiceMain | null = null;
 let mainWindow: BrowserWindow | null = null;
 const hyperOutlookWindows = new HyperOutlookWindows();
 const hyperOutlookPresence = new HyperOutlookPresence(hyperOutlook, { detect: () => hyperOutlookWindows.detect(), launch: () => hyperOutlookWindows.launch(), hidden: () => !mainWindow || mainWindow.isMinimized() || !mainWindow.isVisible() });
@@ -208,6 +211,7 @@ function registerIpc() {
   const nodSessions = createHyperNodSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
   nodSessions.onInvalidate(() => hyperNodTunnel.close());
   registerHyperNodIpc(() => mainWindow, nodSessions, new HyperNodClient({ socketPath: () => hyperNodTunnel.socketPath(), readAccess: signal => hyperNodReadAccess(signal) }));
+  hyperVoice = registerHyperVoiceIpc({ window: () => mainWindow, userData: app.getPath('userData'), supportDirectory });
   let openBotService: HyperOpenBotService | undefined;
   const openBotBridge = registerHyperOpenBotIpc(() => mainWindow, openBotSessions, () => openBotService?.snapshot().ready === true);
   openBotService = createHyperOpenBotService(app.getPath('userData'), openBotSessions, openBotBridge.disconnect);
@@ -415,7 +419,9 @@ if (!app.requestSingleInstanceLock()) {
     // Bots stop first, so no connector call starts against a stopped Outlook bridge. Bounded: an Outlook read can
     // take up to a minute; a call still running at quit is recovered as 'unknown' and never re-run.
     const botsStopped = Promise.race([Promise.resolve().then(() => hyperBots?.stop()), new Promise(resolve => setTimeout(resolve, 5000))]);
-    void botsStopped.catch(() => {}).then(() => { hyperOutlook.stop(); return core.stop(); }).finally(() => app.quit());
+    // The speech runtime kills its native worker; bounded so a stuck worker cannot hold the app open.
+    const voiceStopped = Promise.race([Promise.resolve().then(() => hyperVoice?.dispose()), new Promise(resolve => setTimeout(resolve, 3000))]);
+    void Promise.all([botsStopped.catch(() => {}), voiceStopped.catch(() => {})]).then(() => { hyperOutlook.stop(); return core.stop(); }).finally(() => app.quit());
   });
   app.on('window-all-closed', () => app.quit());
 }

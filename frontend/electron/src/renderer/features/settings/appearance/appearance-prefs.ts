@@ -27,7 +27,7 @@ export type ChatWidth = (typeof CHAT_WIDTHS)[number];
 export const EFFORT_DISPLAYS = ['label', 'bars'] as const;
 export type EffortDisplay = (typeof EFFORT_DISPLAYS)[number];
 
-export const ENVIRONMENT_IDENTIFICATION_MODES = ['artwork', 'pill'] as const;
+export const ENVIRONMENT_IDENTIFICATION_MODES = ['artwork', 'nightly-artwork', 'dev-artwork', 'pill', 'none'] as const;
 export type EnvironmentIdentificationMode = (typeof ENVIRONMENT_IDENTIFICATION_MODES)[number];
 
 export interface AppearancePrefs {

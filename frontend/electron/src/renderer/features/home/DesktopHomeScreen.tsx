@@ -15,6 +15,7 @@ import { HyperChromePanel, useHyperChromePanelStore } from './HyperChromePanel';
 import { CommandPaletteHost } from '@/features/search/CommandPalette';
 import { SettingsDialogHost } from '@/features/settings/SettingsDialog';
 import { HyperJiraBackgroundSync } from '@/features/jira/ui/HyperJiraBackgroundSync';
+import { GlobalVoiceInputIndicator } from '@/features/hyper-voice/chat/GlobalVoiceInputIndicator';
 import { Spinner } from '@/components/ui/spinner';
 import { PluginType, localToolPlugin, viewPlugin } from '../tabs/plugin';
 import { tabsActions, useTabsStore } from '../tabs/tabs-store';
@@ -143,6 +144,8 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
       <CommandPaletteHost />
       <SettingsDialogHost user={user} />
       <HyperJiraBackgroundSync userId={String(user.id)} />
+      {/* t3code's GlobalVoiceInputIndicator: keeps dictation alive across navigation and shows it while its composer is off screen. */}
+      <GlobalVoiceInputIndicator />
       </HyperChromePanel>
     </div>
   );

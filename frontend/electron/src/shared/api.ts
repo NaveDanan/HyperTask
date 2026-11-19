@@ -162,6 +162,8 @@ export interface HypertaskApi {
   hyperNod: HyperNodApi;
   /** HyperBots: bots in rooms. Main owns the runtime, storage, approvals and connectors. */
   hyperBots: HyperBotsApi;
+  /** Voice input: local speech models, cloud transcription and transcript cleanup, ported from t3code. */
+  hyperVoice: import('./hyper-voice/api').HyperVoiceApi;
   hyperOpenBot: {
     callbackKey(input: { action: HyperCallbackKeyAction; agentId: string }): Promise<HyperCallbackKeyResult>;
     onNativeDestination(listener: (destination: HyperNativeDestination) => void): () => void;

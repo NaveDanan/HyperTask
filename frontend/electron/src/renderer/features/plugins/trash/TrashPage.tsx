@@ -4,6 +4,7 @@ import type { TrashPB } from '@shared/protobuf/hyper-folder/trash_pb';
 import { tr, useTr } from '@/i18n';
 import { FileText, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, showConfirmDeletionDialog, showConfirmDialog } from '@/ui';
@@ -35,11 +36,11 @@ function showCancelAndConfirmDialog(options: { title: string; description: strin
   });
 }
 
-function TopBar({ store }: { store: TrashStore }) {
+function TopBar({ store, title }: { store: TrashStore; title?: string }) {
   const { tr } = useTr();
   return (
     <div className="flex h-10 shrink-0 items-center gap-2">
-      <h1 className="text-lg font-semibold tracking-tight">{tr('trash.text')}</h1>
+      <h1 className="text-lg font-semibold tracking-tight">{title ?? tr('trash.text')}</h1>
       <div className="ml-auto flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => showCancelAndConfirmDialog({
           confirmLabel: tr('trash.restore'), title: tr('trash.confirmRestoreAll.title'), description: tr('trash.confirmRestoreAll.caption'), onConfirm: () => void store.restoreAll(),
@@ -82,16 +83,19 @@ function TrashCell({ object, onRestore, onDelete }: { object: TrashPB; onRestore
   );
 }
 
-/** TrashPage (plugins/trash/trash_page.dart). */
-export function TrashPage() {
+/**
+ * TrashPage (plugins/trash/trash_page.dart). Settings > Archived shows it with its own `title`, and
+ * `className` replaces the page padding there.
+ */
+export function TrashPage({ title, className }: { title?: string; className?: string } = {}) {
   const [store] = useState(createTrashStore);
   useEffect(() => store.start(), [store]);
   const objects = useStore(store, (s) => s.objects);
   const { tr } = useTr();
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-8 py-6">
-      <TopBar store={store} />
+    <div className={cn('mx-auto flex h-full w-full max-w-5xl flex-col', className ?? 'px-8 py-6')}>
+      <TopBar store={store} title={title} />
       <div className="trash-list min-h-0 flex-1 overflow-auto pt-6">
         {objects.length === 0 ? (
           <Empty className="h-full"><EmptyHeader><EmptyMedia variant="icon"><Trash2 className="size-5" /></EmptyMedia><EmptyTitle>{tr('trash.mobile.empty')}</EmptyTitle><EmptyDescription>{tr('trash.mobile.emptyDescription')}</EmptyDescription></EmptyHeader></Empty>

@@ -3,7 +3,7 @@ import type { ViewPB } from '@shared/protobuf/hyper-folder/view_pb';
 import { AFRolePB, WorkspaceTypePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import { useStore } from 'zustand';
 import { useTr } from '@/i18n';
-import { Globe, Lock, Trash2, Users } from 'lucide-react';
+import { Archive, Globe, Lock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -12,8 +12,9 @@ import { HyperSvg } from '@/icons/HyperSvg';
 import { cn } from '@/lib/utils';
 import { HypertaskPopover, Tooltip, showToast } from '@/ui';
 import { HyperLayoutIcon } from '../plugins/PlaceholderPage';
-import { trashPlugin } from '../tabs/plugin';
-import { tabsActions, useTabsStore } from '../tabs/tabs-store';
+import { openSettings } from '../home/notifiers';
+import { SettingsPage } from '../settings/settings-dialog-store';
+import { tabsActions } from '../tabs/tabs-store';
 import { SpacePermission, isSpace, spaceIcon, spaceIconColor, spacePermission } from '../view/view-ext';
 import { buildBreadcrumbs } from './breadcrumbs';
 import { useCurrentWorkspace } from './current-workspace';
@@ -26,10 +27,9 @@ import { usePageAccessLevel, useViewScope } from './view-scope';
 import { createViewTitleBarStore } from './view-title-bar-store';
 import { HyperSvgs, type HyperSvgName } from '@/icons/hyper-svgs';
 
-/** Opens the Trash tab and clears the sidebar selection (MenuSharedState.latestOpenView = null). */
+/** Opens the Trash, which lives in Settings > Archived. */
 export function openTrash() {
-  useTabsStore.setState({ latestOpenView: null });
-  tabsActions.openPlugin(trashPlugin());
+  openSettings.emit(SettingsPage.archived);
 }
 
 /** ViewTitleBar (workspace/presentation/widgets/view_title_bar.dart): `space › ... › page`. */
@@ -127,12 +127,11 @@ function SectionChip({
   );
 }
 
-/** TrashBreadcrumb: opens the Trash. */
+/** TrashBreadcrumb: opens Settings > Archived. */
 export function TrashBreadcrumb() {
-  const { tr } = useTr();
   return (
     <Button variant="ghost" size="sm" className="h-7 max-w-48 gap-1.5 px-1.5 font-normal text-muted-foreground hover:text-foreground" onClick={openTrash}>
-      <Trash2 className="size-4" /><span className="truncate">{tr('trash.text')}</span>
+      <Archive className="size-4" /><span className="truncate">Archived</span>
     </Button>
   );
 }

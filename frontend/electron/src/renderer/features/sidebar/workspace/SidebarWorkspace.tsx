@@ -202,8 +202,8 @@ function SidebarSwitchWorkspaceButton({ user, currentWorkspace, isHover: _isHove
   const controller = useRef<PopoverController>(null);
   const [open, setOpen] = useState(false);
   return (
-    <HypertaskPopover controllerRef={controller} trigger="none" direction="bottomWithCenterAligned"
-      offset={{ x: 0, y: 5 }} constraints={{ width: 288, maxWidth: 288, maxHeight: 600 }} margin={0} plain
+    <HypertaskPopover controllerRef={controller} trigger="none" direction="topWithCenterAligned"
+      offset={{ x: 0, y: -5 }} constraints={{ width: 288, maxWidth: 288, maxHeight: 600 }} margin={0} plain
       onOpen={() => {
         setOpen(true);
         void workspaceActions.fetchWorkspaces();

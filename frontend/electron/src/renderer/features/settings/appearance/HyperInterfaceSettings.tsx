@@ -13,7 +13,6 @@ import {
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue, Switch } from './HyperSettingsControls';
 import {
   DEFAULT_APPEARANCE_PREFS,
-  ENVIRONMENT_IDENTIFICATION_MODES,
   MAX_APPEARANCE_CONTRAST,
   MAX_GLASS_OPACITY,
   MAX_PANEL_ANIMATION_DURATION_MS,
@@ -28,6 +27,12 @@ import {
   type EnvironmentIdentificationMode,
 } from './appearance-prefs';
 import { HyperPanelAnimationsPreview } from './HyperPanelAnimationsPreview';
+import {
+  resolveSidebarStageBackdropVariant,
+  useEnvironmentIdentificationMode,
+  useEnvironmentStageLabel,
+  type SidebarStageBackdropVariant,
+} from '@/features/sidebar/HyperSidebarStageBackdrop';
 
 const CHAT_WIDTH_LABELS: Record<ChatWidth, string> = {
   comfortable: 'Comfortable',
@@ -40,12 +45,41 @@ const EFFORT_DISPLAY_LABELS: Record<EffortDisplay, string> = {
   bars: 'Bars',
 };
 
-// HyperTask has no Dev or Nightly channels, so the channel artwork options are not offered. The
-// artwork value is kept as stored and labeled None, as t3code labels it on its Latest channel.
 const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, string> = {
-  artwork: 'None',
+  artwork: 'Artwork',
+  'nightly-artwork': 'Nightly artwork',
+  'dev-artwork': 'Dev artwork',
   pill: 'Version pill',
+  none: 'None',
 };
+
+// The default "artwork" follows the running channel (Dev for an unpackaged build), so it is labeled as
+// that channel's art, or as "None" on Latest. The other channel's art is offered as a fixed choice.
+function environmentIdentificationOptions(
+  stageVariant: SidebarStageBackdropVariant | null,
+): ReadonlyArray<readonly [EnvironmentIdentificationMode, string]> {
+  if (stageVariant === 'dev') {
+    return [
+      ['artwork', 'Dev artwork'],
+      ['nightly-artwork', 'Nightly artwork'],
+      ['pill', 'Version pill'],
+      ['none', 'None'],
+    ];
+  }
+  if (stageVariant === 'nightly') {
+    return [
+      ['artwork', 'Nightly artwork'],
+      ['dev-artwork', 'Dev artwork'],
+      ['pill', 'Version pill'],
+      ['none', 'None'],
+    ];
+  }
+  return [
+    ['artwork', 'None'],
+    ['nightly-artwork', 'Nightly artwork'],
+    ['dev-artwork', 'Dev artwork'],
+  ];
+}
 
 export function HyperInterfaceSettingsSection() {
   const appearanceContrast = useAppearancePrefsStore((s) => s.appearanceContrast);
@@ -56,6 +90,23 @@ export function HyperInterfaceSettingsSection() {
   const panelAnimationDurationMs = useAppearancePrefsStore((s) => s.panelAnimationDurationMs);
   const environmentIdentificationMode = useAppearancePrefsStore((s) => s.environmentIdentificationMode);
   const persistComposerContextStrip = useAppearancePrefsStore((s) => s.persistComposerContextStrip);
+  const environmentStageLabel = useEnvironmentStageLabel();
+  const environmentStageVariant = resolveSidebarStageBackdropVariant(environmentStageLabel);
+  const environmentIdentificationOptionList = environmentIdentificationOptions(environmentStageVariant);
+  const environmentIdentificationLabel =
+    environmentIdentificationOptionList.find(([value]) => value === environmentIdentificationMode)?.[1] ??
+    ENVIRONMENT_IDENTIFICATION_LABELS[environmentIdentificationMode];
+  const effectiveEnvironmentIdentificationMode = useEnvironmentIdentificationMode();
+  const themeHidesEnvironmentArtwork =
+    effectiveEnvironmentIdentificationMode === 'pill' &&
+    resolveSidebarStageBackdropVariant(environmentStageLabel, environmentIdentificationMode) !== null;
+  const environmentIdentificationDescription = themeHidesEnvironmentArtwork
+    ? environmentStageVariant
+      ? 'Only built-in themes show artwork, so this theme shows the version pill.'
+      : 'Only built-in themes show artwork.'
+    : environmentStageVariant
+      ? 'Choose how Dev and Nightly environments are identified.'
+      : 'Show Dev or Nightly artwork in the sidebar header.';
 
   return (
     <SettingsSection id="appearance-interface" title="Interface">
@@ -222,7 +273,7 @@ export function HyperInterfaceSettingsSection() {
 
         <SettingsRow
           title="Environment identification"
-          description="Show the version pill in the sidebar header."
+          description={environmentIdentificationDescription}
           resetAction={
             environmentIdentificationMode !== DEFAULT_APPEARANCE_PREFS.environmentIdentificationMode ? (
               <SettingResetButton
@@ -235,19 +286,20 @@ export function HyperInterfaceSettingsSection() {
             <Select
               value={environmentIdentificationMode}
               onValueChange={(value) => {
-                if (value === 'artwork' || value === 'pill' || value === 'none')
+                const option = environmentIdentificationOptionList.find(([optionValue]) => optionValue === value);
+                if (option)
                   void updateAppearancePrefs({
-                    environmentIdentificationMode: value,
+                    environmentIdentificationMode: option[0],
                   });
               }}
             >
               <SelectTrigger size="sm" className="w-full sm:w-40" aria-label="Environment identification">
-                <SelectValue>{ENVIRONMENT_IDENTIFICATION_LABELS[environmentIdentificationMode]}</SelectValue>
+                <SelectValue>{environmentIdentificationLabel}</SelectValue>
               </SelectTrigger>
               <SelectPopup align="end" alignItemWithTrigger={false}>
-                {ENVIRONMENT_IDENTIFICATION_MODES.map((mode) => (
-                  <SelectItem key={mode} value={mode}>
-                    {ENVIRONMENT_IDENTIFICATION_LABELS[mode]}
+                {environmentIdentificationOptionList.map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
                   </SelectItem>
                 ))}
               </SelectPopup>

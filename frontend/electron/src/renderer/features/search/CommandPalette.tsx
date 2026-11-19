@@ -477,7 +477,7 @@ function NoSearchResultsHint({ onClose }: { onClose: () => void }) {
               openTrash();
             }}
           >
-            {tr('trash.text')}
+            Archived
           </button>
         </EmptyDescription>
       </EmptyHeader>

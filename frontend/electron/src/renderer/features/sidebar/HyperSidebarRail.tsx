@@ -1,6 +1,6 @@
 // HyperSidebarRail: the 56px icon rail the sidebar collapses to (as in CPA-Desktop). Built on the
 // shared ReUI/base-ui primitives: base-ui Tooltip, the app's sidebar tokens and nav icons.
-import { Bot, BotMessageSquare, House, SquareCheckBig, LayoutTemplate, PanelLeftOpen, Search, SquarePen, Trash2 } from 'lucide-react';
+import { Bot, BotMessageSquare, House, SquareCheckBig, LayoutTemplate, PanelLeftOpen, Search, SquarePen } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AFRolePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
@@ -12,7 +12,7 @@ import { useTr } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { MenuStatus, homeSettingActions } from '@/features/home/home-setting-store';
 import { loseFocus, openSettings, toggleCommandPalette } from '@/features/home/notifiers';
-import { localToolPlugin, trashPlugin } from '@/features/tabs/plugin';
+import { localToolPlugin } from '@/features/tabs/plugin';
 import { tabsActions, useTabsStore } from '@/features/tabs/tabs-store';
 import { isMac } from './components';
 import { HyperChatButton, createNewPageInSidebar } from './SidebarButtons';
@@ -62,7 +62,6 @@ export function HyperSidebarRail({ user }: { user: UserProfilePB }) {
   const name = user.name || tr('defaultUsername');
   const role = useWorkspaceStore((s) => workspaceRole(s.currentWorkspace));
   const activeTab = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id);
-  const activeTrash = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.kind === 'trash');
 
   return (
     <div data-slot="sidebar-rail" className="absolute inset-y-0 left-0 z-2 flex w-14 flex-col bg-sidebar text-sidebar-foreground">
@@ -110,12 +109,6 @@ export function HyperSidebarRail({ user }: { user: UserProfilePB }) {
         <div className="w-8 shrink-0 [&>button>span:not(:first-child)]:sr-only">
           <HyperChatButton />
         </div>
-        <div className="flex-1" />
-        <HyperRailButton label={tr('trash.text')} icon={<Trash2 />} active={activeTrash} className="shrink-0" onClick={() => {
-          // MenuSharedState.latestOpenView = null clears the tree selection.
-          useTabsStore.setState({ latestOpenView: null });
-          tabsActions.openPlugin(trashPlugin());
-        }} tooltip={tr('trash.text')} />
       </div>
     </div>
   );

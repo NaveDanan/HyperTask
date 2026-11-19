@@ -1,14 +1,14 @@
 import { useHyperOpenBotService } from '../hyper-openbot/HyperServiceStatus';
-// Sidebar entries: search, new page, Jira, Templates and Trash.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Bot, BotMessageSquare, House, LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen, Trash2 } from 'lucide-react';
+// Sidebar entries: search, new page, Jira and Templates.
+import { useEffect, useRef, useState } from 'react';
+import { Bot, BotMessageSquare, House, LayoutTemplate, MessageSquareText, Search, SquareCheckBig, SquarePen } from 'lucide-react';
 import { ViewLayoutPB, ViewSectionPB } from '@shared/protobuf/hyper-folder/view_pb';
 import { NavItem } from '@/components/app/nav';
 import { ShortcutKeys } from '@/components/app/shortcut';
 import { useTr } from '@/i18n';
 import { Tooltip } from '@/ui';
 import { createNewPage, toggleCommandPalette } from '@/features/home/notifiers';
-import { localToolPlugin, trashPlugin } from '@/features/tabs/plugin';
+import { localToolPlugin } from '@/features/tabs/plugin';
 import { tabsActions, useTabsStore } from '@/features/tabs/tabs-store';
 import { hintTooltip, isMac } from './components';
 import { ViewBackendService } from '@/features/view/view-service';
@@ -79,20 +79,6 @@ export function HyperTemplatesButton() {
   const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:templates');
   return <NavItem icon={<LayoutTemplate />} label={tr('template.label')} active={active}
     onClick={() => tabsActions.openPlugin(localToolPlugin('templates'))} />;
-}
-
-export function SidebarFooter(): ReactNode {
-  const { tr } = useTr();
-  const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.kind === 'trash');
-  return (
-    <div className="shrink-0 border-t border-sidebar-border py-2">
-      <NavItem icon={<Trash2 />} label={tr('trash.text')} active={active} onClick={() => {
-        // MenuSharedState.latestOpenView = null clears the tree selection.
-        useTabsStore.setState({ latestOpenView: null });
-        tabsActions.openPlugin(trashPlugin());
-      }} />
-    </div>
-  );
 }
 
 /** Discoverable entry using the existing native Chat view/plugin. */

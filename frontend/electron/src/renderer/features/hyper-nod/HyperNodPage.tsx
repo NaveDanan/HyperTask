@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { HyperComposerDictationControls, HyperComposerDictationPreview, useHyperComposerDictation } from '@/features/hyper-voice/chat/HyperComposerDictation';
+import { localToolPlugin } from '@/features/tabs/plugin';
+import { tabsActions } from '@/features/tabs/tabs-store';
 import { HyperTranscript } from '../hyper-openbot/transcript';
 import { HyperNodController, hyperNodApprovalLabels, hyperNodDraftAfterSend, type HyperNodViewState } from './HyperNodController';
 import { hyperNodFailure, hyperNodPending, hyperNodTranscript, hyperNodWork } from './HyperNodStore';
@@ -111,16 +114,28 @@ function HyperNodRequest({ message, disabled, actions }: { message: HyperNodMess
 function HyperNodComposer({ disabled, sending, running, stopping, onSend, onStop }: { disabled: boolean; sending: boolean; running: boolean; stopping: boolean; onSend: (text: string) => Promise<boolean>; onStop: () => void }) {
   const [text, setText] = useState(savedDraft);
   const latest = useRef(text);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const update = (value: string) => { savedDraft = value; latest.current = value; setText(value); };
-  const submit = async () => { const sent = text; if (await onSend(sent)) update(hyperNodDraftAfterSend(latest.current, sent)); };
-  const blocked = disabled || sending || !text.trim();
-  return <form className="rounded-xl border border-border bg-background p-2" onSubmit={event => { event.preventDefault(); if (!blocked) void submit(); }}>
-    <Textarea aria-label="Message Nod" placeholder="Ask Nod" value={text} maxLength={HYPER_NOD_TEXT_LIMIT} disabled={disabled} rows={2}
+  const send = async (sent: string) => { if (await onSend(sent)) update(hyperNodDraftAfterSend(latest.current, sent)); };
+  // Dictation (t3code's voice input): the draft outlives this composer, so a recording keeps going when the tab closes.
+  const dictation = useHyperComposerDictation({
+    ownerKey: 'nod', label: 'Nod assistant', text, textareaRef, formRef, disabled, onTextChange: update,
+    onSubmit: value => { if (value.trim() && !disabled && !sending) void send(value); },
+    persistentDraft: { readStoredText: () => savedDraft, commitStoredText: value => { savedDraft = value; }, open: () => tabsActions.openPlugin(localToolPlugin('nod')) },
+  });
+  const dictating = dictation.speech.blocksSubmission;
+  const blocked = disabled || sending || dictation.speech.preparing || (!text.trim() && !dictating);
+  const submit = () => { if (!blocked) dictation.submit(text); };
+  return <form ref={formRef} className="rounded-xl border border-border bg-background p-2" onSubmit={event => { event.preventDefault(); submit(); }}>
+    <Textarea ref={textareaRef} data-testid="composer-editor" aria-label="Message Nod" placeholder="Ask Nod" value={text} maxLength={HYPER_NOD_TEXT_LIMIT} disabled={disabled || dictation.speech.freezesEditor} rows={2}
       className="max-h-48 min-h-12 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
       onChange={event => update(event.target.value)}
-      onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!blocked) void submit(); } }} />
-    <div className="flex justify-end gap-2">
+      onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); submit(); } }} />
+    <HyperComposerDictationPreview dictation={dictation} />
+    <div className="flex min-w-0 items-center justify-end gap-2">
       {running && <Button type="button" variant="outline" size="icon-sm" aria-label="Stop Nod's work" title="Stops every task Nod is running" disabled={stopping} onClick={onStop}><Square /></Button>}
+      <HyperComposerDictationControls dictation={dictation} disabled={disabled} />
       <Button type="submit" size="icon-sm" aria-label="Send" disabled={blocked}>{sending ? <LoaderCircle className="animate-spin motion-reduce:animate-none" /> : <ArrowUp />}</Button>
     </div>
   </form>;

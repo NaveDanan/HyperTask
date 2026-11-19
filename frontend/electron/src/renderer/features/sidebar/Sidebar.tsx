@@ -13,7 +13,7 @@ import { resetRecentViews } from '@/features/search/recent-views-store';
 import { showLoading } from './components';
 import { SidebarFolder } from './folder/SidebarFolder';
 import { SidebarTopMenu, SidebarUser } from './header/SidebarHeader';
-import { HyperHomeButton, JiraButton, HyperChatButton, HyperNodButton, HyperBotsButton, HyperTemplatesButton, SidebarFooter, SidebarNewPageButton, SidebarSearchButton } from './SidebarButtons';
+import { HyperHomeButton, JiraButton, HyperChatButton, HyperNodButton, HyperBotsButton, HyperTemplatesButton, SidebarNewPageButton, SidebarSearchButton } from './SidebarButtons';
 import { SidebarSpace } from './space/SidebarSpace';
 import { useSpaceState } from './space/space-context';
 import { favoriteActions } from './stores/favorite-store';
@@ -121,10 +121,9 @@ function SidebarBody({ user }: { user: UserProfilePB }) {
   const [role] = useState(() => workspaceRole(useWorkspaceStore.getState().currentWorkspace));
   const [scrolled, setScrolled] = useState(false);
   return (
-    <div className="group/sidebar flex h-full flex-col px-2 text-sidebar-foreground">
+    <div className="group/sidebar relative flex h-full flex-col px-2 text-sidebar-foreground">
       <SidebarTopMenu />
-      {showWorkspace ? <SidebarWorkspace user={user} /> : <SidebarUser user={user} />}
-      <div className="flex shrink-0 flex-col gap-px py-1">
+      <div className="relative z-10 flex shrink-0 flex-col gap-px py-1">
         <HyperHomeButton />
         <SidebarSearchButton />
         {role !== AFRolePB.Guest && <SidebarNewPageButton />}
@@ -136,7 +135,10 @@ function SidebarBody({ user }: { user: UserProfilePB }) {
       </div>
       <FolderOrSpace onScrolled={setScrolled} scrolled={scrolled} />
       {/* SpaceMigration and the app-update banner are unreachable in this checkout. */}
-      <SidebarFooter />
+      {/* The account row (workspace or user, settings, notifications) sits where Trash was; Trash is Settings > Archived. */}
+      <div className="shrink-0 border-t border-sidebar-border py-1">
+        {showWorkspace ? <SidebarWorkspace user={user} /> : <SidebarUser user={user} />}
+      </div>
     </div>
   );
 }
