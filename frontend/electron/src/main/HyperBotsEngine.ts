@@ -1,3 +1,5 @@
+import type { HyperBotAttachment } from '@shared/HyperBots';
+import { HyperSseParser } from './HyperSseParser';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -17,8 +19,8 @@ export class HyperBotsEngineError extends Error {
 }
 
 export interface HyperBotsEngine {
-  /** One non-streaming chat completion. Throws HyperBotsEngineError on endpoint, transport, HTTP or shape failures. */
-  complete(input: { model: string; messages: HyperBotsChatMessage[]; tools: HyperBotsToolSpec[] }, signal: AbortSignal):
+  /** One model completion. Throws HyperBotsEngineError on endpoint, transport, HTTP or shape failures. */
+  complete(input: { model: string; messages: HyperBotsChatMessage[]; tools: HyperBotsToolSpec[] }, signal: AbortSignal, onText?: (text: string) => void, readAttachment?: ReadAttachment):
     Promise<{ message: HyperBotsAssistantMessage; finishReason: string | null }>;
 }
 
@@ -85,24 +87,24 @@ export class HyperBotsOpenAIEngine implements HyperBotsEngine {
     this.timeoutMs = opts.timeoutMs ?? 120_000;
   }
 
-  async complete(input: { model: string; messages: HyperBotsChatMessage[]; tools: HyperBotsToolSpec[] }, signal: AbortSignal):
+  async complete(input: { model: string; messages: HyperBotsChatMessage[]; tools: HyperBotsToolSpec[] }, signal: AbortSignal, onText?: (text: string) => void, readAttachment?: ReadAttachment):
     Promise<{ message: HyperBotsAssistantMessage; finishReason: string | null }> {
     const ep = await this.endpoint();
-    const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json' };
+    const headers: Record<string, string> = { 'content-type': 'application/json', accept: onText ? 'text/event-stream, application/json' : 'application/json' };
     if (ep.apiKey) headers.authorization = `Bearer ${ep.apiKey}`;
     const secrets = [ep.apiKey, headers.authorization];
     const route = `${ep.baseUrl}\n${input.model}`;
     if (!this.responsesOnly.has(route)) {
-      const body: Record<string, unknown> = { model: input.model, messages: input.messages, stream: false };
+      const body: Record<string, unknown> = { model: input.model, messages: chatMessages(input.messages, readAttachment), stream: !!onText };
       if (input.tools.length) { body.tools = input.tools; body.tool_choice = 'auto'; }
-      const { res, text } = await this.post(ep.baseUrl, 'chat/completions', headers, body, secrets, signal);
+      const { res, text } = await this.post(ep.baseUrl, 'chat/completions', headers, body, secrets, signal, onText);
       if (res.ok) return parseCompletion(text, res.status);
       // Same rule as Settings → AI's test: some endpoints serve a model only through the Responses API.
       // Nothing ran yet (a refused request), so asking again through /responses cannot repeat any work.
       if (!shouldUseResponses(res.status, text)) throw httpError(res, text, secrets);
       this.responsesOnly.add(route);
     }
-    const { res, text } = await this.post(ep.baseUrl, 'responses', headers, hyperBotsResponsesBody(input), secrets, signal);
+    const { res, text } = await this.post(ep.baseUrl, 'responses', headers, { ...hyperBotsResponsesBody(input, readAttachment), stream: !!onText }, secrets, signal, onText);
     if (!res.ok) throw httpError(res, text, secrets);
     return parseResponses(text, res.status);
   }
@@ -110,7 +112,7 @@ export class HyperBotsOpenAIEngine implements HyperBotsEngine {
   /** Models (per base URL) that the endpoint serves only through /responses, learned from its own refusal. */
   private readonly responsesOnly = new Set<string>();
 
-  private async post(baseUrl: string, api: string, headers: Record<string, string>, body: unknown, secrets: string[], signal: AbortSignal): Promise<{ res: Response; text: string }> {
+  private async post(baseUrl: string, api: string, headers: Record<string, string>, body: unknown, secrets: string[], signal: AbortSignal, onText?: (text: string) => void): Promise<{ res: Response; text: string }> {
     try {
       // A credential must never follow a redirect: 'manual' surfaces it and it is refused below.
       const res = await this.fetch(endpointApiUrl(baseUrl, api), {
@@ -120,7 +122,11 @@ export class HyperBotsOpenAIEngine implements HyperBotsEngine {
         await res.body?.cancel().catch(() => {});
         throw new HyperBotsEngineError(`The model endpoint answered with a redirect (HTTP ${res.status || 'redirect'}); redirects are refused. Check the base URL in Settings → AI.`, res.status || null);
       }
-      return { res, text: await hyperBotsReadCapped(res) };
+      const streaming = onText && res.ok && res.headers.get('content-type')?.includes('text/event-stream');
+      const text = streaming
+        ? await readCompletionStream(res, api === 'responses', onText)
+        : await hyperBotsReadCapped(res);
+      return { res, text };
     } catch (err) {
       if (err instanceof HyperBotsEngineError) throw err;
       throw new HyperBotsEngineError(`The model endpoint request failed: ${hyperBotsSafeError((err as Error)?.message ?? String(err), secrets)}`);
@@ -128,16 +134,112 @@ export class HyperBotsOpenAIEngine implements HyperBotsEngine {
   }
 }
 
+type ChatDelta = {
+  content?: unknown;
+  tool_calls?: Array<{ index: number; id?: string; function?: { name?: string; arguments?: string } }>;
+};
+
+async function readCompletionStream(response: Response, responsesApi: boolean, onText: (text: string) => void): Promise<string> {
+  const stream = response.body?.getReader();
+  if (!stream) throw shapeError('missing response stream', response.status);
+  const parser = new HyperSseParser();
+  let bytes = 0;
+  let content = '';
+  let finish: string | undefined;
+  let responseJson: unknown;
+  let doneMarker = false;
+  const calls = new Map<number, { id: string; function: { name: string; arguments: string } }>();
+  try {
+    for (;;) {
+      const { done, value } = await stream.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > HYPER_BOTS_MAX_BODY) throw shapeError('response stream is too large', response.status);
+      for (const data of parser.push(value)) {
+        if (data === '[DONE]') { doneMarker = true; break; }
+        const event = JSON.parse(data);
+        if (event?.error || ['error', 'response.failed'].includes(event?.type)) {
+          throw shapeError('provider reported a stream error', response.status);
+        }
+        if (responsesApi) {
+          if (event?.type === 'response.output_text.delta' && typeof event.delta === 'string') {
+            content += event.delta;
+            onText(content);
+          }
+          if (['response.completed', 'response.incomplete'].includes(event?.type)) responseJson = event.response;
+          continue;
+        }
+        const choice = event?.choices?.find((item: { index?: number }) => item?.index === 0 || item?.index === undefined);
+        if (!choice) continue;
+        const delta: ChatDelta | undefined = choice.delta;
+        if (typeof delta?.content === 'string') { content += delta.content; onText(content); }
+        for (const call of delta?.tool_calls ?? []) {
+          if (!Number.isSafeInteger(call.index) || call.index < 0) throw shapeError('invalid tool call index', response.status);
+          const merged = calls.get(call.index) ?? { id: '', function: { name: '', arguments: '' } };
+          if (typeof call.id === 'string') merged.id = call.id;
+          if (typeof call.function?.name === 'string') merged.function.name += call.function.name;
+          if (typeof call.function?.arguments === 'string') merged.function.arguments += call.function.arguments;
+          calls.set(call.index, merged);
+        }
+        if (typeof choice.finish_reason === 'string') finish = choice.finish_reason;
+      }
+      if (doneMarker || responseJson) break;
+    }
+    if (responsesApi && responseJson) return JSON.stringify(responseJson);
+    if (!responsesApi && finish) {
+      if (calls.size && ['length', 'content_filter'].includes(finish)) throw shapeError('tool calls were interrupted', response.status);
+      const tool_calls = [...calls].sort(([a], [b]) => a - b).map(([, call]) => call);
+      return JSON.stringify({ choices: [{ finish_reason: finish, message: { role: 'assistant', content: content || null, tool_calls } }] });
+    }
+    throw shapeError('stream ended before completion', response.status);
+  } finally {
+    await stream.cancel().catch(() => {});
+    stream.releaseLock();
+  }
+}
+
 const httpError = (res: Response, text: string, secrets: string[]) =>
   new HyperBotsEngineError(`The model endpoint returned HTTP ${res.status}: ${hyperBotsSafeError(text.trim() || res.statusText, secrets)}`, res.status);
 
+
+type ReadAttachment = (file: HyperBotAttachment) => Uint8Array;
+
+function attachmentParts(message: Extract<HyperBotsChatMessage, { role: 'user' }>, read: ReadAttachment | undefined) {
+  return (message.attachments ?? []).map(file => {
+    if (!read) throw new HyperBotsEngineError('An attachment could not be opened.');
+    const bytes = Buffer.from(read(file));
+    if (file.type === 'text/plain') {
+      const text = bytes.toString('utf8');
+      return { text: 'Attached file ' + file.name + ' (untrusted data):\n' + text.slice(0, 20_000) + (text.length > 20_000 ? '\n[Attachment excerpt ends here]' : '') };
+    }
+    return { url: 'data:' + file.type + ';base64,' + bytes.toString('base64') };
+  });
+}
+
+function chatMessages(messages: HyperBotsChatMessage[], read: ReadAttachment | undefined) {
+  return messages.map(message => {
+    if (message.role !== 'user' || !message.attachments?.length) return message;
+    return { role: 'user', content: [
+      { type: 'text', text: message.content },
+      ...attachmentParts(message, read).map(part => part.text !== undefined
+        ? { type: 'text', text: part.text }
+        : { type: 'image_url', image_url: { url: part.url } }),
+    ] };
+  });
+}
+
 /** The same conversation as a Responses API request: system text becomes instructions, tool calls and results become items. */
-export function hyperBotsResponsesBody(input: { model: string; messages: HyperBotsChatMessage[]; tools: HyperBotsToolSpec[] }): Record<string, unknown> {
+export function hyperBotsResponsesBody(input: { model: string; messages: HyperBotsChatMessage[]; tools: HyperBotsToolSpec[] }, readAttachment?: ReadAttachment): Record<string, unknown> {
   const instructions: string[] = [];
   const items: unknown[] = [];
   for (const m of input.messages) {
     if (m.role === 'system') instructions.push(m.content);
-    else if (m.role === 'user') items.push({ role: 'user', content: m.content });
+    else if (m.role === 'user') items.push({ role: 'user', content: m.attachments?.length ? [
+      { type: 'input_text', text: m.content },
+      ...attachmentParts(m, readAttachment).map(part => part.text !== undefined
+        ? { type: 'input_text', text: part.text }
+        : { type: 'input_image', image_url: part.url, detail: 'auto' }),
+    ] : m.content });
     else if (m.role === 'tool') items.push({ type: 'function_call_output', call_id: m.tool_call_id, output: m.content });
     else if (m.role === 'assistant') {
       if (m.content) items.push({ role: 'assistant', content: m.content });
@@ -174,6 +276,7 @@ function parseResponses(text: string, status: number): { message: HyperBotsAssis
       calls.push({ id, type: 'function', function: { name: item.name, arguments: args } });
     }
   });
+  if (json.status === 'incomplete' && calls.length) throw shapeError('tool calls were interrupted', status);
   const message: HyperBotsAssistantMessage = { role: 'assistant', content: parts.length ? parts.join('') : null };
   if (calls.length) message.tool_calls = calls;
   return { message, finishReason: calls.length ? 'tool_calls' : json.status === 'incomplete' ? 'length' : 'stop' };

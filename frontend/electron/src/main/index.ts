@@ -5,18 +5,12 @@ import { HyperOutlookPresence } from './HyperOutlookPresence';
 import { HyperOutlookWindows } from './HyperOutlookPresenceWindows';
 import { registerHyperOutlookPresenceIpc } from './HyperOutlookPresenceIpc';
 import { registerHyperOutlookIpc } from './HyperOutlookIpc';
-import { hyperClassifyBrowserReturn } from './HyperBrowserReturn';
-import { HyperBrowserReturnQueue } from './HyperBrowserReturnQueue';
-import type { HyperOpenBotService } from './HyperOpenBotService';
-import { createHyperOpenBotService } from './HyperOpenBotBackend';
-import { registerHyperOpenBotServiceIpc } from './HyperOpenBotServiceIpc';
-import { createHyperOpenBotSession, hyperReadCoreIdentity, hyperNativeCoreRequest } from './HyperOpenBotSession';
-import { registerHyperOpenBotFileIpc, registerHyperOpenBotIpc } from './hyper-openbot';
-import { hyperNodReadAccess } from './HyperNodAccess';
-import { HyperNodClient } from './HyperNodClient';
-import { registerHyperNodIpc } from './HyperNodIpc';
-import { createHyperNodSession, hyperNodNativeCoreRequest } from './HyperNodSession';
-import { HyperNodTunnel } from './HyperNodTunnel';
+import { hyperBotTranscribe } from './HyperBotSpeech';
+import { HyperBotFiles } from './HyperBotFiles';
+import { HyperBotWorkspace, hyperBotWebOrigins, hyperBotWorkspaceTools } from './HyperBotWorkspace';
+import { HyperBotVault } from './HyperBotVault';
+import { SettingsError } from './settings-error';
+import { HyperBotsHostClient } from './HyperBotsHostClient';
 import { HyperBotsStore } from './HyperBotsStore';
 import { HyperBotsOpenAIEngine, hyperBotsReadEndpoint } from './HyperBotsEngine';
 import { HyperBotsRuntime } from './HyperBotsRuntime';
@@ -31,7 +25,7 @@ import os from 'node:os';
 import { existsSync } from 'node:fs';
 import { supportPath } from './support-path';
 import path from 'node:path';
-import { app, BrowserWindow, clipboard, dialog, ipcMain, net, session, shell } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, ipcMain, net, safeStorage, session, shell } from 'electron';
 import { IpcChannel as C, type AppInfo, type CoreInitConfig, type FileFilter } from '@shared/api';
 import { isVendorUrl } from '@shared/self-hosted-policy';
 import { scheduleCapture } from './capture';
@@ -61,7 +55,6 @@ const appRoot = path.resolve(__dirname, '../..');
 const prefs = new SharedPreferences(path.join(supportDirectory(), 'shared_preferences.json'));
 const core = new CoreProcess(coreBinaryPath(appRoot, app.isPackaged));
 const hyperOutlook = new HyperOutlookBridge();
-const hyperNodTunnel = new HyperNodTunnel();
 const hyperDevJwt = new HyperDevJwtBootstrap({ packaged: app.isPackaged, rendererUrl: process.env.ELECTRON_RENDERER_URL, enabled: process.env.HYPER_DEV_JWT_ENABLED, sessionFile: process.env.HYPER_DEV_JWT_SESSION_FILE });
 let coreStarted: Promise<void> | null = null;
 let hyperBots: HyperBotsHub | null = null;
@@ -69,25 +62,14 @@ let mainWindow: BrowserWindow | null = null;
 const hyperOutlookWindows = new HyperOutlookWindows();
 const hyperOutlookPresence = new HyperOutlookPresence(hyperOutlook, { detect: () => hyperOutlookWindows.detect(), launch: () => hyperOutlookWindows.launch(), hidden: () => !mainWindow || mainWindow.isMinimized() || !mainWindow.isVisible() });
 let launchDeepLink: string | null = findDeepLink(process.argv);
-const initialBrowserReturn = launchDeepLink !== null && hyperClassifyBrowserReturn(launchDeepLink) === 'return';
-if (launchDeepLink && hyperClassifyBrowserReturn(launchDeepLink) !== 'ordinary') launchDeepLink = null;
-let handleBrowserReturn: (() => Promise<void>) | undefined;
-let browserReturnReady = () => false;
-const browserReturns = new HyperBrowserReturnQueue(() => browserReturnReady(), async () => { await handleBrowserReturn?.(); });
-if (initialBrowserReturn) browserReturns.request();
 function deliverDeepLink(url: string) {
-  const kind = hyperClassifyBrowserReturn(url);
-  if (kind === 'reject') return;
-  if (kind === 'return') {
-    browserReturns.request();
-    return;
-  }
+  if (!url.startsWith(DEEP_LINK_SCHEME + ':')) return;
   if (mainWindow) mainWindow.webContents.send(C.AppDeepLink, url);
   else launchDeepLink = url;
 }
 
 function findDeepLink(argv: string[]): string | null {
-  return argv.find((arg) => (arg.startsWith(`${DEEP_LINK_SCHEME}:`) || /^openbot:/i.test(arg))) ?? null;
+  return argv.find((arg) => arg.startsWith(DEEP_LINK_SCHEME + ':')) ?? null;
 }
 
 const writeCoreOutput = app.isPackaged ? () => {} : createCoreOutputWriter(process.stdout);
@@ -173,22 +155,46 @@ function focusWindow() {
  * under <support>/hyper_bots/users, the Settings → AI endpoint, classic Outlook and that account's Jira tab access.
  */
 function createHyperBots() {
+  const host = HyperBotsHostClient.fromEnvironment(process.env);
+  const webOrigins = hyperBotWebOrigins(process.env.HYPER_BOTS_WEB_ORIGINS);
   const endpoint = () => hyperBotsReadEndpoint(supportDirectory(), unprotect);
   const jira = (user: HyperBotsUser) => hyperBotsReadJira(prefs, new JiraCredentialFiles(supportDirectory), user.userId);
   const netFetch = ((input, init) => net.fetch(input as string, init)) as typeof fetch;
   const engine = new HyperBotsOpenAIEngine({ endpoint, fetch: netFetch });
   const defaultModel = async () => { try { return (await endpoint()).defaultModel || null; } catch { return null; } };
+  let lastPrintedOwner: string | undefined;
   hyperBots = new HyperBotsHub({
     directory: path.join(supportDirectory(), 'hyper_bots', 'users'),
-    identity: async () => { await startCore(); return hyperBotsReadIdentity((event, payload) => core.request(event, payload)); },
+    startOnResolve: !host,
+    identity: async () => {
+      await startCore();
+      const identity = await hyperBotsReadIdentity((event, payload) => core.request(event, payload));
+      if (identity && process.env.HYPER_BOTS_PRINT_OWNER === '1' && identity.key !== lastPrintedOwner) {
+        lastPrintedOwner = identity.key;
+        console.info('[hyper-bots] host owner key', identity.key);
+      }
+      return identity;
+    },
     // Each runtime's Jira tool is bound to its own account; nothing global decides whose Jira receives a write.
-    create: (user, stateFile) => new HyperBotsRuntime({
-      store: new HyperBotsStore(stateFile), engine, defaultModel,
-      tools: new HyperBotsTools([...hyperBotsOutlookTools(hyperOutlook), hyperBotsJiraTool({ access: () => jira(user), fetch: netFetch })]),
-    }),
+    create: (user, stateFile) => {
+      const workspace = new HyperBotWorkspace(path.join(path.dirname(stateFile), 'workspace'));
+      return new HyperBotsRuntime({
+      workspace,
+      store: new HyperBotsStore(stateFile), files: new HyperBotFiles(path.join(path.dirname(stateFile), 'attachments')), engine, defaultModel,
+      vault: new HyperBotVault(path.join(path.dirname(stateFile), 'vault.enc'), () => {
+        if (!safeStorage.isEncryptionAvailable() || (process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text')) {
+          throw new SettingsError('unsupported', 'Unlock the operating system’s password storage to use the vault.');
+        }
+        return { seal: value => safeStorage.encryptString(value), open: value => safeStorage.decryptString(value) };
+      }),
+      transcribe: async (audio, signal) => hyperBotTranscribe(audio, await endpoint(), netFetch, signal),
+      tools: new HyperBotsTools([...hyperBotsOutlookTools(hyperOutlook), hyperBotsJiraTool({ access: () => jira(user), fetch: netFetch }), ...hyperBotWorkspaceTools(workspace, webOrigins, netFetch)]),
+      });
+    },
   });
   return {
     hub: hyperBots,
+    host,
     onOutlookPresenceChange: hyperOutlookPresence.onChange,
     connections: (user: HyperBotsUser) => hyperBotsConnections({ endpoint, outlook: hyperOutlook, jira: () => jira(user) }),
     models: async () => {
@@ -204,14 +210,6 @@ function registerIpc() {
   registerHyperOutlookIpc(hyperOutlook, () => mainWindow);
   registerHyperOutlookPresenceIpc(hyperOutlookPresence, () => mainWindow);
   registerHyperEntraIpc(() => mainWindow);
-  const openBotSessions = createHyperOpenBotSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
-  const nodSessions = createHyperNodSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
-  nodSessions.onInvalidate(() => hyperNodTunnel.close());
-  registerHyperNodIpc(() => mainWindow, nodSessions, new HyperNodClient({ socketPath: () => hyperNodTunnel.socketPath(), readAccess: signal => hyperNodReadAccess(signal) }));
-  let openBotService: HyperOpenBotService | undefined;
-  const openBotBridge = registerHyperOpenBotIpc(() => mainWindow, openBotSessions, () => openBotService?.snapshot().ready === true);
-  openBotService = createHyperOpenBotService(app.getPath('userData'), openBotSessions, openBotBridge.disconnect);
-  registerHyperOpenBotServiceIpc(() => mainWindow, openBotService);
   // HyperBots state that cannot be opened must not stop the app from starting: the hub reports it per account from current().
   try { registerHyperBotsIpc(() => mainWindow, createHyperBots()); } catch (error) {
     hyperBots = null;
@@ -220,45 +218,16 @@ function registerIpc() {
   }
   // Re-reads who is signed in: switches or stops the bots runtime so one account's work never runs as another's.
   const reconcileBots = () => { void hyperBots?.current().catch((error: unknown) => { if (!(error instanceof Error && error.message === HYPER_BOTS_SIGN_IN)) console.error('[hyper-bots] unavailable for this account', error); }); };
-  let returnBusy = false;
-  handleBrowserReturn = async () => {
-    if (returnBusy) return;
-    const owner = mainWindow;
-    if (!owner || owner.isDestroyed() || !openBotService?.snapshot().ready) return;
-    returnBusy = true;
-    const controller = new AbortController();
-    const stop = () => controller.abort();
-    const unsubscribe = openBotSessions.onInvalidate(stop);
-    owner.webContents.once('destroyed', stop);
-    owner.webContents.once('did-start-navigation', stop);
-    try {
-      const lease = await openBotSessions.acquire();
-      const answer = await dialog.showMessageBox(owner, { title: 'HyperTask connections', message: 'Return to Connections?', detail: 'The browser returned from OpenBot. This does not confirm a successful connection. Check the account status in Connections.', buttons: ['Cancel', 'Open Connections'], defaultId: 0, cancelId: 0, signal: controller.signal });
-      await openBotSessions.acquire(); lease.assertCurrent();
-      if (answer.response === 1 && !controller.signal.aborted && mainWindow === owner && !owner.isDestroyed() && openBotService?.snapshot().ready) owner.webContents.send('hyper-openbot:native-destination', { kind: 'connections', confirmation: 'native-confirmed' });
-    } catch { /* Sensitive callback and native failures never enter renderer error strings. */ }
-    finally { returnBusy = false; unsubscribe(); owner.webContents.removeListener('destroyed', stop); owner.webContents.removeListener('did-start-navigation', stop); }
-  };
-  browserReturnReady = () => !!mainWindow && !mainWindow.isDestroyed() && !!openBotService?.snapshot().ready && !!handleBrowserReturn;
-  openBotService.subscribe(() => { void browserReturns.flush(); });
-  core.on('exit', () => { void openBotSessions.beginNativeTransition().cleared.catch(() => {}); nodSessions.beginNativeTransition(); });
   ipcMain.handle(C.CoreInit, async (_, config: CoreInitConfig) => {
-    const transition = openBotSessions.beginNativeTransition(false);
-    const nodTransition = nodSessions.beginNativeTransition();
     await startCore();
-    await transition.cleared;
     const result = await core.init(config);
-    openBotSessions.completeNativeTransition(transition.version, result === 0);
-    nodSessions.completeNativeTransition(nodTransition, result === 0);
     if (hyperDevJwt.enabled) hyperDevJwt.coreReady(result === 0 && config.authenticator_type === 2 ? config.hypertask_cloud_config.base_url : null);
     reconcileBots();
     return result;
   });
   ipcMain.handle(C.CoreRequest, async (_, event: string, payload: Uint8Array) => {
-    const reply = await hyperNodNativeCoreRequest(nodSessions, event, () => hyperNativeCoreRequest(openBotSessions, event, async () => {
-      await startCore();
-      return core.request(event, payload);
-    }));
+    await startCore();
+    const reply = await core.request(event, payload);
     if (['SignOut', 'DeleteAccount', 'SignUp', 'OauthSignIn', 'SignInWithEmailPassword', 'PasscodeSignIn', 'MagicLinkSignIn', 'InitUser', 'OpenAnonUser'].includes(event)) reconcileBots();
     return reply;
   });
@@ -291,7 +260,6 @@ function registerIpc() {
   });
   ipcMain.handle(C.AppTakeLaunchDeepLink, (event) => {
     if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) return null;
-    void browserReturns.flush();
     const link = launchDeepLink;
     launchDeepLink = null;
     return link;
@@ -331,7 +299,6 @@ function registerIpc() {
   ipcMain.handle(C.PrefsSetDouble, (_, key: string, value: number) => prefs.setDouble(key, value));
   ipcMain.handle(C.PrefsRemove, (_, key: string) => prefs.remove(key));
 
-  registerHyperOpenBotFileIpc(app.getPath('userData'));
 
   ipcMain.on(C.WindowMinimize, () => mainWindow?.minimize());
   ipcMain.on(C.WindowToggleMaximize, () => {
@@ -411,7 +378,6 @@ if (!app.requestSingleInstanceLock()) {
     event.preventDefault();
     quitting = true;
     hyperOutlookPresence.stop();
-    hyperNodTunnel.close();
     // Bots stop first, so no connector call starts against a stopped Outlook bridge. Bounded: an Outlook read can
     // take up to a minute; a call still running at quit is recovered as 'unknown' and never re-run.
     const botsStopped = Promise.race([Promise.resolve().then(() => hyperBots?.stop()), new Promise(resolve => setTimeout(resolve, 5000))]);

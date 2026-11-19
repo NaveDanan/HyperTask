@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { HyperBotAvatar, hyperBotAvatarOf } from './HyperBotAvatar';
 import { HyperBotPickers, HyperBotModePicker } from './HyperBotPickers';
+import { HyperBotRoutineEditor } from './HyperBotRoutineMemory';
 import { HyperBotModal, HyperBotModalHeader } from './HyperBotModal';
 import { hyperBotDelete, hyperBotUpdate } from './HyperBotSettings';
 export function HyperBotInstructions({ bot, onChange }: { bot: HyperBotConfig; onChange: (bot: HyperBotConfig) => void }) {
@@ -25,7 +26,9 @@ export function HyperBotSettingsDialog({ settings, bot, room, onSave, onClose, e
     <div className="create-modal__body">{draft && <HyperBotAvatar shape={draft.avatar?.shape} color={draft.avatar?.color} size={64} />}
       <Input aria-label={bot ? 'Bot name' : 'Group name'} className="hb-text-input create-modal__name" value={name} maxLength={40} onChange={event => setName(event.target.value)} />
       {draft && <><HyperBotPickers shape={draft.avatar?.shape ?? 'blob'} color={draft.avatar?.color ?? 'black'} onShape={shape => setDraft({ ...draft, avatar: { shape, color: draft.avatar?.color ?? 'black' } })} onColor={color => setDraft({ ...draft, avatar: { shape: draft.avatar?.shape ?? 'blob', color } })} /><HyperBotModePicker mode={draft.mode ?? 'personal'} onChange={mode => setDraft({ ...draft, mode })} />
-      <HyperBotInstructions bot={draft} onChange={setDraft} /></>}
+      <HyperBotInstructions bot={draft} onChange={setDraft} />
+      <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1 accent-primary" checked={draft.learn === true} onChange={event => setDraft({ ...draft, learn: event.target.checked })} /><span>Automatically learn work preferences from this direct chat</span></label>
+      <HyperBotRoutineEditor routines={draft.routines ?? []} onChange={routines => setDraft({ ...draft, routines })} /></>}
       <div className="delete-bot">{confirm ? <><p>Delete {bot?.name ?? room.name}? {bot ? 'Its direct room is removed and it leaves every group.' : 'This group is removed from the sidebar.'}</p><div><Button variant="ghost" size="sm" onClick={() => setConfirm(false)}>Keep {bot ? 'bot' : 'group'}</Button><Button variant="destructive" size="sm" disabled={busy} onClick={() => void save(true)}>Confirm delete</Button></div></>
         : <Button type="button" variant="destructive" size="sm" disabled={!!bot && settings.bots.length <= 1} title={bot && settings.bots.length <= 1 ? 'Keep at least one bot.' : undefined} onClick={() => setConfirm(true)}>Delete {bot ? 'bot' : 'group'}</Button>}{bot && settings.bots.length <= 1 && <p>Keep at least one bot.</p>}</div>
       {error && <p role="alert" className="card__error">{error}</p>}

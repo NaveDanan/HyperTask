@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { z } from 'zod';
 import type { HyperNodProblem } from '@shared/HyperNod';
-import { hyperOpenBotSshTarget } from './HyperOpenBotSsh';
+import { hyperNodSshTarget } from './HyperNodSsh';
 import script from './HyperNodAccess.py?raw';
 export class HyperNodError extends Error {
   constructor(readonly problem: Exclude<HyperNodProblem, 'none'>, readonly detail?: string, readonly status?: number, readonly code?: string) {
@@ -16,7 +16,7 @@ const schema = z.strictObject({
   token: z.string().regex(/^[A-Za-z0-9_-]{43,512}$/).optional(),
 }).refine(value => (value.problem === 'none') === (value.token !== undefined));
 /** SSH receives one bundled program and a fixed action, never renderer input. The token stays in main memory. */
-export function hyperNodReadAccess(signal: AbortSignal, target = hyperOpenBotSshTarget): Promise<string> {
+export function hyperNodReadAccess(signal: AbortSignal, target = hyperNodSshTarget): Promise<string> {
   return new Promise((resolve, reject) => {
     signal.throwIfAborted();
     const ssh = target();

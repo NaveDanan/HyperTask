@@ -4,14 +4,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { hyperOpenBotSshTarget } from './HyperOpenBotSsh';
+import { hyperNodSshTarget } from './HyperNodSsh';
 /** Nod listens on the VM's loopback only. Its self-host NOD_PUBLIC_URL must name this exact origin. */
 export const HYPER_NOD_REMOTE = { host: '127.0.0.1', port: 4311 } as const;
 export const HYPER_NOD_ORIGIN = `http://${HYPER_NOD_REMOTE.host}:${HYPER_NOD_REMOTE.port}`;
 export const hyperNodSshArgs = (host: string) => ['-T', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=10', '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=3', '-W', `${HYPER_NOD_REMOTE.host}:${HYPER_NOD_REMOTE.port}`, host];
 /**
  * Private IPC endpoint relaying each connection through its own `ssh -W` child: a Windows named pipe,
- * or a Unix socket in an owner-only directory. No TCP listener is opened. Separate from the OpenBot relay.
+ * or a Unix socket in an owner-only directory. No TCP listener is opened.
  */
 export class HyperNodTunnel {
   private starting?: Promise<string>;
@@ -20,7 +20,7 @@ export class HyperNodTunnel {
   private directory?: string;
   private readonly relays = new Set<ChildProcess>();
   private readonly sockets = new Set<net.Socket>();
-  constructor(private readonly target = hyperOpenBotSshTarget) {}
+  constructor(private readonly target = hyperNodSshTarget) {}
   close() {
     this.generation++;
     this.starting = undefined;

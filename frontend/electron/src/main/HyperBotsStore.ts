@@ -2,8 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
+import { HyperBotAttachmentSchema } from './HyperBotFiles';
 import type {
-  HyperBotsAccess, HyperBotsApproval, HyperBotsApprovalStatus, HyperBotsCardRow, HyperBotsDelivery, HyperBotsMessage, HyperBotsRunStatus, HyperBotsRunSummary, HyperBotsSettings,
+  HyperBotAttachment, HyperBotMemory, HyperBotsAccess, HyperBotsApproval, HyperBotsApprovalStatus, HyperBotsCardRow, HyperBotsDelivery, HyperBotsMessage, HyperBotsRunStatus, HyperBotsRunSummary, HyperBotsSettings,
 } from '@shared/HyperBots';
 
 // Durable HyperBots state in one JSON file. Every mutation rewrites it atomically (tmp, fsync, rename);
@@ -12,7 +13,8 @@ import type {
 // OpenAI chat-completions wire shapes (subset).
 export type HyperBotsToolCall = { id: string; type: 'function'; function: { name: string; arguments: string } };
 export type HyperBotsChatMessage =
-  | { role: 'system' | 'user'; content: string }
+  | { role: 'system'; content: string }
+  | { role: 'user'; content: string; attachments?: HyperBotAttachment[] }
   | { role: 'assistant'; content: string | null; tool_calls?: HyperBotsToolCall[] }
   | { role: 'tool'; tool_call_id: string; content: string };
 export type HyperBotsToolSpec = { type: 'function'; function: { name: string; description: string; parameters: Record<string, unknown> } };
@@ -39,7 +41,8 @@ const Count = z.int().min(0);
 const Iso = z.iso.datetime();
 const ToolCall = z.object({ id: z.string(), type: z.literal('function'), function: z.object({ name: z.string(), arguments: z.string() }) });
 const ChatMessage = z.discriminatedUnion('role', [
-  z.object({ role: z.enum(['system', 'user']), content: z.string() }),
+  z.object({ role: z.literal('system'), content: z.string() }),
+  z.object({ role: z.literal('user'), content: z.string(), attachments: z.array(HyperBotAttachmentSchema).max(4).optional() }),
   z.object({ role: z.literal('assistant'), content: z.string().nullable(), tool_calls: z.array(ToolCall).optional() }),
   z.object({ role: z.literal('tool'), tool_call_id: z.string(), content: z.string() }),
 ]);
@@ -48,6 +51,9 @@ const MessageRow = z.object({
   id: z.string().min(1), roomId: z.string(), clientMessageId: z.string(),
   author: z.discriminatedUnion('kind', [z.object({ kind: z.literal('user') }), z.object({ kind: z.literal('bot'), botId: z.string() })]),
   text: z.string(), model: z.string().nullable(), runId: z.string().nullable(), hop: Count, createdAt: Iso, seq: Count,
+  attachments: z.array(HyperBotAttachmentSchema).max(4).optional(),
+  scheduled: z.literal(true).optional(),
+  routineId: z.uuid().optional(),
   plan: z.array(PlanEntry).nullable().default(null),
 });
 const RunRow = z.object({
@@ -66,8 +72,10 @@ const ApprovalRow = z.object({
   decidedBy: z.enum(['policy', 'owner']).nullable(), result: z.string().nullable(), error: z.string().nullable(), createdAt: Iso, updatedAt: Iso,
 });
 const Tombstone = z.object({ id: z.string().min(1), hash: z.string(), model: z.string().nullable(), createdAt: Iso });
+const MemoryRow = z.object({ id: z.uuid(), botId: z.string(), roomId: z.string(), text: z.string().min(1).max(240) });
 const Shape = z.object({
   version: z.literal(1), seq: Count, messages: z.array(MessageRow), runs: z.array(z.unknown()), approvals: z.array(z.unknown()),
+  memory: z.array(MemoryRow).default([]),
   tombstones: z.record(z.string(), Tombstone).default({}),
   settings: z.record(z.string(), z.unknown()).nullable(),
 });
@@ -76,14 +84,17 @@ type Stored = HyperBotsMessage & { seq: number; plan: HyperBotsPlanEntry[] | nul
 type Tomb = z.infer<typeof Tombstone>;
 type State = {
   version: 1; seq: number; messages: Stored[]; runs: HyperBotsRun[]; approvals: HyperBotsApprovalRecord[];
+  memory: HyperBotMemory[];
   tombstones: Record<string, Tomb>; settings: HyperBotsSettings | null;
 };
-const empty = (): State => ({ version: 1, seq: 0, messages: [], runs: [], approvals: [], tombstones: {}, settings: null });
+const empty = (): State => ({ version: 1, seq: 0, messages: [], runs: [], approvals: [], memory: [], tombstones: {}, settings: null });
 const now = () => new Date().toISOString();
 const copy = <T>(value: T): T => structuredClone(value);
 const finished = (s: HyperBotsRunStatus) => s === 'done' || s === 'failed';
 const strip = ({ seq: _seq, plan: _plan, ...m }: Stored): HyperBotsMessage => copy(m);
 const hash = (text: string) => createHash('sha256').update(text, 'utf8').digest('base64url').slice(0, 22); // 132 bits: plenty to tell two texts apart
+const messageHash = (text: string, attachments?: HyperBotAttachment[]) => attachments?.length
+  ? 'files:' + hash(JSON.stringify([text, attachments.map(({ id, name, type }) => [id, name, type])])) : hash(text);
 const key = (roomId: string, clientMessageId: string) => `${roomId}/${clientMessageId}`;
 const own = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k);
 const text = (v: unknown, fallback = '') => (typeof v === 'string' ? v : fallback);
@@ -145,10 +156,10 @@ export function hyperBotsParseState(value: unknown): { state: State; repaired: b
   // Older files have no tombstones: owner messages still on file get theirs now.
   for (const m of messages) {
     const k = key(m.roomId, m.clientMessageId);
-    if (m.author.kind === 'user' && !own(tombstones, k)) tombstones[k] = { id: m.id, hash: hash(m.text), model: m.model, createdAt: m.createdAt };
+    if (m.author.kind === 'user' && !own(tombstones, k)) tombstones[k] = { id: m.id, hash: messageHash(m.text, m.attachments), model: m.model, createdAt: m.createdAt };
   }
   const settings = shape.data.settings as HyperBotsSettings | null;
-  return { state: { version: 1, seq: shape.data.seq, messages, runs, approvals, tombstones, settings }, repaired };
+  return { state: { version: 1, seq: shape.data.seq, messages, runs, approvals, memory: shape.data.memory, tombstones, settings }, repaired };
 }
 
 export class HyperBotsStore {
@@ -211,7 +222,33 @@ export class HyperBotsStore {
   }
 
   settings(): HyperBotsSettings | null { return this.state.settings ? copy(this.state.settings) : null; }
-  saveSettings(s: HyperBotsSettings): void { this.mutate((st) => { st.settings = copy(s); }); }
+  saveSettings(s: HyperBotsSettings): void {
+    this.mutate(st => {
+      st.settings = copy(s);
+      st.memory = st.memory.filter(note => s.bots.some(bot => bot.id === note.botId) && s.rooms.some(room => room.id === note.roomId && room.botIds.includes(note.botId)));
+    });
+  }
+
+  memories(roomId: string, botId: string): HyperBotMemory[] {
+    return this.state.memory.filter(note => note.roomId === roomId && note.botId === botId).map(copy);
+  }
+
+  learn(note: Omit<HyperBotMemory, 'id'>): boolean {
+    const prior = this.state.memory.filter(row => row.roomId === note.roomId && row.botId === note.botId);
+    if (prior.some(row => row.text.toLowerCase() === note.text.toLowerCase())) return false;
+    return this.mutate(st => {
+      const overflow = new Set(prior.slice(0, -39).map(row => row.id));
+      st.memory = st.memory.filter(row => !overflow.has(row.id));
+      st.memory.push({ ...note, id: randomUUID() });
+      return true;
+    });
+  }
+
+  forget(roomId: string, id: string): void {
+    if (this.state.memory.some(note => note.roomId === roomId && note.id === id)) {
+      this.mutate(st => { st.memory = st.memory.filter(note => !(note.roomId === roomId && note.id === id)); });
+    }
+  }
 
   addMessage(input: Omit<HyperBotsMessage, 'id' | 'createdAt'>): { message: HyperBotsMessage; created: boolean; sameText: boolean } {
     const { message, created, sameText } = this.addMessageWithRuns(input, null);
@@ -227,7 +264,7 @@ export class HyperBotsStore {
     input: Omit<HyperBotsMessage, 'id' | 'createdAt'>, plan: HyperBotsPlanEntry[] | null,
     seed: (trigger: HyperBotsMessage, botId: string) => HyperBotsChatMessage[] = () => [],
   ): HyperBotsStored {
-    const prior = this.recall(input.roomId, input.clientMessageId, input.text);
+    const prior = this.recall(input.roomId, input.clientMessageId, input.text, input.attachments);
     if (prior) {
       const runs = this.state.runs.filter((r) => r.triggerMessageId === prior.message.id);
       const unchanged = { ...prior, created: false, runs: runs.map(copy), added: [] };
@@ -248,6 +285,9 @@ export class HyperBotsStore {
         id: randomUUID(), roomId: input.roomId, clientMessageId: input.clientMessageId, author: copy(input.author), text: input.text,
         model: input.model ?? null, runId: input.runId ?? null, hop: input.hop, createdAt: now(), seq: ++st.seq, plan: plan ? copy(plan) : null,
       };
+      if (input.scheduled) m.scheduled = true;
+      if (input.routineId) m.routineId = input.routineId;
+      if (input.attachments?.length) m.attachments = copy(input.attachments);
       st.messages.push(m);
       if (m.author.kind === 'user') this.tombstone(st, m);
       const message = strip(m);
@@ -268,7 +308,7 @@ export class HyperBotsStore {
   }
 
   private tombstone(st: State, m: Stored): void {
-    st.tombstones[key(m.roomId, m.clientMessageId)] = { id: m.id, hash: hash(m.text), model: m.model, createdAt: m.createdAt };
+    st.tombstones[key(m.roomId, m.clientMessageId)] = { id: m.id, hash: messageHash(m.text, m.attachments), model: m.model, createdAt: m.createdAt };
     const keys = Object.keys(st.tombstones);
     // Trim to 90% so the scan runs once per ~10k messages, not on every write at the cap.
     if (keys.length > HYPER_BOTS_TOMBSTONES) for (const k of keys.slice(0, keys.length - Math.floor(HYPER_BOTS_TOMBSTONES * 0.9))) delete st.tombstones[k];
@@ -301,13 +341,13 @@ export class HyperBotsStore {
   }
 
   /** Idempotency lookup that survives pruning: the live message, or one rebuilt from its tombstone. */
-  recall(roomId: string, clientMessageId: string, messageText: string): HyperBotsRecall | undefined {
+  recall(roomId: string, clientMessageId: string, messageText: string, attachments?: HyperBotAttachment[]): HyperBotsRecall | undefined {
     const live = this.state.messages.find((x) => x.roomId === roomId && x.clientMessageId === clientMessageId);
-    if (live) return { message: strip(live), sameText: live.text === messageText, live: true, plan: copy(live.plan) };
+    if (live) return { message: strip(live), sameText: messageHash(live.text, live.attachments) === messageHash(messageText, attachments), live: true, plan: copy(live.plan) };
     const k = key(roomId, clientMessageId);
     if (!own(this.state.tombstones, k)) return undefined;
     const t = this.state.tombstones[k];
-    const sameText = t.hash === hash(messageText);
+    const sameText = t.hash === messageHash(messageText, attachments);
     // Only the hash is kept, so the text is known only when it matches.
     return {
       message: { id: t.id, roomId, clientMessageId, author: { kind: 'user' }, text: sameText ? messageText : '', model: t.model, runId: null, hop: 0, createdAt: t.createdAt },
@@ -318,6 +358,16 @@ export class HyperBotsStore {
   findMessage(roomId: string, clientMessageId: string): HyperBotsMessage | undefined {
     const m = this.state.messages.find((x) => x.roomId === roomId && x.clientMessageId === clientMessageId);
     return m ? strip(m) : undefined;
+  }
+
+  referencedAttachments(): Set<string> {
+    const ids = new Set<string>();
+    for (const message of this.state.messages) for (const file of message.attachments ?? []) ids.add(file.id);
+    for (const run of this.state.runs) {
+      if (finished(run.status)) continue;
+      for (const message of run.transcript) if (message.role === 'user') for (const file of message.attachments ?? []) ids.add(file.id);
+    }
+    return ids;
   }
 
   getMessage(id: string): HyperBotsMessage | undefined {

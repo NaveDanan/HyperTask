@@ -6,7 +6,7 @@ Open **Settings > AI**, enter the API base URL (including its API prefix, common
 
 Inference uses OpenAI `POST /chat/completions`, with automatic `POST /responses` compatibility when the endpoint rejects the chat request shape or does not provide that route. Both the endpoint test and Rust inference follow the same compatibility rules. Streaming uses SSE; a non-streaming JSON completion response is also accepted. The configured service must supply a text-capable chat model. If its optional embeddings model is configured, it must also supply OpenAI-compatible `/embeddings` responses. Redirects are rejected so credentials never move to an unconfigured host. Hypertask-owned domains are rejected by both settings validation and the backend. Disabling the endpoint produces a configuration/capability error and does not select a hosted fallback.
 
-The Electron OpenBot Chat view connects separately to the existing OpenBot/Intelligence VM and uses the provider configured there. Settings > AI configures the local Rust AI adapter; it does not change the VM provider or transfer the endpoint credential to the VM.
+Hyper-Bot uses this endpoint for chat completions.
 
 ## Feature coverage
 

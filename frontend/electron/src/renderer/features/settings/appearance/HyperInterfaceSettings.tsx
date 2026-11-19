@@ -1,7 +1,7 @@
 // Ported from t3code (apps/web/src/components/settings/AppearanceSettingsPanel.tsx), Copyright (c) 2026 T3 Tools Inc., MIT License. See NOTICE.md in this folder.
 // The Interface section of t3code's Appearance settings, with its Advanced fold. Titles, descriptions,
 // ranges, steps, defaults and labels follow t3code. Each preference is stored through appearance-prefs.ts;
-// the features that read it are listed in appearance-prefs.ts and the OpenBot composer.
+// the features that read it are listed in appearance-prefs.ts.
 
 import {
   AdvancedSettings,

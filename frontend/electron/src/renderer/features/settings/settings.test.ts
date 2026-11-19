@@ -39,6 +39,7 @@ describe('SettingsMenu visibility', () => {
       SettingsPage.companyCertificates,
       SettingsPage.shortcuts,
       SettingsPage.ai,
+      SettingsPage.voice,
     ]);
   });
 
@@ -55,6 +56,7 @@ describe('SettingsMenu visibility', () => {
       SettingsPage.companyCertificates,
       SettingsPage.shortcuts,
       SettingsPage.ai,
+      SettingsPage.voice,
       SettingsPage.sites,
       SettingsPage.featureFlags,
     ]);

@@ -11,6 +11,7 @@ export enum SettingsPage {
   manageData = 'manageData',
   shortcuts = 'shortcuts',
   ai = 'ai',
+  voice = 'voice',
   plan = 'plan',
   billing = 'billing',
   sites = 'sites',
@@ -66,6 +67,7 @@ export function visibleSettingsPages({
     SettingsPage.companyCertificates,
     SettingsPage.shortcuts,
     SettingsPage.ai,
+    SettingsPage.voice,
   );
   if (serverMember) pages.push(SettingsPage.sites);
   if (PLAN_BILLING_ENABLED && isBillingEnabled) pages.push(SettingsPage.plan, SettingsPage.billing);

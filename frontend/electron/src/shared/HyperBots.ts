@@ -9,13 +9,18 @@ export type HyperBotsPolicy = 'ask' | 'allow';
 export type HyperBotsReadToolName = 'outlook_list_events' | 'outlook_get_event' | 'outlook_list_messages' | 'outlook_read_message';
 export type HyperBotsToolName = HyperBotsReadToolName
   | 'outlook_create_event' | 'outlook_update_event' | 'outlook_forward_event' | 'outlook_respond_meeting'
-  | 'outlook_send_message' | 'outlook_reply_message' | 'outlook_forward_message' | 'jira_create_issue';
-export type HyperBotsToolGroup = 'outlook-calendar' | 'outlook-mail' | 'jira';
-export const HYPER_BOTS_TOOL_GROUPS: Record<HyperBotsToolGroup, string> = { 'outlook-calendar': 'Outlook calendar', 'outlook-mail': 'Outlook mail', jira: 'Jira' };
+  | 'outlook_send_message' | 'outlook_reply_message' | 'outlook_forward_message' | 'jira_create_issue' | 'workspace_list_files' | 'workspace_read_file' | 'workspace_create_file' | 'workspace_read_page' | 'workspace_command';
+export type HyperBotsToolGroup = 'outlook-calendar' | 'outlook-mail' | 'jira' | 'workspace';
+export const HYPER_BOTS_TOOL_GROUPS: Record<HyperBotsToolGroup, string> = { 'outlook-calendar': 'Outlook calendar', 'outlook-mail': 'Outlook mail', jira: 'Jira', workspace: 'Bot workspace' };
 /** What an approved mail write does: send it now, or save it in Outlook Drafts for the owner to send. */
 export type HyperBotsDelivery = 'send' | 'draft';
 /** `delivery`: the owner picks Send or Save to Drafts when approving. Order is the order shown in Bot settings. */
 export const HYPER_BOTS_TOOLS: Record<HyperBotsToolName, { access: HyperBotsAccess; label: string; group: HyperBotsToolGroup; delivery?: true }> = {
+  workspace_list_files: { access: 'read', label: 'List workspace files', group: 'workspace' },
+  workspace_read_file: { access: 'read', label: 'Read a workspace file', group: 'workspace' },
+  workspace_create_file: { access: 'write', label: 'Create a workspace file', group: 'workspace' },
+  workspace_command: { access: 'read', label: 'Run a workspace command', group: 'workspace' },
+  workspace_read_page: { access: 'read', label: 'Read an approved webpage', group: 'workspace' },
   outlook_list_events: { access: 'read', label: 'Read Outlook calendar', group: 'outlook-calendar' },
   outlook_get_event: { access: 'read', label: 'Read an event in full', group: 'outlook-calendar' },
   outlook_create_event: { access: 'write', label: 'Create events and meetings', group: 'outlook-calendar' },
@@ -43,9 +48,13 @@ export type HyperBotAvatarShape = typeof HYPER_BOT_AVATAR_SHAPES[number];
 export type HyperBotAvatarColor = typeof HYPER_BOT_AVATAR_COLORS[number];
 export type HyperBotMode = 'personal' | 'teammate';
 
+export interface HyperBotRoutine { id: string; startAt: string; everyMinutes: number; prompt: string }
+
 export interface HyperBotConfig {
+  routines?: HyperBotRoutine[];
   avatar?: { shape: HyperBotAvatarShape; color: HyperBotAvatarColor };
   mode?: HyperBotMode;
+  learn?: boolean;
   id: string;           // ^[a-z0-9-]{1,32}$, used in @mentions
   name: string;         // 1..40
   instructions: string; // 0..4000, system prompt
@@ -88,7 +97,16 @@ export function hyperBotsWithDirectRooms(settings: HyperBotsSettings): HyperBots
 }
 
 export type HyperBotsAuthor = { kind: 'user' } | { kind: 'bot'; botId: string };
+export const HYPER_BOT_AUDIO_BYTES = 10 * 1024 * 1024;
+export const HYPER_BOT_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+export const HYPER_BOT_ATTACHMENT_COUNT = 4;
+export const HYPER_BOT_ATTACHMENT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'text/plain'] as const;
+export interface HyperBotAttachment { id: string; name: string; type: typeof HYPER_BOT_ATTACHMENT_TYPES[number]; size: number }
+export type HyperBotUpload = Pick<HyperBotAttachment, 'name' | 'type'> & { data: Uint8Array };
 export interface HyperBotsMessage {
+  attachments?: HyperBotAttachment[];
+  scheduled?: boolean;
+  routineId?: string;
   id: string; roomId: string; clientMessageId: string; author: HyperBotsAuthor; text: string;
   model: string | null; runId: string | null; hop: number; createdAt: string;
 }
@@ -119,7 +137,10 @@ export interface HyperBotsConnections {
   jira: HyperBotsConnectionState & { projectKey?: string };
 }
 
+export interface HyperBotMemory { id: string; botId: string; roomId: string; text: string }
+
 export interface HyperBotsSnapshot {
+  memory?: HyperBotMemory[];
   settings: HyperBotsSettings;
   connections: HyperBotsConnections;
   roomId: string;
@@ -128,17 +149,36 @@ export interface HyperBotsSnapshot {
   approvals: HyperBotsApproval[];    // pending of roomId first, then the last 20 decided
 }
 
-export interface HyperBotsPostInput { roomId: string; clientMessageId: string; text: string; model?: string | null }
+export interface HyperBotsPostInput { roomId: string; clientMessageId: string; text: string; model?: string | null; attachments?: HyperBotUpload[] }
 export interface HyperBotsPosted { message: HyperBotsMessage; created: boolean; runs: HyperBotsRunSummary[] }
 
+export interface HyperBotsReplyPreview { roomId: string; runId: string; botId: string; text: string }
+
 export type HyperBotsEvent =
+  | ({ type: 'preview' } & HyperBotsReplyPreview)
   | { type: 'message'; roomId: string; messageId: string }
   | { type: 'run'; roomId: string; runId: string; status: HyperBotsRunStatus }
   | { type: 'approval'; roomId: string; approvalId: string; status: HyperBotsApprovalStatus }
   | { type: 'settings' };
 
 /** Renderer API. Every call is refused unless it comes from the main window's top frame. */
+export const HYPER_BOT_WORKSPACE_COMMANDS = ['ls', 'cat', 'head', 'tail', 'wc', 'grep'] as const;
+export interface HyperBotWorkspaceCommandInput { command: typeof HYPER_BOT_WORKSPACE_COMMANDS[number]; name?: string; search?: string }
+
+export interface HyperBotVaultEntry { id: string; label: string; username: string }
+
 export interface HyperBotsApi {
+  workspace?: {
+    command(args: HyperBotWorkspaceCommandInput): Promise<import('./api').IpcResult<string>>;
+    list(): Promise<import('./api').IpcResult<{ name: string; size: number }[]>>;
+    read(args: { name: string }): Promise<import('./api').IpcResult<string>>;
+  };
+  vault?: {
+    list(): Promise<import('./api').IpcResult<HyperBotVaultEntry[]>>;
+    add(args: { label: string; username: string; password: string }): Promise<import('./api').IpcResult<void>>;
+    remove(args: { id: string }): Promise<import('./api').IpcResult<void>>;
+    copy(args: { id: string }): Promise<import('./api').IpcResult<boolean>>;
+  };
   /** Main reads the signed-in user from the core (never from the renderer) and returns that user's room. */
   open(args: { roomId?: string }): Promise<import('./api').IpcResult<HyperBotsSnapshot>>;
   snapshot(args: { roomId: string }): Promise<import('./api').IpcResult<HyperBotsSnapshot>>;
@@ -146,6 +186,9 @@ export interface HyperBotsApi {
   /** `delivery` is required to approve a mail write (HYPER_BOTS_TOOLS[tool].delivery) and refused for any other tool. */
   decide(args: { approvalId: string; approved: boolean; delivery?: HyperBotsDelivery }): Promise<import('./api').IpcResult<HyperBotsApproval>>;
   saveSettings(settings: HyperBotsSettings): Promise<import('./api').IpcResult<HyperBotsSettings>>;
+  forget?(args: { roomId: string; id: string }): Promise<import('./api').IpcResult<void>>;
+  transcribe?(args: { type: 'audio/webm' | 'audio/mp4'; data: Uint8Array }): Promise<import('./api').IpcResult<string>>;
+  attachment?(args: { messageId: string; attachmentId: string }): Promise<import('./api').IpcResult<Uint8Array>>;
   /** Model IDs offered by the configured endpoint (/models); [] when discovery is unavailable. */
   models(): Promise<import('./api').IpcResult<string[]>>;
   onEvent(listener: (event: HyperBotsEvent) => void): () => void;
@@ -158,5 +201,15 @@ export const HyperBotsChannel = {
   Decide: 'hyper-bots:decide',
   SaveSettings: 'hyper-bots:save-settings',
   Models: 'hyper-bots:models',
+  Attachment: 'hyper-bots:attachment',
+  Transcribe: 'hyper-bots:transcribe',
+  Forget: 'hyper-bots:forget',
+  VaultList: 'hyper-bots:vault-list',
+  VaultAdd: 'hyper-bots:vault-add',
+  VaultRemove: 'hyper-bots:vault-remove',
+  VaultCopy: 'hyper-bots:vault-copy',
+  WorkspaceList: 'hyper-bots:workspace-list',
+  WorkspaceRead: 'hyper-bots:workspace-read',
+  WorkspaceCommand: 'hyper-bots:workspace-command',
   Event: 'hyper-bots:event',
 } as const;

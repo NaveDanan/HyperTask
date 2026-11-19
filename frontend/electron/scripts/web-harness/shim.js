@@ -47,16 +47,7 @@
   const fallback = (namespace) =>
     new Proxy({}, { get: (_t, name) => (...args) => rpc(`${namespace}.${String(name)}`, ...args).catch(() => null) });
 
-  const aiState = { backend: 'mmems-personal', phase: 'idle', ready: false, problem: 'unsupported', checks: [], autoStart: false, checkedAt: null };
   const api = {
-    // Native service subscriptions must return a disposer; the browser harness has no AI service.
-    hyperOpenBot: {
-      service: { state: async () => aiState, run: async () => aiState, configure: async () => aiState, onState: () => () => {} },
-      onNativeDestination: () => () => {}, onChunk: () => () => {}, onSocket: () => () => {},
-      cancel() {}, socketClose() {}, socketSend() {},
-      start: async () => { throw new Error('AI transport is unavailable in the web harness'); },
-      socketOpen: async () => { throw new Error('AI transport is unavailable in the web harness'); },
-    },
     core: {
       init: (config) => rpc('core.init', config),
       request: (event, payload) => rpc('core.request', event, payload),

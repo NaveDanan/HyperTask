@@ -193,7 +193,7 @@ export function applyAppearancePrefs(prefs: AppearancePrefs = useAppearancePrefs
   root.style.setProperty('--font-size-code', `${prefs.fontSizeCode}px`);
   root.style.setProperty('--font-size-terminal', `${prefs.fontSizeTerminal}px`);
   root.dataset.fontSmoothing = String(prefs.fontSmoothing);
-  // Chat width values from t3code's index.css. The OpenBot message column reads this variable.
+  // Hyper-Bot chat widths from t3code's index.css.
   root.style.setProperty(
     '--chat-content-max-width',
     { comfortable: '46rem', wide: '72rem', full: '100%' }[prefs.chatWidth],

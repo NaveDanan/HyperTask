@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { UserEventGetUserProfile } from '@/backend/events';
-import { Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Palette, Server, ShieldCheck, Sparkles, SquareCheckBig, UserRound, Users, X } from 'lucide-react';
+import { Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Mic, Palette, Server, ShieldCheck, Sparkles, SquareCheckBig, UserRound, Users, X } from 'lucide-react';
 import { NavItem } from '@/components/app/nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,6 +11,7 @@ import { closeAllDialogs, showDialog } from '@/ui';
 import { loseFocus, openSettings } from '@/features/home/notifiers';
 import { AccountPage } from './account/AccountPage';
 import { passwordActions } from './account/password-store';
+import { HyperVoiceSettingsPage } from './voice/HyperVoiceSettingsPage';
 import { AIPage } from './ai/AIPage';
 import { CertificatesPage } from './certificates/CertificatesPage';
 import { ManageDataPage } from './manage-data/ManageDataPage';
@@ -49,6 +50,7 @@ const MENU: Record<SettingsPage, { label: (tr: (key: string) => string) => strin
   [SettingsPage.cloud]: { label: () => 'Storage & server', icon: () => <Server className="size-4" /> },
   [SettingsPage.companyCertificates]: { label: () => 'Certificates', icon: () => <ShieldCheck className="size-4" /> },
   [SettingsPage.shortcuts]: { label: (tr) => tr('settings.shortcutsPage.menuLabel'), icon: () => <Keyboard className="size-4" /> },
+  [SettingsPage.voice]: { label: () => 'Voice', icon: () => <Mic className="size-4" /> },
   [SettingsPage.ai]: { label: (tr) => tr('settings.aiPage.menuLabel'), icon: () => <Sparkles className="size-4" /> },
   [SettingsPage.sites]: { label: (tr) => tr('settings.sites.title'), icon: () => <Globe className="size-4" /> },
   [SettingsPage.plan]: { label: (tr) => tr('settings.planPage.menuLabel'), icon: () => <Gem className="size-4" /> },
@@ -102,6 +104,8 @@ function SettingsView({ page, props }: { page: SettingsPage; props: SettingsPage
       return <CertificatesPage {...props} />;
     case SettingsPage.shortcuts:
       return <ShortcutsPage {...props} />;
+    case SettingsPage.voice:
+      return <HyperVoiceSettingsPage />;
     case SettingsPage.ai:
       // LocalSettingsAIView(key: ValueKey(workspaceId)) → OpenAIEndpointSettingsView [CUSTOM].
       return <AIPage key={props.workspace?.workspaceId ?? ''} {...props} />;

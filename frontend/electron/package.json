@@ -23,15 +23,15 @@
     "harness:view": "node scripts/web-harness/hyper-views.mjs shot",
     "harness:smoke": "vitest run --config scripts/web-harness/live.config.ts",
     "build:desktop": "npm run build && electron-builder --dir",
-    "dev:jwt": "node scripts/HyperDevJwtLogin.mjs"
+    "dev:jwt": "node scripts/HyperDevJwtLogin.mjs",
+    "build:bot-host": "vite build --config HyperBotsHost.vite.config.ts",
+    "bot-host": "node out/host/HyperBotsHost.mjs"
   },
   "dependencies": {
-    "@ag-ui/core": "1.0.2",
     "@azure/msal-node": "7.2.2",
     "@azure/msal-node-extensions": "5.6.2",
     "@base-ui/react": "^1.9.0",
     "@bufbuild/protobuf": "^2.17.0",
-    "@copilotkit/react-core": "1.85.0",
     "@date-fns/tz": "1.5.0",
     "@dnd-kit/core": "6.3.1",
     "@dnd-kit/modifiers": "9.0.0",

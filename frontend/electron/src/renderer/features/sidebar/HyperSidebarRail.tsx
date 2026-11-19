@@ -1,6 +1,6 @@
 // HyperSidebarRail: the 56px icon rail the sidebar collapses to (as in CPA-Desktop). Built on the
 // shared ReUI/base-ui primitives: base-ui Tooltip, the app's sidebar tokens and nav icons.
-import { Bot, BotMessageSquare, House, SquareCheckBig, LayoutTemplate, PanelLeftOpen, Search, SquarePen, Trash2 } from 'lucide-react';
+import { BotMessageSquare, House, SquareCheckBig, LayoutTemplate, PanelLeftOpen, Search, SquarePen, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AFRolePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
@@ -15,7 +15,7 @@ import { loseFocus, openSettings, toggleCommandPalette } from '@/features/home/n
 import { localToolPlugin, trashPlugin } from '@/features/tabs/plugin';
 import { tabsActions, useTabsStore } from '@/features/tabs/tabs-store';
 import { isMac } from './components';
-import { HyperChatButton, createNewPageInSidebar } from './SidebarButtons';
+import { createNewPageInSidebar } from './SidebarButtons';
 import { useWorkspaceStore, workspaceRole } from './stores/workspace-store';
 
 /** Column flow of the rail: 32px rounded icon buttons, hover accent, data-[active] selection. */
@@ -101,15 +101,10 @@ export function HyperSidebarRail({ user }: { user: UserProfilePB }) {
         )}
         <HyperRailButton label="Jira" icon={<SquareCheckBig />} active={activeTab === 'local-tool:jira'}
           onClick={() => tabsActions.openPlugin(localToolPlugin('jira'))} tooltip="Jira" />
-        <HyperRailButton label="Nod assistant" icon={<Bot />} active={activeTab === 'local-tool:nod'}
-          onClick={() => tabsActions.openPlugin(localToolPlugin('nod'))} tooltip="Nod assistant" />
         <HyperRailButton label="Hyper-Bot" icon={<BotMessageSquare />} active={activeTab === 'local-tool:bots'}
           onClick={() => tabsActions.openPlugin(localToolPlugin('bots'))} tooltip="Hyper-Bot" />
         <HyperRailButton label={tr('template.label')} icon={<LayoutTemplate />} active={activeTab === 'local-tool:templates'}
           onClick={() => tabsActions.openPlugin(localToolPlugin('templates'))} tooltip={tr('template.label')} />
-        <div className="w-8 shrink-0 [&>button>span:not(:first-child)]:sr-only">
-          <HyperChatButton />
-        </div>
         <div className="flex-1" />
         <HyperRailButton label={tr('trash.text')} icon={<Trash2 />} active={activeTrash} className="shrink-0" onClick={() => {
           // MenuSharedState.latestOpenView = null clears the tree selection.

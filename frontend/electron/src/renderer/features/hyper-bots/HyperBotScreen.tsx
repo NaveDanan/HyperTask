@@ -5,6 +5,8 @@ import { useHyperChromePanel } from '../home/HyperChromePanel';
 import { hyperBotsWithDirectRooms, type HyperBotsDelivery, type HyperBotsSettings } from '@shared/HyperBots';
 import { Button } from '@/components/ui/button';
 import { HyperBotsController, hyperBotsOutbox, type HyperBotsOutbox, type HyperBotsViewState } from './HyperBotsController';
+import { HyperBotWorkspaceDialog } from './HyperBotWorkspaceDialog';
+import { HyperBotVaultDialog } from './HyperBotVaultDialog';
 import { HyperBotSidebar } from './HyperBotSidebar';
 import { HyperBotChat } from './HyperBotChat';
 import { HyperBotDetails } from './HyperBotDetails';
@@ -49,7 +51,7 @@ export function HyperBotsView({ state, outbox, actions }: { state: HyperBotsView
   const root = useRef<HTMLDivElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(() => sessionDetailsOpen ?? (typeof window === 'undefined' || window.innerWidth >= 1100));
   const chromePanel = useHyperChromePanel(330, !!state.snapshot);
-  const [modal, setModal] = useState<'create' | 'group' | 'settings' | null>(null);
+  const [modal, setModal] = useState<'create' | 'group' | 'settings' | 'vault' | 'workspace' | null>(null);
   useEffect(() => {
     if (!root.current || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(entries => { if (sessionDetailsOpen === undefined) setDetailsOpen((entries[0]?.contentRect.width ?? 0) >= 1100); });
@@ -62,11 +64,13 @@ export function HyperBotsView({ state, outbox, actions }: { state: HyperBotsView
   const members = settings.bots.filter(bot => room?.botIds.includes(bot.id));
   const bot = room?.kind === 'direct' ? members[0] : undefined, name = bot?.name ?? room?.name ?? 'Hyper-Bot';
   const readyState = { ...state, snapshot };
-  const sidebar = <HyperBotSidebar settings={settings} roomId={snapshot.roomId} summaries={state.summaries} connections={snapshot.connections} busy={state.saving} onSelect={id => { setModal(null); actions.select(id); }} onCreate={() => setModal('create')} onGroup={() => setModal('group')} />;
+  const sidebar = <HyperBotSidebar settings={settings} roomId={snapshot.roomId} summaries={state.summaries} connections={snapshot.connections} busy={state.saving} onSelect={id => { setModal(null); actions.select(id); }} onCreate={() => setModal('create')} onGroup={() => setModal('group')} onVault={() => setModal('vault')} onWorkspace={() => setModal('workspace')} />;
   return <div data-hyper-bot className="hyper-bot-screen app" ref={root}>
     {chromePanel ? createPortal(<div data-hyper-bot className="hb-chrome-panel">{sidebar}</div>, chromePanel) : sidebar}
     <HyperBotChat key={snapshot.roomId} state={readyState} outbox={outbox} actions={actions} bot={bot} name={name} members={members} detailsOpen={detailsOpen} onDetails={() => toggleDetails(!detailsOpen)} onSettings={() => setModal('settings')} onGroup={() => setModal('group')} />
     {detailsOpen && <><button type="button" className="details-scrim" aria-label="Dismiss details" onClick={() => toggleDetails(false)} /><HyperBotDetails key={snapshot.roomId} state={readyState} actions={actions} bot={bot} name={name} members={members} onClose={() => toggleDetails(false)} onSettings={() => setModal('settings')} /></>}
+    {modal === 'workspace' && <HyperBotWorkspaceDialog onClose={() => setModal(null)} />}
+    {modal === 'vault' && <HyperBotVaultDialog onClose={() => setModal(null)} />}
     {modal === 'create' && <HyperBotCreateDialog settings={settings} onSave={actions.saveSettings} onSelect={actions.select} onClose={() => setModal(null)} onGroup={() => setModal('group')} error={state.settingsError} />}
     {modal === 'group' && <HyperBotGroupDialog settings={settings} onSave={actions.saveSettings} onSelect={actions.select} onClose={() => setModal(null)} error={state.settingsError} />}
     {modal === 'settings' && room && <HyperBotSettingsDialog key={room.id} settings={settings} bot={bot} room={room} onSave={actions.saveSettings} onClose={() => setModal(null)} error={state.settingsError} />}

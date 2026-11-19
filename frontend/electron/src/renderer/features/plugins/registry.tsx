@@ -4,13 +4,12 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/hyper-folder/view_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { tr, useTr } from '@/i18n';
-import { Bot, BotMessageSquare, FileText, House, LayoutTemplate, SquareCheckBig, Trash2 } from 'lucide-react';
-import { MenuSeparator } from '@/components/app/menu-row';
+import { BotMessageSquare, FileText, House, LayoutTemplate, SquareCheckBig, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PluginType, type Plugin } from '../tabs/plugin';
 import { nameOrDefault } from '../view/view-ext';
 import { ViewFavoriteButton } from '../view-header/FavoriteButton';
-import { CustomViewAction, MoreViewActions } from '../view-header/MoreViewActions';
+import { MoreViewActions } from '../view-header/MoreViewActions';
 import { ShareButton } from '../view-header/share/ShareButton';
 import { RawEmojiIcon, viewIcon } from '../view-header/ViewIcon';
 import { ViewTitleBar } from '../view-header/ViewTitleBar';
@@ -21,10 +20,8 @@ import { TrashPage } from './trash/TrashPage';
 import { TemplateStorePage } from '../templates/TemplateStorePage';
 import { HyperDatabasePage } from '../hyper-database/HyperDatabasePage';
 import { hyperLayout } from '../hyper-database/HyperDatabaseController';
-import { HyperOpenBotPage } from '../hyper-openbot/HyperOpenBotPage';
 import { JiraDashboardPage } from '../jira/ui/JiraDashboardPage';
 import { HyperHomePage } from '../hyper-home/HyperHomePage';
-import { HyperNodPage } from '../hyper-nod/HyperNodPage';
 import { HyperBotsPage } from '../hyper-bots/HyperBotsPage';
 
 /** PluginContext: onDeleted(view, index) and the user (null in the secondary view). */
@@ -62,7 +59,6 @@ export const pluginBuilders = () => [
   { pluginType: PluginType.board, menuName: tr('board.menuName'), icon: 'icon_board_s' as const, layout: ViewLayoutPB.Board },
   { pluginType: PluginType.calendar, menuName: tr('calendar.menuName'), icon: 'icon_calendar_s' as const, layout: ViewLayoutPB.Calendar },
   { pluginType: PluginType.grid, menuName: 'Gantt', icon: 'icon_grid_s' as const, layout: ViewLayoutPB.Grid, hyperLayout: 'gantt' as const },
-  { pluginType: PluginType.chat, menuName: 'AI Chat', icon: 'chat_ai_page_s' as const, layout: ViewLayoutPB.Chat },
 ];
 
 /** ViewTabBarItem (workspace/presentation/widgets/tab_bar_item.dart). */
@@ -115,31 +111,6 @@ function DatabaseRightBar({ view }: { view: ViewPB }) {
   );
 }
 
-/** AIChatPagePluginWidgetBuilder.rightBarItem: Favorite, More with "Add messages to page". */
-function ChatRightBar({ view }: { view: ViewPB }) {
-  const { tr } = useTr();
-  return (
-    <div className="ml-auto flex shrink-0 items-center gap-1">
-      <ViewFavoriteButton view={view} />
-      <MoreViewActions
-        view={view}
-        customActions={
-          <>
-            {/* ChatSelectMessageState.enabled is false until the chat page has messages. */}
-            <CustomViewAction
-              leftIcon="ai_add_to_page_s"
-              label={tr('moreAction.saveAsNewPage')}
-              tooltipMessage={tr('moreAction.saveAsNewPageDisabled')}
-              disabled
-            />
-            <MenuSeparator />
-          </>
-        }
-      />
-    </div>
-  );
-}
-
 const DEFAULT_PADDING: CSSProperties['padding'] = '28px 40px';
 
 /** plugin.widgetBuilder for every plugin kind of features/tabs/plugin.ts. */
@@ -166,11 +137,11 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
     case 'localTool':
       return {
         viewName: plugin.title,
-        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs">{plugin.toolId === 'home' ? <House className="size-4 text-muted-foreground" /> : plugin.toolId === 'jira' ? <SquareCheckBig className="size-4 text-muted-foreground" /> : plugin.toolId === 'nod' ? <Bot className="size-4 text-muted-foreground" /> : plugin.toolId === 'bots' ? <BotMessageSquare className="size-4 text-muted-foreground" /> : <LayoutTemplate className="size-4 text-muted-foreground" />}{!shortForm && <span className="truncate">{plugin.title}</span>}</span>,
+        tabBarItem: (shortForm) => <span className="flex min-w-0 items-center gap-1.5 text-xs">{plugin.toolId === 'home' ? <House className="size-4 text-muted-foreground" /> : plugin.toolId === 'jira' ? <SquareCheckBig className="size-4 text-muted-foreground" /> : plugin.toolId === 'bots' ? <BotMessageSquare className="size-4 text-muted-foreground" /> : <LayoutTemplate className="size-4 text-muted-foreground" />}{!shortForm && <span className="truncate">{plugin.title}</span>}</span>,
         leftBarItem: <MediumLabel text={plugin.title} />,
         rightBarItem: null,
         contentPadding: 0,
-        buildWidget: (context) => plugin.toolId === 'home' ? <HyperHomePage /> : plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : plugin.toolId === 'jira' ? <JiraDashboardPage userProfile={context.userProfile} /> : plugin.toolId === 'nod' ? <HyperNodPage /> : plugin.toolId === 'bots' ? <HyperBotsPage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
+        buildWidget: (context) => plugin.toolId === 'home' ? <HyperHomePage /> : plugin.toolId === 'templates' ? <TemplateStorePage userProfile={context.userProfile} /> : plugin.toolId === 'jira' ? <JiraDashboardPage userProfile={context.userProfile} /> : plugin.toolId === 'bots' ? <HyperBotsPage userProfile={context.userProfile} /> : <LocalToolPlaceholder title={plugin.title} />,
       };
     case 'databaseDocument':
       return {
@@ -191,16 +162,14 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
         tabBarItem: (shortForm) => <ViewTabBarItem view={view} shortForm={shortForm} />,
         leftBarItem: <ViewTitleBar view={view} />,
         rightBarItem:
-          type === PluginType.chat ? (
-            <ChatRightBar view={view} />
-          ) : isDatabase ? (
+          isDatabase ? (
             <DatabaseRightBar view={view} />
           ) : (
             <DocumentRightBar view={view} />
           ),
         // Document and chat use EdgeInsets.zero; databases EdgeInsets.only(top: 28).
         contentPadding: 0,
-        buildWidget: (context) => type === PluginType.chat ? <HyperOpenBotPage viewId={view.id} /> : isDatabase ? <HyperDatabasePage key={view.id} view={view} context={context} /> : <ViewPlaceholderPage view={view} context={context} />,
+        buildWidget: (context) => type === PluginType.chat ? <PlaceholderMessage icon={<BotMessageSquare className="size-5" />} name="Use Hyper-Bot from the sidebar to chat." /> : isDatabase ? <HyperDatabasePage key={view.id} view={view} context={context} /> : <ViewPlaceholderPage view={view} context={context} />,
       };
     }
   }

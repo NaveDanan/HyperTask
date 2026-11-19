@@ -105,6 +105,6 @@ describe('active plugin menu preference', () => {
   });
   it('marks only the bots plugin as preferring collapse and keeps its identity', () => {
     expect(localToolPlugin('bots')).toMatchObject({ id: 'local-tool:bots', prefersCollapsedMenu: true });
-    for (const plugin of [localToolPlugin('home'), localToolPlugin('jira'), localToolPlugin('nod'), localToolPlugin('templates'), blankPlugin(), trashPlugin()]) expect(plugin.prefersCollapsedMenu).toBeFalsy();
+    for (const plugin of [localToolPlugin('home'), localToolPlugin('jira'), localToolPlugin('templates'), blankPlugin(), trashPlugin()]) expect(plugin.prefersCollapsedMenu).toBeFalsy();
   });
 });

@@ -6,7 +6,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Terminal, type ITheme } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { useEffect, useRef, type CSSProperties } from 'react';
-import { TERMINAL_THEME } from '@/features/hyper-openbot/computer-browser/HyperTerminalTheme';
+import { TERMINAL_THEME } from './HyperTerminalTheme';
 import { cn } from '@/lib/utils';
 import { useBrightness } from '@/theme/appearance-store';
 import { usePromptFontStyle } from './font-families';

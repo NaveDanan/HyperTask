@@ -1,5 +1,5 @@
 import type { IpcResult } from '@shared/api';
-import type { HyperBotsApi, HyperBotsDelivery, HyperBotsEvent, HyperBotsSettings, HyperBotsSnapshot } from '@shared/HyperBots';
+import type { HyperBotUpload, HyperBotsApi, HyperBotsDelivery, HyperBotsEvent, HyperBotsReplyPreview, HyperBotsSettings, HyperBotsSnapshot } from '@shared/HyperBots';
 /** A rejected invoke (no handler, window closing) reads as a failure, so no busy flag or 'opening' phase sticks. */
 function hyperBotsSettled(api: HyperBotsApi): HyperBotsApi {
   const failure = (error: unknown): IpcResult<never> => ({ ok: false, kind: 'other', message: error instanceof Error ? error.message : String(error) });
@@ -28,6 +28,7 @@ export function hyperBotsRoomSummary(snapshot: HyperBotsSnapshot, unread = false
     activeRun: snapshot.runs.some(row => row.status === 'queued' || row.status === 'running'), unread };
 }
 export interface HyperBotsViewState {
+  previews?: HyperBotsReplyPreview[];
   summaries?: Record<string, HyperBotsRoomSummary>;
   phase: 'idle' | 'opening' | 'ready' | 'unavailable';
   snapshot: HyperBotsSnapshot | null;
@@ -45,7 +46,7 @@ export interface HyperBotsViewState {
   syncError?: string;
 }
 export type HyperBotsOutboxState = 'sending' | 'uncertain' | 'accepted';
-export interface HyperBotsOutboxEntry { readonly roomId: string; readonly text: string; readonly model: string | null; readonly clientMessageId: string; state: HyperBotsOutboxState; attempts: number }
+export interface HyperBotsOutboxEntry { readonly roomId: string; readonly text: string; readonly model: string | null; readonly clientMessageId: string; readonly attachments?: HyperBotUpload[]; state: HyperBotsOutboxState; attempts: number }
 /**
  * The composer's draft and every unconfirmed post, outside any page or controller, so a remount never holds a stale
  * copy. An identical retry (same room, text and model) of an unaccepted post reuses its ID; other uncertain posts keep
@@ -63,11 +64,17 @@ export class HyperBotsOutbox {
   /** The composer's model choice; '' means each bot's own model. */
   readonly getModel = () => this.model;
   readonly setModel = (model: string) => { if (this.model !== model) { this.model = model; this.changed(); } };
+  private readonly files = new Map<string, HyperBotUpload[]>();
+  readonly attachments = (roomId: string) => this.files.get(roomId);
+  readonly setAttachments = (roomId: string, attachments: HyperBotUpload[]) => {
+    if (attachments.length) this.files.set(roomId, attachments); else this.files.delete(roomId);
+    this.changed();
+  };
   readonly list = (roomId: string) => this.entries.filter(entry => entry.roomId === roomId).map(entry => ({ ...entry }));
   /** Starts an attempt and returns the entry whose ID it must carry. */
-  begin(roomId: string, text: string, model: string | null, uuid: () => string): HyperBotsOutboxEntry {
-    let entry = this.entries.find(row => row.roomId === roomId && row.text === text && row.model === model && row.state !== 'accepted');
-    if (!entry) this.entries.push(entry = { roomId, text, model, clientMessageId: uuid(), state: 'sending', attempts: 0 });
+  begin(roomId: string, text: string, model: string | null, uuid: () => string, attachments?: HyperBotUpload[]): HyperBotsOutboxEntry {
+    let entry = this.entries.find(row => row.roomId === roomId && row.text === text && row.model === model && row.attachments === attachments && row.state !== 'accepted');
+    if (!entry) this.entries.push(entry = { roomId, text, model, clientMessageId: uuid(), ...(attachments?.length && { attachments }), state: 'sending', attempts: 0 });
     entry.attempts++;
     entry.state = 'sending';
     this.changed();
@@ -79,6 +86,7 @@ export class HyperBotsOutbox {
     if (ok && entry.state !== 'accepted') {
       entry.state = 'accepted';
       this.drafts.set(entry.roomId, hyperBotsDraftAfterSend(this.draft(entry.roomId), entry.text));
+      if (this.attachments(entry.roomId) === entry.attachments) this.files.delete(entry.roomId);
     } else if (entry.state === 'sending' && !entry.attempts) entry.state = 'uncertain';
     if (entry.state === 'accepted' && !entry.attempts) this.entries = this.entries.filter(row => row !== entry);
     this.changed();
@@ -94,7 +102,7 @@ export function hyperBotsOutbox(userId: string) {
 }
 const IDLE: Pick<HyperBotsViewState, 'sending' | 'saving' | 'deciding'> = { sending: false, saving: false, deciding: [] };
 const INITIAL: HyperBotsViewState = { phase: 'idle', snapshot: null, models: [], ...IDLE };
-/** One room of bots. Events only trigger snapshot reads; nothing is resent to recover. */
+/** One room of bots. Durable events trigger a snapshot; preview events paint transient output. */
 export class HyperBotsController {
   private state = INITIAL;
   private readonly listeners = new Set<() => void>();
@@ -133,7 +141,9 @@ export class HyperBotsController {
     if (this.missed) { this.missed = false; void this.refresh(); }
   }
   private applySnapshot(snapshot: HyperBotsSnapshot) {
-    this.set({ phase: 'ready', snapshot, syncError: undefined, summaries: { ...this.state.summaries,
+    const finished = new Set(snapshot.runs.filter(run => run.status === 'done' || run.status === 'failed').map(run => run.id));
+    const previews = this.state.previews?.filter(row => row.roomId !== snapshot.roomId || !finished.has(row.runId));
+    this.set({ phase: 'ready', snapshot, previews, syncError: undefined, summaries: { ...this.state.summaries,
       [snapshot.roomId]: hyperBotsRoomSummary(snapshot) } });
   }
   /** Navigation cancels stale reads, never the outbox: each room retains its own draft and retry IDs. */
@@ -178,6 +188,7 @@ export class HyperBotsController {
   dispose() {
     this.disposed = true; this.generation++;
     this.offEvent?.(); this.offEvent = undefined;
+    this.set({ previews: [] });
   }
   /** Once per controller; a failed discovery is tried again on the next start. */
   private async loadModels() {
@@ -188,6 +199,17 @@ export class HyperBotsController {
   }
   private receive(event: HyperBotsEvent) {
     if (this.disposed) return;
+    if (event.type === 'preview') {
+      const previews = this.state.previews ?? [];
+      const previous = previews.find(row => row.runId === event.runId);
+      if (event.text) this.set({ previews: previous ? previews.map(row => row === previous ? event : row) : [...previews, event] });
+      else if (previous) this.set({ previews: previews.filter(row => row !== previous) });
+      return;
+    }
+    if (event.type === 'run' && event.status !== 'running' && event.roomId !== this.state.snapshot?.roomId) {
+      const previews = this.state.previews?.filter(row => row.runId !== event.runId);
+      if (previews?.length !== this.state.previews?.length) this.set({ previews });
+    }
     const snapshot = this.state.snapshot;
     if (this.state.phase !== 'ready' || !snapshot) { this.missed = true; return; }
     if (event.type === 'settings') { void this.refresh().then(() => this.sweep()); return; }
@@ -226,11 +248,13 @@ export class HyperBotsController {
   /** Resolves true once the room accepted the message. A failed post keeps its ID in the outbox for an identical retry. */
   async send(text: string, model: string | null = null): Promise<boolean> {
     const snapshot = this.state.snapshot;
-    if (!snapshot || this.state.phase !== 'ready' || this.state.sending || !text.trim()) return false;
-    const entry = this.outbox.begin(snapshot.roomId, text, model || null, this.uuid);
+    if (!snapshot || this.state.phase !== 'ready' || this.state.sending) return false;
+    const attachments = this.outbox.attachments(snapshot.roomId);
+    if (!text.trim() && !attachments?.length) return false;
+    const entry = this.outbox.begin(snapshot.roomId, text, model || null, this.uuid, attachments);
     const generation = this.generation;
     this.set({ sending: true, error: undefined });
-    const result = await this.api.post({ roomId: snapshot.roomId, clientMessageId: entry.clientMessageId, text, model: entry.model });
+    const result = await this.api.post({ roomId: snapshot.roomId, clientMessageId: entry.clientMessageId, text, model: entry.model, ...(entry.attachments && { attachments: entry.attachments }) });
     // Recorded even when this controller is gone, so whichever page is open now sees the message as sent.
     // The room deduplicates by ID, so an attempt that failed after an identical one was accepted was accepted too.
     const accepted = this.outbox.end(entry, result.ok);

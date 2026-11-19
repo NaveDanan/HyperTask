@@ -1,7 +1,4 @@
 export type HyperCallbackKeyAction = 'create' | 'rotate' | 'revoke';
-export interface HyperCallbackKeyResult { status: 'issued' | 'revoked' | 'cancelled' | 'refused' | 'failed' }
-export interface HyperNativeDestination { kind: 'connections'; confirmation: 'native-confirmed'; serverId?: string }
-import type { HyperOpenBotServiceAction, HyperOpenBotServiceState } from './HyperOpenBotService';
 import type { HyperOutlookColorId } from './HyperOutlookColor';
 import type { HyperNodEvent, HyperNodHistoryCursor, HyperNodHistoryPage, HyperNodSendInput, HyperNodSnapshot, HyperNodStatus, HyperNodSubmitted } from './HyperNod';
 import type { HyperBotsApi } from './HyperBots';
@@ -107,9 +104,6 @@ export interface GoogleFontFace {
   data: Uint8Array;
 }
 
-export interface HyperOpenBotRequest { id: string; path: string; method: string; body?: string | Uint8Array; contentType?: string }
-export interface HyperOpenBotChunk { id: string; chunk?: Uint8Array; done?: boolean; error?: string }
-export interface HyperOpenBotSocketEvent { id: string; type: 'open' | 'message' | 'error' | 'close'; data?: string | Uint8Array; code?: number; reason?: string }
 export interface HyperOutlookAttendee { name: string; email: string; type: number; response: number }
 export type { HyperOutlookPresenceState } from './HyperOutlookPresence';
 export interface HyperOutlookStatus { available: boolean; userName: string; email: string; reason?: string }
@@ -158,27 +152,8 @@ export interface HyperNodApi {
 export interface HypertaskApi {
   auth: { devJwtSession(): Promise<string | null>; entraIdToken(config: import('./HyperEntra').HyperEntraConfig): Promise<IpcResult<import('./HyperEntra').HyperEntraToken>>; entraCancel(): Promise<void> };
   outlook: HyperOutlookApi;
-  /** The Nod personal assistant on the VM. Main owns its token and transport. */
-  hyperNod: HyperNodApi;
   /** HyperBots: bots in rooms. Main owns the runtime, storage, approvals and connectors. */
   hyperBots: HyperBotsApi;
-  hyperOpenBot: {
-    callbackKey(input: { action: HyperCallbackKeyAction; agentId: string }): Promise<HyperCallbackKeyResult>;
-    onNativeDestination(listener: (destination: HyperNativeDestination) => void): () => void;
-    service: {
-      state(): Promise<HyperOpenBotServiceState>;
-      run(action: HyperOpenBotServiceAction): Promise<HyperOpenBotServiceState>;
-      configure(autoStart: boolean): Promise<HyperOpenBotServiceState>;
-      onState(listener: (state: HyperOpenBotServiceState) => void): () => void;
-    };
-    start(request: HyperOpenBotRequest): Promise<{ status: number; headers: Record<string, string> }>;
-    cancel(id: string): void;
-    socketOpen(id: string, path: string, protocols: string[]): Promise<void>;
-    socketSend(id: string, data: string | Uint8Array): void;
-    socketClose(id: string, code?: number, reason?: string): void;
-    onSocket(listener: (event: HyperOpenBotSocketEvent) => void): () => void;
-    onChunk(listener: (event: HyperOpenBotChunk) => void): () => void;
-  };
   core: {
     init(config: CoreInitConfig): Promise<number>;
     request(event: string, payload: Uint8Array): Promise<CoreReply>;

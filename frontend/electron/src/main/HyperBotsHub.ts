@@ -40,7 +40,7 @@ export class HyperBotsHub {
   private stopped = false;
   private readonly stopTimeoutMs: number;
 
-  constructor(private readonly deps: { directory: string; identity: () => Promise<HyperBotsUser | null>; create: (user: HyperBotsUser, stateFile: string) => HyperBotsRuntime; stopTimeoutMs?: number }) {
+  constructor(private readonly deps: { directory: string; startOnResolve?: boolean; identity: () => Promise<HyperBotsUser | null>; create: (user: HyperBotsUser, stateFile: string) => HyperBotsRuntime; stopTimeoutMs?: number }) {
     this.stopTimeoutMs = deps.stopTimeoutMs ?? 5000;
   }
 
@@ -82,7 +82,7 @@ export class HyperBotsHub {
     this.active = { user, runtime };
     this.emit(runtime);
     // Approved work resumes for this account only.
-    try { runtime.start(); } catch (error) { console.error('[hyper-bots] could not resume runs', error); }
+    try { if (this.deps.startOnResolve !== false) runtime.start(); } catch (error) { console.error('[hyper-bots] could not resume runs', error); }
     return this.active;
   }
 
