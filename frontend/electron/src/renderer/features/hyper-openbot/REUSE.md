@@ -1,5 +1,7 @@
 # Hyper OpenBot integration
 
+The Electron OpenBot Chat renderer has been retired. The source mappings below document the original port. Settings retains OpenBot app and browser management, and Nod and Hyper-Bot reuse transcript rendering.
+
 Source pinned at f8af37ab73e96784f174a11104505a965e722cab in `/home/naved/HyperTask-OpenBot-baseline`. Copyright (c) 2026 CopilotKit. MIT license is reproduced in LICENSE. HyperTask was developed by NaveDanan. Component-specific mappings are in each subdirectory's REUSE.md.
 
 | Local file | Original source | Adaptation |

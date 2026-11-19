@@ -21,7 +21,7 @@ const connections = {
   jira: { title: 'Jira', icon: SquareCheckBig, description: 'Sync a project and mirror issues to Hyper-Kanban.' },
   ai: { title: 'AI endpoint', icon: Sparkles, description: 'OpenAI-compatible API, credentials, and models.' },
   entra: { title: 'Microsoft Entra ID', icon: ShieldCheck, description: 'Set up company sign-in.' },
-  openbot: { title: 'OpenBot apps', icon: Plug, description: 'Manage accounts and app access for Bots.' },
+  openbot: { title: 'OpenBot apps', icon: Plug, description: 'Manage accounts and app access on the OpenBot service.' },
   browsers: { title: 'Connected browsers', icon: Globe, description: 'View and disconnect browsers paired with OpenBot.' },
   voice: { title: 'Voice providers', icon: Mic, description: 'Choose a transcription provider and manage its API key.' },
   server: { title: 'Storage & server', icon: Server, description: 'Choose local storage or connect a collaboration server.' },

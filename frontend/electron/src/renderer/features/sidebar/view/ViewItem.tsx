@@ -253,7 +253,7 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
             onEditing={(value) => bloc.setIsEditing(value)}
             onSelected={(layout, _createNewView, hyperLayout) => {
               // The new document/chat name is empty, other layouts are "Untitled".
-              const name = layout === ViewLayoutPB.Document || layout === ViewLayoutPB.Chat ? '' : tr('menuAppHeader.defaultNewPageName');
+              const name = layout === ViewLayoutPB.Document ? '' : tr('menuAppHeader.defaultNewPageName');
               void bloc.createView(name, layout, { openAfterCreated: true, section: toViewSectionPB(spaceType), hyperLayout });
               void bloc.setIsExpanded(true);
             }}

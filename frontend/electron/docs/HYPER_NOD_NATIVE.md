@@ -6,7 +6,7 @@ Updated 2026-11-16. Branch `hyper/nod-backend`. This is the first slice of repla
 
 The OpenBot chat depends on CopilotKit Intelligence 0.15.1. Intelligence holds durable threads, the realtime gateway, memory and Learning. It needs a CopilotKit account, an accepted agreement, an entitlement and a renewable license ([audit](HYPER_OPENBOT_AUDIT.md), [baseline](HYPER_OPENBOT_BASELINE.md)). Nod's own server provides durable threads and turns in PostgreSQL, streaming, approvals, questions, memory, schedules, Vault and a sandboxed computer, with no license gate.
 
-Nod is not a drop-in Intelligence endpoint: it speaks HTTP JSON plus server-sent events, not AG-UI or Phoenix. It also keeps one active conversation per owner. HyperTask therefore adds Nod as a second, independent backend. Existing OpenBot chats, their stores and their identifiers are unchanged. Opening them still requires Intelligence until an explicit archive or migration exists.
+Nod speaks HTTP JSON and server-sent events and keeps one active conversation per owner. It runs independently of OpenBot and Hyper-Bot. The old OpenBot Chat renderer has been retired in Electron. Saved Chat pages display a retirement message, and their stored data remains in place.
 
 ## What this slice does
 

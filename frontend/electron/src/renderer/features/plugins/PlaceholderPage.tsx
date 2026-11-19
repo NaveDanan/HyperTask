@@ -11,14 +11,13 @@ import type { PluginContext } from './registry';
 
 export const PLACEHOLDER_LINE = 'This page type opens in a later milestone of the Electron port.';
 
-/** A centered "later milestone" message with the page's icon and name. */
-export function PlaceholderMessage({ icon, name }: { icon: ReactNode; name: string }) {
+export function PlaceholderMessage({ icon, name, description = PLACEHOLDER_LINE }: { icon: ReactNode; name: string; description?: string }) {
   return (
     <Empty className="h-full">
       <EmptyHeader className="max-w-md">
         {icon && <EmptyMedia variant="icon">{icon}</EmptyMedia>}
         <EmptyTitle>{name}</EmptyTitle>
-        <EmptyDescription>{PLACEHOLDER_LINE}</EmptyDescription>
+        <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );
@@ -31,8 +30,8 @@ export function HyperLayoutIcon({ layout, hyperLayout, className }: { layout: Vi
 }
 
 /**
- * Body of the Document / Grid / Board / Calendar / Chat plugins until their pages land. It keeps
- * the plugins' delete handling: documents show the "in Trash" banner (restore / delete
+ * Placeholder for unfinished page types and retired Chat pages. It keeps the plugins'
+ * delete handling: documents show the "in Trash" banner (restore / delete
  * permanently → onDeleted), databases close as soon as a trash notification carries an index.
  */
 export function ViewPlaceholderPage({ view, context }: { view: ViewPB; context: PluginContext }) {
@@ -51,9 +50,6 @@ export function ViewPlaceholderPage({ view, context }: { view: ViewPB; context: 
     if (isDatabase && deleted && deleted.oneOfIndex.case === 'index') context.onDeleted?.(current, deleted.oneOfIndex.value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deleted, isDatabase]);
-
-  // AIChatPage renders nothing without a user profile (e.g. in the secondary view).
-  if (view.layout === ViewLayoutPB.Chat && !context.userProfile) return null;
 
   const icon = viewIcon(current);
   const showBanner = view.layout === ViewLayoutPB.Document && deleted !== null && !bannerHidden;
@@ -82,6 +78,7 @@ export function ViewPlaceholderPage({ view, context }: { view: ViewPB; context: 
         <PlaceholderMessage
           icon={icon ? <span className="text-2xl"><RawEmojiIcon icon={icon} size={24} /></span> : <HyperLayoutIcon layout={current.layout} className="size-5" />}
           name={nameOrDefault(current)}
+          description={view.layout === ViewLayoutPB.Chat ? 'OpenBot Chat has been retired. To start a new conversation, open Hyper-Bot.' : undefined}
         />
       </div>
     </div>

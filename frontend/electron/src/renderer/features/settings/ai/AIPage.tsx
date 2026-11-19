@@ -166,7 +166,7 @@ export function AIPage(_: SettingsPageProps) {
             </div>
             {protectedKey !== '' && <SettingsRow label={<label htmlFor="hyper-ai-remove-key" className="cursor-pointer">Remove saved API key</label>} control={<Checkbox id="hyper-ai-remove-key" aria-label="Remove saved API key" checked={removeKey} disabled={busy} onCheckedChange={setRemoveKey} />} />}
           </SettingsGroup>
-          <p className="text-sm text-muted-foreground">Workspace AI actions, summaries, translations, and selected-source answers use this model. OpenBot Chat uses the provider configured on its VM. Retrieval uses local text search,
+          <p className="text-sm text-muted-foreground">Workspace AI actions, summaries, translations, and selected-source answers use this model. Retrieval uses local text search,
             or your optional embeddings model for semantic workspace search. Image output uses the optional image model. Unsupported image
             or vision requests show a capability error.</p>
           <div className="flex flex-wrap items-center gap-3"><Button disabled={busy} onClick={() => void act(false)}>Save AI settings</Button><Button variant="outline" disabled={busy} onClick={() => void act(true)}>Test endpoint</Button>{busy && <Spinner />}</div>

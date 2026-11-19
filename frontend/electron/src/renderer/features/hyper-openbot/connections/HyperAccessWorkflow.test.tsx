@@ -1,7 +1,6 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import { HyperAppAccessAction } from './HyperAppAccessAction';
-import { HyperBotAppGrants } from '../bot-tabs/HyperBotAppGrants';
 import { HyperPluginGrants } from './HyperPluginGrants';
 
 // Run the production hooks, effects and event handlers with deterministic transport replies.
@@ -67,12 +66,6 @@ it('offers Continue when a latest formerly blocked card first reads ready', asyn
   render(HyperAppAccessAction, props); const tree = await settle(HyperAppAccessAction, props);
   expect(resume).not.toHaveBeenCalled(); expect(button(tree, 'Continue')).toBeDefined(); button(tree, 'Continue')!.props.onClick(); await settle(HyperAppAccessAction, props);
   expect(resume).toHaveBeenCalledOnce();
-});
-it('stops an unheld shared action at exposure confirmation before HTTP', async () => {
-  const props = { agentId: 'bot', app: 'mail', shared: true, onSaved: vi.fn() }; render(HyperBotAppGrants, props); const tree = await settle(HyperBotAppGrants, props);
-  find(tree, el => el.type === 'input' && el.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); await settle(HyperBotAppGrants, props);
-  expect(writes()).toHaveLength(0);
-  expect(button(await settle(HyperBotAppGrants, props), 'Approve audience and grant action')).toBeDefined();
 });
 it('does not offer personal-edition per-Bot grant or revoke controls', async () => {
   edition = 'personal'; const props = { server: { id: 'mail', title: 'Mail', summary: '', url: '', tools: [{ ref: 'mail/read', name: 'Read', description: '', grantedTo: ['bot'] }] }, busy: false, admin: true, navigate: vi.fn(), run: async (fn: () => Promise<void>) => fn() };
@@ -150,35 +143,6 @@ it('does not continue a pending give after the connection wait is cancelled', as
   button(tree, 'Cancel connection wait')!.props.onClick(); live = access({ state: 'owner_grantable', needsConnect: false }); for (const cb of f.listeners.get('focus') ?? []) cb(); await settle(HyperAppAccessAction, props);
   expect(writes().some(call => call[0].endsWith('/give'))).toBe(false);
 });
-it('requires explicit first-grant confirmation and sends no invented approval', async () => {
-  const props = { agentId: 'bot', app: 'mail', shared: true, onSaved: vi.fn() }; render(HyperBotAppGrants, props); let tree = await settle(HyperBotAppGrants, props);
-  find(tree, el => el.type === 'input' && el.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  const old = button(tree, 'Approve audience and grant action')!; old.props.onClick(); await settle(HyperBotAppGrants, props); expect(writes()).toHaveLength(0);
-  const confirmation = find(tree, el => el.type === 'label' && text(el.props.children).includes('Confirm shared account exposure'))!;
-  find(confirmation, el => el.type === 'input')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  button(tree, 'Approve audience and grant action')!.props.onClick(); await settle(HyperBotAppGrants, props);
-  expect(writes()).toEqual([['/api/plugins/grants', 'POST', { kind: 'mcp', ref: 'mail/read', agentId: 'bot' }]]);
-});
-it('expires a confirmed shared grant after cancelling its proposal', async () => {
-  const props = { agentId: 'bot', app: 'mail', shared: true, onSaved: vi.fn() }; render(HyperBotAppGrants, props); let tree = await settle(HyperBotAppGrants, props);
-  find(tree, el => el.type === 'input' && el.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  const confirmation = find(tree, el => el.type === 'label' && text(el.props.children).includes('Confirm shared account exposure'))!;
-  find(confirmation, el => el.type === 'input')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  const old = button(tree, 'Approve audience and grant action')!; button(tree, 'Cancel action grant')!.props.onClick(); await settle(HyperBotAppGrants, props); old.props.onClick(); await settle(HyperBotAppGrants, props);
-  expect(writes()).toHaveLength(0);
-});
-it('requires shared confirmation for an English-authored save and preserves authoring', async () => {
-  const original = f.request.getMockImplementation()!;
-  f.request.mockImplementation(async (path, method, body) => path.endsWith('/translate') ? { grants: ['mail/read'], explanation: 'Read only', warning: null, otherApps: [], check: { ok: true } } : path.endsWith('/replay') ? { check: { ok: true }, changes: { added: [{ ref: 'mail/read', name: 'Read' }], removed: [] }, warning: null, report: null } : original(path, method, body));
-  const props = { agentId: 'bot', app: 'mail', shared: true, onSaved: vi.fn() }; render(HyperBotAppGrants, props); let tree = await settle(HyperBotAppGrants, props);
-  find(tree, el => el.type === 'label' && text(el.props.children) === 'Describe allowed actions')!.props.children[1].props.onChange({ target: { value: 'Only read mail' } }); tree = await settle(HyperBotAppGrants, props);
-  button(tree, 'Choose actions')!.props.onClick(); tree = await settle(HyperBotAppGrants, props); button(tree, 'Preview against recent activity')!.props.onClick(); tree = await settle(HyperBotAppGrants, props);
-  button(tree, 'Save action changes')!.props.onClick(); await settle(HyperBotAppGrants, props); expect(writes().some(call => call[0].endsWith('/grants'))).toBe(false);
-  const confirmation = find(tree, el => el.type === 'label' && text(el.props.children).includes('Confirm shared account exposure'))!;
-  find(confirmation, el => el.type === 'input')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  button(tree, 'Save action changes')!.props.onClick(); await settle(HyperBotAppGrants, props);
-  expect(writes().find(call => call[0].endsWith('/grants'))?.[2]).toEqual({ add: ['mail/read'], remove: [], authoring: { source: 'english', text: 'Only read mail' } });
-});
 it('keeps a pending owner transaction mounted on the safe main return and rechecks the server', async () => {
   const { hyperRefreshPendingConnection } = await import('./HyperAccessRefresh');
   live = access({ state: 'owner_grantable', needsConnect: true }); const props = { agentId: 'bot', app: 'mail' };
@@ -196,30 +160,6 @@ it.each(['give', 'approve'])('confirms a shared card %s before accepting its fir
   expect(writes()).toHaveLength(0); expect(button(tree, 'Confirm shared account grant')).toBeDefined();
   button(tree, 'Confirm shared account grant')!.props.onClick(); await settle(HyperAppAccessAction, props);
   expect(writes().map(call => call[0])).toEqual([`/api/plugins/for/bot/apps/mail/${action}`]);
-});
-it('gets shared mode from the actual directory even when the caller supplied a stale personal flag', async () => {
-  const props = { agentId: 'bot', app: 'mail', shared: false, onSaved: vi.fn() }; render(HyperBotAppGrants, props); let tree = await settle(HyperBotAppGrants, props);
-  find(tree, el => el.type === 'input' && el.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  expect(writes()).toHaveLength(0); expect(button(tree, 'Approve audience and grant action')).toBeDefined();
-});
-it('does not let a cached confirmed button bypass an immediately unchecked shared confirmation', async () => {
-  const props = { agentId: 'bot', app: 'mail', shared: true, onSaved: vi.fn() }; render(HyperBotAppGrants, props); let tree = await settle(HyperBotAppGrants, props);
-  find(tree, el => el.type === 'input' && el.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  const confirmInput = (node: ReactNode) => find(find(node, el => el.type === 'label' && text(el.props.children).includes('Confirm shared account exposure'))!, el => el.type === 'input')!;
-  confirmInput(tree).props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  const old = button(tree, 'Approve audience and grant action')!; confirmInput(tree).props.onChange({ target: { checked: false } }); old.props.onClick(); await settle(HyperBotAppGrants, props);
-  expect(writes()).toHaveLength(0);
-});
-it('sends only the held Bot’s server-proposed membership after exposure confirmation', async () => {
-  const proposal = { audience: 'people', outsideInput: true, members: [{ kind: 'user', value: 'server-person' }, { kind: 'group', value: 'server-group' }] };
-  const original = f.request.getMockImplementation()!;
-  f.request.mockImplementation(async (path, method, body) => path.startsWith('/api/approvals/shared-use') ? { apps: [{ serverId: 'mail', approval: null, needed: proposal }] } : original(path, method, body));
-  const props = { agentId: 'bot', app: 'mail', shared: true, onSaved: vi.fn() }; render(HyperBotAppGrants, props); let tree = await settle(HyperBotAppGrants, props);
-  find(tree, el => el.type === 'input' && el.props.type === 'checkbox')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  const confirmation = find(tree, el => el.type === 'label' && text(el.props.children).includes('Confirm shared account exposure'))!;
-  find(confirmation, el => el.type === 'input')!.props.onChange({ target: { checked: true } }); tree = await settle(HyperBotAppGrants, props);
-  button(tree, 'Approve audience and grant action')!.props.onClick(); await settle(HyperBotAppGrants, props);
-  expect(writes()[0][2]).toEqual({ kind: 'mcp', ref: 'mail/read', agentId: 'bot', approval: proposal });
 });
 it('routes missing broker configuration to the matching administrator directory', async () => {
   live = access({ state: 'disabled', unavailable: 'composio_unconfigured', provider: 'arcade' });

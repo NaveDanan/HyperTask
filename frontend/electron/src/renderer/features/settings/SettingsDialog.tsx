@@ -226,7 +226,14 @@ export function SettingsDialogHost({ user }: { user: UserProfilePB }) {
       })();
     });
 
+    const releaseConnectionReturn = window.hypertask.hyperOpenBot?.onNativeDestination?.(destination => {
+      if (destination.kind === 'connections' && destination.confirmation === 'native-confirmed') {
+        openSettings.emit('connections/openbot');
+      }
+    });
+
     return () => {
+      releaseConnectionReturn?.();
       off();
       // runHypertask() rebuilds the whole tree in Flutter, dialogs stacked on settings included.
       if (useSettingsDialogStore.getState().open) closeAllDialogs();

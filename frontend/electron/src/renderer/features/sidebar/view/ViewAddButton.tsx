@@ -2,7 +2,7 @@
 // creatable layouts (pluginBuilders() in registration order) plus "Import".
 import { useRef, useState, type ReactNode } from 'react';
 import { ViewLayoutPB } from '@shared/protobuf/hyper-folder/view_pb';
-import { CalendarDays, ChartGantt, FileText, Import, MessageSquareText, Plus, SquareKanban, Table2, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ChartGantt, FileText, Import, Plus, SquareKanban, Table2, type LucideIcon } from 'lucide-react';
 import { MenuRow, MenuSeparator } from '@/components/app/menu-row';
 import { NavIconButton } from '@/components/app/nav';
 import { useTr } from '@/i18n';
@@ -23,8 +23,6 @@ const ADD_ITEMS: AddItem[] = [
   { layout: ViewLayoutPB.Board, icon: SquareKanban, label: (tr) => tr('board.menuName') },
   { layout: ViewLayoutPB.Calendar, icon: CalendarDays, label: (tr) => tr('calendar.menuName') },
   { layout: ViewLayoutPB.Grid, hyperLayout: 'gantt', icon: ChartGantt, label: () => 'Gantt' },
-  // AIChatPluginBuilder.menuName is not localized.
-  { layout: ViewLayoutPB.Chat, icon: MessageSquareText, label: () => 'AI Chat' },
 ];
 
 export function ViewAddButton({

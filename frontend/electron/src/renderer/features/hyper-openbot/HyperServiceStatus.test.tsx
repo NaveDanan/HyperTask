@@ -26,7 +26,7 @@ it.each(['unsupported', 'signed_out', 'profile_required'] as const)('shows %s in
   expect(html).not.toContain('Checking the configured private backend');
 });
 
-it('explains that Chat backend readiness is separate from the configured LLM endpoint', () => {
+it('explains that OpenBot readiness is separate from the configured LLM endpoint', () => {
   const html = renderToStaticMarkup(<HyperServiceStatus state={{ ...stopped, problem: 'unsupported', checkedAt: null }} />);
   expect(html).toContain('Settings → Connections → AI endpoint');
   expect(html).toContain('Manage the workspace AI endpoint separately');

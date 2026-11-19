@@ -1,5 +1,7 @@
 # Native OpenBot acceptance
 
+This is a historical record. The Electron OpenBot Chat renderer and its native smoke driver have been removed. Reproducing the steps below requires the corresponding historical checkout.
+
 [Issue #8](https://github.com/NaveDanan/HyperTask/issues/8) tracks the original OpenBot/CopilotKit integration inside HyperTask. Final source `5b94256` implements the reported parity corrections and passes 1614 automated tests, one optional skip, four real-core tests, typecheck/build and 23 smoke safeguards. The owner explicitly authorized merge after fixing the reports, requested the final comment `fixed all the issues`, waived another Codex review and skipped native verification. Native verification of this final source is **unverified, not passed**. Merge status is tracked in [PR #14](https://github.com/NaveDanan/HyperTask/pull/14).
 
 The native observations below are historical baseline evidence, captured before the owner requested the expanded parity work. They must not be read as a live acceptance receipt for the final source. Tailscale authentication and the retained disposable app were not bypassed or reset. No new agreement, vendor consent or native acceptance was performed for this delivery.

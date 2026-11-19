@@ -1,9 +1,6 @@
 // Adapted from OpenBot components/plugins/app-access-action.tsx, MIT Copyright (c) 2026 CopilotKit.
 import { useEffect, useRef, useState } from 'react';
-import type { HyperAppSetupIntent } from '../HyperOpenBotSections';
 import { Button } from '@/components/ui/button';
-import { useHyperRoutineNavigation } from '../routines/HyperRoutineNavigation';
-import { hyperConnectionSelectionPath } from './HyperNativeConnections';
 import { hyperAuthorizationUrl, hyperStartConnection } from './HyperConnectionsApi';
 import { hyperConfirmConnection } from './HyperPluginDetailsApi';
 import { hyperOpenBotRequest } from '../transport';
@@ -17,10 +14,10 @@ export interface HyperAppCarryOn {
   /** Resume the actual channel core without manufacturing a user message. False means gated. */
   resume(): Promise<boolean>;
 }
+interface HyperAppSetupIntent { admin: boolean; provider?: 'arcade' | 'composio' }
 export interface HyperAppAccessActionProps { agentId: string; app: string; refusal?: 'connect' | 'reconnect' | 'shared'; refusalAt?: string; admin?: boolean; deriveAdmin?: boolean; onOpenConnection?(key: string, intent?: HyperAppSetupIntent): void; onSettled?(): void; carryOn?: HyperAppCarryOn }
 const carried = new Set<string>();
 export function HyperAppAccessAction({ agentId, app, refusal, refusalAt, admin: adminOverride, deriveAdmin = false, onOpenConnection, onSettled, carryOn }: HyperAppAccessActionProps) {
-  const navigation = useHyperRoutineNavigation();
   const [actorAdmin, setActorAdmin] = useState(false);
   const admin = adminOverride ?? actorAdmin;
   const current = useRef({ agentId, app, admin, active: false, sequence: 0, busy: false, error: '', access: undefined as api.HyperAppAccess | undefined, pendingGive: false, pendingActor: '', waiting: false, sawBlocked: false, carried: false });
@@ -33,7 +30,7 @@ export function HyperAppAccessAction({ agentId, app, refusal, refusalAt, admin: 
   const access = liveAccess ? api.hyperAppAccessAsRefused(liveAccess, refusal, refusalAt) : undefined;
   const resultBusy = result?.scope === scope && result.busy;
   const error = result?.scope === scope ? result.error : '';
-  const isCurrent = () => current.current === scope && scope.active && navigation?.isCurrentNavigation?.() !== false;
+  const isCurrent = () => current.current === scope && scope.active;
   const canRead = () => isCurrent() && !scope.busy;
   const canAct = () => isCurrent() && !scope.busy && !!liveAccess && scope.access === liveAccess;
   function publish(error = '') {
@@ -128,14 +125,9 @@ export function HyperAppAccessAction({ agentId, app, refusal, refusalAt, admin: 
     if (!(duringTransaction ? isCurrent() : canAct())) return;
     const adminSetup = allowedAdmin && (value.account === 'shared' || value.state === 'disabled' && value.unavailable !== null && value.unavailable !== 'absent');
     const provider = value.unavailable === 'composio_unconfigured' && (value.provider === 'arcade' || value.provider === 'composio') ? value.provider : undefined;
-    const selection = provider ? { page: 'browse' as const, provider } : { page: 'app' as const, key: value.key };
     const intent = { admin: adminSetup, ...(provider ? { provider } : {}) };
-    if (navigation?.openAppConnection) { navigation.openAppConnection(value.key, intent); }
-    else if (adminSetup && navigation?.navigate) {
-      navigation.navigate('admin-plugins', { path: hyperConnectionSelectionPath(selection, true) });
-    } else if (onOpenConnection) {
-      if (adminSetup || provider) onOpenConnection(value.key, intent); else onOpenConnection(value.key);
-    } else navigation?.navigate?.('connections', { path: hyperConnectionSelectionPath(selection) });
+    if (adminSetup || provider) onOpenConnection?.(value.key, intent);
+    else onOpenConnection?.(value.key);
   }
   async function verifyAuthority(expected: NonNullable<typeof context>) {
     if (!isCurrent() || contextRef.current !== expected) return false;
@@ -245,7 +237,7 @@ export function HyperAppAccessAction({ agentId, app, refusal, refusalAt, admin: 
   const sentences = access ? { ready: access.accountHolder === 'owner' ? 'Ready using the Bot owner’s account.' : access.asksFirst ? 'Ready using your account. You will be asked before first use.' : 'Ready to use.', not_connected: 'Connect your own account.', reconnect: access.accountHolder === 'owner' ? 'The Bot owner must reconnect their account.' : 'Your account needs reconnecting.', shared_not_connected: refusal === 'shared' && !access.requestKind ? 'An admin must reconnect the team account.' : 'An admin must connect the team account.', shared_not_approved: 'An admin must approve this Bot’s audience for the team account.', disabled: access.unavailable === 'absent' ? 'This app has not been enabled.' : 'This app needs setup before it can be used.', not_granted: 'An admin must give this app to the Bot.', owner_grantable: access.needsConnect ? 'Connect your own account before giving it to your Bot.' : 'Let your Bot use this app?' } : undefined;
   return <div className="space-y-2 rounded-lg border border-border p-3">{error && <p role="alert" className="text-destructive">{error}</p>}{!access ? error ? <Button disabled={busy} variant="outline" onClick={() => { if (canRead()) void load(); }}>Retry access</Button> : <p role="status">Loading app access…</p> : <><p>{access.displayName} · {sentences?.[access.state]}</p>{access.request ? <><p>Requested</p><Button disabled={busy} variant="outline" onClick={() => void run(() => api.hyperCancelAppAccess(access.request!.id), true)}>Withdraw request</Button></> : access.requestKind && !allowedAdmin ? <Button disabled={busy} onClick={() => void run(() => api.hyperRequestAppAccess(agentId, app), true)}>Request access</Button> : null}
     {personalConnect && <Button disabled={busy} onClick={() => void connect(true)}>Connect app</Button>}{context && !personalConnect && (access.state === 'not_connected' || access.state === 'reconnect') && access.accountHolder === 'you' && (access.connect === 'oauth' || access.connect === 'consent') && <Button disabled={busy} onClick={() => void connect()}>Connect account</Button>}{context && access.state === 'owner_grantable' && access.needsConnect && <Button disabled={busy || scope.waiting} onClick={() => void connect(false, true)}>Connect and allow</Button>}{scope.waiting && <><p role="status">Finish signing in in your browser. Waiting for the server to confirm the account.</p><Button disabled={busy} variant="outline" onClick={() => void checkConnection()}>Check connection</Button><Button disabled={busy} variant="outline" onClick={() => { if (isCurrent()) { scope.waiting = false; scope.pendingGive = false; publish(); } }}>Cancel connection wait</Button></>}{carryOn && access.state === 'ready' && !scope.carried && !carried.has(`${context?.userId ?? ''}:${carryOn.key}`) && carryOn.blockedWhenAsked && carryOn.latest() && <Button disabled={busy} onClick={() => void resume()}>Continue</Button>}{access.state === 'owner_grantable' && !access.needsConnect && <Button disabled={busy} onClick={() => void beginGrant('give')}>Let it use your app</Button>}{access.givenByOwner && !personal && <Button disabled={busy} variant="outline" onClick={() => void run(() => api.hyperGiveApp(agentId, app, false))}>Take back what you gave</Button>}
-    {allowedAdmin && !personalConnect && (access.state === 'not_granted' || access.state === 'disabled' && (access.unavailable === null || access.unavailable === 'absent')) && <Button disabled={busy} onClick={() => void beginGrant('approve')}>Enable and grant read-only access</Button>}{(onOpenConnection || navigation?.navigate || navigation?.openAppConnection) && access.state !== 'ready' && access.accountHolder !== 'owner' && <Button variant="outline" disabled={busy} onClick={() => { openSetup(access); }}>Open app setup and connection</Button>}{sharedGrant?.scope === scope && sharedGrant.access === liveAccess && <div role="alertdialog" aria-label="Confirm shared account grant" className="space-y-2 rounded-lg border border-border p-3"><p>This Bot will use the team account. Confirm that its server-resolved audience and outside input may use that account. Existing administrator decisions are preserved.</p>{sharedGrant.exposure ? <p>Server exposure: {sharedGrant.exposure.audience} · Outside input: {sharedGrant.exposure.outsideInput ? 'yes' : 'no'} · {sharedGrant.exposure.members.map(member => `${member.kind}: ${member.value}`).join(', ')}</p> : <p>This Bot has not held the app. The server resolves its current audience and outside input on the first grant.</p>}<Button disabled={busy} onClick={() => void confirmSharedGrant()}>Confirm shared account grant</Button><Button disabled={busy} variant="outline" onClick={() => { if (isCurrent()) { sharedGrantRef.current = undefined; setSharedGrant(undefined); } }}>Cancel shared grant</Button></div>}<Button variant="ghost" disabled={busy} onClick={() => { if (canRead()) void load(); }}>Refresh access</Button></>}
+    {allowedAdmin && !personalConnect && (access.state === 'not_granted' || access.state === 'disabled' && (access.unavailable === null || access.unavailable === 'absent')) && <Button disabled={busy} onClick={() => void beginGrant('approve')}>Enable and grant read-only access</Button>}{onOpenConnection && access.state !== 'ready' && access.accountHolder !== 'owner' && <Button variant="outline" disabled={busy} onClick={() => { openSetup(access); }}>Open app setup and connection</Button>}{sharedGrant?.scope === scope && sharedGrant.access === liveAccess && <div role="alertdialog" aria-label="Confirm shared account grant" className="space-y-2 rounded-lg border border-border p-3"><p>This Bot will use the team account. Confirm that its server-resolved audience and outside input may use that account. Existing administrator decisions are preserved.</p>{sharedGrant.exposure ? <p>Server exposure: {sharedGrant.exposure.audience} · Outside input: {sharedGrant.exposure.outsideInput ? 'yes' : 'no'} · {sharedGrant.exposure.members.map(member => `${member.kind}: ${member.value}`).join(', ')}</p> : <p>This Bot has not held the app. The server resolves its current audience and outside input on the first grant.</p>}<Button disabled={busy} onClick={() => void confirmSharedGrant()}>Confirm shared account grant</Button><Button disabled={busy} variant="outline" onClick={() => { if (isCurrent()) { sharedGrantRef.current = undefined; setSharedGrant(undefined); } }}>Cancel shared grant</Button></div>}<Button variant="ghost" disabled={busy} onClick={() => { if (canRead()) void load(); }}>Refresh access</Button></>}
   </div>;
 }
 export function HyperAppAccessRequests({ app, busy, run }: { app: string; busy: boolean; run(action: () => Promise<void>): Promise<void> }) {

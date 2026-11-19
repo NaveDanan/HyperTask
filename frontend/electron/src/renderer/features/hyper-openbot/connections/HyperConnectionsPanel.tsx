@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ExternalLink, Plug, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { hyperStoreMcpToken } from '../vault';
+import { hyperStoreMcpToken } from '../vault/HyperVaultApi';
 import { HyperConnectionSecrets } from './HyperConnectionSecrets';
 import { HyperAppAccessRequests } from './HyperAppAccessAction';
 import { HyperSharedAccessRequests } from './HyperSharedAccessRequests';

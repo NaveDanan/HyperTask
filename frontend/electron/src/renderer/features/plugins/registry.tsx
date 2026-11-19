@@ -5,12 +5,11 @@ import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/hyper-folder/view_pb
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { tr, useTr } from '@/i18n';
 import { Bot, BotMessageSquare, FileText, House, LayoutTemplate, SquareCheckBig, Trash2 } from 'lucide-react';
-import { MenuSeparator } from '@/components/app/menu-row';
 import { cn } from '@/lib/utils';
 import { PluginType, type Plugin } from '../tabs/plugin';
 import { nameOrDefault } from '../view/view-ext';
 import { ViewFavoriteButton } from '../view-header/FavoriteButton';
-import { CustomViewAction, MoreViewActions } from '../view-header/MoreViewActions';
+import { MoreViewActions } from '../view-header/MoreViewActions';
 import { ShareButton } from '../view-header/share/ShareButton';
 import { RawEmojiIcon, viewIcon } from '../view-header/ViewIcon';
 import { ViewTitleBar } from '../view-header/ViewTitleBar';
@@ -21,7 +20,6 @@ import { TrashPage } from './trash/TrashPage';
 import { TemplateStorePage } from '../templates/TemplateStorePage';
 import { HyperDatabasePage } from '../hyper-database/HyperDatabasePage';
 import { hyperLayout } from '../hyper-database/HyperDatabaseController';
-import { HyperOpenBotPage } from '../hyper-openbot/HyperOpenBotPage';
 import { JiraDashboardPage } from '../jira/ui/JiraDashboardPage';
 import { HyperHomePage } from '../hyper-home/HyperHomePage';
 import { HyperNodPage } from '../hyper-nod/HyperNodPage';
@@ -62,7 +60,6 @@ export const pluginBuilders = () => [
   { pluginType: PluginType.board, menuName: tr('board.menuName'), icon: 'icon_board_s' as const, layout: ViewLayoutPB.Board },
   { pluginType: PluginType.calendar, menuName: tr('calendar.menuName'), icon: 'icon_calendar_s' as const, layout: ViewLayoutPB.Calendar },
   { pluginType: PluginType.grid, menuName: 'Gantt', icon: 'icon_grid_s' as const, layout: ViewLayoutPB.Grid, hyperLayout: 'gantt' as const },
-  { pluginType: PluginType.chat, menuName: 'AI Chat', icon: 'chat_ai_page_s' as const, layout: ViewLayoutPB.Chat },
 ];
 
 /** ViewTabBarItem (workspace/presentation/widgets/tab_bar_item.dart). */
@@ -115,27 +112,11 @@ function DatabaseRightBar({ view }: { view: ViewPB }) {
   );
 }
 
-/** AIChatPagePluginWidgetBuilder.rightBarItem: Favorite, More with "Add messages to page". */
-function ChatRightBar({ view }: { view: ViewPB }) {
-  const { tr } = useTr();
+function RetiredChatRightBar({ view }: { view: ViewPB }) {
   return (
     <div className="ml-auto flex shrink-0 items-center gap-1">
       <ViewFavoriteButton view={view} />
-      <MoreViewActions
-        view={view}
-        customActions={
-          <>
-            {/* ChatSelectMessageState.enabled is false until the chat page has messages. */}
-            <CustomViewAction
-              leftIcon="ai_add_to_page_s"
-              label={tr('moreAction.saveAsNewPage')}
-              tooltipMessage={tr('moreAction.saveAsNewPageDisabled')}
-              disabled
-            />
-            <MenuSeparator />
-          </>
-        }
-      />
+      <MoreViewActions view={view} />
     </div>
   );
 }
@@ -192,15 +173,14 @@ export function pluginWidgets(plugin: Plugin): PluginWidgets {
         leftBarItem: <ViewTitleBar view={view} />,
         rightBarItem:
           type === PluginType.chat ? (
-            <ChatRightBar view={view} />
+            <RetiredChatRightBar view={view} />
           ) : isDatabase ? (
             <DatabaseRightBar view={view} />
           ) : (
             <DocumentRightBar view={view} />
           ),
-        // Document and chat use EdgeInsets.zero; databases EdgeInsets.only(top: 28).
         contentPadding: 0,
-        buildWidget: (context) => type === PluginType.chat ? <HyperOpenBotPage viewId={view.id} /> : isDatabase ? <HyperDatabasePage key={view.id} view={view} context={context} /> : <ViewPlaceholderPage view={view} context={context} />,
+        buildWidget: (context) => isDatabase ? <HyperDatabasePage key={view.id} view={view} context={context} /> : <ViewPlaceholderPage view={view} context={context} />,
       };
     }
   }

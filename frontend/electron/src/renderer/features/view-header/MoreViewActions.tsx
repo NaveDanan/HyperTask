@@ -4,7 +4,7 @@ import { WorkspaceTypePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import { useTr } from '@/i18n';
 import type { HyperSvgName } from '@/icons/hyper-svgs';
 import { useAppearanceStore } from '@/theme/appearance-store';
-import { Copy, FolderInput, Lock, Minus, MoreHorizontal, Plus, SquarePen, Trash2, Type } from 'lucide-react';
+import { Copy, FolderInput, Lock, Minus, MoreHorizontal, Plus, Trash2, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Switch } from '@/components/ui/switch';
@@ -22,23 +22,6 @@ import { usePageAccessLevel, useViewScope } from './view-scope';
 const isDocument = (view: ViewPB) => view.layout === ViewLayoutPB.Document;
 const isDatabase = (view: ViewPB) =>
   view.layout === ViewLayoutPB.Grid || view.layout === ViewLayoutPB.Board || view.layout === ViewLayoutPB.Calendar;
-
-export interface CustomViewActionProps {
-  leftIcon: HyperSvgName;
-  label: string;
-  tooltipMessage?: string;
-  disabled?: boolean;
-  onTap?: () => void;
-}
-
-/** CustomViewAction (more_view_actions/widgets/common_view_action.dart). */
-export function CustomViewAction({ leftIcon, label, tooltipMessage, disabled, onTap }: CustomViewActionProps) {
-  return (
-    <Tooltip message={tooltipMessage}>
-      <div><MenuRow disabled={disabled} onClick={onTap} icon={leftIcon === 'ai_add_to_page_s' ? <SquarePen className="size-4" /> : <Copy className="size-4" />} label={label} /></div>
-    </Tooltip>
-  );
-}
 
 function ActionButton({ icon, label, isDelete, onTap, rightIcon }: {
   icon: HyperSvgName; label: string; isDelete?: boolean; onTap?: () => void; rightIcon?: ReactNode;
@@ -105,7 +88,7 @@ function ViewMetaInfo({ createdAt }: { createdAt: Date }) {
 }
 
 /** MoreViewActions (workspace/presentation/widgets/more_view_actions/more_view_actions.dart). */
-export function MoreViewActions({ view, customActions }: { view: ViewPB; customActions?: ReactNode }) {
+export function MoreViewActions({ view }: { view: ViewPB }) {
   const { tr } = useTr();
   const mutexRef = useRef(new PopoverMutex());
   return (
@@ -115,7 +98,7 @@ export function MoreViewActions({ view, customActions }: { view: ViewPB; customA
       constraints={{ maxWidth: 240, maxHeight: 600, width: 240 }}
       direction="bottomWithRightAligned"
       offset={{ x: 0, y: 12 }}
-      popup={(close) => <MoreViewActionsMenu view={view} customActions={customActions} close={close} />}
+      popup={(close) => <MoreViewActionsMenu view={view} close={close} />}
     >
       <div className="flex shrink-0">
         <Tooltip message={tr('moreAction.moreOptions')}>
@@ -128,11 +111,9 @@ export function MoreViewActions({ view, customActions }: { view: ViewPB; customA
 
 function MoreViewActionsMenu({
   view: widgetView,
-  customActions,
   close,
 }: {
   view: ViewPB;
-  customActions?: ReactNode;
   close: () => void;
 }) {
   const { tr } = useTr();
@@ -159,7 +140,6 @@ function MoreViewActionsMenu({
 
   return (
     <div className="flex flex-col">
-      {customActions}
       {isDocument(widgetView) && (
         <>
           <FontSizeAction />
