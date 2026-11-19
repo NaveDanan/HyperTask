@@ -5,7 +5,7 @@ import { HyperRecorder } from './HyperRecorder';
 import { Button } from '@/components/ui/button';
 import { hyperOpenBotRequest } from '../transport';
 interface HyperConnection { id: string; label: string; recording: boolean; lastUsedAt: string | null }
-export default function HyperBrowsersSection({path}: {path?:string}) {
+export default function HyperBrowsersSection({path, embedded = false}: {path?:string; embedded?:boolean}) {
   const match=path ? /^\/settings\/browsers\/([^/?#]+)/.exec(path) : null;
   const [selected,setSelected]=useState<string|undefined>(()=>{try{return match?decodeURIComponent(match[1]):undefined;}catch{return undefined;}});
 
@@ -17,7 +17,7 @@ export default function HyperBrowsersSection({path}: {path?:string}) {
     void poll(); return () => { active = false; clearTimeout(timer); };
   }, []);
   async function revoke() { if (!target) return; setBusy(true); try { await hyperOpenBotRequest(`/api/recorder/connections/${encodeURIComponent(target.id)}`, 'DELETE'); await read(); setTarget(undefined); } catch { setError('Could not disconnect the browser. Try again.'); } finally { setBusy(false); } }
-  return <section className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-6"><h2 className="text-lg font-semibold">Connected browsers</h2>
+  return <section className={embedded ? 'flex flex-col gap-4' : 'mx-auto flex w-full max-w-3xl flex-col gap-4 p-6'}><h2 className="text-lg font-semibold">Connected browsers</h2>
     {error && <p role="alert" className="text-destructive">{error}</p>}{!rows && !error && <p role="status">Loading browsers…</p>}
     {rows?.length === 0 && <p>No browsers connected.</p>}
     {rows?.filter(row=>!selected||row.id===selected).map(row => <div key={row.id} className="flex items-center gap-3 rounded-lg border p-4"><span className="flex-1">{row.label || 'Browser'}<span className="block text-xs text-muted-foreground">{row.recording ? 'Recording now' : row.lastUsedAt ? `Last used ${new Date(row.lastUsedAt).toLocaleString()}` : 'Not used yet'}</span></span><Button variant="outline" onClick={() => setTarget(row)}>Disconnect…</Button></div>)}

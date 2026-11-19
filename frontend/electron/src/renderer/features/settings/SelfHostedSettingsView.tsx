@@ -47,7 +47,7 @@ function StorageOption({ selected, disabled, icon, title, description, onSelect 
  * local workspace or an owned collaboration server, then restart. Strings are hard-coded
  * English in the Flutter view too.
  */
-export function SelfHostedSettingsView({ restartApp }: { restartApp: () => void }) {
+export function SelfHostedSettingsView({ restartApp, showCompanySignIn = true }: { restartApp: () => void; showCompanySignIn?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [shared, setShared] = useState(false);
   const [server, setServer] = useState('');
@@ -111,7 +111,7 @@ export function SelfHostedSettingsView({ restartApp }: { restartApp: () => void 
           <div><Button disabled={saving} onClick={() => void save()}>{saving ? 'Applying…' : 'Apply and restart'}</Button></div>
         </SettingsSection>
       )}
-      {!loading && <HyperEntraSettings />}
+      {!loading && showCompanySignIn && <HyperEntraSettings />}
     </>
   );
 }

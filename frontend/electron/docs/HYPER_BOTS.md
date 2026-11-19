@@ -19,11 +19,11 @@ A message from the owner that mentions `@scout` or `@scribe` goes to that bot; w
 
 Bots reuse the app's own connections. Nothing is configured in the Bots tab except the bots themselves.
 
-1. **Model endpoint.** In **Settings → AI**, enter the OpenAI-compatible base URL (with `/v1`), the API key and the default model, enable it, and test it. Bots call `<base>/chat/completions` with tools. Some endpoints refuse a model there; newer GPT models behind a Copilot-style proxy answer "Invalid type for 'input'". The bots then use `<base>/responses` for that model, the same rule as the Settings → AI test, and remember it until the app restarts. A refused request has done nothing, so asking again cannot repeat any work. The key stays DPAPI-protected on disk and is decrypted only in the main process.
+1. **Model endpoint.** In **Settings → Connections → AI endpoint**, enter the OpenAI-compatible base URL (with `/v1`), the API key and the default model, enable it, and test it. Bots call `<base>/chat/completions` with tools. Some endpoints refuse a model there; newer GPT models behind a Copilot-style proxy answer "Invalid type for 'input'". The bots then use `<base>/responses` for that model, the same rule as the Settings → Connections → AI endpoint test, and remember it until the app restarts. A refused request has done nothing, so asking again cannot repeat any work. The key stays DPAPI-protected on disk and is decrypted only in the main process.
 2. **Jira.** In the **Jira** tab, save the Jira URL, the project and a token (a personal access token for Server/Data Center, or Basic auth). Scribe always creates issues in that project with REST API v2. The model cannot choose another project.
 3. **Outlook.** Nothing to do if classic Outlook for Windows runs as the same user. The bots use the same bridge as the Outlook views; see [Outlook tools](#outlook-tools).
 
-The Hyper-Bot sidebar footer shows compact Model, Outlook and Jira connection pills. Their tooltips show the detail or setup problem; a bot’s Activity panel spells these out. When the model is unavailable the composer points to Settings → AI.
+The Hyper-Bot sidebar footer shows compact Model, Outlook and Jira connection pills. Their tooltips show the detail or setup problem; a bot’s Activity panel spells these out. When the model is unavailable the composer points to Settings → Connections → AI endpoint.
 
 **The one approved exception to rule 1.** The Outlook chip asks the bridge whether classic Outlook answers (`status`). It reads no calendar item. The bridge's reply also carries the profile name and address. Main drops them, so the chip says only "Classic Outlook is available", and a failure reason is clipped to 300 characters.
 

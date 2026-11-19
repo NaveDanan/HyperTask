@@ -49,6 +49,11 @@
 
   const aiState = { backend: 'mmems-personal', phase: 'idle', ready: false, problem: 'unsupported', checks: [], autoStart: false, checkedAt: null };
   const api = {
+    outlook: new Proxy({
+      status: async () => ({ ok: true, value: { available: false, userName: '', email: '', reason: 'Outlook requires the desktop app.' } }),
+      presence: async () => ({ ok: true, value: { installed: false, running: false, connected: false } }),
+      onPresence: () => () => {},
+    }, { get: (target, name) => name in target ? target[name] : fallback('outlook')[name] }),
     // Native service subscriptions must return a disposer; the browser harness has no AI service.
     hyperOpenBot: {
       service: { state: async () => aiState, run: async () => aiState, configure: async () => aiState, onState: () => () => {} },

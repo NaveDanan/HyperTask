@@ -141,7 +141,7 @@ it('connections are checked independently, bounded, and say where to fix them', 
     outlook: { request: vi.fn(() => new Promise(() => {})) } as never,
     jira: async () => { throw new Error('Set up Jira in the Jira tab (URL, project and token).'); },
   }, 50);
-  expect(bad.model).toMatchObject({ ready: false, problem: expect.stringContaining('Settings → AI') });
+  expect(bad.model).toMatchObject({ ready: false, problem: expect.stringContaining('Settings → Connections → AI endpoint') });
   expect(bad.outlook).toMatchObject({ ready: false, problem: expect.stringContaining('Classic Outlook') });
   expect(bad.jira).toEqual({ ready: false, problem: 'Set up Jira in the Jira tab (URL, project and token).' });
 });

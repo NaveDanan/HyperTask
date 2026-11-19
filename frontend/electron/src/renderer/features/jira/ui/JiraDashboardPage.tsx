@@ -11,9 +11,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Badge } from '@/components/reui/badge';
 import { floatingSurfaceClass } from '@/components/app/menu-row';
 import { cn } from '@/lib/utils';
+import { openSettings } from '@/features/home/notifiers';
 import { JiraStatusCategory, jiraStatusCategoryLabels, type JiraDashboardStats, type JiraIssue } from '..';
 import { getHyperJiraStore } from '../logic/HyperJiraRegistry';
-import { HyperJiraSettingsDialog } from './dialogs/JiraSettingsDialog';
 import { HyperJiraIssueDialog } from './dialogs/JiraIssueDialog';
 import { HyperJiraTransitionDialog } from './dialogs/JiraTransitionDialog';
 import { HyperJiraStatusBadge } from './JiraStatusBadge';
@@ -25,7 +25,7 @@ export function HyperJiraDashboardPage({ userProfile }: { userProfile?: UserProf
   return store ? <HyperJiraDashboardView key={userId} store={store} /> : null;
 }
 
-type HyperJiraDialog = { kind: 'settings' } | { kind: 'issue'; issue: JiraIssue | null } | { kind: 'transition'; issue: JiraIssue };
+type HyperJiraDialog = { kind: 'issue'; issue: JiraIssue | null } | { kind: 'transition'; issue: JiraIssue };
 
 export function HyperJiraDashboardView({ store }: { store: HyperJiraStoreHook }) {
   const loading = store(s => s.isLoading);
@@ -33,12 +33,12 @@ export function HyperJiraDashboardView({ store }: { store: HyperJiraStoreHook })
   const config = store(s => s.config);
   const [dialog, setDialog] = useState<HyperJiraDialog | null>(null);
   useEffect(() => { void store.getState().load(); }, [store]);
-  const openSettings = () => setDialog({ kind: 'settings' });
+  const openConnection = () => openSettings.emit('connections/jira');
   return <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 overflow-y-auto px-8 py-6 text-foreground">
     {loading ? <div className="flex flex-1 items-center justify-center"><Spinner className="size-5 text-muted-foreground" /></div> : <>
-      <HyperJiraHeader store={store} onSettings={openSettings} onCreate={() => setDialog({ kind: 'issue', issue: null })} />
-      <HyperJiraBanners store={store} onSettings={openSettings} />
-      {!configured ? <HyperJiraEmptyState onConnect={openSettings} /> : <>
+      <HyperJiraHeader store={store} onSettings={openConnection} onCreate={() => setDialog({ kind: 'issue', issue: null })} />
+      <HyperJiraBanners store={store} onSettings={openConnection} />
+      {!configured ? <HyperJiraEmptyState onConnect={openConnection} /> : <>
         <HyperJiraStatsSection store={store} />
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
           <HyperJiraIssueList store={store} onEdit={issue => setDialog({ kind: 'issue', issue })} onTransition={issue => setDialog({ kind: 'transition', issue })} />
@@ -46,7 +46,6 @@ export function HyperJiraDashboardView({ store }: { store: HyperJiraStoreHook })
         </div>
       </>}
     </>}
-    {dialog?.kind === 'settings' && <HyperJiraSettingsDialog store={store} onClose={() => setDialog(null)} />}
     {dialog?.kind === 'issue' && <HyperJiraIssueDialog store={store} issue={dialog.issue} onClose={() => setDialog(null)} />}
     {dialog?.kind === 'transition' && <HyperJiraTransitionDialog store={store} issue={dialog.issue} browseUrl={config?.browseUrl(dialog.issue.key)} onClose={() => setDialog(null)} />}
   </div>;

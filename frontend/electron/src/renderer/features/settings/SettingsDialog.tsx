@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { UserEventGetUserProfile } from '@/backend/events';
-import { Archive, Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Mic, Palette, Server, ShieldCheck, Sparkles, SquareCheckBig, UserRound, Users, X } from 'lucide-react';
+import { Archive, Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Mic, Palette, Plug, ShieldCheck, UserRound, Users, X } from 'lucide-react';
 import { NavItem } from '@/components/app/nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,21 +12,19 @@ import { loseFocus, openSettings } from '@/features/home/notifiers';
 import { AccountPage } from './account/AccountPage';
 import { passwordActions } from './account/password-store';
 import { VoiceSettingsPanel } from '@/features/hyper-voice/settings/VoiceSettingsPanel';
-import { AIPage } from './ai/AIPage';
+import { HyperConnectionsPage } from './connections/HyperConnectionsPage';
 import { CertificatesPage } from './certificates/CertificatesPage';
 import { ManageDataPage } from './manage-data/ManageDataPage';
 import { TrashPage } from '@/features/plugins/trash/TrashPage';
 import { NotificationsPage } from './notifications/NotificationsPage';
-import { HyperJiraSettingsPage } from './jira/HyperJiraSettingsPage';
 import type { SettingsPageProps } from './page-props';
 import { FeatureFlagsPage } from './pages/FeatureFlagsPage';
 import { MembersPage } from './pages/MembersPage';
 import { SitesPage } from './pages/SitesPage';
-import { SelfHostedSettingsView } from './SelfHostedSettingsView';
 import {
   SettingsPage,
+  type SettingsMenuPage,
   isDebugBuild,
-  isSettingsPage,
   settingsDialogActions,
   useSettingsDialogStore,
   visibleSettingsPages,
@@ -38,7 +36,7 @@ import { WorkspacePage } from './workspace/WorkspacePage';
 import { HyperAppearancePage } from './appearance/HyperAppearancePage';
 import { SettingsBreadcrumbBar } from './appearance/appearance-layout';
 
-const MENU: Record<SettingsPage, { label: (tr: (key: string) => string) => string; icon: () => ReactNode }> = {
+const MENU: Record<SettingsMenuPage, { label: (tr: (key: string) => string) => string; icon: () => ReactNode }> = {
   [SettingsPage.account]: { label: (tr) => tr('settings.accountPage.menuLabel'), icon: () => <UserRound className="size-4" /> },
   // [CUSTOM] hard-coded English label. The Workspace page used to be this entry, see HyperAppearancePage.
   [SettingsPage.appearance]: { label: () => 'Appearance', icon: () => <Palette className="size-4" /> },
@@ -48,22 +46,20 @@ const MENU: Record<SettingsPage, { label: (tr: (key: string) => string) => strin
   // [CUSTOM] hard-coded English label: the Trash page, under its Settings name.
   [SettingsPage.archived]: { label: () => 'Archived', icon: () => <Archive className="size-4" /> },
   [SettingsPage.notifications]: { label: (tr) => tr('settings.menu.notifications'), icon: () => <Bell className="size-4" /> },
-  [SettingsPage.jira]: { label: () => 'Jira', icon: () => <SquareCheckBig className="size-4" /> },
+  [SettingsPage.connections]: { label: () => 'Connections', icon: () => <Plug className="size-4" /> },
   // [CUSTOM] hard-coded English labels.
-  [SettingsPage.cloud]: { label: () => 'Storage & server', icon: () => <Server className="size-4" /> },
   [SettingsPage.companyCertificates]: { label: () => 'Certificates', icon: () => <ShieldCheck className="size-4" /> },
   [SettingsPage.shortcuts]: { label: (tr) => tr('settings.shortcutsPage.menuLabel'), icon: () => <Keyboard className="size-4" /> },
   [SettingsPage.voice]: { label: () => 'Voice', icon: () => <Mic className="size-4" /> },
-  [SettingsPage.ai]: { label: (tr) => tr('settings.aiPage.menuLabel'), icon: () => <Sparkles className="size-4" /> },
   [SettingsPage.sites]: { label: (tr) => tr('settings.sites.title'), icon: () => <Globe className="size-4" /> },
   [SettingsPage.plan]: { label: (tr) => tr('settings.planPage.menuLabel'), icon: () => <Gem className="size-4" /> },
   [SettingsPage.billing]: { label: (tr) => tr('settings.billingPage.menuLabel'), icon: () => <CreditCard className="size-4" /> },
   [SettingsPage.featureFlags]: { label: () => 'Feature Flags', icon: () => <Flag className="size-4" /> },
 };
 
-function SettingsMenu({ pages, current }: { pages: SettingsPage[]; current: SettingsPage }) {
+function SettingsMenu({ pages, current }: { pages: ReturnType<typeof visibleSettingsPages>; current: SettingsPage }) {
   const { tr } = useTr();
-  return <nav className="flex h-full w-56 shrink-0 flex-col gap-px overflow-y-auto border-r bg-sidebar p-2">
+  return <nav className="flex h-full w-32 shrink-0 flex-col gap-px overflow-y-auto border-r bg-sidebar p-2 sm:w-48 md:w-56">
     <div className="px-2 pt-2 pb-2 text-xs font-medium text-muted-foreground">{tr('settings.title')}</div>
     {pages.map((page) => <NavItem key={page} label={MENU[page].label(tr)} icon={MENU[page].icon()} active={page === current}
       role="button" tabIndex={0} data-selected={page === current ? 'true' : undefined}
@@ -100,11 +96,8 @@ function SettingsView({ page, props }: { page: SettingsPage; props: SettingsPage
       return <TrashPage title="Archived" className="p-0" />;
     case SettingsPage.notifications:
       return <NotificationsPage {...props} />;
-    case SettingsPage.jira:
-      return <HyperJiraSettingsPage key={String(props.user.id)} {...props} />;
-    case SettingsPage.cloud:
-      // SettingCloud → SelfHostedSettingsView [CUSTOM].
-      return <SelfHostedSettingsView restartApp={props.restartApp} />;
+    case SettingsPage.connections:
+      return <HyperConnectionsPage key={String(props.user.id)} {...props} />;
     case SettingsPage.companyCertificates:
       return <CertificatesPage {...props} />;
     case SettingsPage.shortcuts:
@@ -112,9 +105,6 @@ function SettingsView({ page, props }: { page: SettingsPage; props: SettingsPage
     case SettingsPage.voice:
       // t3code's Voice settings (features/hyper-voice/settings).
       return <VoiceSettingsPanel />;
-    case SettingsPage.ai:
-      // LocalSettingsAIView(key: ValueKey(workspaceId)) → OpenAIEndpointSettingsView [CUSTOM].
-      return <AIPage key={props.workspace?.workspaceId ?? ''} {...props} />;
     case SettingsPage.member:
       return <MembersPage {...props} />;
     case SettingsPage.sites:
@@ -167,10 +157,9 @@ function SettingsDialog({ close }: { close: () => void }) {
     <div className="flex overflow-hidden rounded-xl bg-background text-foreground shadow-2xl ring-1 ring-foreground/10"
       style={{ width: dialogWidth, height: Math.min(height * 0.7, height - 48) }}>
       <SettingsMenu pages={pages} current={page} />
-      {page === SettingsPage.appearance || page === SettingsPage.voice ? (
-        // Appearance and Voice are laid out as t3code's settings pages: a breadcrumb bar, then WorkspacePageContainer ("readable" width).
+      {page === SettingsPage.appearance || page === SettingsPage.voice || page === SettingsPage.connections ? (
         <div className="flex h-full min-w-0 flex-1 flex-col">
-          <SettingsBreadcrumbBar root={tr('settings.title')} section={page === SettingsPage.voice ? 'Voice' : 'Appearance'} onClose={close} />
+          <SettingsBreadcrumbBar root={tr('settings.title')} section={MENU[page].label(tr)} onClose={close} />
           <ScrollArea key={page} className="min-h-0 flex-1">
             <div className="mx-auto w-full max-w-4xl px-5 pt-6 pb-12 sm:px-6">
               <SettingsView key={page} page={page} props={pageProps} />
@@ -214,6 +203,7 @@ export function SettingsDialogHost({ user }: { user: UserProfilePB }) {
 
     const off = openSettings.on((payload) => {
       if (useSettingsDialogStore.getState().open) {
+        if (payload) { settingsDialogActions.setSelectedPage(payload); return; }
         closeAllDialogs();
         finish();
         return;
@@ -221,7 +211,6 @@ export function SettingsDialogHost({ user }: { user: UserProfilePB }) {
       if (opening) return;
       opening = true;
       loseFocus.emit();
-      const initPage = isSettingsPage(payload) ? payload : null;
       void (async () => {
         // UserWorkspaceBloc.state.userProfile / currentWorkspace?.role at open time.
         const [profile, { current }] = await Promise.all([UserEventGetUserProfile(), fetchWorkspaces()]);
@@ -229,7 +218,7 @@ export function SettingsDialogHost({ user }: { user: UserProfilePB }) {
         useSettingsWorkspaceStore.setState({ current });
         opening = false;
         if (useSettingsDialogStore.getState().open) return;
-        settingsDialogActions.opened(snapshot, workspaceRole(current), initPage);
+        settingsDialogActions.opened(snapshot, workspaceRole(current), payload);
         stopWorkspace = startSettingsWorkspace(snapshot);
         // PasswordBloc(userProfile)..init..checkHasPassword (a new bloc on this path).
         void passwordActions.init(snapshot);

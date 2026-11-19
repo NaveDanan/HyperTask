@@ -41,7 +41,7 @@ export function HyperServiceStatus({ state, error }: { state: HyperOpenBotServic
       <Button variant="ghost" size="sm" className="ml-auto" aria-expanded={expanded || !state.ready} onClick={() => setExpanded(value => !value)}>AI services</Button></div>
     {(expanded || !state.ready) && <div className="mt-2 space-y-3">
       <p>{state.phase !== 'idle' ? 'Working with the configured OpenBot backend. HyperTask remains available while this finishes.' : checking ? 'Checking the configured OpenBot backend. HyperTask stays open while it connects.' : HYPER_OPENBOT_SERVICE_MESSAGES[state.problem]}</p>
-      <p className="text-xs text-muted-foreground">This Chat view uses the separate OpenBot/Intelligence backend on the configured VM. The LLM endpoint in Settings &gt; AI does not configure this connection. Closing HyperTask leaves the backend running.</p>
+      <p className="text-xs text-muted-foreground">OpenBot uses the OpenBot/Intelligence backend on the configured VM. Manage the workspace AI endpoint separately under Settings → Connections → AI endpoint. Closing HyperTask leaves the backend running.</p>
       {state.checks.length > 0 && <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">{state.checks.map(check => <div key={check.id} className="flex gap-1"><dt className="capitalize">{check.id}</dt><dd>{check.state}</dd></div>)}</dl>}
       <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={busy} onClick={() => void run('check')}>Check AI readiness</Button>
         {!state.ready && <Button size="sm" disabled={busy || ['unsupported', 'signed_out', 'profile_required'].includes(state.problem)} onClick={() => void run('start')}>Start AI services</Button>}

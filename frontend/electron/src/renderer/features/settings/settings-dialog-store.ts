@@ -16,6 +16,7 @@ export enum SettingsPage {
   billing = 'billing',
   sites = 'sites',
   notifications = 'notifications',
+  connections = 'connections',
   jira = 'jira',
   cloud = 'cloud',
   companyCertificates = 'companyCertificates',
@@ -25,8 +26,22 @@ export enum SettingsPage {
   archived = 'archived',
 }
 
+export type SettingsMenuPage = Exclude<SettingsPage, SettingsPage.jira | SettingsPage.ai | SettingsPage.cloud>;
+
 export const isSettingsPage = (value: unknown): value is SettingsPage =>
   typeof value === 'string' && (Object.values(SettingsPage) as string[]).includes(value);
+
+const connections = ['outlook', 'jira', 'ai', 'entra', 'openbot', 'browsers', 'voice', 'server'] as const;
+export type HyperConnectionPage = typeof connections[number];
+
+export function settingsDestination(value: string | void | null): { page: SettingsPage; connection: HyperConnectionPage | null } {
+  const connection = connections.find(id => value === `connections/${id}` ||
+    (id === 'jira' && value === SettingsPage.jira) || (id === 'ai' && value === SettingsPage.ai) ||
+    (id === 'server' && value === SettingsPage.cloud));
+  return connection
+    ? { page: SettingsPage.connections, connection }
+    : { page: isSettingsPage(value) ? value : SettingsPage.account, connection: null };
+}
 
 /** kDebugMode: a development (unpackaged) build. */
 export const isDebugBuild = () => useAppStore.getState().info?.isPackaged === false;
@@ -54,9 +69,9 @@ export function visibleSettingsPages({
   role: AFRolePB | null;
   isBillingEnabled: boolean;
   debug: boolean;
-}): SettingsPage[] {
+}): SettingsMenuPage[] {
   const serverMember = workspaceType === WorkspaceTypePB.ServerW && role !== null && role !== AFRolePB.Guest;
-  const pages: SettingsPage[] = [SettingsPage.account, SettingsPage.appearance];
+  const pages: SettingsMenuPage[] = [SettingsPage.account, SettingsPage.appearance];
   // The Workspace page holds the name, icon and Delete/Leave, which a local workspace does not have.
   if (workspaceType !== WorkspaceTypePB.LocalW) pages.push(SettingsPage.workspace);
   // FeatureFlag.membersSettings is always on (released flag).
@@ -65,11 +80,9 @@ export function visibleSettingsPages({
     SettingsPage.manageData,
     SettingsPage.archived,
     SettingsPage.notifications,
-    SettingsPage.jira,
-    SettingsPage.cloud,
+    SettingsPage.connections,
     SettingsPage.companyCertificates,
     SettingsPage.shortcuts,
-    SettingsPage.ai,
     SettingsPage.voice,
   );
   if (serverMember) pages.push(SettingsPage.sites);
@@ -80,25 +93,26 @@ export function visibleSettingsPages({
 
 interface SettingsDialogState {
   /** Open dialog instance, or null. */
-  open: { initPage: SettingsPage | null; snapshot: UserProfilePB; role: AFRolePB | null } | null;
+  open: { snapshot: UserProfilePB; role: AFRolePB | null } | null;
   page: SettingsPage;
+  connection: HyperConnectionPage | null;
   /** Always false here: Plan/Billing are forced off, so _isBillingEnabled is never consulted. */
   isBillingEnabled: boolean;
 }
 
 /** SettingsDialogBloc (workspace/application/settings/settings_dialog_bloc.dart). */
-export const useSettingsDialogStore = create<SettingsDialogState>(() => ({ open: null, page: SettingsPage.account, isBillingEnabled: false }));
+export const useSettingsDialogStore = create<SettingsDialogState>(() => ({ open: null, page: SettingsPage.account, connection: null, isBillingEnabled: false }));
 
 export const settingsDialogActions = {
   /** SettingsDialogBloc(initPage): page = initPage ?? account, isBillingEnabled = false. */
-  opened(snapshot: UserProfilePB, role: AFRolePB | null, initPage: SettingsPage | null) {
-    useSettingsDialogStore.setState({ open: { initPage, snapshot, role }, page: initPage ?? SettingsPage.account, isBillingEnabled: false });
+  opened(snapshot: UserProfilePB, role: AFRolePB | null, destination: string | void) {
+    useSettingsDialogStore.setState({ open: { snapshot, role }, ...settingsDestination(destination), isBillingEnabled: false });
   },
   closed() {
     useSettingsDialogStore.setState({ open: null });
   },
   /** setSelectedPage: in-memory only. */
-  setSelectedPage(page: SettingsPage) {
-    useSettingsDialogStore.setState({ page });
+  setSelectedPage(destination: string) {
+    useSettingsDialogStore.setState(settingsDestination(destination));
   },
 };

@@ -53,9 +53,9 @@ describe('transcript cleanup', () => {
   });
 
   it('reports endpoint failures as a cleanup failure with the endpoint\'s reason', async () => {
-    const failing = cleanup(async () => { throw new Error('Set up the model endpoint in Settings → AI.'); });
+    const failing = cleanup(async () => { throw new Error('Set up the model endpoint in Settings → Connections → AI endpoint.'); });
     const error = await process(failing, 'hello').catch((cause: unknown) => cause);
-    expect(hyperVoiceFailure(error).message).toBe('Transcript cleanup failed: Set up the model endpoint in Settings → AI.');
+    expect(hyperVoiceFailure(error).message).toBe('Transcript cleanup failed: Set up the model endpoint in Settings → Connections → AI endpoint.');
   });
 });
 

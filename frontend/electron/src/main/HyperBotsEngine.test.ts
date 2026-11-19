@@ -51,8 +51,8 @@ test('engine reads the endpoint on every call', async () => {
     key = 'key-two';
     await e.complete(none, sig());
     expect(s.seen.map((x) => x.headers.authorization)).toEqual(['Bearer key-one', 'Bearer key-two']);
-    const broken = new HyperBotsOpenAIEngine({ endpoint: async () => { throw new HyperBotsEngineError('Set up the model endpoint in Settings → AI.'); } });
-    await expect(broken.complete(none, sig())).rejects.toThrow(/Settings → AI/);
+    const broken = new HyperBotsOpenAIEngine({ endpoint: async () => { throw new HyperBotsEngineError('Set up the model endpoint in Settings → Connections → AI endpoint.'); } });
+    await expect(broken.complete(none, sig())).rejects.toThrow(/Settings → Connections → AI endpoint/);
   } finally { await s.close(); }
 });
 
@@ -154,11 +154,11 @@ test('engine times out, honours abort and caps response size', async () => {
   } finally { await big.close(); }
 });
 
-test('hyperBotsReadEndpoint parses Settings → AI and decrypts the key', async () => {
+test('hyperBotsReadEndpoint parses Settings → Connections → AI endpoint and decrypts the key', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'hyper-bots-endpoint-'));
   const write = (value: unknown) => { mkdirSync(join(dir, 'local_ai'), { recursive: true }); writeFileSync(join(dir, 'local_ai', 'openai-endpoint.json'), typeof value === 'string' ? value : JSON.stringify(value)); };
   const unprotect = async (p: string) => `plain:${p}`;
-  const setup = /Set up the model endpoint in Settings → AI\./;
+  const setup = /Set up the model endpoint in Settings → Connections → AI endpoint\./;
   const base = { base_url: 'https://llm.example.test/v1', model: 'gpt-x', embedding_model: '', image_model: '', protected_key: 'BLOB', enabled: true };
   try {
     await expect(hyperBotsReadEndpoint(dir, unprotect)).rejects.toThrow(setup);
@@ -207,7 +207,7 @@ test('audit #8: hyperBotsSafeError redacts every credential form before it clips
   expect(hyperBotsSafeError('Invalid header value: "Bearer sk-x"', [])).toMatch(/headers were rejected/);
 });
 
-// The real Settings → AI endpoint refuses /chat/completions for gpt-6.x with exactly this body (seen 2026-11-16).
+// The real Settings → Connections → AI endpoint endpoint refuses /chat/completions for gpt-6.x with exactly this body (seen 2026-11-16).
 const CHAT_REFUSED = { error: { message: "Invalid type for 'input': expected a string, but got an object instead.", code: 'invalid_request_body' } };
 
 test('a model the endpoint serves only through /responses runs a full tool loop there, and the route is remembered', async () => {

@@ -13,7 +13,7 @@ import * as details from './HyperPluginDetailsApi';
 import { hyperOpenBotRequest } from '../transport';
 import { hyperAddServerOutcome, hyperAuthorizationUrl, hyperLoadConnections, hyperServerPath, hyperStartConnection, type HyperConnectionRow } from './HyperConnectionsApi';
 
-export function HyperConnectionsPanel({ admin = false, selection, onSelectionChange, onConnectionStarted }: { admin?: boolean } & details.HyperConnectionNavigationProps) {
+export function HyperConnectionsPanel({ admin = false, embedded = false, selection, onSelectionChange, onConnectionStarted }: { admin?: boolean; embedded?: boolean } & details.HyperConnectionNavigationProps) {
   const [rows, setRows] = useState<HyperConnectionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -98,6 +98,15 @@ export function HyperConnectionsPanel({ admin = false, selection, onSelectionCha
   useEffect(() => hyperSubscribeAppAccess(() => { void load(false); }), [load]);
   useEffect(() => { void load(); return () => { sequence.current++; }; }, [load]);
   useEffect(() => { const refresh = () => { const confirm = pendingReturn.current; pendingReturn.current = false; void load(confirm); }; window.addEventListener('focus', refresh); return () => window.removeEventListener('focus', refresh); }, [load]);
+  useEffect(() => {
+    if (!embedded) return;
+    return window.hypertask.hyperOpenBot.onNativeDestination(destination => {
+      if (destination.kind === 'connections' && destination.confirmation === 'native-confirmed') {
+        pendingReturn.current = false;
+        void load();
+      }
+    });
+  }, [embedded, load]);
   async function action(run: () => Promise<void>) {
     if (modeEpoch.current !== frameEpoch || modeTarget.current !== frameTarget) return;
     setBusy(true); setError(''); setNotice('');
@@ -119,14 +128,14 @@ export function HyperConnectionsPanel({ admin = false, selection, onSelectionCha
   const row = rows.find(r => r.key === selected);
   const mode = modeState?.serverId === row?.key && modeState?.epoch === modeEpoch.current ? modeState : undefined;
   const disabled = busy || loading;
-  return <section className="mx-auto flex h-full w-full max-w-6xl flex-col gap-5 overflow-y-auto px-8 py-6 text-foreground" aria-label="Connections">
+  return <section className={embedded ? 'flex flex-col gap-5 text-foreground' : 'mx-auto flex h-full w-full max-w-6xl flex-col gap-5 overflow-y-auto px-8 py-6 text-foreground'} aria-label="Connections">
     <header className="flex flex-wrap items-center gap-3">
       <Plug className="size-5 text-muted-foreground" aria-hidden="true" />
-      <div className="flex-1"><h1 className="text-lg font-semibold">{adding ? 'Add server' : row?.title ?? 'Connections'}</h1><p className="text-xs text-muted-foreground">Connect your accounts so Bots can use apps on your behalf.</p></div>
+      <div className="min-w-0 flex-1"><h2 className="break-words text-lg font-semibold">{adding ? 'Add server' : row?.title ?? (embedded ? 'OpenBot apps' : 'Connections')}</h2><p className="text-xs text-muted-foreground">Connect your accounts so Bots can use apps on your behalf.</p></div>
       <Button variant="outline" disabled={disabled} onClick={() => void load()}><RefreshCw className={loading ? 'animate-spin' : ''} />Refresh</Button>
       {!adding && <Button onClick={() => { navigate({ page: 'new' }); }} disabled={busy}><Plus />Add server</Button>}
     </header>
-    {(selected || adding) && <Button className="self-start" variant="ghost" disabled={busy} onClick={() => { navigate({ page: 'list' }); }}><ArrowLeft />All connections</Button>}
+    {(selected || adding) && <Button className="self-start" variant="ghost" disabled={busy} onClick={() => { navigate({ page: 'list' }); }}><ArrowLeft />{embedded ? 'All OpenBot apps' : 'All connections'}</Button>}
     {error && <p role="alert" className="rounded-lg border border-border bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
     {notice && <p role="status" className="rounded-lg bg-muted p-3 text-sm">{notice}</p>}
     {loading && <p role="status" className="text-sm text-muted-foreground">Loading connections…</p>}

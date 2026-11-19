@@ -117,7 +117,7 @@ describe('runtime', () => {
       { id: 'scout', name: 'Scout', instructions: '', model: '', tools: [] },
       { id: 'scribe', name: 'Scribe', instructions: '', model: 'm-scribe', tools: [] }] } });
     const e = await rejectsWith(t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: 'everyone' }), 'invalid');
-    expect(e.message).toBe('Choose a model in Settings → AI or in the bot settings.');
+    expect(e.message).toBe('Choose a model in Settings → Connections → AI endpoint or in the bot settings.');
     expect(t.store.listMessages('ops')).toEqual([]);
     expect(t.store.listRuns()).toEqual([]);
     // A message model (or a bot model) needs no default.

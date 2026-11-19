@@ -28,6 +28,6 @@ it.each(['unsupported', 'signed_out', 'profile_required'] as const)('shows %s in
 
 it('explains that Chat backend readiness is separate from the configured LLM endpoint', () => {
   const html = renderToStaticMarkup(<HyperServiceStatus state={{ ...stopped, problem: 'unsupported', checkedAt: null }} />);
-  expect(html).toContain('Settings &gt; AI');
-  expect(html).toContain('does not configure this connection');
+  expect(html).toContain('Settings → Connections → AI endpoint');
+  expect(html).toContain('Manage the workspace AI endpoint separately');
 });

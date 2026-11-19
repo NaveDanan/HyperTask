@@ -22,7 +22,7 @@ for tests. The Windows sidebar opens the dashboard as a tab via LocalToolPlugin.
 
 ## Configuration
 
-Open the dashboard and press **Connect to Jira** (or the settings icon).
+Open **Settings → Connections → Jira** and choose **Connect Jira**. The Jira dashboard’s settings button opens this same page.
 
 | Setting | Notes |
 | --- | --- |

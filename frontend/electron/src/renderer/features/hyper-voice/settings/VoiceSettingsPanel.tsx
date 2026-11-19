@@ -3,7 +3,7 @@
 // Adapted for HyperTask by NaveDanan: HyperTask is the only environment, so the destination picker offers this
 // computer's local model and the cloud providers HyperTask forwards to, without environment groups, scopes, managed
 // policies, permissions or project overrides. The project/shared dictionary row is gone (one person, one device).
-// The cleanup model is a model of the Settings → AI endpoint instead of a provider/model picker. Existing model files
+// The cleanup model is a model of the Settings → Connections → AI endpoint endpoint instead of a provider/model picker. Existing model files
 // can also be linked with a native file or folder picker. Settings search targets are plain element ids.
 import {
   ArrowDownUpIcon,
@@ -494,7 +494,7 @@ function DictionaryEditor(props: {
 }
 
 /**
- * Cleanup runs through the Settings → AI endpoint. Off follows the endpoint's own model; on pins a cheaper or faster
+ * Cleanup runs through the Settings → Connections → AI endpoint endpoint. Off follows the endpoint's own model; on pins a cheaper or faster
  * model of the same endpoint (t3code's dedicated cleanup model selection).
  */
 function CleanupModelRow() {
@@ -536,16 +536,16 @@ function CleanupModelRow() {
       {...setting("speech-post-processing-model")}
       title={gt("Cleanup model")}
       description={gt(
-        "Model for transcript cleanup, such as a cheaper or faster one. When disabled, use the model configured in Settings → AI.",
+        "Model for transcript cleanup, such as a cheaper or faster one. When disabled, use the model configured in Settings → Connections → AI endpoint.",
       )}
       control={
         failed ? (
           <span className="text-sm text-muted-foreground">
-            <T>Couldn’t read the Settings → AI endpoint.</T>
+            <T>Couldn’t read the Settings → Connections → AI endpoint endpoint.</T>
           </span>
         ) : !cleanup ? null : !cleanup.configured ? (
           <span className="text-sm text-muted-foreground">
-            <T>Set up an endpoint in Settings → AI first.</T>
+            <T>Set up an endpoint in Settings → Connections → AI endpoint first.</T>
           </span>
         ) : (
           <div className="flex min-w-0 flex-wrap items-center gap-2 @min-[32rem]/settings-row:justify-end">
@@ -1223,7 +1223,7 @@ function TranscriptionTest(props: { readonly card: ModelCardProps; readonly hidd
   );
 }
 
-export function VoiceSettingsPanel() {
+export function VoiceSettingsPanel({ connectionsOnly = false }: { connectionsOnly?: boolean } = {}) {
   const messages = useMessages();
   const gt = useGT();
   const cleanupEnabled = useCleanupGrant() !== null;
@@ -1235,7 +1235,7 @@ export function VoiceSettingsPanel() {
   const local = grant?.destination.kind === "environment";
   const [pendingCloud, setPendingCloud] = useState<CloudSpeechProvider | null>(null);
   const [microphones, setMicrophones] = useState<BrowserMicrophone[]>([]);
-  const catalog = useVoiceModels(local);
+  const catalog = useVoiceModels(local && !connectionsOnly);
 
   const refreshMicrophones = useStableCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) return;
@@ -1249,13 +1249,14 @@ export function VoiceSettingsPanel() {
   });
   // Follows microphone device changes while settings are open.
   useEffect(() => {
+    if (connectionsOnly) return;
     queueMicrotask(() => void refreshMicrophones());
     const mediaDevices = navigator.mediaDevices;
     if (!mediaDevices?.addEventListener) return;
     const onChange = () => void refreshMicrophones();
     mediaDevices.addEventListener("devicechange", onChange);
     return () => mediaDevices.removeEventListener("devicechange", onChange);
-  }, [refreshMicrophones]);
+  }, [connectionsOnly, refreshMicrophones]);
   const modelStatus = catalog.status;
 
   const order = microphoneOrder(settings);
@@ -1277,7 +1278,7 @@ export function VoiceSettingsPanel() {
 
   return (
     <SettingsPageContainer>
-      <SettingsSection id="voice-input" title={gt("Input")}>
+      {!connectionsOnly && <SettingsSection id="voice-input" title={gt("Input")}>
         <SettingsRow
           {...setting("voice-microphone")}
           title={gt("Microphone")}
@@ -1344,7 +1345,7 @@ export function VoiceSettingsPanel() {
             </Select>
           }
         />
-      </SettingsSection>
+      </SettingsSection>}
 
       <SettingsSection id="voice-transcription" title={gt("Transcription")}>
         <SettingsRow
@@ -1460,6 +1461,7 @@ export function VoiceSettingsPanel() {
             close={() => setPendingCloud(null)}
           />
         )}
+        {!connectionsOnly && <>
         {(model || cloudProvider) && (
           <SettingsRow
             {...setting("speech-language")}
@@ -1526,8 +1528,10 @@ export function VoiceSettingsPanel() {
         />
         {local ? <SpeechModelBrowser catalog={catalog} /> : null}
         {local && <AdvancedSpeechSettings catalog={catalog} />}
+        </>}
       </SettingsSection>
 
+      {!connectionsOnly && <>
       <SettingsSection id="voice-dictionary" title={gt("Dictionary")}>
         <SettingsRow
           {...setting("speech-dictionary")}
@@ -1644,6 +1648,7 @@ export function VoiceSettingsPanel() {
           />
         ) : null}
       </SettingsSection>
+      </>}
     </SettingsPageContainer>
   );
 }

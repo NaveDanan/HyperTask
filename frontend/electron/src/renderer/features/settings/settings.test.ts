@@ -3,7 +3,7 @@ import { AFRolePB, WorkspaceTypePB } from '@shared/protobuf/hyper-user/workspace
 import { ErrorCode } from '@shared/protobuf/hyper-error/code_pb';
 import { create } from '@bufbuild/protobuf';
 import { UserWorkspacePBSchema } from '@shared/protobuf/hyper-user/user_profile_pb';
-import { SettingsPage, visibleSettingsPages, workspaceRole } from './settings-dialog-store';
+import { SettingsPage, settingsDestination, visibleSettingsPages, workspaceRole } from './settings-dialog-store';
 import { endpointSettingsFromJson, endpointSettingsToJson, endpointErrorMessage, SettingsError } from './ai/openai-endpoint-settings';
 import { accessToken, changePasswordErrorFor, passwordRequest, setupPasswordErrorFor, validateChangePassword, validateSetupPassword } from './account/password';
 import { colorSchemeFromJsonSoft, colorSchemeToJson, cssToDartColor, dartColorToCss, decodeThemePlugin, dartIntTryParse } from './workspace/hyper-theme';
@@ -35,16 +35,14 @@ describe('SettingsMenu visibility', () => {
       SettingsPage.manageData,
       SettingsPage.archived,
       SettingsPage.notifications,
-      SettingsPage.jira,
-      SettingsPage.cloud,
+      SettingsPage.connections,
       SettingsPage.companyCertificates,
       SettingsPage.shortcuts,
-      SettingsPage.ai,
       SettingsPage.voice,
     ]);
   });
 
-  it('server members see Appearance, then Workspace, then Members; Sites after AI; debug adds Feature Flags', () => {
+  it('server members see Appearance, then Workspace, then Members; debug adds Feature Flags', () => {
     expect(visibleSettingsPages({ workspaceType: WorkspaceTypePB.ServerW, role: AFRolePB.Member, isBillingEnabled: false, debug: true })).toEqual([
       SettingsPage.account,
       SettingsPage.appearance,
@@ -53,15 +51,22 @@ describe('SettingsMenu visibility', () => {
       SettingsPage.manageData,
       SettingsPage.archived,
       SettingsPage.notifications,
-      SettingsPage.jira,
-      SettingsPage.cloud,
+      SettingsPage.connections,
       SettingsPage.companyCertificates,
       SettingsPage.shortcuts,
-      SettingsPage.ai,
       SettingsPage.voice,
       SettingsPage.sites,
       SettingsPage.featureFlags,
     ]);
+  });
+
+  it('opens old settings destinations and provider shortcuts inside Connections', () => {
+    expect(settingsDestination(SettingsPage.connections)).toEqual({ page: SettingsPage.connections, connection: null });
+    expect(settingsDestination(SettingsPage.jira)).toEqual({ page: SettingsPage.connections, connection: 'jira' });
+    expect(settingsDestination(SettingsPage.ai)).toEqual({ page: SettingsPage.connections, connection: 'ai' });
+    expect(settingsDestination(SettingsPage.cloud)).toEqual({ page: SettingsPage.connections, connection: 'server' });
+    expect(settingsDestination('connections/outlook')).toEqual({ page: SettingsPage.connections, connection: 'outlook' });
+    expect(settingsDestination('connections/unknown')).toEqual({ page: SettingsPage.account, connection: null });
   });
 
   it('guests and a missing role hide Members and Sites', () => {

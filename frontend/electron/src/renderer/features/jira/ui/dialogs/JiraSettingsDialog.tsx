@@ -8,14 +8,14 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { JiraAuthType, jiraAuthLabels, JiraConfig, JiraCredentials, asJiraException, type JiraException } from '../..';
 import { HyperJiraError, HyperJiraField, HyperJiraIconButton, HyperJiraModal, HyperJiraNotice, type HyperJiraStoreHook } from '../jira-ui';
 
-export function HyperJiraSettingsDialog({ store, onClose }: { store: HyperJiraStoreHook; onClose: () => void }) {
+export function HyperJiraSettingsDialog({ store, onClose, inline }: { store: HyperJiraStoreHook; onClose: () => void; inline?: boolean }) {
   const [initial] = useState(() => store.getState());
-  return <HyperJiraSettingsForm config={initial.config} hasCredentials={initial.hasCredentials} credentialsPersist={initial.credentialsPersist} actions={store.getState()} onClose={onClose} />;
+  return <HyperJiraSettingsForm config={initial.config} hasCredentials={initial.hasCredentials} credentialsPersist={initial.credentialsPersist} actions={store.getState()} onClose={onClose} inline={inline} />;
 }
 
-export function HyperJiraSettingsForm({ config, hasCredentials, credentialsPersist, actions, onClose }: {
+export function HyperJiraSettingsForm({ config, hasCredentials, credentialsPersist, actions, onClose, inline = false }: {
   config: JiraConfig | null; hasCredentials: boolean; credentialsPersist: boolean;
-  actions: Pick<ReturnType<HyperJiraStoreHook['getState']>, 'testConnection' | 'saveSettings'>; onClose: () => void;
+  actions: Pick<ReturnType<HyperJiraStoreHook['getState']>, 'testConnection' | 'saveSettings'>; onClose: () => void; inline?: boolean;
 }) {
   const id = useId();
   const suggested = JiraConfig.fromUserUrl('https://jira.example.com/projects/DEMO/');
@@ -29,6 +29,7 @@ export function HyperJiraSettingsForm({ config, hasCredentials, credentialsPersi
   const [viewId, setViewId] = useState(config?.databaseViewId ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<JiraException | null>(null);
   const basic = authType === JiraAuthType.basic;
@@ -52,22 +53,24 @@ export function HyperJiraSettingsForm({ config, hasCredentials, credentialsPersi
       setResult(`Connected as ${user.displayName || user.name} · ${connectedProject.key} – ${connectedProject.name}`);
     } catch (e) { setError(asJiraException(e)); } finally { setTesting(false); }
   }
-  function save() {
+  async function save() {
     const next = buildConfig(); if (!next) return;
     const value = credentials();
     const keepsSecret = hasCredentials && config?.scopeId === next.scopeId && config.authType === next.authType && config.username === next.username;
     if (!value && !keepsSecret) { setErrors({ secret: 'Enter a token to connect.' }); return; }
     if (basic && !next.username) { setErrors({ secret: 'Basic auth needs a username.' }); return; }
-    // Close immediately, as Dart does; sync progress/errors remain on the dashboard.
-    void actions.saveSettings(next, value);
+    setSaving(true);
+    try { await actions.saveSettings(next, value); }
+    finally { setSaving(false); }
     onClose();
   }
-  return <HyperJiraModal title="Jira connection" onClose={onClose} footer={<>
-    <Button type="button" variant="outline" className="sm:mr-auto" disabled={testing} onClick={() => void test()}>{testing ? 'Testing…' : 'Test connection'}</Button>
-    <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-    <Button type="submit" form={id + '-form'}>Save</Button>
-  </>}>
-    <form id={id + '-form'} className="flex flex-col gap-4" onSubmit={event => { event.preventDefault(); void save(); }}>
+  const footer = <>
+    <Button type="button" variant="outline" className="sm:mr-auto" disabled={testing || saving} onClick={() => void test()}>{testing ? 'Testing…' : 'Test connection'}</Button>
+    <Button type="button" variant="outline" disabled={saving} onClick={onClose}>Cancel</Button>
+    <Button type="submit" disabled={testing || saving} form={id + '-form'}>{saving ? 'Saving and syncing…' : 'Save'}</Button>
+  </>;
+  const form = <form id={id + '-form'} onSubmit={event => { event.preventDefault(); if (!testing && !saving) void save(); }}>
+    <fieldset disabled={saving} className="flex min-w-0 flex-col gap-4">
       <HyperJiraField id={id + 'url'} label="Jira URL" required error={errors.url} helper="Server or Data Center URL, including any context path. Pasting a project or issue link works too.">
         <Input {...control('url')} data-testid="jira-settings-url" className="font-mono text-xs" placeholder="https://jira.example.com/projects/KEY" value={url} onChange={event => { const value = event.target.value; setUrl(value); if (!project.trim()) setProject(JiraConfig.parseJiraUrl(value).projectKey ?? ''); }} />
       </HyperJiraField>
@@ -93,7 +96,9 @@ export function HyperJiraSettingsForm({ config, hasCredentials, credentialsPersi
       </HyperJiraField>
       {result && <HyperJiraNotice variant="success" message={result} />}
       {error && <HyperJiraError error={error} />}
-    </form>
-  </HyperJiraModal>;
+    </fieldset>
+  </form>;
+  return inline ? <div className="flex flex-col gap-4">{form}<div className="flex flex-wrap gap-2">{footer}</div></div>
+    : <HyperJiraModal title="Jira connection" onClose={onClose} footer={footer}>{form}</HyperJiraModal>;
 }
 export { HyperJiraSettingsDialog as JiraSettingsDialog };

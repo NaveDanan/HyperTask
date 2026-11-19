@@ -27,7 +27,7 @@ export class HyperEntraBroker {
   cancel() { this.epoch++; }
   async idToken(input: unknown, windowHandle?: Buffer): Promise<HyperEntraToken> {
     const valid = HyperEntraConfigSchema.safeParse(input);
-    if (!valid.success) throw new SettingsError('format', 'Company sign-in is not configured. Enter valid Tenant and Application IDs in Storage & server.');
+    if (!valid.success) throw new SettingsError('format', 'Company sign-in is not configured. Enter valid Tenant and Application IDs in Microsoft Entra ID settings.');
     if (this.busy) throw new SettingsError('state', 'A Windows sign-in is still finishing. Close the account picker and try again.');
     this.busy = true; const epoch = ++this.epoch;
     const current = () => { if (epoch !== this.epoch) throw new SettingsError('state', 'Company sign-in was cancelled.'); };

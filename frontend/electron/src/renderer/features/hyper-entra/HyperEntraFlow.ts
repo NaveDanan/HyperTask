@@ -21,7 +21,7 @@ export class HyperEntraFlow {
     if (automatic && (this.attempted || signedOut || !config || !baseUrl)) return;
     if (automatic) this.attempted = true;
     if (['broker', 'exchange', 'handoff'].includes(this.state.phase)) return;
-    if (!config) { this.set({ phase: 'error', reason: 'Company sign-in is not configured. Enter the Tenant and Application IDs in Storage & server.' }); return; }
+    if (!config) { this.set({ phase: 'error', reason: 'Company sign-in is not configured. Enter the Tenant and Application IDs under Microsoft Entra ID in Connections. On the sign-in screen, use the settings button.' }); return; }
     const epoch = ++this.epoch, current = () => epoch === this.epoch;
     this.set({ phase: 'broker', name: '', reason: '' });
     try {

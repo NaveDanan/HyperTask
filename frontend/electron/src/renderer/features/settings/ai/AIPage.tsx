@@ -141,7 +141,7 @@ export function AIPage(_: SettingsPageProps) {
 
   return (
     <>
-      <SettingsPageHeader title="AI" description="Use your own OpenAI-compatible API. Workspace storage stays local. AI prompts, selected sources, and enabled semantic-search inputs are sent only to this endpoint." />
+      <SettingsPageHeader title="AI endpoint" description="Use your own OpenAI-compatible API. Workspace storage stays local. AI prompts, selected sources, and enabled semantic-search inputs are sent only to this endpoint." />
       <SettingsSection>
         {loading ? <Spinner /> : <>
           <SettingsGroup>

@@ -9,7 +9,7 @@ export type HyperBotsEndpoint = { baseUrl: string; apiKey: string; defaultModel:
 export type HyperBotsAssistantMessage = Extract<HyperBotsChatMessage, { role: 'assistant' }>;
 
 export const HYPER_BOTS_MAX_BODY = 2 * 1024 * 1024;
-const SETUP = 'Set up the model endpoint in Settings → AI.';
+const SETUP = 'Set up the model endpoint in Settings → Connections → AI endpoint.';
 
 export class HyperBotsEngineError extends Error {
   readonly status: number | null;
@@ -97,7 +97,7 @@ export class HyperBotsOpenAIEngine implements HyperBotsEngine {
       if (input.tools.length) { body.tools = input.tools; body.tool_choice = 'auto'; }
       const { res, text } = await this.post(ep.baseUrl, 'chat/completions', headers, body, secrets, signal);
       if (res.ok) return parseCompletion(text, res.status);
-      // Same rule as Settings → AI's test: some endpoints serve a model only through the Responses API.
+      // Same rule as Settings → Connections → AI endpoint's test: some endpoints serve a model only through the Responses API.
       // Nothing ran yet (a refused request), so asking again through /responses cannot repeat any work.
       if (!shouldUseResponses(res.status, text)) throw httpError(res, text, secrets);
       this.responsesOnly.add(route);
@@ -118,7 +118,7 @@ export class HyperBotsOpenAIEngine implements HyperBotsEngine {
       });
       if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
         await res.body?.cancel().catch(() => {});
-        throw new HyperBotsEngineError(`The model endpoint answered with a redirect (HTTP ${res.status || 'redirect'}); redirects are refused. Check the base URL in Settings → AI.`, res.status || null);
+        throw new HyperBotsEngineError(`The model endpoint answered with a redirect (HTTP ${res.status || 'redirect'}); redirects are refused. Check the base URL in Settings → Connections → AI endpoint.`, res.status || null);
       }
       return { res, text: await hyperBotsReadCapped(res) };
     } catch (err) {
@@ -208,7 +208,7 @@ function parseCompletion(text: string, status: number): { message: HyperBotsAssi
   return { message, finishReason: typeof fr === 'string' ? fr : null };
 }
 
-/** The endpoint from Settings → AI (`<support>/local_ai/openai-endpoint.json`), key decrypted per call. */
+/** The endpoint from Settings → Connections → AI endpoint (`<support>/local_ai/openai-endpoint.json`), key decrypted per call. */
 export async function hyperBotsReadEndpoint(supportDirectory: string, unprotect: (protectedKey: string) => Promise<string>): Promise<HyperBotsEndpoint> {
   let json: Record<string, unknown>;
   try {
@@ -219,11 +219,11 @@ export async function hyperBotsReadEndpoint(supportDirectory: string, unprotect:
   const str = (key: string) => (typeof json[key] === 'string' ? (json[key] as string).trim() : '');
   const baseUrl = str('base_url'), model = str('model');
   if (json.enabled !== true || !baseUrl || !model) throw new HyperBotsEngineError(SETUP);
-  try { validateEndpointUrl(baseUrl); } catch (e) { throw new HyperBotsEngineError(`${(e as Error).message} (Settings → AI)`); }
+  try { validateEndpointUrl(baseUrl); } catch (e) { throw new HyperBotsEngineError(`${(e as Error).message} (Settings → Connections → AI endpoint)`); }
   const protectedKey = str('protected_key');
   let apiKey = '';
   if (protectedKey) {
-    try { apiKey = await unprotect(protectedKey); } catch { throw new HyperBotsEngineError('Could not decrypt the model endpoint key. Save it again in Settings → AI.'); }
+    try { apiKey = await unprotect(protectedKey); } catch { throw new HyperBotsEngineError('Could not decrypt the model endpoint key. Save it again in Settings → Connections → AI endpoint.'); }
   }
   return { baseUrl, apiKey, defaultModel: model };
 }

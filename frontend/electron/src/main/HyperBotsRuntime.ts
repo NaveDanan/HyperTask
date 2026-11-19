@@ -67,7 +67,7 @@ const ID = /^[a-z0-9-]{1,32}$/;
 const MENTION = /@([a-z0-9-]{1,32})/g;
 const DECLINED = JSON.stringify({ error: 'The owner declined this call.' });
 const UNKNOWN = JSON.stringify({ error: 'Outcome unknown; the call was not retried.' });
-const NO_MODEL = 'Choose a model in Settings → AI or in the bot settings.';
+const NO_MODEL = 'Choose a model in Settings → Connections → AI endpoint or in the bot settings.';
 const DAMAGED = 'Stored run was damaged and was stopped.';
 /** The owner's local clock: calendar questions ("tomorrow") are about local dates, and Outlook returns UTC times. */
 export function hyperBotsClock(now: Date, zone = Intl.DateTimeFormat().resolvedOptions().timeZone): string {

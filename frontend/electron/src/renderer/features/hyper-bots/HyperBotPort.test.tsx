@@ -23,7 +23,7 @@ it('renders direct chats with native details, tool-derived empty text, exact com
   const html = render();
   expect(html).toContain('data-hyper-bot'); expect(html).toContain('Hyper-Bot');
   expect(html).toContain('Reads your Outlook calendar and mail'); expect(html).toContain('aria-label="Message Scout"');
-  expect(html).toContain('Set up the AI endpoint in Settings → AI to chat.');
+  expect(html).toContain('Set up the AI endpoint in Settings → Connections → AI endpoint to chat.');
   expect(html).toContain('HyperTask AI endpoint'); expect(html).toContain('Endpoint default (model-a)');
   expect(html).toContain('Endpoint disabled.'); expect(html).toContain('Choose a Jira project.');
   expect(html).toContain('>Tools</button>'); expect(html).toContain('>Activity</button>');

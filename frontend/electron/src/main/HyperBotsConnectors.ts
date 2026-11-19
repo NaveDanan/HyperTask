@@ -179,10 +179,10 @@ export async function hyperBotsConnections(deps: { endpoint: () => Promise<Hyper
   const failed = (problem: string): HyperBotsConnectionState => ({ ready: false, problem });
   const [model, outlook, jira] = await Promise.all([
     bounded(deps.endpoint, timeoutMs).then(
-      (e): HyperBotsConnections['model'] => !e.baseUrl ? failed('Set up the AI endpoint in Settings → AI.')
-        : !e.defaultModel ? failed(`Choose a default model in Settings → AI (endpoint ${e.baseUrl}).`)
+      (e): HyperBotsConnections['model'] => !e.baseUrl ? failed('Set up the AI endpoint in Settings → Connections → AI endpoint.')
+        : !e.defaultModel ? failed(`Choose a default model in Settings → Connections → AI endpoint (endpoint ${e.baseUrl}).`)
         : { ready: true, detail: `${e.defaultModel} at ${e.baseUrl}`, defaultModel: e.defaultModel },
-      error => failed(`Set up the AI endpoint in Settings → AI. ${message(error)}`.trim())),
+      error => failed(`Set up the AI endpoint in Settings → Connections → AI endpoint. ${message(error)}`.trim())),
     bounded(() => deps.outlook.request('status', undefined), timeoutMs).then(
       (s): HyperBotsConnectionState => s.available ? { ready: true, detail: 'Classic Outlook is available' } : failed(s.reason ? clip(s.reason, 300) : HyperOutlookUnavailable),
       error => failed(/timed out/.test(message(error)) ? `Classic Outlook did not respond. ${HyperOutlookUnavailable}` : message(error) || HyperOutlookUnavailable)),
