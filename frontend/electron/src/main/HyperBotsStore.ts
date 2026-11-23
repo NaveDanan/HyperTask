@@ -341,6 +341,59 @@ export class HyperBotsStore {
     return (limit ? all.slice(-limit) : []).map(strip);
   }
 
+  /** A display-only projection. Never copy model transcripts and completed tool result bodies to open a chat. */
+  roomWindow(roomId: string, limit: number, fromMessageId?: string) {
+    const all = this.state.messages.filter(message => message.roomId === roomId);
+    const anchor = fromMessageId ? all.findIndex(message => message.id === fromMessageId) : -1;
+    const tail = Math.max(0, all.length - limit);
+    const start = anchor < 0 ? tail : Math.min(anchor, tail);
+    const messages = all.slice(start).map(strip);
+    const visible = new Set(messages.map(message => message.id));
+    const replies = new Set(messages.map(message => message.runId));
+    const runs = this.state.runs.filter(run => run.roomId === roomId &&
+      (!finished(run.status) || visible.has(run.triggerMessageId) || replies.has(run.id)))
+      .map(({ transcript: _transcript, ...run }) => run);
+    const runIds = new Set(runs.map(run => run.id));
+    const approvals = this.state.approvals.filter(row => row.roomId === roomId && (row.status === 'pending' || runIds.has(row.runId)))
+      .map(({ fingerprint: _fingerprint, ...approval }) => copy({ ...approval, result: null,
+        ...(approval.status !== 'pending' && { card: null, args: null }) }));
+    return { roomId, messages, hasEarlier: start > 0, runs, approvals };
+  }
+
+  /** Recent, complete messages preceding this turn. Bound prompt size even when individual replies are long. */
+  promptHistory(trigger: HyperBotsMessage, maxCharacters: number): string[] {
+    const messages = this.state.messages;
+    const before = messages.findIndex(message => message.id === trigger.id);
+    const history: string[] = [];
+    let remaining = maxCharacters;
+    for (let index = before - 1; index >= 0; index--) {
+      const message = messages[index]!;
+      if (message.roomId !== trigger.roomId) continue;
+      const author = message.author.kind === 'user' ? 'Owner' : `Bot @${message.author.botId}`;
+      const line = `[${author}]: ${message.text}`;
+      if (line.length + 1 > remaining) break;
+      history.push(line);
+      remaining -= line.length + 1;
+    }
+    return history.reverse();
+  }
+
+  roomSummaries(rooms: HyperBotsSettings['rooms']) {
+    const summaries = new Map(rooms.map(room => [room.id, { preview: '', activeRun: false, pendingApprovals: 0 }]));
+    const latest = new Map<string, Stored>();
+    for (const message of this.state.messages) latest.set(message.roomId, message);
+    for (const [id, room] of summaries) room.preview = latest.get(id)?.text.slice(0, 512) ?? '';
+    for (const run of this.state.runs) {
+      const room = summaries.get(run.roomId);
+      if (room && (run.status === 'running' || run.status === 'queued')) room.activeRun = true;
+    }
+    for (const approval of this.state.approvals) {
+      const room = summaries.get(approval.roomId);
+      if (room && approval.status === 'pending') room.pendingApprovals++;
+    }
+    return Object.fromEntries(summaries);
+  }
+
   createRun(input: { roomId: string; botId: string; triggerMessageId: string; model: string; transcript: HyperBotsChatMessage[] }): HyperBotsRun {
     return this.mutate((st) => {
       const t = now();

@@ -57,6 +57,36 @@ function setup(onOutlookPresenceChange?: (listener: () => void) => () => void) {
   return { hub, runtimes, contents, deps, unregister, event, call, jiraFetch, as: (user: HyperBotsUser | null) => { who = user; } };
 }
 
+it('opens the recent conversation while an Outlook probe is still pending', async () => {
+  const h = setup();
+  let release!: (value: HyperBotsConnections) => void;
+  h.deps.connections.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+  try {
+    const result = await h.call(B.Open, { limit: 40 });
+    expect(result).toMatchObject({ ok: true, value: { roomId: 'dm-scout', connections: { model: { checking: true } }, messages: [] } });
+    release(CONNECTIONS);
+    await vi.waitFor(() => expect(h.contents.send).toHaveBeenCalledWith(B.Event, { type: 'connections' }));
+    expect(await h.call(B.Snapshot, { roomId: 'dm-scout', limit: 40 })).toMatchObject({ ok: true, value: { connections: CONNECTIONS } });
+  } finally { release?.(CONNECTIONS); h.unregister(); await h.hub.stop(); }
+});
+
+it('discards a deferred connection result when the signed-in account changes', async () => {
+  const h = setup();
+  let release!: (value: HyperBotsConnections) => void;
+  h.deps.connections.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+  try {
+    await h.call(B.Open, { limit: 16 });
+    h.as(B2);
+    await h.call(B.Open, { limit: 16 });
+    await vi.waitFor(() => expect(h.contents.send).toHaveBeenCalledWith(B.Event, { type: 'connections' }));
+    h.contents.send.mockClear();
+    release({ ...CONNECTIONS, jira: { ready: true, detail: 'Old project' } });
+    const result = await h.call(B.Snapshot, { roomId: 'ops', limit: 16 });
+    expect(result.value.connections).toEqual(CONNECTIONS);
+    expect(h.contents.send).not.toHaveBeenCalled();
+  } finally { release?.(CONNECTIONS); h.unregister(); await h.hub.stop(); }
+});
+
 it('refuses untrusted senders and frames before any runtime work', async () => {
   const h = setup();
   const refused = { ok: false, kind: 'state', message: 'Untrusted HyperBots caller refused.' };

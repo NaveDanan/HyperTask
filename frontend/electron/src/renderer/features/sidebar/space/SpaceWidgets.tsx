@@ -25,6 +25,11 @@ import { SpacePermission, spaceIcon, spaceIconColor, spacePermission, viewExtra,
 import { HyperTextField } from '../components';
 import { IconEmojiPicker } from '../icon-picker/IconEmojiPicker';
 import { findSvgContent, parseIconsData, svgDataUrl, useIconGroups } from '../icon-picker/icon-groups';
+import {
+  filterHyperProjectViews,
+  isHyperProjectsFilterActive,
+  type HyperProjectsFilterCriteria,
+} from '../stores/HyperProjectsFilter';
 import type { SpaceStore } from '../stores/space-store';
 import { builtInSpaceColors, dartColorToCss, kDefaultSpaceIconId, type IgnoreViewType } from '../stores/types';
 import { useViewBloc } from '../stores/view-bloc';
@@ -215,6 +220,8 @@ export function SpacePages({
   rightIconsBuilder,
   disableSelectedStatus = false,
   shouldIgnoreView,
+  projectFilter,
+  emptyFilterState,
 }: {
   space: ViewPB;
   hoverGated: boolean;
@@ -224,11 +231,15 @@ export function SpacePages({
   rightIconsBuilder?: (view: ViewPB, bloc: ViewBloc) => ReactNode;
   disableSelectedStatus?: boolean;
   shouldIgnoreView?: (view: ViewPB) => IgnoreViewType;
+  projectFilter?: HyperProjectsFilterCriteria;
+  emptyFilterState?: ReactNode;
 }) {
   const bloc = useViewBloc(space);
   const view = useStore(bloc.store, (s) => s.view);
+  const filterActive = isHyperProjectsFilterActive(projectFilter);
   let childViews = view.childViews;
   if (shouldIgnoreView) childViews = childViews.filter((v) => shouldIgnoreView(v) !== 'hide');
+  if (filterActive) childViews = filterHyperProjectViews(childViews, projectFilter);
   const spaceType = spacePermission(space) === SpacePermission.publicToAll ? 'public' : 'private';
   return (
     <div className="mt-0.5 flex flex-col gap-px">
@@ -249,8 +260,10 @@ export function SpacePages({
           onSelected={onSelected}
           onTertiarySelected={onTertiarySelected}
           shouldIgnoreView={shouldIgnoreView}
+          projectFilter={filterActive ? projectFilter : undefined}
         />
       ))}
+      {filterActive && childViews.length === 0 && emptyFilterState}
     </div>
   );
 }

@@ -23,6 +23,12 @@ import { openFromSidebar } from '../folder/SidebarFolder';
 import { IconEmojiPicker, type SelectedEmojiIconResult } from '../icon-picker/IconEmojiPicker';
 import { parseIconsData } from '../icon-picker/icon-groups';
 import { SharedSection, isSharedSectionOn } from '../shared-section/SharedSection';
+import {
+  filterHyperProjectViews,
+  hyperProjectsFilterActions,
+  isHyperProjectsFilterActive,
+  type HyperProjectsFilterCriteria,
+} from '../stores/HyperProjectsFilter';
 import { useFavoriteStore } from '../stores/favorite-store';
 import { sidebarSpace, spaceDeleteDisabledReason } from '../stores/space-store';
 import { useWorkspaceStore, workspaceRole } from '../stores/workspace-store';
@@ -30,32 +36,38 @@ import { ViewAddButton } from '../view/ViewAddButton';
 import { CurrentSpace, SpacePages, SpacePopup, showCreateSpaceDialog, showManageSpaceDialog } from './SpaceWidgets';
 import { useSpaceState } from './space-context';
 
-export function SidebarSpace() {
+export function SidebarSpace({ projectFilter: activeFilter }: { projectFilter?: HyperProjectsFilterCriteria }) {
   const favorites = useFavoriteStore((s) => s.views);
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
   const role = workspaceRole(currentWorkspace);
   // Guests see no spaces.
   const shouldShowSpaces = role === AFRolePB.Member || role === AFRolePB.Owner;
+  const filteredFavorites = activeFilter
+    ? filterHyperProjectViews(favorites.map((f) => f.item), activeFilter)
+    : favorites.map((f) => f.item);
   return (
     <div className="flex flex-col">
-      {favorites.length > 0 && (
+      {filteredFavorites.length > 0 && (
         <div>
-          <FavoriteFolder views={favorites.map((f) => f.item)} />
+          <FavoriteFolder views={filteredFavorites} projectFilter={activeFilter} />
         </div>
       )}
-      {isSharedSectionOn() && <SharedSection key={currentWorkspace?.workspaceId ?? ''} workspaceId={currentWorkspace?.workspaceId ?? ''} />}
-      {shouldShowSpaces && <Space />}
+      {isSharedSectionOn() && <SharedSection key={currentWorkspace?.workspaceId ?? ''} workspaceId={currentWorkspace?.workspaceId ?? ''} projectFilter={activeFilter} />}
+      {shouldShowSpaces && <Space projectFilter={activeFilter} />}
     </div>
   );
 }
 
-function Space() {
+function Space({ projectFilter }: { projectFilter?: HyperProjectsFilterCriteria }) {
+  const { tr } = useTr();
   const spaces = useSpaceState((s) => s.spaces);
   const stateSpace = useSpaceState((s) => s.currentSpace);
   const isExpanded = useSpaceState((s) => s.isExpanded);
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspace?.workspaceId ?? '');
   // isExpandedNotifier: each "collapse all" notifies every root row.
   const [collapseAllSignal, setCollapseAllSignal] = useState(0);
+  const filterActive = isHyperProjectsFilterActive(projectFilter);
+  const expanded = filterActive || isExpanded;
 
   // switchToTheNextSpace (Mod+O) and switchToSpaceNotifier.
   useEffect(() => switchToNextSpace.on(() => sidebarSpace.actions.switchToNextSpace()), []);
@@ -72,7 +84,7 @@ function Space() {
   return (
     <div className="mt-3 flex flex-col">
       <SidebarSpaceHeader
-        isExpanded={isExpanded}
+        isExpanded={expanded}
         space={currentSpace}
         onAdded={(layout, hyperLayout) => {
           void sidebarSpace.actions.createPage({ name: '', layout, hyperLayout, index: 0, openAfterCreate: true });
@@ -81,7 +93,7 @@ function Space() {
         onCreateNewSpace={() => showCreateSpaceDialog(sidebarSpace)}
         onCollapseAllPages={() => setCollapseAllSignal((n) => n + 1)}
       />
-      {isExpanded && (
+      {expanded && (
         <div>
           <SpacePages
             key={`${workspaceId} ${currentSpace.id}`}
@@ -90,6 +102,19 @@ function Space() {
             collapseAllSignal={collapseAllSignal}
             onSelected={openFromSidebar}
             onTertiarySelected={(view) => tabsActions.openViewInNewTab(view)}
+            projectFilter={projectFilter}
+            emptyFilterState={
+              <div className="mt-1.5 flex flex-col items-start gap-1.5 rounded-md border border-dashed border-sidebar-border px-2.5 py-2.5 text-xs text-sidebar-muted-foreground">
+                <span>{tr('sideBar.projects.empty')}</span>
+                <button
+                  type="button"
+                  onClick={() => hyperProjectsFilterActions.clearFilter()}
+                  className="text-xs font-medium text-sidebar-foreground underline underline-offset-2 hover:opacity-80"
+                >
+                  {tr('sideBar.projects.clear')}
+                </button>
+              </div>
+            }
           />
         </div>
       )}

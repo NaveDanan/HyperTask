@@ -14,7 +14,7 @@ export function HyperBotConnections({ connections, compact = false }: { connecti
   return <div className={compact ? 'connection-pills' : 'panel-card connections'}>{(['model', 'outlook', 'jira'] as const).map(key => {
     const state = connections[key], name = key === 'model' ? 'Model' : key === 'outlook' ? 'Outlook' : 'Jira';
     return <div key={key} className={compact ? 'connection-pill' : 'panel-row'} title={state.ready ? state.detail : state.problem}>
-      <i aria-hidden="true" className={cn('connection-dot', state.ready ? 'is-ready' : 'is-problem')} /><HyperBotProviderLogo provider={key === 'model' ? null : key} /><span className="panel-row__text"><span className="panel-row__title">{name}</span>{!compact && <span className="connection-detail">{state.ready ? state.detail : state.problem}</span>}</span><span className="sr-only">{state.ready ? 'Ready' : 'Needs setup'}</span>
+      <i aria-hidden="true" className={cn('connection-dot', state.ready ? 'is-ready' : state.checking ? 'is-checking' : 'is-problem')} /><HyperBotProviderLogo provider={key === 'model' ? null : key} /><span className="panel-row__text"><span className="panel-row__title">{name}</span>{!compact && <span className="connection-detail">{state.ready ? state.detail : state.problem}</span>}</span><span className="sr-only">{state.ready ? 'Ready' : state.checking ? 'Checking' : 'Needs setup'}</span>
     </div>;
   })}</div>;
 }

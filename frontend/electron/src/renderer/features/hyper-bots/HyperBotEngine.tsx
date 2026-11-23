@@ -17,6 +17,6 @@ export function HyperBotEngine({ bot, settings, connection, models, saving, erro
   return <div className="panel-card engine"><div className="panel-row panel-row--setting engine__provider"><span>Provider</span><span title={connection.ready ? connection.detail : connection.problem}>HyperTask AI endpoint</span></div><p className="engine__detail">{connection.ready ? connection.detail : connection.problem}</p>
     <label className="panel-row panel-row--setting"><span>Model</span><HyperBotModelSelect id={bot.id} model={model} models={models} defaultModel={connection.defaultModel} onChange={setModel} /></label>
     <div className="engine__actions"><Button size="sm" disabled={!changed || saving} onClick={() => void onSave(hyperBotUpdate(settings, { ...bot, model }))}>{saving ? 'Saving…' : 'Save'}</Button><Button size="sm" variant="ghost" disabled={!changed || saving} onClick={() => setModel(bot.model)}>Undo</Button></div>
-    <div className="engine__meta"><span className={cn('engine__state', connection.ready ? 'is-ready' : 'is-error')}><i aria-hidden="true" />{connection.ready ? 'Ready' : 'Needs setup'}</span></div>{error && <p role="alert" className="engine__error">{error}</p>}
+    <div className="engine__meta"><span className={cn('engine__state', connection.ready ? 'is-ready' : connection.checking ? 'is-starting' : 'is-error')}><i aria-hidden="true" />{connection.ready ? 'Ready' : connection.checking ? 'Checking' : 'Needs setup'}</span></div>{error && <p role="alert" className="engine__error">{error}</p>}
   </div>;
 }

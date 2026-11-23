@@ -1,6 +1,6 @@
 // HyperSidebarRail: the 56px icon rail the sidebar collapses to (as in CPA-Desktop). Built on the
 // shared ReUI/base-ui primitives: base-ui Tooltip, the app's sidebar tokens and nav icons.
-import { Bot, BotMessageSquare, House, SquareCheckBig, LayoutTemplate, PanelLeftOpen, Search, SquarePen } from 'lucide-react';
+import { BotMessageSquare, FolderPlus, House, LayoutTemplate, ListFilter, PanelLeftOpen, Search, SquareCheckBig } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AFRolePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
@@ -16,6 +16,7 @@ import { localToolPlugin } from '@/features/tabs/plugin';
 import { tabsActions, useTabsStore } from '@/features/tabs/tabs-store';
 import { isMac } from './components';
 import { createNewPageInSidebar } from './SidebarButtons';
+import { hyperProjectsFilterActions, isHyperProjectsFilterActive, useHyperProjectsFilterStore } from './stores/HyperProjectsFilter';
 import { useWorkspaceStore, workspaceRole } from './stores/workspace-store';
 
 /** Column flow of the rail: 32px rounded icon buttons, hover accent, data-[active] selection. */
@@ -62,6 +63,7 @@ export function HyperSidebarRail({ user }: { user: UserProfilePB }) {
   const name = user.name || tr('defaultUsername');
   const role = useWorkspaceStore((s) => workspaceRole(s.currentWorkspace));
   const activeTab = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id);
+  const filterActive = useHyperProjectsFilterStore((s) => isHyperProjectsFilterActive(s));
 
   return (
     <div data-slot="sidebar-rail" className="absolute inset-y-0 left-0 z-2 flex w-14 flex-col bg-sidebar text-sidebar-foreground">
@@ -86,24 +88,31 @@ export function HyperSidebarRail({ user }: { user: UserProfilePB }) {
           }}
           tooltip={name}
         />
-        <HyperRailButton label="Home" icon={<House />} active={activeTab === 'local-tool:home'}
-          onClick={() => tabsActions.openPlugin(localToolPlugin('home'))} tooltip="Home" />
         <HyperRailButton
           label={tr('search.label')} icon={<Search />}
           onClick={() => toggleCommandPalette.emit()}
           tooltip={<span className="flex items-center gap-2">{tr('search.sidebarSearchIcon')}<ShortcutKeys keys={isMac ? '⌘+P' : 'Ctrl+P'} /></span>}
         />
+        <HyperRailButton
+          label={tr('sideBar.projects.filter')} icon={<ListFilter />}
+          active={filterActive}
+          onClick={() => {
+            homeSettingActions.changeMenuStatus(MenuStatus.expanded);
+            hyperProjectsFilterActions.open();
+          }}
+          tooltip={tr('sideBar.projects.filter')}
+        />
         {role !== AFRolePB.Guest && (
-          <HyperRailButton label={tr('newPageText')} icon={<SquarePen />} onClick={createNewPageInSidebar} tooltip={
+          <HyperRailButton label={tr('newPageText')} icon={<FolderPlus />} onClick={createNewPageInSidebar} tooltip={
             <span className="flex items-center gap-2">{tr('newPageText')}<ShortcutKeys keys={isMac ? '⌘+N' : 'Ctrl+N'} /></span>
           } />
         )}
-        <HyperRailButton label="Jira" icon={<SquareCheckBig />} active={activeTab === 'local-tool:jira'}
-          onClick={() => tabsActions.openPlugin(localToolPlugin('jira'))} tooltip="Jira" />
-        <HyperRailButton label="Nod assistant" icon={<Bot />} active={activeTab === 'local-tool:nod'}
-          onClick={() => tabsActions.openPlugin(localToolPlugin('nod'))} tooltip="Nod assistant" />
+        <HyperRailButton label="Home" icon={<House />} active={activeTab === 'local-tool:home'}
+          onClick={() => tabsActions.openPlugin(localToolPlugin('home'))} tooltip="Home" />
         <HyperRailButton label="Hyper-Bot" icon={<BotMessageSquare />} active={activeTab === 'local-tool:bots'}
           onClick={() => tabsActions.openPlugin(localToolPlugin('bots'))} tooltip="Hyper-Bot" />
+        <HyperRailButton label="Jira" icon={<SquareCheckBig />} active={activeTab === 'local-tool:jira'}
+          onClick={() => tabsActions.openPlugin(localToolPlugin('jira'))} tooltip="Jira" />
         <HyperRailButton label={tr('template.label')} icon={<LayoutTemplate />} active={activeTab === 'local-tool:templates'}
           onClick={() => tabsActions.openPlugin(localToolPlugin('templates'))} tooltip={tr('template.label')} />
       </div>

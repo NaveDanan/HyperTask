@@ -33,17 +33,33 @@ it('listens before opening the room, loads models once, and refreshes for events
   const bots = controller();
   const starting = bots.start();
   expect(api.onEvent.mock.invocationCallOrder[0]).toBeLessThan(api.open.mock.invocationCallOrder[0]);
-  expect(api.open).toHaveBeenCalledWith({ roomId: undefined });
+  expect(api.open).toHaveBeenCalledWith({ roomId: undefined, limit: 16 });
   expect(bots.getState().phase).toBe('opening');
   listener({ type: 'message', roomId: 'ops', messageId: id(1) });
   release(ok(snapshot()));
   await starting;
+  await flush();
   expect(bots.getState()).toMatchObject({ phase: 'ready', snapshot: { roomId: 'ops' }, models: ['gpt-x', 'gpt-y'] });
-  expect(api.snapshot).toHaveBeenCalledWith({ roomId: 'ops' });
+  expect(api.snapshot).toHaveBeenCalledWith({ roomId: 'ops', limit: 16 });
   bots.dispose();
   await bots.start();
   expect(api.models).toHaveBeenCalledOnce();
-  expect(api.open).toHaveBeenLastCalledWith({ roomId: 'ops' });
+  expect(api.open).toHaveBeenLastCalledWith({ roomId: 'ops', limit: 16 });
+});
+
+it('opens from a compact room summary without a sidebar sweep and expands only on request', async () => {
+  const settings = hyperBotsWithDirectRooms(HYPER_BOTS_DEFAULT_SETTINGS);
+  const roomSummaries = { ops: { preview: '', pendingApprovals: 0, activeRun: false }, 'dm-scout': { preview: 'Other chat', pendingApprovals: 0, activeRun: false } };
+  const recent = snapshot({ settings, roomSummaries, hasEarlier: true,
+    messages: Array.from({ length: 16 }, (_, i) => ({ id: id(41 + i), text: 'Recent reply' } as never)) });
+  api.open.mockResolvedValue(ok(recent));
+  api.snapshot.mockResolvedValue(ok({ ...recent, hasEarlier: false }));
+  const bots = await opened();
+  expect(api.snapshot).not.toHaveBeenCalled();
+  expect(bots.getState().summaries?.['dm-scout']?.preview).toBe('Other chat');
+  await bots.loadEarlier();
+  expect(api.snapshot).toHaveBeenCalledWith({ roomId: 'ops', limit: 56, fromMessageId: id(41) });
+  expect(bots.getState().snapshot?.hasEarlier).toBe(false);
 });
 it('shows an open failure as syncError and opens again on reload', async () => {
   api.open.mockResolvedValueOnce(fail('Untrusted Bots caller refused.'));
@@ -331,5 +347,5 @@ it('a late pre-save snapshot cannot erase a newly created direct room or its set
   expect(await bots.saveSettings(next)).toBe(true);
   late.settle(ok(snapshot({ settings }))); await reading;
   expect(bots.getState().snapshot?.settings).toEqual(next);
-  await bots.select('dm-new'); expect(api.open).toHaveBeenLastCalledWith({ roomId: 'dm-new' });
+  await bots.select('dm-new'); expect(api.open).toHaveBeenLastCalledWith({ roomId: 'dm-new', limit: 16 });
 });

@@ -115,7 +115,7 @@ export interface HyperBotsApproval {
   result: string | null; error: string | null; createdAt: string; updatedAt: string;
 }
 
-export type HyperBotsConnectionState = { ready: true; detail: string } | { ready: false; problem: string };
+export type HyperBotsConnectionState = { ready: true; detail: string } | { ready: false; problem: string; checking?: boolean };
 export interface HyperBotsConnections {
   model: HyperBotsConnectionState & { defaultModel?: string };  // detail e.g. 'gpt-x at https://host/v1'
   outlook: HyperBotsConnectionState;
@@ -126,9 +126,12 @@ export interface HyperBotsSnapshot {
   settings: HyperBotsSettings;
   connections: HyperBotsConnections;
   roomId: string;
-  messages: HyperBotsMessage[];      // last 200 of roomId, oldest first
-  runs: HyperBotsRunSummary[];       // runs of roomId that are not done, plus the last 20 finished
-  approvals: HyperBotsApproval[];    // pending of roomId first, then the last 20 decided
+  messages: HyperBotsMessage[];      // oldest first
+  hasEarlier?: boolean;
+
+  roomSummaries?: Record<string, { preview: string; activeRun: boolean; pendingApprovals: number }>;
+  runs: HyperBotsRunSummary[];       // active runs and completed runs in the requested window
+  approvals: HyperBotsApproval[];    // pending requests and decisions associated with the window
 }
 
 export interface HyperBotsPostInput { roomId: string; clientMessageId: string; text: string; model?: string | null }
@@ -138,13 +141,14 @@ export type HyperBotsEvent =
   | { type: 'message'; roomId: string; messageId: string }
   | { type: 'run'; roomId: string; runId: string; status: HyperBotsRunStatus }
   | { type: 'approval'; roomId: string; approvalId: string; status: HyperBotsApprovalStatus }
-  | { type: 'settings' };
+  | { type: 'settings' }
+  | { type: 'connections' };
 
 /** Renderer API. Every call is refused unless it comes from the main window's top frame. */
 export interface HyperBotsApi {
   /** Main reads the signed-in user from the core (never from the renderer) and returns that user's room. */
-  open(args: { roomId?: string }): Promise<import('./api').IpcResult<HyperBotsSnapshot>>;
-  snapshot(args: { roomId: string }): Promise<import('./api').IpcResult<HyperBotsSnapshot>>;
+  open(args: { roomId?: string; limit?: number }): Promise<import('./api').IpcResult<HyperBotsSnapshot>>;
+  snapshot(args: { roomId: string; limit?: number; fromMessageId?: string }): Promise<import('./api').IpcResult<HyperBotsSnapshot>>;
   post(input: HyperBotsPostInput): Promise<import('./api').IpcResult<HyperBotsPosted>>;
   /** `delivery` is required to approve a mail write (HYPER_BOTS_TOOLS[tool].delivery) and refused for any other tool. */
   decide(args: { approvalId: string; approved: boolean; delivery?: HyperBotsDelivery }): Promise<import('./api').IpcResult<HyperBotsApproval>>;

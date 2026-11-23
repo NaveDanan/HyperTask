@@ -73,6 +73,13 @@ it('lists pending approvals above the composer with args, and decided ones with 
   expect(html).toContain('done (allowed by policy)');
   expect(hyperBotsMentionHint(snapshot({ settings: { ...HYPER_BOTS_DEFAULT_SETTINGS, rooms: [{ id: 'ops', name: 'Ops', botIds: ['scout'] }] } }))).toBe('Mention @scout to pick a bot; no mention = all bots in the room.');
 });
+it('shows each tool under the message that triggered it, before the next turn', () => {
+  const html = render({ snapshot: snapshot({ messages: [message(1), message(2)], runs: [run(50), run(51, { triggerMessageId: id(2) })],
+    approvals: [approval(6, { status: 'done', summary: 'First turn tool' }), approval(7, { runId: id(51), summary: 'Second turn tool' })] }) });
+  const positions = ['Message 1', 'First turn tool', 'Message 2', 'Second turn tool'].map(label => html.indexOf(label));
+  expect(positions.every(pos => pos >= 0)).toBe(true);
+  expect(positions).toEqual([...positions].sort((a, b) => a - b));
+});
 it('approval card emphasizes writes, shows exact args and decides by approval ID', () => {
   const onDecide = vi.fn();
   const card = HyperBotsApprovalCard({ approval: approval(5), botName: 'Scribe', busy: false, onDecide });

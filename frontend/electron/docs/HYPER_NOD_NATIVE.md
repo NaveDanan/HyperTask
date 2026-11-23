@@ -10,7 +10,7 @@ Nod speaks HTTP JSON and server-sent events and keeps one active conversation pe
 
 ## What this slice does
 
-- **Nod assistant** opens from the sidebar and the collapsed rail. It is a singleton local tool tab (`local-tool:nod`), separate from Chat views.
+- **Nod assistant** retains its singleton local tool tab (`local-tool:nod`) for existing sessions. The sidebar and collapsed rail omit its shortcut.
 - It shows Nod's one durable conversation, with live streamed text, activity steps, running, waiting and failed states, and older history pages. Messages that newer ones push out of Nod's 150-message window stay visible; hidden messages disappear.
 - You can send text and stop Nod's work. Stop applies to every task Nod is running, so the control says so. Text typed while a message is sending is kept.
 - It answers pending choice questions, by choice or in your own words, and approvals, including ones found in loaded history. Approvals show Nod's exact fields and body. Choice and written answers target their question, so a background task resumes. An open question in the main conversation takes a normal reply.

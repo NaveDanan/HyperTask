@@ -28,6 +28,7 @@ export function hyperBotsRoomSummary(snapshot: HyperBotsSnapshot, unread = false
     activeRun: snapshot.runs.some(row => row.status === 'queued' || row.status === 'running'), unread };
 }
 export interface HyperBotsViewState {
+  loadingEarlier?: boolean;
   summaries?: Record<string, HyperBotsRoomSummary>;
   phase: 'idle' | 'opening' | 'ready' | 'unavailable';
   snapshot: HyperBotsSnapshot | null;
@@ -94,6 +95,8 @@ export function hyperBotsOutbox(userId: string) {
 }
 const IDLE: Pick<HyperBotsViewState, 'sending' | 'saving' | 'deciding'> = { sending: false, saving: false, deciding: [] };
 const INITIAL: HyperBotsViewState = { phase: 'idle', snapshot: null, models: [], ...IDLE };
+const INITIAL_MESSAGES = 16;
+const EARLIER_MESSAGES = 40;
 /** One room of bots. Events only trigger snapshot reads; nothing is resent to recover. */
 export class HyperBotsController {
   private state = INITIAL;
@@ -105,6 +108,7 @@ export class HyperBotsController {
   private offEvent?: () => void;
   private refreshing?: { generation: number; done: Promise<void> };
   private refreshAgain = false;
+  private windowSize = INITIAL_MESSAGES;
   /** An event arrived before the room was open. */
   private missed = false;
   private modelsLoaded = false;
@@ -124,16 +128,20 @@ export class HyperBotsController {
     const generation = ++this.generation;
     this.offEvent ??= this.api.onEvent(event => this.receive(event));
     this.set({ phase: 'opening', error: undefined, syncError: undefined, settingsError: undefined, ...IDLE });
-    void this.loadModels();
-    const opened = await this.api.open({ roomId: this.state.snapshot?.roomId ?? roomId });
+    this.windowSize = INITIAL_MESSAGES;
+    const opened = await this.api.open({ roomId: roomId ?? this.state.snapshot?.roomId, limit: INITIAL_MESSAGES });
     if (!this.current(generation)) return;
     if (!opened.ok) { this.set({ phase: 'unavailable', syncError: opened.message }); return; }
     this.applySnapshot(opened.value);
+    void this.loadModels();
     void this.sweep();
     if (this.missed) { this.missed = false; void this.refresh(); }
   }
   private applySnapshot(snapshot: HyperBotsSnapshot) {
-    this.set({ phase: 'ready', snapshot, syncError: undefined, summaries: { ...this.state.summaries,
+    const summaries = snapshot.roomSummaries ? Object.fromEntries(Object.entries(snapshot.roomSummaries).map(([id, row]) => [id, {
+      ...row, preview: hyperBotsPreviewText(row.preview), unread: this.state.summaries?.[id]?.unread ?? false,
+    }])) : this.state.summaries;
+    this.set({ phase: 'ready', snapshot, syncError: undefined, summaries: { ...summaries,
       [snapshot.roomId]: hyperBotsRoomSummary(snapshot) } });
   }
   /** Navigation cancels stale reads, never the outbox: each room retains its own draft and retry IDs. */
@@ -141,10 +149,11 @@ export class HyperBotsController {
     if (this.disposed || roomId === this.state.snapshot?.roomId && this.state.phase === 'ready') return;
     if (!this.state.snapshot?.settings.rooms.some(room => room.id === roomId)) return;
     const generation = ++this.generation;
-    this.set({ phase: 'opening', error: undefined, syncError: undefined, ...IDLE });
-    const result = await this.api.open({ roomId });
+    this.set({ phase: 'opening', error: undefined, syncError: undefined, loadingEarlier: false, ...IDLE });
+    const result = await this.api.open({ roomId, limit: INITIAL_MESSAGES });
     if (!this.current(generation)) return;
     if (!result.ok) { this.set({ phase: this.state.snapshot ? 'ready' : 'unavailable', syncError: result.message }); return; }
+    this.windowSize = INITIAL_MESSAGES;
     this.applySnapshot(result.value);
     void this.sweep();
     if (this.missed) { this.missed = false; void this.refresh(); }
@@ -152,7 +161,7 @@ export class HyperBotsController {
   /** A single sweep after open/settings; event reads are coalesced separately per other room. */
   private async sweep() {
     const snapshot = this.state.snapshot;
-    if (!snapshot) return;
+    if (!snapshot || snapshot.roomSummaries) return;
     await Promise.all(snapshot.settings.rooms.filter(room => room.id !== snapshot.roomId).map(room => this.readSummary(room.id)));
   }
   private readSummary(roomId: string): Promise<void> {
@@ -190,13 +199,15 @@ export class HyperBotsController {
     if (this.disposed) return;
     const snapshot = this.state.snapshot;
     if (this.state.phase !== 'ready' || !snapshot) { this.missed = true; return; }
+    if (event.type === 'connections') { void this.refresh(); return; }
     if (event.type === 'settings') { void this.refresh().then(() => this.sweep()); return; }
     if (event.roomId === snapshot.roomId) { void this.refresh(); return; }
     if (!snapshot.settings.rooms.some(room => room.id === event.roomId)) return;
     const previous = this.state.summaries?.[event.roomId] ?? { preview: '', pendingApprovals: 0, activeRun: false, unread: false };
     this.set({ summaries: { ...this.state.summaries, [event.roomId]: { ...previous, unread: previous.unread || event.type === 'message',
       ...(event.type === 'run' ? { activeRun: event.status === 'running' || event.status === 'queued' } : {}) } } });
-    void this.readSummary(event.roomId);
+    if (snapshot.roomSummaries) void this.refresh();
+    else void this.readSummary(event.roomId);
   }
   /** Coalesced per generation: one read at a time, repeated once if more refreshes arrived meanwhile. */
   refresh(): Promise<void> {
@@ -209,7 +220,8 @@ export class HyperBotsController {
         const roomId = this.state.snapshot?.roomId;
         if (!roomId) return;
         const revision = this.settingsRevision;
-        const result = await this.api.snapshot({ roomId });
+        const fromMessageId = this.windowSize > INITIAL_MESSAGES ? this.state.snapshot?.messages[0]?.id : undefined;
+        const result = await this.api.snapshot({ roomId, limit: this.windowSize, ...(fromMessageId && { fromMessageId }) });
         if (!this.current(generation)) return;
         // A read begun before a settings save must not erase newly created rooms or tool changes.
         if (revision !== this.settingsRevision) { this.refreshAgain = true; continue; }
@@ -223,6 +235,15 @@ export class HyperBotsController {
   }
   /** Reloads the room, or opens it again when it never opened. */
   readonly reload = () => this.state.snapshot || !this.started ? this.refresh() : this.start();
+  async loadEarlier() {
+    const snapshot = this.state.snapshot;
+    if (!snapshot?.hasEarlier || this.state.phase !== 'ready' || this.state.loadingEarlier) return;
+    const generation = this.generation;
+    this.windowSize = Math.min(100_000, snapshot.messages.length + EARLIER_MESSAGES);
+    this.set({ loadingEarlier: true });
+    try { await this.refresh(); }
+    finally { if (this.current(generation)) this.set({ loadingEarlier: false }); }
+  }
   /** Resolves true once the room accepted the message. A failed post keeps its ID in the outbox for an identical retry. */
   async send(text: string, model: string | null = null): Promise<boolean> {
     const snapshot = this.state.snapshot;

@@ -1,5 +1,5 @@
 // Ported from bot-hq (web/src/styles/cards.css), Copyright (c) 2026 Nick Vasilescu, MIT License. See features/hyper-bots/NOTICE.md.
-import { LoaderCircle } from 'lucide-react';
+import { Check, CircleAlert, CircleSlash, LoaderCircle } from 'lucide-react';
 import { HYPER_BOTS_TOOLS, type HyperBotsApproval, type HyperBotsApprovalStatus, type HyperBotsCardRow, type HyperBotsDelivery, type HyperBotsSettings } from '@shared/HyperBots';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,31 @@ function HyperBotsCardRows({ rows }: { rows: HyperBotsCardRow[] }) {
   </dl>;
 }
 const outcome = (approval: HyperBotsApproval) => approval.status === 'done' && approval.delivery ? approval.delivery === 'draft' ? 'saved to Drafts' : 'sent' : STATUS_LABEL[approval.status];
+
+export function HyperBotTurnTools({ approvals, settings, deciding, onDecide }: {
+  approvals: HyperBotsApproval[]; settings: HyperBotsSettings; deciding: string[];
+  onDecide: (id: string, approved: boolean, delivery?: HyperBotsDelivery) => void;
+}) {
+  return <ol className="hb-turn-tools" aria-label="Tools used in this turn">{approvals.map(approval => {
+    const name = botName(settings, approval.botId);
+    if (approval.status === 'pending') return <li key={approval.id} id={'hyper-bot-request-' + approval.id} tabIndex={-1}>
+      <p className="hb-tool-waiting">Waiting for you</p>
+      <HyperBotsApprovalCard approval={approval} botName={name} busy={deciding.includes(approval.id)} onDecide={onDecide} />
+    </li>;
+    const tool = HYPER_BOTS_TOOLS[approval.tool as keyof typeof HYPER_BOTS_TOOLS];
+    const Status = approval.status === 'done' ? Check : approval.status === 'failed' || approval.status === 'unknown' ? CircleAlert :
+      approval.status === 'skipped' || approval.status === 'denied' ? CircleSlash : LoaderCircle;
+    return <li key={approval.id} className="hb-tool-step" data-status={approval.status}>
+      <div className="hb-tool-step__line"><HyperBotToolLogo tool={approval.tool} />
+        <strong>{tool?.label ?? approval.tool}</strong>
+        <span className="hb-tool-step__status"><Status size={13} aria-hidden="true" />{outcome(approval)}{approval.decidedBy === 'policy' && ' (allowed by policy)'}</span>
+      </div>
+      <p className="hb-tool-step__summary" dir="auto">{approval.summary}</p>
+      <p className="hb-tool-step__meta">{name} · {approval.access === 'read' ? 'Read' : 'Write'}{approval.destination && ' · to ' + approval.destination}</p>
+      {approval.error && <p className="hb-tool-step__error">{approval.error}</p>}
+    </li>;
+  })}</ol>;
+}
 /** `flat`: the bare list, for the details panel, whose section already says "Recent decisions". */
 export function HyperBotsDecided({ approvals, settings, flat }: { approvals: HyperBotsApproval[]; settings: HyperBotsSettings; flat?: boolean }) {
   const list = <ul className={cn('space-y-1', !flat && 'mt-1')}>

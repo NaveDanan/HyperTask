@@ -47,6 +47,14 @@ The Hyper-Bot sidebar footer shows compact Model, Outlook and Jira connection pi
    - A message and its whole run plan (each bot and its model) are stored in one write. A retry creates only the planned runs that are missing.
 3. **Model fixed per message.** Pick a model in the message box, or leave it on **Bot default**. The model is recorded when the message is sent and used for every step of that answer, even if settings change. A bot reached by hand-off uses its own model. A bot's model can be set in **Details → Activity → Engine**; the default is the endpoint's model.
 
+## Conversation history and tool activity
+
+Hyper-Bot opens the selected room at its newest 16 messages. **Load earlier messages** adds 40 more and keeps the current reading position. The first room response includes compact previews and activity counts for the sidebar. Outlook, Jira and model connection checks finish separately. Each tool card appears under the message that started its run and shows the bot, action, destination and current outcome. Pending writes keep their approval controls.
+
+The model receives the most recent complete, author-labelled room messages that fit within 32,000 characters, followed by the current request. Earlier messages remain available for reading within the existing 2,000-message retention limit. Active work can pin messages past that limit. Each run still has its own eight-step limit.
+
+On 2026-11-20 a local fixture with 2,000 messages, 1,000 completed runs and 1,000 tool decisions produced a 12.4 KB opening snapshot. Reading and validating its state file took 24 ms. In a separate headless Chrome measurement with that snapshot and a simulated IPC bridge, the production renderer showed the conversation in approximately 115 ms after mounting. Loading the next 40 messages kept the first visible message within one pixel of its original position. These measurements exclude desktop startup, sign-in and live model latency.
+
 ## Where things live
 
 - **State:**
@@ -131,7 +139,7 @@ npx vitest run src/main/HyperBots src/renderer/features/hyper-bots src/shared
 
 The columns follow bot-hq's UI, restyled with HyperTask theme tokens. Entering the active Hyper-Bot tab temporarily collapses the main sidebar to its 56px rail. Leaving or closing the tab restores the previous state unless the user toggled it while in Hyper-Bot; only user changes persist. The generic plugin flag is prefersCollapsedMenu. At window widths of at least 900px with the main sidebar collapsed, the active primary page portals its 330px list into HyperChromePanel in the app chrome. A tab-owned width claim shifts HomeStack using the sidebar's existing transition and releases on tab switch/unmount. Otherwise the list stays inside the content card (212px below a 701px page width). The panel and dialogs retain data-hyper-bot.
 
-The list has a bold title without header controls. Its first bot is pinned, other bots show a last-message preview or their type, and group rows stack their members' avatars. The Group chats row always includes a New group chat plus button, even without groups. Connection chips stay at the bottom and wrap on narrow layouts or larger text scales. Sidebar foreground/accent tokens keep rows consistent with the main sidebar in light, dark and custom themes. Working, needs-you and unread dots update from room events and a snapshot sweep; opening a room clears its unread dot.
+The list has a bold title without header controls. Its first bot is pinned, other bots show a last-message preview or their type, and group rows stack their members' avatars. The Group chats row always includes a New group chat plus button, even without groups. Connection chips stay at the bottom and wrap on narrow layouts or larger text scales. Sidebar foreground/accent tokens keep rows consistent with the main sidebar in light, dark and custom themes. Working, needs-you and unread dots update from room events and compact room summaries. Opening a room clears its unread dot.
 
 Hand-drawn inline Outlook and classic Jira SVG marks identify every tool row, approval header, recent decision (including those in the transcript), and Outlook/Jira connection chips in the list and details. They are decorative, preserve all labels, and use per-instance React useId gradient IDs. The current create/settings dialogs contain no tool picker; any shared HyperBotToolsForm gets the marks. Trademark attribution is in NOTICE.md.
 
