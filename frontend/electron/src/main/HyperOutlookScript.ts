@@ -351,19 +351,203 @@ function Hyper-AdPerson($result) {
   }
   return $person
 }
-function Hyper-GalPeople([string]$query) {
-  $recipient = $null; $entry = $null; $user = $null
-  Connect-Hyper
+function Hyper-ValidEmail([string]$email) {
+  if (!$email -or $email.Length -gt 320) { return $false }
+  return $email -match '^[^\s@<>()\[\]\\]+@[^\s@<>()\[\]\\]+\.[^\s@<>()\[\]\\]+$'
+}
+function Hyper-ClipField([string]$value, [int]$max) {
+  if (!$value) { return '' }
+  if ($value.Length -gt $max) { return $value.Substring(0, $max) }
+  return $value
+}
+function Hyper-AddPerson($list, $seen, $person, [int]$limit) {
+  if ($list.Count -ge $limit -or $null -eq $person) { return }
+  $email = ([string]$person.email).Trim()
+  if (!(Hyper-ValidEmail $email)) { return }
+  $key = $email.ToLowerInvariant()
+  if ($seen.Contains($key)) { return }
+  [void]$seen.Add($key)
+  $name = Hyper-ClipField ([string]$person.name).Trim() 512
+  if (!$name) { $name = $email }
+  $out = @{
+    name = $name; email = $email
+    title = (Hyper-ClipField ([string]$person.title).Trim() 1024)
+    department = (Hyper-ClipField ([string]$person.department).Trim() 1024)
+    phone = (Hyper-ClipField ([string]$person.phone).Trim() 256)
+    office = (Hyper-ClipField ([string]$person.office).Trim() 1024)
+    company = (Hyper-ClipField ([string]$person.company).Trim() 1024)
+    source = [string]$person.source
+  }
+  if ($person.photo) { $out.photo = [string]$person.photo }
+  [void]$list.Add($out)
+}
+function Hyper-QueryMatches([string]$haystack, [string]$query, [bool]$lookup) {
+  if (!$haystack -or !$query) { return $false }
+  if ($lookup) { return $haystack.Equals($query, [StringComparison]::OrdinalIgnoreCase) }
+  if ($haystack.IndexOf($query, [StringComparison]::OrdinalIgnoreCase) -ge 0) { return $true }
+  $tokens = @($query -split '\s+' | Where-Object { $_.Length -ge 2 })
+  if (!$tokens.Count) { return $false }
+  foreach ($tok in $tokens) { if ($haystack.IndexOf($tok, [StringComparison]::OrdinalIgnoreCase) -lt 0) { return $false } }
+  return $true
+}
+function Hyper-EntryPerson($entry) {
+  if ($null -eq $entry) { return $null }
+  $user = $null
   try {
-    $recipient = $ns.CreateRecipient($query); $recipient.Resolve()
-    if (!$recipient.Resolved) { return }
-    $entry = $recipient.AddressEntry; $user = $entry.GetExchangeUser()
-    if ($null -ne $user -and $user.PrimarySmtpAddress) { return @{ name = [string]$user.Name; email = [string]$user.PrimarySmtpAddress; title = [string]$user.JobTitle; department = [string]$user.Department; phone = [string]$user.BusinessTelephoneNumber; office = [string]$user.OfficeLocation; company = [string]$user.CompanyName; source = 'outlook' } }
-  } catch { throw 'Employee directory is unavailable. Connect to the company network or VPN and try again.' }
-  finally { foreach ($com in @($user, $entry, $recipient)) { if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($com) } } }
+    $user = $entry.GetExchangeUser()
+    if ($null -ne $user -and $user.PrimarySmtpAddress) {
+      return @{ name = [string]$user.Name; email = [string]$user.PrimarySmtpAddress; title = [string]$user.JobTitle; department = [string]$user.Department; phone = [string]$user.BusinessTelephoneNumber; office = [string]$user.OfficeLocation; company = [string]$user.CompanyName; source = 'outlook' }
+    }
+    $addr = [string]$entry.Address
+    if (Hyper-ValidEmail $addr) {
+      return @{ name = [string]$entry.Name; email = $addr; title = ''; department = ''; phone = ''; office = ''; company = ''; source = 'outlook' }
+    }
+  } catch {}
+  finally { if ($null -ne $user -and [Runtime.InteropServices.Marshal]::IsComObject($user)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($user) } }
+  return $null
+}
+function Hyper-OutlookPeople([string]$query, [int]$limit, [bool]$lookup) {
+  Connect-Hyper
+  $list = New-Object Collections.ArrayList
+  $seen = New-Object 'Collections.Generic.HashSet[string]'
+  $watch = [Diagnostics.Stopwatch]::StartNew()
+  # (a) Classic Outlook personal Contacts (olFolderContacts = 10)
+  $contacts = $null; $items = $null
+  try {
+    $contacts = $ns.GetDefaultFolder(10); $items = $contacts.Items; $scanned = 0; $item = $items.GetFirst()
+    while ($null -ne $item -and $scanned -lt 500 -and $list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 2500) {
+      $scanned++
+      try {
+        if ([int]$item.Class -eq 40) {
+          $fullName = [string]$item.FullName
+          $company = [string]$item.CompanyName
+          $title = [string]$item.JobTitle
+          $dept = [string]$item.Department
+          $phone = [string]$item.BusinessTelephoneNumber; if (!$phone) { $phone = [string]$item.MobileTelephoneNumber }
+          $office = [string]$item.OfficeLocation
+          foreach ($rawEmail in @([string]$item.Email1Address, [string]$item.Email2Address, [string]$item.Email3Address)) {
+            $email = $rawEmail.Trim()
+            if (!(Hyper-ValidEmail $email)) { continue }
+            $hay = if ($lookup) { $email } else { ($fullName + ' ' + $email + ' ' + $company) }
+            if (Hyper-QueryMatches $hay $query $lookup) {
+              Hyper-AddPerson $list $seen @{ name = $(if ($fullName) { $fullName } else { $email }); email = $email; title = $title; department = $dept; phone = $phone; office = $office; company = $company; source = 'outlook' } $limit
+              break
+            }
+          }
+        }
+      } catch {}
+      finally { if ($null -ne $item -and [Runtime.InteropServices.Marshal]::IsComObject($item)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($item) } }
+      $item = $items.GetNext()
+    }
+  } catch {}
+  finally { foreach ($com in @($items, $contacts)) { if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($com) } } }
+  # (b) Outlook GAL: fast CreateRecipient().Resolve() + bounded AddressLists lookup
+  if ($list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 3500) {
+    $recipient = $null; $entry = $null
+    try {
+      $recipient = $ns.CreateRecipient($query)
+      if ($recipient.Resolve()) {
+        $entry = $recipient.AddressEntry
+        $p = Hyper-EntryPerson $entry
+        if ($null -ne $p) {
+          $hay = if ($lookup) { [string]$p.email } else { ([string]$p.name + ' ' + [string]$p.email) }
+          if (!$lookup -or (Hyper-QueryMatches $hay $query $true)) { Hyper-AddPerson $list $seen $p $limit }
+        }
+      }
+    } catch {}
+    finally { foreach ($com in @($entry, $recipient)) { if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($com) } } }
+  }
+  if ($list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 4000) {
+    $partials = New-Object Collections.ArrayList
+    $partialSeen = New-Object 'Collections.Generic.HashSet[string]'
+    try {
+      $lists = $ns.AddressLists
+      # Indexed matches from large lists are cheap to try first. Partial matches cannot stop the scan for exact ones.
+      foreach ($indexed in @($true, $false)) {
+        for ($li = 1; $li -le $lists.Count -and $list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 4000; $li++) {
+          $al = $null; $entries = $null
+          try {
+            $al = $lists.Item($li); $entries = $al.AddressEntries; $count = [int]$entries.Count
+            if ($count -le 0) { continue }
+            $large = $count -gt 400
+            if (($indexed -and !$large) -or (!$indexed -and $large -and $lookup)) { continue }
+            $first = if ($indexed) { 0 } else { 1 }
+            $last = if ($indexed) { 0 } else { [Math]::Min($count, 2000) }
+            for ($ei = $first; $ei -le $last -and $list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 4000; $ei++) {
+              $ae = $null
+              try {
+                $ae = if ($indexed) { $entries.Item($query) } else { $entries.Item($ei) }
+                if (!$ae) { continue }
+                $exact = $false
+                if (!$indexed) {
+                  $name = [string]$ae.Name
+                  $address = if (!$large) { [string]$ae.Address } else { '' }
+                  $exact = (Hyper-QueryMatches $name $query $true) -or (Hyper-QueryMatches $address $query $true)
+                  if (!$exact -and ($lookup -or $partials.Count -ge $limit -or !(Hyper-QueryMatches ($name + ' ' + $address) $query $false))) { continue }
+                }
+                $p = Hyper-EntryPerson $ae
+                if ($null -eq $p) { continue }
+                if (Hyper-QueryMatches ([string]$p.email) $query $true) {
+                  Hyper-AddPerson $list $seen $p $limit
+                } elseif (!$lookup) {
+                  if ($exact -or (Hyper-QueryMatches ([string]$p.name) $query $true)) {
+                    Hyper-AddPerson $list $seen $p $limit
+                  } elseif (!$indexed -or (Hyper-QueryMatches ([string]$p.name + ' ' + [string]$p.email) $query $false)) {
+                    Hyper-AddPerson $partials $partialSeen $p $limit
+                  }
+                }
+              } catch {}
+              finally { if ($null -ne $ae -and [Runtime.InteropServices.Marshal]::IsComObject($ae)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($ae) } }
+            }
+          } catch {}
+          finally { foreach ($com in @($entries, $al)) { if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($com) } } }
+        }
+      }
+    } catch {}
+    foreach ($partial in $partials) { Hyper-AddPerson $list $seen $partial $limit }
+  }
+  # (c) Recent Inbox/Sent correspondent headers (bounded, never reads Body or changes UnRead)
+  if ($list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 5000) {
+    foreach ($folderId in @(6, 5)) {
+      if ($list.Count -ge $limit -or $watch.ElapsedMilliseconds -ge 5000) { break }
+      $folder = $null; $items = $null
+      try {
+        $folder = $ns.GetDefaultFolder($folderId); $items = $folder.Items
+        $items.Sort('[ReceivedTime]', $true); $scanned = 0; $item = $items.GetFirst()
+        while ($null -ne $item -and $scanned -lt 120 -and $list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 5000) {
+          $scanned++
+          try {
+            if ([int]$item.Class -in $HyperMailClasses) {
+              $cands = New-Object Collections.ArrayList
+              [void]$cands.Add((Hyper-Sender $item))
+              foreach ($rType in @(1, 2)) {
+                foreach ($r in (Hyper-MailRecipients $item $rType).list) { [void]$cands.Add($r) }
+              }
+              foreach ($c in $cands) {
+                if ($list.Count -ge $limit) { break }
+                $cName = [string]$c.name; $cEmail = [string]$c.email
+                if (!(Hyper-ValidEmail $cEmail)) { continue }
+                $hay = if ($lookup) { $cEmail } else { ($cName + ' ' + $cEmail) }
+                if (Hyper-QueryMatches $hay $query $lookup) {
+                  Hyper-AddPerson $list $seen @{ name = $cName; email = $cEmail; title = ''; department = ''; phone = ''; office = ''; company = ''; source = 'outlook' } $limit
+                }
+              }
+            }
+          } catch {}
+          finally { if ($null -ne $item -and [Runtime.InteropServices.Marshal]::IsComObject($item)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($item) } }
+          $item = $items.GetNext()
+        }
+      } catch {}
+      finally { foreach ($com in @($items, $folder)) { if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($com) } } }
+    }
+  }
+  return @($list)
 }
 function Hyper-People([string]$query, [int]$limit, [bool]$lookup) {
   $searcher = $null; $results = $null; $root = $null
+  $adList = New-Object Collections.ArrayList
+  $adSeen = New-Object 'Collections.Generic.HashSet[string]'
+  $adFailed = $false
   try {
     Add-Type -AssemblyName System.DirectoryServices
     $root = New-Object DirectoryServices.DirectoryEntry
@@ -374,9 +558,15 @@ function Hyper-People([string]$query, [int]$limit, [bool]$lookup) {
     $searcher.SizeLimit = $limit; $searcher.ServerTimeLimit = [timespan]::FromSeconds(5); $searcher.ClientTimeout = [timespan]::FromSeconds(7)
     foreach ($field in @('displayName','mail','title','department','telephoneNumber','physicalDeliveryOfficeName','company','thumbnailPhoto')) { [void]$searcher.PropertiesToLoad.Add($field) }
     $results = $searcher.FindAll()
-    foreach ($result in $results) { Hyper-AdPerson $result }
-  } catch { Hyper-GalPeople $query }
+    foreach ($result in $results) { Hyper-AddPerson $adList $adSeen (Hyper-AdPerson $result) $limit }
+  } catch { $adFailed = $true }
   finally { if ($results) { $results.Dispose() }; if ($searcher) { $searcher.Dispose() }; if ($root) { $root.Dispose() } }
+  if ($adList.Count -gt 0) { return @($adList) }
+  try { return @(Hyper-OutlookPeople $query $limit $lookup) }
+  catch {
+    if ($adFailed) { throw 'Employee directory is unavailable. Connect to the company network or VPN and try again.' }
+    return @()
+  }
 }
 
 while ($null -ne ($line = [Console]::In.ReadLine())) {

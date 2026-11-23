@@ -147,10 +147,10 @@ it('settings edit instructions/model, preserve catalog tool order and apply glob
   expect(renderToStaticMarkup(model)).toContain('Endpoint default (gpt-x)');
   model.props.onChange('gpt-y'); expect(onChange.mock.calls[1][0]).toBe('gpt-y');
   all(form, element => element.props.type === 'radio')[1].props.onChange();
-  expect(onChange.mock.calls[2][0].policy).toEqual({ outlook_list_events: 'allow', outlook_get_event: 'allow', outlook_list_messages: 'ask', outlook_read_message: 'ask' });
-  const tool = all(form, element => element.props.label === 'Create events and meetings')[0];
+  expect(onChange.mock.calls[2][0].policy).toEqual({ outlook_list_events: 'allow', outlook_get_event: 'allow', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'ask' });
+  const tool = all(form, element => element.props.label === 'Edit meetings')[0];
   tool.props.onChange(true);
-  expect(onChange.mock.calls[3][0].bots[0].tools).toEqual(['outlook_list_events', 'outlook_get_event', 'outlook_create_event', 'outlook_list_messages', 'outlook_read_message']);
+  expect(onChange.mock.calls[3][0].bots[0].tools).toEqual(['outlook_list_events', 'outlook_get_event', 'outlook_create_event', 'outlook_update_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people', 'outlook_send_message']);
 });
 it('mail write card shows the approved lines and offers Send or Save to Drafts', () => {
   const onDecide = vi.fn();

@@ -32,6 +32,7 @@ describe('SettingsMenu visibility', () => {
     expect(visibleSettingsPages({ workspaceType: WorkspaceTypePB.LocalW, role: AFRolePB.Owner, isBillingEnabled: true, debug: false })).toEqual([
       SettingsPage.account,
       SettingsPage.appearance,
+      SettingsPage.desktop,
       SettingsPage.manageData,
       SettingsPage.archived,
       SettingsPage.notifications,
@@ -42,10 +43,11 @@ describe('SettingsMenu visibility', () => {
     ]);
   });
 
-  it('server members see Appearance, then Workspace, then Members; debug adds Feature Flags', () => {
+  it('server members see Appearance, Desktop, then Workspace, then Members; debug adds Feature Flags', () => {
     expect(visibleSettingsPages({ workspaceType: WorkspaceTypePB.ServerW, role: AFRolePB.Member, isBillingEnabled: false, debug: true })).toEqual([
       SettingsPage.account,
       SettingsPage.appearance,
+      SettingsPage.desktop,
       SettingsPage.workspace,
       SettingsPage.member,
       SettingsPage.manageData,

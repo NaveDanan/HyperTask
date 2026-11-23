@@ -17,7 +17,7 @@ import {
   UserEventSetAppearanceSetting,
   UserEventSetDateTimeSettings,
 } from '@/backend/events';
-import { resolveLocale, setLocale as applyLocale } from '@/i18n';
+import { HYPER_OVERLAY_LOCALE_KEY, resolveLocale, setLocale } from '@/i18n';
 import { KVKeys, KeyValueStorage } from '@/startup/kv';
 import { applyTheme, type Brightness } from './theme';
 import { builtInColorSchemes } from './color-schemes';
@@ -214,6 +214,11 @@ useAppearanceStore.subscribe(render);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) =>
   useAppearanceStore.setState({ systemBrightness: event.matches ? 'dark' : 'light' }),
 );
+
+async function applyLocale(locale: string): Promise<void> {
+  await setLocale(locale);
+  try { localStorage.setItem(HYPER_OVERLAY_LOCALE_KEY, locale); } catch { /* Storage can be unavailable. */ }
+}
 
 /**
  * InitAppWidgetTask: loads the appearance and date/time settings. Startup fails if either

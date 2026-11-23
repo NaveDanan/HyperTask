@@ -31,7 +31,7 @@ The Hyper-Bot sidebar footer shows compact Model, Outlook and Jira connection pi
 
 1. **Approval before every connector call.**
    - **The card.** A request card ("Waiting for you") shows the bot, the tool, Read or Write, a summary, the exact arguments, and **To:** the destination. The destination is "Outlook calendar on this PC" for a calendar read. For a Jira write it is "Jira project OPS at https://jira.example as nave", or "as token" for a personal access token. Nothing reaches Outlook or Jira until the request is approved.
-   - **Policy.** Calendar reads and mail reads can each be pre-allowed in **Details → Tools → Read policies** (applies to all bots). Every write always asks.
+   - **Policy.** Calendar reads, mail reads and directory searches ask for approval by default. You can pre-approve each type of read in **Details → Tools → Read policies**, which applies to all bots. The bot's model receives the results of approved reads. Every write always asks.
    - **Checked again just before the call.**
      - The destination is resolved again. If it changed (another project, server, Jira user or HyperTask account), the request goes back to *pending* with the new destination, and the owner must approve it again. A rotated token for the same destination is not a change.
      - If the destination cannot be resolved, the request is *failed* and nothing is sent.

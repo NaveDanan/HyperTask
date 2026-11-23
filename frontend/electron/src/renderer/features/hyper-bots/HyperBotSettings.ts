@@ -14,7 +14,10 @@ export function hyperBotCreate(settings: HyperBotsSettings, input: Pick<HyperBot
   const instructions = input.mode === 'teammate'
     ? 'You are ' + name + ', a teammate bot in HyperTask. Work with the other bots and hand off when another bot fits better.'
     : 'You are ' + name + ", the owner's personal assistant in HyperTask. Be concise and ask before acting.";
-  const bot: HyperBotConfig = { ...input, name, id, instructions, model: '', tools: ['outlook_list_events', 'outlook_get_event', 'outlook_list_messages', 'outlook_read_message'] };
+  const tools: HyperBotsToolName[] = input.mode === 'teammate'
+    ? ['outlook_list_events', 'outlook_get_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people']
+    : ['outlook_list_events', 'outlook_get_event', 'outlook_create_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people', 'outlook_send_message'];
+  const bot: HyperBotConfig = { ...input, name, id, instructions, model: '', tools };
   // A fresh room id: messages stay stored under a deleted bot's room, so a new bot with the same name must not reuse it.
   const room = { id: hyperBotUniqueId('dm-' + id + '-' + crypto.randomUUID().slice(0, 4), settings.rooms.map(row => row.id), 32, 'dm'), name, kind: 'direct' as const, botIds: [id] };
   return { bot, settings: hyperBotsWithDirectRooms({ ...settings, bots: [...settings.bots, bot], rooms: [...settings.rooms, room] }) };
@@ -43,6 +46,7 @@ export function hyperBotDescription(bot: HyperBotConfig) {
   const readMail = bot.tools.some(name => name === 'outlook_list_messages' || name === 'outlook_read_message');
   const parts: string[] = [];
   if (readCalendar || readMail) parts.push('Reads your Outlook ' + (readCalendar && readMail ? 'calendar and mail' : readCalendar ? 'calendar' : 'mail'));
+  if (bot.tools.includes('outlook_search_people')) parts.push('Searches your employee directory');
   if (bot.tools.some(name => HYPER_BOTS_TOOLS[name].group === 'outlook-calendar' && HYPER_BOTS_TOOLS[name].access === 'write')) parts.push('Manages Outlook meetings');
   if (bot.tools.some(name => HYPER_BOTS_TOOLS[name].group === 'outlook-mail' && HYPER_BOTS_TOOLS[name].access === 'write')) parts.push('Drafts and sends Outlook mail');
   if (bot.tools.includes('jira_create_issue')) parts.push('Creates Jira issues');

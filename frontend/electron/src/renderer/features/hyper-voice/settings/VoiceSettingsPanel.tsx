@@ -1314,6 +1314,18 @@ export function VoiceSettingsPanel({ connectionsOnly = false }: { connectionsOnl
           onMicrophoneAccess={() => void refreshMicrophones()}
         />
         <SettingsRow
+          {...setting("hyper-bot-voice-hotkey")}
+          title={gt("Global Hyper-Bot voice assistant")}
+          description={gt(
+            "Press Ctrl+Alt+Space from anywhere—even when HyperTask is in the system tray—to open the floating voice sphere for English and Hebrew commands. For offline Hebrew + English, choose Whisper Large v3 Turbo below (or a cloud provider).",
+          )}
+          control={
+            <Badge variant="outline" className="font-mono text-xs">
+              Ctrl+Alt+Space
+            </Badge>
+          }
+        />
+        <SettingsRow
           {...setting("dictation-shortcut-mode")}
           title={gt("Dictation shortcut")}
           description={`${messages(SHORTCUT_MODES[settings.voiceShortcutMode].hint)}.`}

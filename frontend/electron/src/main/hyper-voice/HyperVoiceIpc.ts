@@ -27,6 +27,7 @@ import { HyperBotsEngineError, HyperBotsOpenAIEngine, hyperBotsReadEndpoint } fr
 import { unprotect } from '../dpapi';
 import { listEndpointModels } from '../openai-endpoint';
 import { SettingsError, toIpcResult } from '../settings-error';
+import { hyperTrustedWindowAdapter, type HyperTrustedWindowRegistry } from '../HyperTrustedWindows';
 import * as CloudSpeech from './CloudSpeech';
 import { createHyperVoiceRuntime } from './HyperVoiceRuntime';
 import * as SpeechPostProcessing from './postProcessing';
@@ -124,6 +125,7 @@ export interface HyperVoiceMain {
 
 export function registerHyperVoiceIpc(options: {
   window: () => BrowserWindow | null;
+  trustedWindows?: HyperTrustedWindowRegistry;
   /** `<userData>`: settings and models live in its hyper-voice folder. */
   userData: string;
   /** Where Settings → AI keeps local_ai/openai-endpoint.json. */
@@ -164,7 +166,8 @@ export function registerHyperVoiceIpc(options: {
   void speech().catch((error: unknown) => console.error('[hyper-voice] speech runtime could not start', error));
   readSettings = async () => run((await settingsService()).getSettings);
 
-  const trusted = (event: IpcMainEvent | IpcMainInvokeEvent) => event.sender === options.window()?.webContents && event.senderFrame === event.sender.mainFrame;
+  const trustedRegistry = options.trustedWindows ?? hyperTrustedWindowAdapter(options.window);
+  const trusted = (event: IpcMainEvent | IpcMainInvokeEvent) => trustedRegistry.isTrustedSender(event);
   const handle = <T>(channel: string, work: (event: IpcMainInvokeEvent, ...args: unknown[]) => Promise<T>) =>
     ipcMain.handle(channel, (event, ...args) => toIpcResult(async () => {
       if (!trusted(event)) throw new SettingsError('state', 'Untrusted voice caller refused.');

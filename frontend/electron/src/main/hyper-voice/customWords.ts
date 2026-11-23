@@ -15,13 +15,29 @@ export function makeSpeechTextCorrector(
 ) {
   const MATCH_THRESHOLD = 0.18;
 
+  const stripHebrewNiqqud = (value: string) => value.replace(/[\u0591-\u05C7]/gu, "");
+  const isHebrewText = (value: string) => /[\u05D0-\u05EA]/u.test(value);
+  const normalizeHebrewKey = (value: string) =>
+    stripHebrewNiqqud(value)
+      .replace(/ך/g, "כ")
+      .replace(/ם/g, "מ")
+      .replace(/ן/g, "נ")
+      .replace(/ף/g, "פ")
+      .replace(/ץ/g, "צ")
+      .replace(/יי+/g, "י")
+      .replace(/וו+/g, "ו");
+  const hebrewConsonantSkeleton = (value: string) =>
+    value.length >= 2 ? value[0]! + value.slice(1, -1).replace(/[וי]/g, "") + value[value.length - 1]! : value;
+  const HEBREW_PROCLITICS = /^(?:(?:ול|ומ|וב|וה|של|שמ|שב|שה|כל|כמ|כב|כה|ל|מ|ב|ו|ה|ש|כ)-?)/u;
+
   const matchKey = (value: string) =>
-    [...value]
+    [...stripHebrewNiqqud(value)]
       .filter((character) => /[\p{L}\p{N}]/u.test(character))
       .join("")
       .toLocaleLowerCase();
 
   const isAsciiKey = (value: string) => /^[a-z0-9]+$/i.test(value);
+  const isMatchableKey = (value: string) => value.length > 0 && /^[\p{L}\p{N}]+$/u.test(value);
 
   const soundex = (value: string) => {
     const upper = value.toUpperCase();
@@ -64,6 +80,7 @@ export function makeSpeechTextCorrector(
   };
 
   const preserveCase = (original: string, replacement: string) => {
+    if (isHebrewText(replacement)) return replacement;
     const letters = [...original].filter((character) => /\p{L}/u.test(character));
     if (letters.length > 0 && letters.every((character) => character === character.toUpperCase()))
       return replacement.toUpperCase();
@@ -75,7 +92,14 @@ export function makeSpeechTextCorrector(
     return replacement;
   };
 
-  type CustomWordKey = { readonly word: string; readonly key: string };
+  type CustomWordKey = {
+    readonly word: string;
+    readonly key: string;
+    readonly ascii: boolean;
+    readonly wordCount: number;
+    readonly hebrewKey?: string;
+    readonly hebrewSkeleton?: string;
+  };
 
   const customWordKeys = (words: readonly string[]): CustomWordKey[] =>
     words.flatMap((word) => {
@@ -84,24 +108,83 @@ export function makeSpeechTextCorrector(
       const keys = sources.flatMap((source) => {
         const key = matchKey(source);
         // A term that loses its symbols to one letter (C# -> c) would claim every standalone letter.
-        const lostSymbols = key !== source.replace(/\s+/gu, "").toLocaleLowerCase();
+        const lostSymbols = key !== stripHebrewNiqqud(source).replace(/\s+/gu, "").toLocaleLowerCase();
         return key.length < 2 && lostSymbols ? [] : [key];
       });
-      return [...new Set(keys)].filter(isAsciiKey).map((key) => ({ word, key }));
+      const wordCount = word.trim().split(/\s+/u).filter(Boolean).length;
+      return [...new Set(keys)]
+        .filter(isMatchableKey)
+        .map((key) => {
+          const hebrew = isHebrewText(key);
+          const hebrewKey = hebrew ? normalizeHebrewKey(key) : undefined;
+          return {
+            word,
+            key,
+            ascii: isAsciiKey(key),
+            wordCount,
+            ...(hebrewKey ? { hebrewKey, hebrewSkeleton: hebrewConsonantSkeleton(hebrewKey) } : {}),
+          };
+        });
     });
 
   const possessive = /['’]s$/iu;
   const innerPossessives = (value: string) => value.match(/['’]s(?=\s)/giu)?.length ?? 0;
-  type Match = { readonly word: string; readonly score: number; readonly suffix: string };
+  type Match = { readonly word: string; readonly score: number; readonly prefix: string; readonly suffix: string };
   const bestMatch = (phrase: string, keys: readonly CustomWordKey[]) => {
     const key = matchKey(phrase);
     const suffix = phrase.match(possessive)?.[0] ?? "";
     const stem = suffix ? key.slice(0, -1) : key;
-    if (!isAsciiKey(stem) || stem.length > 50) return undefined;
+    if (!isMatchableKey(stem) || stem.length > 50) return undefined;
+    const phraseIsHebrew = isHebrewText(phrase);
+    const phraseWordCount = phrase.trim().split(/\s+/u).filter(Boolean).length;
     const inner = innerPossessives(phrase);
     let best: Match | undefined;
     for (const custom of keys) {
       if (inner > 0 && inner > innerPossessives(custom.word)) continue;
+      if (custom.hebrewKey) {
+        if (!phraseIsHebrew || phraseWordCount !== custom.wordCount) continue;
+        // Try both full phrase and stripping a leading Hebrew proclitic (ל/מ/ב/ו/ה/ש/כ + optional hyphen) so "לאביי" -> "לאבי".
+        const prefixMatch = phrase.match(HEBREW_PROCLITICS);
+        const candidates: Array<{ readonly prefix: string; readonly raw: string }> = [
+          { prefix: "", raw: phrase },
+        ];
+        if (prefixMatch && prefixMatch[0].length < phrase.length) {
+          const stripped = phrase.slice(prefixMatch[0].length);
+          if (matchKey(stripped).length >= 2) {
+            candidates.push({ prefix: prefixMatch[0], raw: stripped });
+          }
+        }
+        for (const attempt of candidates) {
+          const candidateKey = matchKey(attempt.raw);
+          if (!candidateKey) continue;
+          const normCandidate = normalizeHebrewKey(candidateKey);
+          const normCustom = custom.hebrewKey;
+          let score: number | undefined;
+          if (normCandidate === normCustom) {
+            score = attempt.prefix ? 0.01 : 0;
+          } else if (
+            custom.hebrewSkeleton &&
+            Math.min(normCandidate.length, normCustom.length) >= 3 &&
+            Math.abs(normCandidate.length - normCustom.length) === 1 &&
+            hebrewConsonantSkeleton(normCandidate) === custom.hebrewSkeleton
+          ) {
+            // Ktiv male / haser single matres lectionis difference (e.g. "מושה" <-> "משה") without colliding "אני"/"אבי".
+            score = 0.08 + (attempt.prefix ? 0.01 : 0);
+          } else if (
+            Math.min(normCandidate.length, normCustom.length) >= 4 &&
+            Math.abs(normCandidate.length - normCustom.length) <= Math.max(Math.max(normCandidate.length, normCustom.length) * 0.25, 1)
+          ) {
+            const longest = Math.max(normCandidate.length, normCustom.length);
+            const distance = editDistance(normCandidate, normCustom) / longest;
+            if (distance < MATCH_THRESHOLD) score = distance + (attempt.prefix ? 0.01 : 0);
+          }
+          if (score !== undefined && (!best || score < best.score)) {
+            best = { word: custom.word, score, prefix: attempt.prefix, suffix: "" };
+          }
+        }
+        continue;
+      }
+      if (!custom.ascii && phraseIsHebrew) continue;
       const keepSuffix = suffix !== "" && !possessive.test(custom.word);
       const candidate = keepSuffix ? stem : key;
       if (Math.min(candidate.length, custom.key.length) < 4 && candidate !== custom.key) continue;
@@ -112,7 +195,7 @@ export function makeSpeechTextCorrector(
       const score =
         phonetic && soundex(candidate) === soundex(custom.key) ? distance * 0.3 : distance;
       if (score < MATCH_THRESHOLD && (!best || score < best.score))
-        best = { word: custom.word, score, suffix: keepSuffix ? suffix : "" };
+        best = { word: custom.word, score, prefix: "", suffix: keepSuffix ? suffix : "" };
     }
     return best;
   };
@@ -156,7 +239,7 @@ export function makeSpeechTextCorrector(
       const first = tokens[index]!;
       output.push(
         text.slice(cursor, first.start),
-        preserveCase(first.value, best.word),
+        best.prefix + preserveCase(first.value, best.word),
         best.suffix,
       );
       cursor = tokens[index + best.count - 1]!.end;

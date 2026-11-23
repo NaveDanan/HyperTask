@@ -7,6 +7,7 @@ import { useAppStore } from '@/startup/app-store';
 export enum SettingsPage {
   account = 'account',
   appearance = 'appearance',
+  desktop = 'desktop',
   workspace = 'workspace',
   manageData = 'manageData',
   shortcuts = 'shortcuts',
@@ -71,7 +72,7 @@ export function visibleSettingsPages({
   debug: boolean;
 }): SettingsMenuPage[] {
   const serverMember = workspaceType === WorkspaceTypePB.ServerW && role !== null && role !== AFRolePB.Guest;
-  const pages: SettingsMenuPage[] = [SettingsPage.account, SettingsPage.appearance];
+  const pages: SettingsMenuPage[] = [SettingsPage.account, SettingsPage.appearance, SettingsPage.desktop];
   // The Workspace page holds the name, icon and Delete/Leave, which a local workspace does not have.
   if (workspaceType !== WorkspaceTypePB.LocalW) pages.push(SettingsPage.workspace);
   // FeatureFlag.membersSettings is always on (released flag).

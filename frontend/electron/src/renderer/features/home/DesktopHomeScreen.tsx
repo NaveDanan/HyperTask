@@ -22,7 +22,8 @@ import { tabsActions, useTabsStore } from '../tabs/tabs-store';
 import { homeSettingActions, useHomeLayout } from './home-setting-store';
 import { startHome, useHomeStore } from './home-store';
 import { useHomeHotKeys } from './hotkeys';
-import { useSwitchToSpace } from './notifiers';
+import { openSettings, useSwitchToSpace } from './notifiers';
+import { hyperBotRememberRoom } from '@/features/hyper-bots/HyperBotSettings';
 import { QuestionBubble } from './QuestionBubble';
 import { SidebarResizer } from './SidebarResizer';
 import { isSpace } from '../view/view-ext';
@@ -74,6 +75,23 @@ function HomeBody({ user, setting }: { user: UserProfilePB; setting: WorkspaceLa
     homeSettingActions.initialize();
     return startHome(user, setting);
   }, [user, setting]);
+
+  useEffect(() => {
+    return window.hypertask.desktop?.onMainEvent?.((event) => {
+      if (event.type !== 'navigate') return;
+      if (event.route === 'settings') {
+        openSettings.emit(event.settingsPage);
+        return;
+      }
+      if (event.route === 'hyper-bots') {
+        if (event.roomId) hyperBotRememberRoom(String(user.id), event.roomId);
+        tabsActions.openPlugin(localToolPlugin('bots'));
+        if (event.roomId) {
+          window.dispatchEvent(new CustomEvent('hyper-bots:select-room', { detail: { roomId: event.roomId } }));
+        }
+      }
+    });
+  }, [user.id]);
 
   useEffect(() => {
     const update = () => {

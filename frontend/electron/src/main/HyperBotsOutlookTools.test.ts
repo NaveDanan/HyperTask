@@ -18,7 +18,7 @@ const event = (extra: object = {}) => ({
   organizer: 'Nave', isOrganizer: true, responseStatus: 1, attendees: [{ name: 'Lee', email: 'lee@corp.example', type: 1, response: 3 }], attendeeCount: 1,
   busyStatus: 2, isRecurring: false, recurrenceState: 0, isCancelled: false, isPrivate: false, joinUrl: null, lastModified: '2026-11-17T06:00:00.000Z', ...extra,
 });
-function setup(over: Record<string, (args: any) => unknown> = {}) {
+function setup(over: Record<string, (args: any) => unknown> = {}, cachedPerson?: (email: string) => unknown) {
   const ops: Record<string, (args: any) => unknown> = {
     'mail.account': () => account, 'mail.read': () => mail(), 'event.get': () => event(), list: () => [event()],
     'mail.list': () => [mail(), mail({ id: 'EF56', protected: true, preview: '' })],
@@ -27,7 +27,7 @@ function setup(over: Record<string, (args: any) => unknown> = {}) {
     create: a => event({ subject: a.subject }), update: () => event({ subject: 'Moved' }), 'event.forward': a => ({ mode: 'organizer', to: a.to }), ...over,
   };
   const request = vi.fn(async (op: string, args: unknown) => ops[op]!(args));
-  const tools = Object.fromEntries(hyperBotsOutlookTools({ request } as never).map(tool => [tool.name, tool]));
+  const tools = Object.fromEntries(hyperBotsOutlookTools({ request, cachedPerson } as never).map(tool => [tool.name, tool]));
   return { request, tools, tool: (name: string) => tools[name]! };
 }
 const failsWith = async (run: Promise<unknown>, kind: string, pattern?: RegExp) => {
@@ -40,8 +40,8 @@ const failsWith = async (run: Promise<unknown>, kind: string, pattern?: RegExp) 
 it('offers every Outlook tool once, reads as reads and writes as writes', () => {
   const { tools } = setup();
   expect(Object.keys(tools).sort()).toEqual(['outlook_create_event', 'outlook_forward_event', 'outlook_forward_message', 'outlook_get_event', 'outlook_list_events',
-    'outlook_list_messages', 'outlook_read_message', 'outlook_reply_message', 'outlook_respond_meeting', 'outlook_send_message', 'outlook_update_event']);
-  for (const name of ['outlook_list_events', 'outlook_get_event', 'outlook_list_messages', 'outlook_read_message']) expect(tools[name]!.access).toBe('read');
+    'outlook_list_messages', 'outlook_read_message', 'outlook_reply_message', 'outlook_respond_meeting', 'outlook_search_people', 'outlook_send_message', 'outlook_update_event']);
+  for (const name of ['outlook_list_events', 'outlook_get_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people']) expect(tools[name]!.access).toBe('read');
   expect(Object.values(tools).filter(tool => tool.access === 'write')).toHaveLength(7);
 });
 
@@ -260,4 +260,55 @@ it('a message Outlook could not fully read (no content hash) cannot be replied t
   await failsWith(forward.bind!(forward.parse({ id: ID, to: ['lee@corp.example'] }), signal), 'refused', /could not read all of this message/);
   expect(request).not.toHaveBeenCalledWith('mail.reply', expect.anything());
   expect(request).not.toHaveBeenCalledWith('mail.forward', expect.anything());
+});
+
+it('outlook_search_people resolves English and Hebrew directory queries, strips photo bytes, and handles errors', async () => {
+  const aaron = { name: 'Aaron Mitchell', email: 'aaron.mitchell@corp.example', title: 'Staff Engineer', department: 'Platform', phone: '123', office: 'TLV', company: 'HyperTask', photo: 'data:image/png;base64,AAAA', source: 'ad' as const };
+  const israel = { name: 'ישראל ישראלי', email: 'israel@corp.example', title: 'מנהל מוצר', department: 'מוצר', phone: '', office: '', company: '', source: 'outlook' as const };
+  const { tool } = setup({
+    'people.search': a => {
+      if (a.query === 'Aaron Mitchel' || a.query === 'Mitchell') return [aaron];
+      if (a.query === 'ישראל ישראלי') return [israel];
+      return [];
+    },
+  });
+  const search = tool('outlook_search_people');
+  expect(await search.bind!({ query: 'Aaron Mitchel' }, signal)).toEqual({ destination: 'Employee & Outlook directory on this PC', fingerprint: 'outlook:local-directory' });
+  const en = await search.run(search.parse({ query: 'Aaron Mitchel' }), signal) as Array<Record<string, unknown>>;
+  expect(en).toEqual([{ name: 'Aaron Mitchell', email: 'aaron.mitchell@corp.example', title: 'Staff Engineer', department: 'Platform', office: 'TLV', company: 'HyperTask', source: 'ad' }]);
+  expect(en[0]).not.toHaveProperty('photo');
+
+  const he = await search.run(search.parse({ query: 'לישראל ישראלי' }), signal) as Array<Record<string, unknown>>;
+  expect(he).toEqual([{ name: 'ישראל ישראלי', email: 'israel@corp.example', title: 'מנהל מוצר', department: 'מוצר', source: 'outlook' }]);
+
+  const unavailable = setup({ 'people.search': () => { throw new SettingsError('state', 'Employee directory is unavailable.'); } }).tool('outlook_search_people');
+  await failsWith(unavailable.run(unavailable.parse({ query: 'Aaron' }), signal), 'refused', /unavailable/);
+});
+
+it('enriches create_event and send_message approval cards with Display Name, email, title and department when cached', async () => {
+  const people: Record<string, unknown> = {
+    'aaron.mitchell@corp.example': { name: 'Aaron Mitchell', email: 'aaron.mitchell@corp.example', title: 'Staff Engineer', department: 'Platform', phone: '', office: '', company: '', source: 'ad' },
+    'israel@corp.example': { name: 'ישראל ישראלי', email: 'israel@corp.example', title: 'מנהל פרויקט', department: 'הנדסה', phone: '', office: '', company: '', source: 'outlook' },
+  };
+  const { request, tool } = setup({}, (email) => people[email] ?? null);
+  const create = tool('outlook_create_event');
+  const createBound = await create.bind!(create.parse({
+    subject: 'Sync', start: '2026-11-18T18:00:00Z', end: '2026-11-18T18:30:00Z',
+    attendees: ['aaron.mitchell@corp.example', 'israel@corp.example'],
+  }), signal);
+  const invites = createBound.card?.find(r => r.label === 'Invites')?.value ?? '';
+  expect(invites).toContain('Aaron Mitchell');
+  expect(invites).toContain('<aaron.mitchell@corp.example>');
+  expect(invites).toContain('Staff Engineer · Platform');
+  expect(invites).toContain('ישראל ישראלי');
+  expect(invites).toContain('<israel@corp.example>');
+
+  const send = tool('outlook_send_message');
+  const sendBound = await send.bind!(send.parse({
+    to: ['aaron.mitchell@corp.example'], cc: ['unknown@vendor.example'], subject: 'Hi', body: 'Hello',
+  }), signal);
+  expect(sendBound.card?.find(r => r.label === 'To')?.value).toContain('Aaron Mitchell');
+  expect(sendBound.card?.find(r => r.label === 'Cc')?.value).toBe('unknown@vendor.example');
+  expect(sendBound.card?.find(r => r.label === 'Outside corp.example')?.value).toBe('unknown@vendor.example');
+  expect(request.mock.calls.map(([op]) => op)).toEqual(['mail.account', 'mail.account']);
 });

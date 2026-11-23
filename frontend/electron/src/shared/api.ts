@@ -5,6 +5,8 @@ import type { HyperOpenBotServiceAction, HyperOpenBotServiceState } from './Hype
 import type { HyperOutlookColorId } from './HyperOutlookColor';
 import type { HyperNodEvent, HyperNodHistoryCursor, HyperNodHistoryPage, HyperNodSendInput, HyperNodSnapshot, HyperNodStatus, HyperNodSubmitted } from './HyperNod';
 import type { HyperBotsApi } from './HyperBots';
+import type { HyperDesktopApi } from './HyperDesktop';
+import type { HyperAssistantApi } from './HyperAssistant';
 // The API the preload script exposes to the renderer as `window.hypertask`.
 
 export interface CoreReply {
@@ -162,6 +164,10 @@ export interface HypertaskApi {
   hyperNod: HyperNodApi;
   /** HyperBots: bots in rooms. Main owns the runtime, storage, approvals and connectors. */
   hyperBots: HyperBotsApi;
+  /** Desktop shell controls: OS auto-start, tray, global voice hotkey, and floating overlay lifecycle. */
+  desktop: HyperDesktopApi;
+  /** Personal voice assistant pipeline: EN+HE bot/person resolution, dispatch, and inline approval. */
+  assistant: HyperAssistantApi;
   /** Voice input: local speech models, cloud transcription and transcript cleanup, ported from t3code. */
   hyperVoice: import('./hyper-voice/api').HyperVoiceApi;
   hyperOpenBot: {

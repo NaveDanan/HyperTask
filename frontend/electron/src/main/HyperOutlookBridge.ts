@@ -52,6 +52,13 @@ export class HyperOutlookBridge {
     this.peopleCache.delete(key); this.peopleCache.set(key, { value, expires: Date.now() + 300000 });
     while (this.peopleCache.size > 200) this.peopleCache.delete(this.peopleCache.keys().next().value!);
   }
+  /** Optional approval-card details must never start an Outlook request. */
+  cachedPerson(email: string): z.output<(typeof HyperOutlookValues)['people.lookup']> {
+    const key = 'people.lookup:' + JSON.stringify({ email: email.trim().toLowerCase() });
+    const cached = this.peopleCache.get(key);
+    if (!cached || cached.expires <= Date.now()) return null;
+    return cached.value as z.output<(typeof HyperOutlookValues)['people.lookup']>;
+  }
   private start() {
     if (this.stopped) throw new SettingsError('state', 'Outlook connection has stopped.');
     if (process.platform !== 'win32') throw new SettingsError('unsupported', HyperOutlookUnavailable);
@@ -109,7 +116,7 @@ export class HyperOutlookBridge {
       if (this.stopped) { reject(new SettingsError('state', 'Outlook connection has stopped.')); return; }
       if (process.platform !== 'win32') { reject(new SettingsError('unsupported', HyperOutlookUnavailable)); return; }
       if (this.running === false && !op.startsWith('people.')) { reject(new SettingsError('state', HyperOutlookClosed)); return; }
-      const key = op.startsWith('people.') ? op + ':' + JSON.stringify(valid.data).toLocaleLowerCase() : '';
+      const key = op.startsWith('people.') ? op + ':' + JSON.stringify(valid.data).toLowerCase() : '';
       const cached = this.peopleCache.get(key);
       if (cached && cached.expires > Date.now()) { this.peopleCache.delete(key); this.peopleCache.set(key, cached); resolve(cached.value as z.output<(typeof HyperOutlookValues)[K]>); return; }
       if (key) {
