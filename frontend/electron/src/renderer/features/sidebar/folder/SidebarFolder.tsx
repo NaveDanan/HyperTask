@@ -15,7 +15,6 @@ import {
   filterHyperProjectViews,
   hyperProjectsFilterActions,
   isHyperProjectsFilterActive,
-  useHyperProjectsFilterStore,
   type HyperProjectsFilterCriteria,
 } from '../stores/HyperProjectsFilter';
 import { sectionsActions, useSectionsStore } from '../stores/sections-store';
@@ -41,18 +40,13 @@ export function openFromSidebar(view: ViewPB, event: { ctrlKey: boolean }) {
   tabsActions.openView(view);
 }
 
-export function SidebarFolder() {
+export function SidebarFolder({ projectFilter: activeFilter }: { projectFilter?: HyperProjectsFilterCriteria }) {
   const favorites = useFavoriteStore((s) => s.views);
   const pinnedFavorites = useFavoriteStore((s) => s.pinnedViews);
   const section = useSectionsStore((s) => s.section);
   const isCollab = useWorkspaceStore((s) => s.isCollabWorkspaceOn);
-  const query = useHyperProjectsFilterStore((s) => s.query);
-  const layout = useHyperProjectsFilterStore((s) => s.layout);
   const { tr } = useTr();
-
-  const criteria: HyperProjectsFilterCriteria = { query, layout };
-  const filterActive = isHyperProjectsFilterActive(criteria);
-  const activeFilter = filterActive ? criteria : undefined;
+  const filterActive = isHyperProjectsFilterActive(activeFilter);
 
   const filteredFavorites = filterActive
     ? filterHyperProjectViews(favorites.map((f) => f.item), activeFilter)

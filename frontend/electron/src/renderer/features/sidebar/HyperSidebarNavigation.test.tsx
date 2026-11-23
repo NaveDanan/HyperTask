@@ -35,6 +35,7 @@ import { ViewBackendService } from '@/features/view/view-service';
 import { tabsActions } from '@/features/tabs/tabs-store';
 import { HyperSidebarRail } from './HyperSidebarRail';
 import { SidebarBody } from './Sidebar';
+import { SidebarFolder } from './folder/SidebarFolder';
 import {
   HyperProjectsFilterBar,
   HyperSidebarActionBar,
@@ -201,12 +202,13 @@ describe('SidebarBody navigation, Nod removal, and Projects filtering', () => {
     });
 
     hyperProjectsFilterActions.setLayout('board');
-    const filteredHtml = renderHtml(<SidebarBody user={makeUser()} />);
+    expect(renderHtml(<SidebarBody user={makeUser()} />)).toContain('Searching projects');
+    const filteredHtml = renderHtml(<SidebarFolder projectFilter={{ query: '', layout: 'board' }} />);
     expect(filteredHtml).toContain('Sprint Board');
     expect(filteredHtml).not.toContain('Alpha Roadmap');
 
     hyperProjectsFilterActions.setQuery('nonexistent');
-    const emptyHtml = renderHtml(<SidebarBody user={makeUser()} />);
+    const emptyHtml = renderHtml(<SidebarFolder projectFilter={{ query: 'nonexistent', layout: 'board' }} />);
     expect(emptyHtml).toContain('No matching projects');
     expect(emptyHtml).toContain('Clear filter');
 

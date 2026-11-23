@@ -398,6 +398,8 @@
       "filter": "Filter projects",
       "filterType": "Filter projects by type",
       "clear": "Clear filter",
+      "loading": "Searching projects…",
+      "incomplete": "Could not search every project. Showing available matches.",
       "empty": "No matching projects",
       "layout": "Choose project layout",
       "all": "All",

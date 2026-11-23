@@ -27,7 +27,6 @@ import {
   filterHyperProjectViews,
   hyperProjectsFilterActions,
   isHyperProjectsFilterActive,
-  useHyperProjectsFilterStore,
   type HyperProjectsFilterCriteria,
 } from '../stores/HyperProjectsFilter';
 import { useFavoriteStore } from '../stores/favorite-store';
@@ -37,16 +36,12 @@ import { ViewAddButton } from '../view/ViewAddButton';
 import { CurrentSpace, SpacePages, SpacePopup, showCreateSpaceDialog, showManageSpaceDialog } from './SpaceWidgets';
 import { useSpaceState } from './space-context';
 
-export function SidebarSpace() {
+export function SidebarSpace({ projectFilter: activeFilter }: { projectFilter?: HyperProjectsFilterCriteria }) {
   const favorites = useFavoriteStore((s) => s.views);
   const currentWorkspace = useWorkspaceStore((s) => s.currentWorkspace);
-  const query = useHyperProjectsFilterStore((s) => s.query);
-  const layout = useHyperProjectsFilterStore((s) => s.layout);
   const role = workspaceRole(currentWorkspace);
   // Guests see no spaces.
   const shouldShowSpaces = role === AFRolePB.Member || role === AFRolePB.Owner;
-  const criteria: HyperProjectsFilterCriteria = { query, layout };
-  const activeFilter = isHyperProjectsFilterActive(criteria) ? criteria : undefined;
   const filteredFavorites = activeFilter
     ? filterHyperProjectViews(favorites.map((f) => f.item), activeFilter)
     : favorites.map((f) => f.item);

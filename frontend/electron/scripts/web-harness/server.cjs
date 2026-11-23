@@ -25,6 +25,9 @@ const arg = (name, fallback) => {
 };
 const port = Number(arg('port', '5199'));
 const host = arg('host', '127.0.0.1');
+if (host !== '127.0.0.1' && host !== '::1') {
+  throw new Error('The development harness can listen on 127.0.0.1 or ::1 only.');
+}
 const support = path.resolve(arg('support', path.join(root, '.cache/harness-support')));
 fs.mkdirSync(support, { recursive: true });
 
@@ -119,7 +122,15 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css
 
 http
   .createServer(async (req, res) => {
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    const requestHost = req.headers.host ?? '';
+    const origin = 'http://' + requestHost;
+    if (!/^(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i.test(requestHost) ||
+        (req.headers.origin && req.headers.origin !== origin)) {
+      res.writeHead(403);
+      res.end();
+      return;
+    }
+    const url = new URL(req.url, origin);
     if (url.pathname === '/__harness/events') {
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
       res.write(':ok\n\n');
@@ -162,7 +173,7 @@ http
     res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] ?? 'application/octet-stream' });
     res.end(content);
   })
-  .listen(port, host, () => console.log(`harness http://${host}:${port} (support ${support})`));
+  .listen(port, host, () => console.log(`harness http://${host.includes(':') ? '[' + host + ']' : host}:${port} (support ${support})`));
 
 const shutdown = () => core.stop().finally(() => process.exit(0));
 process.on('SIGINT', shutdown);

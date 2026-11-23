@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   filterHyperProjectViews,
   hyperProjectsFilterActions,
+  hyperMatchingProjectPaths,
   isHyperProjectsFilterActive,
   useHyperProjectsFilterStore,
   viewMatchesHyperProjectFilter,
@@ -56,6 +57,19 @@ describe('HyperProjectsFilter pure helpers', () => {
     expect(viewMatchesHyperProjectLayout(grid, 'gantt')).toBe(false);
     expect(viewMatchesHyperProjectLayout(board, 'board')).toBe(true);
     expect(viewMatchesHyperProjectLayout(cal, 'calendar')).toBe(true);
+  });
+
+  it('retains ancestor rows from a flat workspace index while their ViewBlocs load deeper descendants', () => {
+    const child = { ...makeView('child', 'Quarterly'), parentViewId: 'root' };
+    const root = makeView('root', 'Engineering', ViewLayoutPB.Document, { childViews: [child] });
+    const unrelated = makeView('other', 'Marketing');
+    const nested = { ...makeView('nested', 'Launch Gantt', ViewLayoutPB.Grid, { gantt: true }), parentViewId: child.id };
+    const criteria = { query: 'launch', layout: 'gantt' as const };
+    const matchingPathIds = hyperMatchingProjectPaths([root, unrelated, child, nested], criteria);
+
+    expect(filterHyperProjectViews([root, unrelated], { ...criteria, matchingPathIds })).toEqual([root]);
+    expect(filterHyperProjectViews(root.childViews, { ...criteria, matchingPathIds })).toEqual([child]);
+    expect(filterHyperProjectViews([nested], { ...criteria, matchingPathIds })).toEqual([nested]);
   });
 
   it('keeps parent projects when a nested descendant matches and drops non-matching subtrees', () => {
