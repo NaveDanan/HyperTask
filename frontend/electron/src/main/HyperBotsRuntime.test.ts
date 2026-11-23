@@ -48,7 +48,7 @@ function testSettings(over: Partial<HyperBotsSettings> = {}): HyperBotsSettings 
       { id: 'scribe', name: 'Scribe', instructions: 'You file issues.', model: 'm-scribe', tools: ['jira_create_issue'] },
     ],
     rooms: [{ id: 'ops', name: 'Ops', botIds: ['scout', 'scribe'] }],
-    policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'allow' }, ...over,
+    policy: { ...HYPER_BOTS_DEFAULT_SETTINGS.policy }, ...over,
   };
 }
 
@@ -215,6 +215,34 @@ describe('runtime', () => {
     expect(parts).toHaveLength(4);
     expect(parts[2]).toMatch(/Invalid arguments: bad args/);
     expect(parts[3]).toMatch(/not available/);
+  });
+
+  test('directory search waits for the owner by default and can be explicitly pre-approved', async () => {
+    const store = new HyperBotsStore(null);
+    const directory = fakeTool('outlook_search_people', 'read');
+    const engine = fakeEngine((completion) => toolMsgs(completion).length
+      ? say('Done')
+      : tools(call('directory-search', directory.name, { query: 'Dana' })));
+    const runtime = new HyperBotsRuntime({ store, engine, tools: fakeRegistry([directory]), defaultModel: async () => 'm' });
+    const post = () => runtime.post({ roomId: 'dm-scout', clientMessageId: randomUUID(), text: 'Find Dana in the directory' });
+
+    const first = await post();
+    await runtime.idle();
+    expect(directory.runs).toBe(0);
+    expect(engine.calls).toHaveLength(1);
+    const [approval] = store.listApprovals({ runId: first.runs[0].id });
+    expect(approval).toMatchObject({ status: 'pending', decidedBy: null });
+    runtime.decide(approval.id, true);
+    await runtime.idle();
+    expect(directory.runs).toBe(1);
+
+    const settings = runtime.settings();
+    runtime.saveSettings({ ...settings, policy: { ...settings.policy, outlook_search_people: 'allow' } });
+    expect(store.settings()?.policy.outlook_search_people).toBe('allow');
+    const second = await post();
+    await runtime.idle();
+    expect(directory.runs).toBe(2);
+    expect(store.listApprovals({ runId: second.runs[0].id })).toMatchObject([{ status: 'done', decidedBy: 'policy' }]);
   });
 
   test('policy is read at run time: a tool the bot does not have is refused', async () => {
@@ -833,11 +861,11 @@ describe('mail writes', () => {
     expect(t.runtime.decide(a.id, true)).toMatchObject({ status: 'approved', delivery: null, card: null });
   });
 
-  test('an older calendar-read policy also covers reading one event in full and defaults directory search to allow', () => {
+  test('an older calendar-read policy also covers reading one event in full and defaults directory search to ask', () => {
     const store = new HyperBotsStore(null);
     store.saveSettings({ ...testSettings(), policy: { outlook_list_events: 'allow' } } as HyperBotsSettings);
     const runtime = new HyperBotsRuntime({ store, engine: fakeEngine(() => say('ok')), tools: fakeRegistry([]), defaultModel: async () => 'm' });
-    expect(runtime.settings().policy).toEqual({ outlook_list_events: 'allow', outlook_get_event: 'allow', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'allow' });
+    expect(runtime.settings().policy).toEqual({ outlook_list_events: 'allow', outlook_get_event: 'allow', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'ask' });
   });
 });
 

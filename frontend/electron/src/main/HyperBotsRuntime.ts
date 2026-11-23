@@ -165,8 +165,8 @@ const SettingsSchema = z.strictObject({
     kind: z.enum(['direct', 'group']).optional(),
   }), 'Rooms are required.').min(1, 'Add at least one room.').max(24, 'At most 24 rooms.')
     .refine((rooms) => uniq(rooms.map((r) => r.id)), 'Room ids must be unique.'),
-  // Only read tools take a policy; writes always ask. Directory search defaults to allow.
-  policy: z.strictObject(Object.fromEntries(readTools.map((n) => [n, z.enum(['ask', 'allow']).default(n === 'outlook_search_people' ? 'allow' : 'ask')])), 'Policy may only name read tools.'),
+  // Only read tools take a policy; writes always ask.
+  policy: z.strictObject(Object.fromEntries(readTools.map((n) => [n, z.enum(['ask', 'allow']).default('ask')])), 'Policy may only name read tools.'),
 }).superRefine((s, ctx) => {
   const direct = new Set<string>();
   s.rooms.forEach((room, i) => {
@@ -228,7 +228,6 @@ export class HyperBotsRuntime {
     // Older files had one calendar-read policy; reading one event in full is the same kind of read.
     const policy = (raw as { policy?: Record<string, unknown> } | null)?.policy;
     if (policy && !('outlook_get_event' in policy)) settings.policy.outlook_get_event = settings.policy.outlook_list_events;
-    if (policy && !('outlook_search_people' in policy)) settings.policy.outlook_search_people = 'allow';
     return hyperBotsWithDirectRooms(settings);
   }
 

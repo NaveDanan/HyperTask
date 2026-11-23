@@ -72,7 +72,7 @@ export const HYPER_BOTS_DEFAULT_SETTINGS: HyperBotsSettings = {
       instructions: 'You are Scribe. You file concise, actionable Jira issues when asked. Reply with the new issue key.' },
   ],
   rooms: [{ id: 'ops', name: 'Ops', kind: 'group', botIds: ['scout', 'scribe'] }],
-  policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'allow' },
+  policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'ask' },
 };
 
 /** Add direct rooms without mutating settings. Legacy rooms remain group conversations. */
