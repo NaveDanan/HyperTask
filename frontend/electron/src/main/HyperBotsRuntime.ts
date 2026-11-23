@@ -362,9 +362,10 @@ export class HyperBotsRuntime {
     return pub(a);
   }
 
-  snapshot(roomId: string): Omit<HyperBotsSnapshot, 'connections'> {
+  snapshot(roomId: string, limit?: number, fromMessageId?: string): Omit<HyperBotsSnapshot, 'connections'> {
     const settings = this.settings();
     if (!settings.rooms.some((r) => r.id === roomId)) throw new HyperBotsRuntimeError('not_found', `Unknown room: ${roomId}`);
+    if (limit !== undefined) return { settings, ...this.store.roomWindow(roomId, limit, fromMessageId), roomSummaries: this.store.roomSummaries(settings.rooms) };
     const runs = this.store.listRuns({ roomId });
     const done = runs.filter((r) => finished(r.status)).slice(-20).map((r) => r.id);
     const approvals = this.store.listApprovals({ roomId });
@@ -416,8 +417,6 @@ export class HyperBotsRuntime {
 
   async idle(): Promise<void> { while (this.active.size) await Promise.allSettled([...this.active.values()]); }
 
-  private label(m: HyperBotsMessage) { return m.author.kind === 'user' ? 'Owner' : `Bot @${m.author.botId}`; }
-
   /** The first prompt of a run. Room history and other bots' text are labelled by author kind; only the owner asks. */
   private seed(botId: string, trigger: HyperBotsMessage): HyperBotsChatMessage[] {
     const bot = this.bot(botId);
@@ -430,7 +429,7 @@ export class HyperBotsRuntime {
       others.length ? `Other bots in this room: ${others.join(', ')}. To hand work to one of them, call the ${HYPER_BOTS_HAND_OFF} tool; mentioning a bot in your reply does not reach it.`
         : 'You are the only bot in this room.',
       TRUST, hyperBotsClock(this.now())].filter(Boolean).join('\n\n');
-    const history = this.store.listMessages(trigger.roomId, { limit: 20, beforeSeqOf: trigger.id }).map((m) => `[${this.label(m)}]: ${hyperBotsPromptText(m.text)}`);
+    const history = this.store.promptHistory(trigger, 32_000).map(hyperBotsPromptText);
     const owner = trigger.author.kind === 'user' ? undefined : this.ownerRequest(trigger);
     const triggerText = hyperBotsPromptText(trigger.text);
     const request = trigger.author.kind === 'user' ? `[Owner]: ${triggerText}`

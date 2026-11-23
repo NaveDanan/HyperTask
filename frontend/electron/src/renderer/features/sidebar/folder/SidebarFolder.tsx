@@ -11,6 +11,13 @@ import { tabsActions } from '@/features/tabs/tabs-store';
 import { FavoriteFolder } from '../favorites/FavoriteFolder';
 import { getFolderIsExpanded, setExpanded } from '../stores/expand-storage';
 import { useFavoriteStore } from '../stores/favorite-store';
+import {
+  filterHyperProjectViews,
+  hyperProjectsFilterActions,
+  isHyperProjectsFilterActive,
+  useHyperProjectsFilterStore,
+  type HyperProjectsFilterCriteria,
+} from '../stores/HyperProjectsFilter';
 import { sectionsActions, useSectionsStore } from '../stores/sections-store';
 import { toViewSectionPB, type FolderSpaceType } from '../stores/types';
 import { useWorkspaceStore } from '../stores/workspace-store';
@@ -36,22 +43,80 @@ export function openFromSidebar(view: ViewPB, event: { ctrlKey: boolean }) {
 
 export function SidebarFolder() {
   const favorites = useFavoriteStore((s) => s.views);
+  const pinnedFavorites = useFavoriteStore((s) => s.pinnedViews);
   const section = useSectionsStore((s) => s.section);
   const isCollab = useWorkspaceStore((s) => s.isCollabWorkspaceOn);
+  const query = useHyperProjectsFilterStore((s) => s.query);
+  const layout = useHyperProjectsFilterStore((s) => s.layout);
   const { tr } = useTr();
+
+  const criteria: HyperProjectsFilterCriteria = { query, layout };
+  const filterActive = isHyperProjectsFilterActive(criteria);
+  const activeFilter = filterActive ? criteria : undefined;
+
+  const filteredFavorites = filterActive
+    ? filterHyperProjectViews(favorites.map((f) => f.item), activeFilter)
+    : favorites.map((f) => f.item);
+  const filteredPinnedCount = filterActive
+    ? filterHyperProjectViews(pinnedFavorites.map((f) => f.item), activeFilter).length
+    : pinnedFavorites.length;
+  const publicViews = filterActive ? filterHyperProjectViews(section.publicViews, activeFilter) : section.publicViews;
+  const privateViews = filterActive ? filterHyperProjectViews(section.privateViews, activeFilter) : section.privateViews;
+
+  const totalMatches =
+    filteredPinnedCount + publicViews.length + (isCollab ? privateViews.length : 0);
+
   return (
     <div className="flex flex-col">
-      {favorites.length > 0 && <FavoriteFolder views={favorites.map((f) => f.item)} />}
+      {filteredFavorites.length > 0 && (
+        <FavoriteFolder views={filteredFavorites} projectFilter={activeFilter} />
+      )}
       {isCollab ? (
         <>
-          <SectionFolder title={tr('sideBar.workspace')} spaceType="public" views={section.publicViews} addButtonTooltip={tr('sideBar.addAPageToWorkspace')} />
-          <SectionFolder title={tr('sideBar.private')} spaceType="private" views={section.privateViews} addButtonTooltip={tr('sideBar.addAPageToPrivate')} />
+          {(!filterActive || publicViews.length > 0) && (
+            <SectionFolder
+              title={tr('sideBar.workspace')}
+              spaceType="public"
+              views={publicViews}
+              addButtonTooltip={tr('sideBar.addAPageToWorkspace')}
+              projectFilter={activeFilter}
+            />
+          )}
+          {(!filterActive || privateViews.length > 0) && (
+            <SectionFolder
+              title={tr('sideBar.private')}
+              spaceType="private"
+              views={privateViews}
+              addButtonTooltip={tr('sideBar.addAPageToPrivate')}
+              projectFilter={activeFilter}
+            />
+          )}
         </>
       ) : (
         <>
           {/* Personal = the public section; private views are not shown in local mode. */}
-          <SectionFolder title={tr('sideBar.personal')} spaceType="public" views={section.publicViews} addButtonTooltip={tr('sideBar.addAPage')} />
+          {(!filterActive || publicViews.length > 0) && (
+            <SectionFolder
+              title={tr('sideBar.personal')}
+              spaceType="public"
+              views={publicViews}
+              addButtonTooltip={tr('sideBar.addAPage')}
+              projectFilter={activeFilter}
+            />
+          )}
         </>
+      )}
+      {filterActive && totalMatches === 0 && (
+        <div className="mt-3 flex flex-col items-start gap-1.5 rounded-md border border-dashed border-sidebar-border px-2.5 py-2.5 text-xs text-sidebar-muted-foreground">
+          <span>{tr('sideBar.projects.empty')}</span>
+          <button
+            type="button"
+            onClick={() => hyperProjectsFilterActions.clearFilter()}
+            className="text-xs font-medium text-sidebar-foreground underline underline-offset-2 hover:opacity-80"
+          >
+            {tr('sideBar.projects.clear')}
+          </button>
+        </div>
       )}
     </div>
   );
@@ -62,19 +127,23 @@ function SectionFolder({
   spaceType,
   views,
   addButtonTooltip,
+  projectFilter,
 }: {
   title: string;
   spaceType: FolderSpaceType;
   views: ViewPB[];
   addButtonTooltip: string;
+  projectFilter?: HyperProjectsFilterCriteria;
 }) {
   const [isExpanded, expand] = useFolderExpanded(spaceType);
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspace?.workspaceId ?? '');
+  const filterActive = isHyperProjectsFilterActive(projectFilter);
+  const expanded = filterActive || isExpanded;
   return (
     <div className="mt-3 flex flex-col">
       <FolderHeader
         title={title}
-        isExpanded={isExpanded}
+        isExpanded={expanded}
         addButtonTooltip={addButtonTooltip}
         onPressed={() => expand()}
         onAdded={() => {
@@ -83,7 +152,7 @@ function SectionFolder({
         }}
       />
       <div className="mt-0.5 flex flex-col gap-px">
-        {isExpanded &&
+        {expanded &&
           views.map((view) => (
             <ViewItem
               key={`${spaceType} ${view.id}`}
@@ -98,9 +167,10 @@ function SectionFolder({
               enableRightClickContext
               onSelected={openFromSidebar}
               onTertiarySelected={(v) => tabsActions.openViewInNewTab(v)}
+              projectFilter={projectFilter}
             />
           ))}
-        {views.length === 0 && (
+        {views.length === 0 && !filterActive && (
           // The empty section's drop target (move a page into this section).
           <ViewItem
             spaceType={spaceType}

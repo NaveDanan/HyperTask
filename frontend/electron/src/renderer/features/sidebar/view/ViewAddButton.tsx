@@ -31,6 +31,9 @@ export function ViewAddButton({
   onSelected,
   isHovered: _isHovered,
   tooltip,
+  icon,
+  ariaLabel,
+  buttonClassName,
 }: {
   parentViewId: string;
   onEditing: (value: boolean) => void;
@@ -38,6 +41,9 @@ export function ViewAddButton({
   onSelected: (layout: ViewLayoutPB, createNewView: boolean, hyperLayout?: 'gantt') => void;
   isHovered?: boolean;
   tooltip?: ReactNode;
+  icon?: ReactNode;
+  ariaLabel?: string;
+  buttonClassName?: string;
 }) {
   const { tr } = useTr();
   const controller = useRef<PopoverController>(null);
@@ -79,11 +85,18 @@ export function ViewAddButton({
     >
       <div className="flex">
         <Tooltip rich={tooltip}>
-          <NavIconButton aria-expanded={open} aria-label={typeof tooltip === 'string' ? tooltip : tr('menuAppHeader.addPageTooltip')} onClick={(event) => {
-            event.stopPropagation();
-            onEditing(true);
-            controller.current?.show();
-          }}><Plus className="size-3.5" /></NavIconButton>
+          <NavIconButton
+            className={buttonClassName}
+            aria-expanded={open}
+            aria-label={ariaLabel ?? (typeof tooltip === 'string' ? tooltip : tr('menuAppHeader.addPageTooltip'))}
+            onClick={(event) => {
+              event.stopPropagation();
+              onEditing(true);
+              controller.current?.show();
+            }}
+          >
+            {icon ?? <Plus className="size-3.5" />}
+          </NavIconButton>
         </Tooltip>
       </div>
     </ActionListPopover>

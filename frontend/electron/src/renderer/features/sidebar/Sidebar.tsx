@@ -2,7 +2,6 @@
 // listeners, and the _Sidebar column.
 import { useEffect, useState } from 'react';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
-import { AFRolePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import { cn } from '@/lib/utils';
 import { useHomeStore } from '@/features/home/home-store';
 import { renameSelectedView } from '@/features/home/notifiers';
@@ -13,10 +12,18 @@ import { resetRecentViews } from '@/features/search/recent-views-store';
 import { showLoading } from './components';
 import { SidebarFolder } from './folder/SidebarFolder';
 import { SidebarTopMenu, SidebarUser } from './header/SidebarHeader';
-import { HyperHomeButton, JiraButton, HyperNodButton, HyperBotsButton, HyperTemplatesButton, SidebarNewPageButton, SidebarSearchButton } from './SidebarButtons';
+import {
+  HyperBotsButton,
+  HyperHomeButton,
+  HyperProjectsFilterBar,
+  HyperSidebarActionBar,
+  HyperTemplatesButton,
+  JiraButton,
+} from './SidebarButtons';
 import { SidebarSpace } from './space/SidebarSpace';
 import { useSpaceState } from './space/space-context';
 import { favoriteActions } from './stores/favorite-store';
+import { hyperProjectsFilterActions } from './stores/HyperProjectsFilter';
 import { notificationSettingsActions } from './stores/notification-settings-store';
 import { reminderActions } from './stores/reminder-store';
 import { sectionsActions, useSectionsStore } from './stores/sections-store';
@@ -89,6 +96,7 @@ function SidebarScope({ user, workspaceId }: { user: UserProfilePB; workspaceId:
       if (workspaceId && prev.currentWorkspace && workspaceId !== prev.currentWorkspace.workspaceId) {
         commandPaletteWorkspaceChanged();
         resetRecentViews();
+        hyperProjectsFilterActions.reset();
       }
       const result = state.actionResult;
       if (result === prev.actionResult || !result || result.isLoading) return;
@@ -106,6 +114,7 @@ function SidebarScope({ user, workspaceId }: { user: UserProfilePB; workspaceId:
       stopSpace();
       stopWorkspace();
       loading?.();
+      hyperProjectsFilterActions.reset();
       sectionsActions.dispose();
       sidebarSpace.actions.dispose();
     };
@@ -115,19 +124,17 @@ function SidebarScope({ user, workspaceId }: { user: UserProfilePB; workspaceId:
 }
 
 /** _Sidebar: the column (top → bottom). */
-function SidebarBody({ user }: { user: UserProfilePB }) {
+export function SidebarBody({ user }: { user: UserProfilePB }) {
   const showWorkspace = useWorkspaceStore((s) => s.isCollabWorkspaceOn && s.workspaces.length > 0);
-  // The role is read once (context.read), not watched.
-  const [role] = useState(() => workspaceRole(useWorkspaceStore.getState().currentWorkspace));
+  const role = useWorkspaceStore((s) => workspaceRole(s.currentWorkspace));
   const [scrolled, setScrolled] = useState(false);
   return (
     <div className="group/sidebar relative flex h-full flex-col px-2 text-sidebar-foreground">
       <SidebarTopMenu />
       <div className="relative z-10 flex shrink-0 flex-col gap-px py-1">
+        <HyperSidebarActionBar role={role} />
+        <HyperProjectsFilterBar />
         <HyperHomeButton />
-        <SidebarSearchButton />
-        {role !== AFRolePB.Guest && <SidebarNewPageButton />}
-        <HyperNodButton />
         <HyperBotsButton />
         <JiraButton />
         <HyperTemplatesButton />

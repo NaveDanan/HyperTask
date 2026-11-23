@@ -9,12 +9,13 @@ import { hyperTrustedWindowAdapter, type HyperWindowSource } from './HyperTruste
 const uuid = z.uuid();
 const slug = z.string().regex(/^[a-z0-9-]{1,32}$/, 'Use 1..32 lowercase letters, digits or dashes.');
 const roomId = slug;
+const limit = z.int().min(1).max(100_000).optional();
 const toolNames = Object.keys(HYPER_BOTS_TOOLS) as [HyperBotsToolName, ...HyperBotsToolName[]];
 const readTools = toolNames.filter(name => HYPER_BOTS_TOOLS[name].access === 'read');
 export const HyperBotsArgs = {
   // Who the caller is comes from the core in main (hub.current()), never from the renderer.
-  open: z.strictObject({ roomId: roomId.optional() }),
-  snapshot: z.strictObject({ roomId }),
+  open: z.strictObject({ roomId: roomId.optional(), limit }),
+  snapshot: z.strictObject({ roomId, limit, fromMessageId: uuid.optional() }),
   post: z.strictObject({ roomId, clientMessageId: uuid, text: z.string().min(1).max(20000).refine(text => text.trim().length > 0, 'Write a message first.'), model: z.string().min(1).max(200).nullable().optional() }),
   decide: z.strictObject({ approvalId: uuid, approved: z.boolean(), delivery: z.enum(['send', 'draft']).optional() }),
   settings: z.strictObject({
@@ -81,19 +82,38 @@ export function registerHyperBotsIpc(window: HyperWindowSource, deps: { hub: Pic
         return await run(value as never, active);
       } catch (error) { throw hyperBotsFailure(error); }
     }));
-  // Events refresh the room often; the connection probes (Outlook, DPAPI, Jira files) are shared for a while
-  // so a slow Outlook does not hold every refresh. Opening the room always probes again. Probes never cross accounts.
-  let probe: { key: string; at: number; value: Promise<HyperBotsConnections> } | null = null;
-  const connections = (user: HyperBotsUser, fresh: boolean) => {
-    if (fresh || !probe || probe.key !== user.key || Date.now() - probe.at > CONNECTIONS_TTL_MS) probe = { key: user.key, at: Date.now(), value: deps.connections(user) };
-    return probe.value;
+  // A windowed read can paint the conversation before Outlook or Jira answers. The event contains no account data.
+  // Unwindowed callers still receive a completed connection check.
+  const checking = { ready: false as const, problem: 'Checking connection…', checking: true };
+  let probe: { key: string; at: number; value: Promise<HyperBotsConnections>; notify: boolean; result?: HyperBotsConnections } | null = null;
+  const connections = (user: HyperBotsUser, fresh: boolean, notify: boolean) => {
+    if (!fresh && probe?.key === user.key && (!probe.result || Date.now() - probe.at < CONNECTIONS_TTL_MS)) {
+      probe.notify ||= notify;
+      return probe;
+    }
+    const entry: NonNullable<typeof probe> = { key: user.key, at: Date.now(), value: deps.connections(user), notify };
+    probe = entry;
+    void entry.value.then(result => {
+      entry.result = result;
+    }, () => {
+      const failed = { ready: false as const, problem: 'Connection check failed.' };
+      entry.result = { model: failed, jira: failed, outlook: failed };
+    }).then(() => { if (entry.notify && probe === entry && followed) forward({ type: 'connections' }); });
+    return entry;
   };
-  const snapshot = async ({ runtime, user }: HyperBotsActive, room: string, fresh = false): Promise<HyperBotsSnapshot> => {
-    const [state, current] = await Promise.all([runtime.snapshot(room), connections(user, fresh)]);
-    return { ...state, connections: current };
+  const snapshot = async ({ runtime, user }: HyperBotsActive, room: string, fresh = false, windowSize?: number, fromMessageId?: string): Promise<HyperBotsSnapshot> => {
+    const state = runtime.snapshot(room, windowSize, fromMessageId);
+    const entry = connections(user, fresh && windowSize === undefined, windowSize !== undefined);
+    if (windowSize !== undefined && !entry.result) return { ...state, connections: { model: checking, jira: checking, outlook: checking } };
+    return { ...state, connections: entry.result ?? await entry.value };
   };
-  handle(B.Open, HyperBotsArgs.open, async (args, active) => snapshot(active, args.roomId ?? (await active.runtime.settings()).rooms[0]!.id, true));
-  handle(B.Snapshot, HyperBotsArgs.snapshot, (args, active) => snapshot(active, args.roomId));
+  handle(B.Open, HyperBotsArgs.open, (args, active) => {
+    if (args.roomId) return snapshot(active, args.roomId, true, args.limit);
+    const settings = active.runtime.settings();
+    const first = args.limit === undefined ? undefined : settings.rooms.find(room => room.kind === 'direct' && room.botIds[0] === settings.bots[0]?.id);
+    return snapshot(active, (first ?? settings.rooms[0]!).id, true, args.limit);
+  });
+  handle(B.Snapshot, HyperBotsArgs.snapshot, (args, active) => snapshot(active, args.roomId, false, args.limit, args.fromMessageId));
   handle(B.Post, HyperBotsArgs.post, (args, { runtime }) => runtime.post(args));
   handle(B.Decide, HyperBotsArgs.decide, (args, { runtime }) => runtime.decide(args.approvalId, args.approved, args.delivery));
   handle(B.SaveSettings, HyperBotsArgs.settings, (args, { runtime }) => runtime.saveSettings(args));
@@ -104,6 +124,7 @@ export function registerHyperBotsIpc(window: HyperWindowSource, deps: { hub: Pic
   let followed: HyperBotsRuntime | null = null;
   const follow = (runtime: HyperBotsRuntime | null) => {
     if (followed === runtime) return;
+    probe = null;
     followed?.events.off('event', forward);
     followed = runtime;
     followed?.events.on('event', forward);

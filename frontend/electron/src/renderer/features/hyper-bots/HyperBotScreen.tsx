@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { LoaderCircle, RefreshCw } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useHyperChromePanel } from '../home/HyperChromePanel';
-import { hyperBotsWithDirectRooms, type HyperBotsDelivery, type HyperBotsSettings } from '@shared/HyperBots';
+import type { HyperBotsDelivery, HyperBotsSettings } from '@shared/HyperBots';
 import { Button } from '@/components/ui/button';
 import { HyperBotsController, hyperBotsOutbox, type HyperBotsOutbox, type HyperBotsViewState } from './HyperBotsController';
 import { HyperBotSidebar } from './HyperBotSidebar';
@@ -15,6 +15,7 @@ import { hyperBotStoredRoom, hyperBotRememberRoom } from './HyperBotSettings';
 import './HyperBot.css';
 export interface HyperBotActions {
   reload(): void;
+  loadEarlier?(): void;
   select(roomId: string): void;
   send(text: string, model: string | null): Promise<boolean>;
   decide(approvalId: string, approved: boolean, delivery?: HyperBotsDelivery): void;
@@ -31,13 +32,6 @@ export function HyperBotScreen({ userId }: { userId: string }) {
       const preferred = hyperBotStoredRoom(userId);
       await controller.start(preferred);
       if (alive && preferred && !controller.getState().snapshot) await controller.start();
-      if (!alive) return;
-      const snapshot = controller.getState().snapshot;
-      if (!snapshot) return;
-      const settings = hyperBotsWithDirectRooms(snapshot.settings);
-      const first = settings.rooms.find(room => room.kind === 'direct' && room.botIds[0] === settings.bots[0]?.id);
-      const roomId = settings.rooms.find(room => room.id === preferred)?.id ?? first?.id;
-      if (roomId) await controller.select(roomId);
     };
     void open().finally(() => { if (alive) setRestoring(false); }); return () => { alive = false; controller.dispose(); };
   }, [controller, userId]);
@@ -55,7 +49,7 @@ export function HyperBotScreen({ userId }: { userId: string }) {
     window.addEventListener('hyper-bots:select-room', onSelectRoom);
     return () => window.removeEventListener('hyper-bots:select-room', onSelectRoom);
   }, [controller, userId]);
-  return <HyperBotsView state={restoring ? { ...state, snapshot: null, phase: 'opening' } : state} outbox={controller.outbox} actions={{ reload: () => void controller.reload(), select: id => void controller.select(id), send: (text, model) => controller.send(text, model), decide: (id, approved, delivery) => void controller.decide(id, approved, delivery), saveSettings: settings => controller.saveSettings(settings) }} />;
+  return <HyperBotsView state={state} outbox={controller.outbox} actions={{ reload: () => void controller.reload(), loadEarlier: () => void controller.loadEarlier(), select: id => void controller.select(id), send: (text, model) => controller.send(text, model), decide: (id, approved, delivery) => void controller.decide(id, approved, delivery), saveSettings: settings => controller.saveSettings(settings) }} />;
 }
 export function HyperBotsView({ state, outbox, actions }: { state: HyperBotsViewState; outbox: HyperBotsOutbox; actions: HyperBotActions }) {
   const root = useRef<HTMLDivElement>(null);

@@ -552,6 +552,29 @@
 [data-hyper-bot] .hb-brand-logo { display: inline-block; flex-shrink: 0; vertical-align: middle; pointer-events: none; }
 [data-hyper-bot] .hb-tool-name { display: inline-flex; align-items: center; gap: 6px; }
 
+[data-hyper-bot] .hb-history-link {
+  align-self: center; color: var(--hb-text-secondary); padding: 5px 12px;
+  border: 1px solid var(--hb-border-secondary); border-radius: var(--hb-radius-full); font-size: .8125rem;
+}
+[data-hyper-bot] .hb-history-link:hover { background: var(--hb-bg-hover); }
+[data-hyper-bot] .hb-turn-tools {
+  align-self: flex-start; width: min(100%, 36rem); list-style: none; margin: 8px 0; padding: 0 0 0 12px;
+  border-inline-start: 2px solid var(--hb-border-secondary); display: grid; gap: 6px; text-align: start;
+}
+[data-hyper-bot] .hb-tool-step {
+  padding: 8px 12px; border-radius: var(--hb-radius-sm); background: var(--hb-bg-tertiary); overflow-wrap: anywhere;
+}
+[data-hyper-bot] .hb-tool-step__line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: .8125rem; }
+[data-hyper-bot] .hb-tool-step__line strong { font-weight: 600; }
+[data-hyper-bot] .hb-tool-step__status { margin-inline-start: auto; display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; }
+[data-hyper-bot] .hb-tool-step[data-status=done] .hb-tool-step__status svg { color: var(--hb-success); }
+[data-hyper-bot] .hb-tool-step__error,
+[data-hyper-bot] .hb-tool-step:is([data-status=failed],[data-status=unknown]) .hb-tool-step__status { color: var(--hb-danger-text); }
+[data-hyper-bot] .hb-tool-step__summary { margin: 4px 0; font-size: .8125rem; }
+[data-hyper-bot] .hb-tool-step__meta { color: var(--hb-text-secondary); font-size: .75rem; }
+[data-hyper-bot] .hb-tool-waiting { margin-bottom: 4px; font-size: .75rem; font-weight: 600; color: var(--hb-warn-text); }
+[data-hyper-bot] .connection-dot.is-checking { background: var(--hb-text-quaternary); }
+
 [data-hyper-bot] .composer__shell { position: relative; max-width: 960px; margin: 0 auto; }
 [data-hyper-bot] .hb-mention-popover {
   position: absolute;

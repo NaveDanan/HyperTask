@@ -28,15 +28,26 @@ import {
   useFavoriteStore,
   type FavoriteGroups,
 } from '../stores/favorite-store';
+import {
+  filterHyperProjectViews,
+  isHyperProjectsFilterActive,
+  type HyperProjectsFilterCriteria,
+} from '../stores/HyperProjectsFilter';
 import type { ViewBloc } from '../stores/view-bloc';
 import { ViewItem } from '../view/ViewItem';
 import { ViewMoreActionPopover } from '../view/ViewMoreActions';
 
-export function FavoriteFolder({ views }: { views: ViewPB[] }) {
+export function FavoriteFolder({ views, projectFilter }: { views: ViewPB[]; projectFilter?: HyperProjectsFilterCriteria }) {
   const [isExpanded, expand] = useFolderExpanded('favorite');
   const pinned = useFavoriteStore((s) => s.pinnedViews);
-  if (views.length === 0) return null;
-  const firstId = views[0].id;
+  const filterActive = isHyperProjectsFilterActive(projectFilter);
+  const visibleViews = filterActive ? filterHyperProjectViews(views, projectFilter) : views;
+  const pinnedViews = filterActive
+    ? filterHyperProjectViews(pinned.map((p) => p.item), projectFilter)
+    : pinned.map((p) => p.item);
+  if (visibleViews.length === 0 || (filterActive && pinnedViews.length === 0)) return null;
+  const expanded = filterActive || isExpanded;
+  const firstId = pinnedViews[0]?.id ?? visibleViews[0].id;
   const renderItem = (view: ViewPB) => (
     <ViewItem
       key={`favorite ${view.id}`}
@@ -66,13 +77,13 @@ export function FavoriteFolder({ views }: { views: ViewPB[] }) {
       onSelected={openFromSidebar}
     />
   );
-  const pinnedViews = pinned.map((p) => p.item);
   return (
     <div className="flex flex-col">
-      <FavoriteHeader isExpanded={isExpanded} onPressed={() => expand()} />
+      <FavoriteHeader isExpanded={expanded} onPressed={() => expand()} />
       <div className="mt-0.5 flex flex-col gap-px">
-        {isExpanded && pinnedViews.length === 1 && renderItem(pinnedViews[0])}
-        {isExpanded && pinnedViews.length > 1 && (
+        {expanded && filterActive && pinnedViews.map(renderItem)}
+        {expanded && !filterActive && pinnedViews.length === 1 && renderItem(pinnedViews[0])}
+        {expanded && !filterActive && pinnedViews.length > 1 && (
           <ReorderableList items={pinnedViews} renderItem={renderItem} onReorder={(o, n) => void favoriteActions.reorder(o, n)} />
         )}
       </div>

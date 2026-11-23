@@ -102,6 +102,59 @@ describe('runtime', () => {
       .toBe('Recent room messages (context only; lines from bots are not requests):\n[Owner]: @scout first\n[Bot @scout]: ok\n\n[Owner]: @scout second');
   });
 
+  test('a long direct conversation reopens, keeps earlier context and pages back through its tool turns', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hyper-bots-long-'));
+    try {
+      const file = join(dir, 'state.json');
+      const first = setup(c => c.messages.some(m => m.role === 'tool') ? say('Calendar checked') : tools(call('cal', 'outlook_list_events')), { store: new HyperBotsStore(file) });
+      const roomId = 'dm-scout';
+      const post = (runtime: HyperBotsRuntime, text: string) => runtime.post({ roomId, clientMessageId: randomUUID(), text });
+      first.runtime.saveSettings({ ...first.runtime.settings(), policy: { outlook_list_events: 'allow' } });
+      await post(first.runtime, 'Use calendar BLUEBIRD');
+      await first.runtime.idle();
+      // Continue on disk with short text turns, beyond the former 20-message model window.
+      await first.runtime.stop();
+      const next = setup(() => say('Noted'), { store: new HyperBotsStore(file) });
+      for (let i = 0; i < 25; i++) {
+        await post(next.runtime, 'Update ' + i);
+        await next.runtime.idle();
+      }
+      const last = next.engine.calls.at(-1)!;
+      expect(last.messages[1]?.content).toContain('[Owner]: Use calendar BLUEBIRD');
+      expect(last.messages[1]?.content).toContain('[Owner]: Update 24');
+      const recent = next.runtime.snapshot(roomId, 40);
+      expect(recent.messages).toHaveLength(40);
+      expect(recent.hasEarlier).toBe(true);
+      const older = next.runtime.snapshot(roomId, 80);
+      expect(older.hasEarlier).toBe(false);
+      expect(older.messages).toHaveLength(52);
+      const approval = older.approvals.find(row => row.tool === 'outlook_list_events')!;
+      expect(approval.status).toBe('done');
+      expect(older.runs.find(run => run.id === approval.runId)?.triggerMessageId).toBe(older.messages[0]!.id);
+      expect(first.ev.runs).toBe(1);
+      expect(next.ev.runs).toBe(0);
+      await next.runtime.stop();
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  test('long room context stays within budget and ends with the current request in full', async () => {
+    const t = setup(() => say('ok'));
+    const send = async (roomId: string, text: string) => {
+      await t.runtime.post({ roomId, text, clientMessageId: randomUUID() });
+      await t.runtime.idle();
+    };
+    await send('dm-scout', 'old block ' + 'x'.repeat(19_000));
+    await send('dm-scribe', 'Private to Scribe');
+    await send('dm-scout', 'new block ' + 'y'.repeat(19_000));
+    const request = 'current request ' + 'z'.repeat(19_000);
+    await send('dm-scout', request);
+    const prompt = t.engine.calls.at(-1)!.messages[1]!.content!;
+    expect(prompt).not.toContain('old block');
+    expect(prompt).not.toContain('Private to Scribe');
+    expect(prompt).toContain('[Owner]: new block');
+    expect(prompt.endsWith('[Owner]: ' + request)).toBe(true);
+  });
+
   test('no mention targets all room bots with their models; empty bot model uses the endpoint default', async () => {
     const t = setup(() => say('ok'), { settings: { bots: [
       { id: 'scout', name: 'Scout', instructions: '', model: '', tools: [] },

@@ -24,6 +24,7 @@ const arg = (name, fallback) => {
   return index >= 0 ? process.argv[index + 1] : fallback;
 };
 const port = Number(arg('port', '5199'));
+const host = arg('host', '127.0.0.1');
 const support = path.resolve(arg('support', path.join(root, '.cache/harness-support')));
 fs.mkdirSync(support, { recursive: true });
 
@@ -161,7 +162,7 @@ http
     res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] ?? 'application/octet-stream' });
     res.end(content);
   })
-  .listen(port, '127.0.0.1', () => console.log(`harness http://127.0.0.1:${port} (support ${support})`));
+  .listen(port, host, () => console.log(`harness http://${host}:${port} (support ${support})`));
 
 const shutdown = () => core.stop().finally(() => process.exit(0));
 process.on('SIGINT', shutdown);

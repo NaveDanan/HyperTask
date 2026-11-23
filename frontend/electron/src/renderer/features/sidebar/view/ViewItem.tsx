@@ -20,6 +20,12 @@ import { cn } from '@/lib/utils';
 import { NavIconButton, TreeDisclosure, TreeRowActions, treeIndent, treeRowClass } from '@/components/app/nav';
 import { ViewBackendService } from '@/features/view/view-service';
 import { IconEmojiPicker } from '../icon-picker/IconEmojiPicker';
+import {
+  filterHyperProjectViews,
+  isHyperProjectsFilterActive,
+  viewSelfMatchesHyperProjectFilter,
+  type HyperProjectsFilterCriteria,
+} from '../stores/HyperProjectsFilter';
 import { sectionsActions } from '../stores/sections-store';
 import { sidebarSpace } from '../stores/space-store';
 import type { FolderSpaceType, IgnoreViewType } from '../stores/types';
@@ -67,24 +73,34 @@ export interface ViewItemProps {
   shouldIgnoreView?: (view: ViewPB) => IgnoreViewType;
   enableRightClickContext?: boolean;
   engagedInExpanding?: boolean;
+  /** Active sidebar Projects filter; omitted in menus like MovePageMenu / FavoriteMenu. */
+  projectFilter?: HyperProjectsFilterCriteria;
 }
 
 /** ViewItem: provides the row's ViewBloc and filters ignored children. */
 export function ViewItem(props: ViewItemProps) {
   const { tr } = useTr();
-  const { view, shouldLoadChildViews = true, engagedInExpanding = false, shouldIgnoreView } = props;
+  const { view, shouldLoadChildViews = true, engagedInExpanding = false, shouldIgnoreView, projectFilter } = props;
   const bloc = useViewBloc(view, { shouldLoadChildViews, engagedInExpanding });
   const state = useStore(bloc.store);
+  const filterActive = isHyperProjectsFilterActive(projectFilter);
+  const selfMatched = !filterActive || viewSelfMatchesHyperProjectFilter(state.view, projectFilter!);
   let childViews = state.view.childViews;
   if (shouldIgnoreView) childViews = childViews.filter((v) => shouldIgnoreView(v) !== 'hide');
+  if (filterActive && !selfMatched) {
+    childViews = filterHyperProjectViews(childViews, projectFilter);
+  }
+  const childFilter = filterActive && !selfMatched ? projectFilter : undefined;
+  const isExpanded = state.isExpanded || (filterActive && !selfMatched && childViews.length > 0);
 
   const inner = (
     <InnerViewItem
       {...props}
+      projectFilter={childFilter}
       bloc={bloc}
       view={state.view}
       childViews={childViews}
-      isExpanded={state.isExpanded}
+      isExpanded={isExpanded}
       showActions={state.isEditing}
     />
   );
@@ -163,6 +179,7 @@ function InnerViewItem(props: InnerProps) {
             extendBuilder={props.extendBuilder}
             shouldIgnoreView={props.shouldIgnoreView}
             engagedInExpanding={props.engagedInExpanding}
+            projectFilter={props.projectFilter}
           />
         ))}
       </div>
@@ -297,7 +314,7 @@ function SingleInnerViewItem(props: InnerProps & { isSelected: boolean }) {
         <ViewItemDefaultLeftIcon
           view={view}
           parentView={parentView ?? null}
-          hasChildren={view.childViews.length > 0}
+          hasChildren={props.childViews.length > 0}
           isExpanded={isExpanded}
           leftPadding={leftPadding}
           hoverGated={!!props.hoverGated}

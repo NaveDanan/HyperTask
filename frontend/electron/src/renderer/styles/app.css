@@ -405,6 +405,23 @@ html[data-theme-id]:not([data-theme-id='']) {
   -webkit-app-region: no-drag;
 }
 
+/* Sidebar toolbar dimensions and normal-state ink sampled from the Projects reference. */
+[data-slot='sidebar-action-bar'] button svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.65;
+  color: #7e7984;
+}
+[data-slot='sidebar-action-bar'] > div { gap: 5px; }
+[data-slot='sidebar-action-bar'] > div button { width: 30px; height: 30px; }
+[data-slot='sidebar-action-bar'] button.group\/search {
+  padding-inline-start: 3px;
+  gap: 10px;
+  font-size: 17px;
+  color: #6c6570;
+}
+[data-theme='dark'] [data-slot='sidebar-action-bar'] button.group\/search { color: var(--sidebar-foreground); }
+
 /* Floating transparent voice sphere overlay (loaded with ?mode=voice-overlay). */
 html[data-hyper-overlay='true'],
 html[data-hyper-overlay='true'] body,

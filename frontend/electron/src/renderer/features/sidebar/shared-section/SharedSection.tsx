@@ -24,6 +24,7 @@ import { nameOrDefault } from '@/features/view/view-ext';
 import { ViewBackendService } from '@/features/view/view-service';
 import { openFromSidebar } from '../folder/SidebarFolder';
 import { favoriteActions } from '../stores/favorite-store';
+import { viewMatchesHyperProjectFilter, type HyperProjectsFilterCriteria } from '../stores/HyperProjectsFilter';
 import type { ViewBloc } from '../stores/view-bloc';
 import { ViewItem } from '../view/ViewItem';
 
@@ -98,7 +99,7 @@ function useSharedSection(workspaceId: string) {
   return { state, leave, toggle };
 }
 
-export function SharedSection({ workspaceId }: { workspaceId: string }) {
+export function SharedSection({ workspaceId, projectFilter }: { workspaceId: string; projectFilter?: HyperProjectsFilterCriteria }) {
   const { tr } = useTr();
   const { state, leave, toggle } = useSharedSection(workspaceId);
   if (state.isLoading) {
@@ -115,19 +116,22 @@ export function SharedSection({ workspaceId }: { workspaceId: string }) {
       </div>
     );
   }
-  if (state.sharedPages.length === 0) return null;
-  const firstId = state.sharedPages[0].view.id;
+  const pages = projectFilter ? state.sharedPages.filter(page => viewMatchesHyperProjectFilter(page.view, projectFilter)) : state.sharedPages;
+  if (pages.length === 0) return null;
+  const expanded = !!projectFilter || state.isExpanded;
+  const firstId = pages[0].view.id;
   return (
     <div className="mt-3 flex flex-col">
-      <NavSectionHeader label={tr('shareSection.shared')} collapsed={!state.isExpanded} onToggle={toggle} />
+      <NavSectionHeader label={tr('shareSection.shared')} collapsed={!expanded} onToggle={toggle} />
       <div className="mt-0.5 flex flex-col gap-px">
-        {state.isExpanded &&
-          state.sharedPages.map((page) => (
+        {expanded &&
+          pages.map((page) => (
             <ViewItem
               key={page.view.id}
               spaceType="public"
               isFirstChild={page.view.id === firstId}
               view={page.view}
+              projectFilter={projectFilter}
               level={0}
               isDraggable={false}
               leftPadding={16}
