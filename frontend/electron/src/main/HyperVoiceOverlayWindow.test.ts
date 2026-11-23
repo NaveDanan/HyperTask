@@ -93,6 +93,10 @@ describe('HyperVoiceOverlayWindow', () => {
       backgroundColor: '#00000000',
     });
     expect(fakeWin.loadURL).toHaveBeenCalledWith('http://localhost:5173?mode=voice-overlay');
+    expect(fakeWin.setVisibleOnAllWorkspaces).toHaveBeenCalledWith(true, {
+      visibleOnFullScreen: true,
+      skipTransformProcessType: true,
+    });
     expect(fakeWin.show).toHaveBeenCalledTimes(1);
     expect(fakeWin.focus).toHaveBeenCalledTimes(1);
     expect(fakeWin.webContents.send).toHaveBeenCalledWith(HyperDesktopChannel.OverlayEvent, {

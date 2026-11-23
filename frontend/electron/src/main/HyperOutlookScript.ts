@@ -458,44 +458,53 @@ function Hyper-OutlookPeople([string]$query, [int]$limit, [bool]$lookup) {
     finally { foreach ($com in @($entry, $recipient)) { if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($com) } } }
   }
   if ($list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 4000) {
+    $partials = New-Object Collections.ArrayList
+    $partialSeen = New-Object 'Collections.Generic.HashSet[string]'
     try {
       $lists = $ns.AddressLists
-      for ($li = 1; $li -le $lists.Count -and $list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 4000; $li++) {
-        $al = $null; $entries = $null
-        try {
-          $al = $lists.Item($li); $entries = $al.AddressEntries; $count = [int]$entries.Count
-          if ($count -le 0) { continue }
-          if ($count -le 400) {
-            for ($ei = 1; $ei -le $count -and $list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 4000; $ei++) {
+      # Indexed matches from large lists are cheap to try first. Partial matches cannot stop the scan for exact ones.
+      foreach ($indexed in @($true, $false)) {
+        for ($li = 1; $li -le $lists.Count -and $list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 4000; $li++) {
+          $al = $null; $entries = $null
+          try {
+            $al = $lists.Item($li); $entries = $al.AddressEntries; $count = [int]$entries.Count
+            if ($count -le 0) { continue }
+            $large = $count -gt 400
+            if (($indexed -and !$large) -or (!$indexed -and $large -and $lookup)) { continue }
+            $first = if ($indexed) { 0 } else { 1 }
+            $last = if ($indexed) { 0 } else { [Math]::Min($count, 2000) }
+            for ($ei = $first; $ei -le $last -and $list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 4000; $ei++) {
               $ae = $null
               try {
-                $ae = $entries.Item($ei)
-                $aeName = [string]$ae.Name; $aeAddr = [string]$ae.Address
-                if (Hyper-QueryMatches ($aeName + ' ' + $aeAddr) $query $lookup) {
-                  $p = Hyper-EntryPerson $ae
-                  if ($null -ne $p -and (!$lookup -or (Hyper-QueryMatches ([string]$p.email) $query $true))) { Hyper-AddPerson $list $seen $p $limit }
+                $ae = if ($indexed) { $entries.Item($query) } else { $entries.Item($ei) }
+                if (!$ae) { continue }
+                $exact = $false
+                if (!$indexed) {
+                  $name = [string]$ae.Name
+                  $address = if (!$large) { [string]$ae.Address } else { '' }
+                  $exact = (Hyper-QueryMatches $name $query $true) -or (Hyper-QueryMatches $address $query $true)
+                  if (!$exact -and ($lookup -or $partials.Count -ge $limit -or !(Hyper-QueryMatches ($name + ' ' + $address) $query $false))) { continue }
+                }
+                $p = Hyper-EntryPerson $ae
+                if ($null -eq $p) { continue }
+                if (Hyper-QueryMatches ([string]$p.email) $query $true) {
+                  Hyper-AddPerson $list $seen $p $limit
+                } elseif (!$lookup) {
+                  if ($exact -or (Hyper-QueryMatches ([string]$p.name) $query $true)) {
+                    Hyper-AddPerson $list $seen $p $limit
+                  } elseif (!$indexed -or (Hyper-QueryMatches ([string]$p.name + ' ' + [string]$p.email) $query $false)) {
+                    Hyper-AddPerson $partials $partialSeen $p $limit
+                  }
                 }
               } catch {}
               finally { if ($null -ne $ae -and [Runtime.InteropServices.Marshal]::IsComObject($ae)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($ae) } }
             }
-          } else {
-            # Large GAL: indexed Item($query) prefix lookup stays fast without linear scan
-            $ae = $null
-            try {
-              $ae = $entries.Item($query)
-              if ($null -ne $ae) {
-                $p = Hyper-EntryPerson $ae
-                if ($null -ne $p -and (Hyper-QueryMatches ($(if ($lookup) { [string]$p.email } else { ([string]$p.name + ' ' + [string]$p.email) })) $query $lookup)) {
-                  Hyper-AddPerson $list $seen $p $limit
-                }
-              }
-            } catch {}
-            finally { if ($null -ne $ae -and [Runtime.InteropServices.Marshal]::IsComObject($ae)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($ae) } }
-          }
-        } catch {}
-        finally { foreach ($com in @($entries, $al)) { if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($com) } } }
+          } catch {}
+          finally { foreach ($com in @($entries, $al)) { if ($null -ne $com -and [Runtime.InteropServices.Marshal]::IsComObject($com)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($com) } } }
+        }
       }
     } catch {}
+    foreach ($partial in $partials) { Hyper-AddPerson $list $seen $partial $limit }
   }
   # (c) Recent Inbox/Sent correspondent headers (bounded, never reads Body or changes UnRead)
   if ($list.Count -lt $limit -and $watch.ElapsedMilliseconds -lt 5000) {

@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import type {
-  HyperAssistantBotCandidate,
-  HyperAssistantIntent,
-  HyperAssistantLanguage,
-  HyperAssistantPersonSlot,
-  HyperVoiceCommandPlan,
+import { HYPER_ASSISTANT_MAX_PEOPLE, type HyperAssistantBotCandidate,
+  type HyperAssistantIntent,
+  type HyperAssistantLanguage,
+  type HyperAssistantPersonSlot,
+  type HyperVoiceCommandPlan,
 } from '@shared/HyperAssistant';
 import type { HyperBotConfig, HyperBotsRoom, HyperBotsSettings, HyperBotsToolName } from '@shared/HyperBots';
 import {
@@ -12,6 +11,8 @@ import {
   hyperBotDisplayHandle,
   hyperStripDiacritics,
 } from '@shared/HyperBotResolver';
+import { hyperFindPlainPersonSpan, hyperParseMentions, hyperSerializeMention } from '@shared/HyperPeopleMentions';
+import { SettingsError } from './settings-error';
 import { hyperCleanPersonQuery, type HyperPeopleResolver } from './HyperPeopleResolver';
 
 // Hybrid bilingual (English + Hebrew + mixed) voice command parser.
@@ -40,7 +41,6 @@ interface ExtractedSpan {
 
 const HEBREW_RE = /[\u0590-\u05FF]/g;
 const LATIN_RE = /[A-Za-z]/g;
-const SERIALIZED_MENTION_RE = /@\[((?:\\.|[^\]\\\r\n])*)\]\(mailto:([^\s()]+)\)/gu;
 const EMAIL_RE = /^[^\s@<>()[\]\\]+@[^\s@<>()[\]\\]+\.[^\s@<>()[\]\\]+$/u;
 
 export function detectCommandLanguage(text: string): HyperAssistantLanguage {
@@ -136,15 +136,11 @@ function extractPeopleFromPhrase(
   gluedPrefixChar?: string,
 ): ExtractedSpan[] {
   const tail = fullText.slice(phraseStart);
-  // Stop at sentence punctuation or newline
-  const clauseEndMatch = /[.!?\n\r;:]/.exec(tail);
-  const clause = clauseEndMatch ? tail.slice(0, clauseEndMatch.index) : tail;
-
-  // Tokenize words & separators with exact offsets relative to phraseStart
-  const tokenRe = /[^\s,]+|,/gu;
+  // Match a complete email first so its dots and digits stay inside the recipient.
+  const tokenRe = /[A-Za-z0-9_+%'!-]+(?:\.[A-Za-z0-9_+%'!-]+)*@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+|[.!?\n\r;:]|[^\s,.!?;:]+|,/gu;
   const rawTokens: Array<{ text: string; start: number; end: number }> = [];
-  let m: RegExpExecArray | null;
-  while ((m = tokenRe.exec(clause)) !== null) {
+  for (const m of tail.matchAll(tokenRe)) {
+    if (/^[.!?\n\r;:]$/u.test(m[0])) break;
     rawTokens.push({ text: m[0], start: m.index, end: m.index + m[0].length });
   }
 
@@ -193,7 +189,7 @@ function extractPeopleFromPhrase(
     }
 
     // Check stop word (e.g. "tomorrow", "at", "about", "מחר", "בשש", "על", "לגבי")
-    if (isStopToken(tok.text)) {
+    if (!EMAIL_RE.test(tok.text) && isStopToken(tok.text)) {
       break;
     }
 
@@ -277,13 +273,11 @@ export function extractPersonSpans(
   const overlaps = (start: number, end: number) => spans.some((s) => start < s.end && end > s.start);
 
   // 1. Existing serialized @[Name](mailto:email) tokens
-  for (const m of commandText.matchAll(SERIALIZED_MENTION_RE)) {
-    const email = m[2]!.toLowerCase();
-    if (!EMAIL_RE.test(email)) continue;
-    const name = m[1]!.replace(/\\(.)/gu, '$1');
-    const start = m.index ?? 0;
-    const end = start + m[0].length;
-    spans.push({ rawName: name, query: name, start, end, role: intent === 'email' ? 'to' : 'attendee', presetEmail: email });
+  for (const part of hyperParseMentions(commandText)) {
+    if (part.kind !== 'mention') continue;
+    const { name, email } = part.person;
+    spans.push({ rawName: name, query: name, start: part.start, end: part.end, role: intent === 'email' ? 'to' : 'attendee', presetEmail: email });
+    if (spans.length > HYPER_ASSISTANT_MAX_PEOPLE) return spans;
   }
 
   // 2. Explicit `@Name` mentions in commandText (skipping emails and bot handles)
@@ -300,6 +294,7 @@ export function extractPersonSpans(
     if (excludeBotHandles.has(handleLower)) continue;
     if (!overlaps(fullStart, fullEnd)) {
       spans.push({ ...first, start: fullStart, end: fullEnd });
+      if (spans.length > HYPER_ASSISTANT_MAX_PEOPLE) return spans;
     }
   }
 
@@ -318,6 +313,7 @@ export function extractPersonSpans(
         if (excludeBotHandles.has(('@' + span.query).toLowerCase())) continue;
         if (!overlaps(span.start, span.end)) {
           spans.push(span);
+          if (spans.length > HYPER_ASSISTANT_MAX_PEOPLE) return spans;
         }
       }
     }
@@ -343,19 +339,8 @@ function buildLlmRefinementPrompt(commandText: string): string {
 function findSpanForLlmName(commandText: string, name: string): { start: number; end: number; rawName: string } | null {
   const clean = hyperCleanPersonQuery(name);
   if (!clean) return null;
-  const idx = commandText.toLowerCase().indexOf(clean.toLowerCase());
-  if (idx >= 0) return { start: idx, end: idx + clean.length, rawName: commandText.slice(idx, idx + clean.length) };
-  // Try matching last or first token in text
-  const firstToken = clean.split(/\s+/u)[0];
-  if (firstToken && firstToken.length >= 2) {
-    const tIdx = commandText.toLowerCase().indexOf(firstToken.toLowerCase());
-    if (tIdx >= 0) return { start: tIdx, end: Math.min(commandText.length, tIdx + clean.length), rawName: clean };
-  }
-  return null;
-}
-
-export function serializeVerifiedMention(name: string, email: string): string {
-  return '@[' + name.replace(/[\r\n]/g, ' ').replace(/\\/g, '\\\\').replace(/\]/g, '\\]') + '](mailto:' + email.toLowerCase() + ')';
+  const span = hyperFindPlainPersonSpan(commandText, clean);
+  return span ? { start: span.start, end: span.end, rawName: span.text } : null;
 }
 
 export function buildBotCandidate(
@@ -506,9 +491,17 @@ export class HyperVoiceCommandParser {
     }
 
     // 5. Resolve each extracted person against AD + Outlook directory via HyperPeopleResolver
+    if (spans.length > HYPER_ASSISTANT_MAX_PEOPLE) {
+      throw new SettingsError('format', 'A voice command can contain at most ' + HYPER_ASSISTANT_MAX_PEOPLE + ' recipients.');
+    }
     const people: HyperAssistantPersonSlot[] = await Promise.all(
       spans.map(async (span, idx): Promise<HyperAssistantPersonSlot> => {
         const slotId = `person-${idx + 1}`;
+        const sourceSpan = span.start < 0 ? undefined : {
+          start: span.start,
+          end: span.end,
+          text: cleanedCommand.slice(span.start, span.end),
+        };
         if (span.presetEmail) {
           const lookedUp = await this.peopleResolver.lookupEmail(span.presetEmail);
           const person = lookedUp ?? {
@@ -523,6 +516,7 @@ export class HyperVoiceCommandParser {
           };
           return {
             id: slotId,
+            sourceSpan,
             rawName: span.rawName,
             query: span.query,
             role: span.role,
@@ -531,7 +525,7 @@ export class HyperVoiceCommandParser {
             candidates: [person],
           };
         }
-        return this.peopleResolver.resolveSlot(slotId, span.rawName, span.role);
+        return { ...await this.peopleResolver.resolveSlot(slotId, span.rawName, span.role), sourceSpan };
       }),
     );
 
@@ -552,7 +546,7 @@ export class HyperVoiceCommandParser {
       const pad = needsLeadingSpace ? ' ' : '';
       const normReplacement = `${pad}@${displayName}`;
       const canonReplacement = slot.selected
-        ? `${pad}${serializeVerifiedMention(slot.selected.name, slot.selected.email)}`
+        ? `${pad}${hyperSerializeMention(slot.selected)}`
         : normReplacement;
       normalizedBody = normalizedBody.slice(0, span.start) + normReplacement + normalizedBody.slice(span.end);
       canonicalBody = canonicalBody.slice(0, span.start) + canonReplacement + canonicalBody.slice(span.end);
@@ -565,7 +559,7 @@ export class HyperVoiceCommandParser {
     if (unpositioned.length) {
       const normExtras = unpositioned.map(({ slot }) => `@${slot.selected?.name ?? slot.query}`).join(', ');
       const canonExtras = unpositioned
-        .map(({ slot }) => (slot.selected ? serializeVerifiedMention(slot.selected.name, slot.selected.email) : `@${slot.query}`))
+        .map(({ slot }) => (slot.selected ? hyperSerializeMention(slot.selected) : `@${slot.query}`))
         .join(', ');
       normalizedBody = `${normalizedBody} (${normExtras})`.trim();
       canonicalBody = `${canonicalBody} (${canonExtras})`.trim();

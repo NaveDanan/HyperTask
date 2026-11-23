@@ -1,3 +1,4 @@
+import type { HyperAssistantExecution } from '@shared/HyperAssistant';
 import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -285,7 +286,11 @@ export class HyperBotsRuntime {
     return (mentioned.length ? mentioned : room.botIds).flatMap((id) => this.bot(id) ?? []);
   }
 
-  async post(input: HyperBotsPostInput): Promise<HyperBotsPosted> {
+  async post(
+    input: HyperBotsPostInput,
+    confirmed?: { botId: string; enableTools: readonly HyperBotsToolName[]; onToolsEnabled: (tools: HyperBotsToolName[]) => void },
+  ): Promise<HyperBotsPosted> {
+    const lifetime = this.abort.signal;
     const room = this.room(input?.roomId);
     if (!room) throw new HyperBotsRuntimeError('not_found', `Unknown room: ${input?.roomId}`);
     if (typeof input.clientMessageId !== 'string' || !UUID.test(input.clientMessageId)) throw new HyperBotsRuntimeError('invalid', 'clientMessageId must be a UUID.');
@@ -301,7 +306,35 @@ export class HyperBotsRuntime {
     // A stored plan is reused as is (its runs keep their models); a message from an older file without a plan or runs
     // is planned with the model it was stored with.
     const needsPlan = !existing || (existing.live && !existing.plan && !this.store.runsForMessage(existing.message.id).length);
-    const plans = needsPlan ? await this.plan(this.targets(room, input.text), existing ? existing.message.model : model) : [];
+    const target = confirmed && room.botIds.includes(confirmed.botId) ? this.bot(confirmed.botId) : undefined;
+    if (confirmed && !target) throw new HyperBotsRuntimeError('not_found', 'The confirmed bot is no longer in this room.');
+    const plans = needsPlan ? await this.plan(target ? [target] : this.targets(room, input.text), existing ? existing.message.model : model) : [];
+    if (lifetime.aborted) throw new HyperBotsRuntimeError('conflict', 'The bot session changed. Try again.');
+    if (confirmed) {
+      // Model discovery may yield to another post or settings edit.
+      const prior = this.store.recall(room.id, input.clientMessageId, input.text);
+      if (prior) {
+        if (!prior.sameText) throw conflict();
+        const botIds = prior.plan?.map((entry) => entry.botId) ??
+          this.store.runsForMessage(prior.message.id).map((run) => run.botId);
+        if (!prior.live || botIds.some((id) => id !== confirmed.botId) || botIds.length > 1) {
+          throw new HyperBotsRuntimeError('conflict', 'This message was already used for a different bot request.');
+        }
+      }
+      const settings = this.settings();
+      const bot = settings.bots.find((row) => row.id === confirmed.botId);
+      if (!bot || !settings.rooms.some((row) => row.id === room.id && row.botIds.includes(bot.id))) {
+        throw new HyperBotsRuntimeError('not_found', 'The confirmed bot is no longer in this room.');
+      }
+      const enabled = [...new Set(confirmed.enableTools)].filter((tool) => !bot.tools.includes(tool));
+      if (enabled.length) {
+        this.saveSettings({
+          ...settings,
+          bots: settings.bots.map((row) => row.id === bot.id ? { ...row, tools: [...row.tools, ...enabled] } : row),
+        });
+        confirmed.onToolsEnabled(enabled);
+      }
+    }
     const r = this.store.addMessageWithRuns(
       { roomId: room.id, clientMessageId: input.clientMessageId, author: { kind: 'user' }, text: input.text, model, runId: null, hop: 0 },
       needsPlan ? plans.map((p) => ({ botId: p.bot.id, model: p.model })) : null, (m, botId) => this.seed(botId, m));
@@ -341,6 +374,32 @@ export class HyperBotsRuntime {
       messages: this.store.listMessages(roomId, { limit: 200 }),
       runs: runs.filter((r) => !finished(r.status) || done.includes(r.id)).map(summary),
       approvals: [...approvals.filter((a) => a.status === 'pending'), ...approvals.filter((a) => a.status !== 'pending').slice(-20)].map(pub),
+    };
+  }
+
+  /** A voice request owns its initial run and hand-offs triggered by that run. */
+  assistantExecution(roomId: string, messageId: string, runId: string): HyperAssistantExecution | null {
+    const runs = this.store.listRuns({ roomId });
+    const root = runs.find((run) => run.id === runId && run.triggerMessageId === messageId);
+    if (!root) return null;
+
+    // Runs are stored in creation order, so their hand-off parents always precede them.
+    const messages = this.store.listMessages(roomId, { limit: Infinity });
+    const byId = new Map(messages.map((message) => [message.id, message]));
+    const family = new Set([root.id]);
+    for (const run of runs) {
+      const parentId = byId.get(run.triggerMessageId)?.runId;
+      if (parentId && family.has(parentId)) family.add(run.id);
+    }
+    const replies = new Set(runs.filter((run) => family.has(run.id) && run.status === 'done').map((run) => 'run:' + run.id));
+    const reply = messages.findLast((message) =>
+      replies.has(message.clientMessageId) && message.author.kind === 'bot',
+    );
+    return {
+      runs: runs.filter((run) => family.has(run.id)).map(summary),
+      approvals: this.store.listApprovals({ roomId }).filter((approval) => family.has(approval.runId)).map(pub),
+      settings: this.settings(),
+      reply: reply?.author.kind === 'bot' ? { text: reply.text, botId: reply.author.botId } : null,
     };
   }
 

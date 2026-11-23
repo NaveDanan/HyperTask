@@ -3,11 +3,14 @@ import type { HyperBotConfig, HyperBotMode, HyperBotsDelivery, HyperBotsToolName
 // Shared IPC contracts for HyperTask's personal voice assistant pipeline (EN + HE bot resolution,
 // Outlook/AD employee directory resolution, pre-send confirmation, and inline approval execution).
 
+export const HYPER_ASSISTANT_MAX_PEOPLE = 20;
+
 export const HyperAssistantChannel = {
   ParseCommand: 'hyper-assistant:parse-command',
   SearchPeople: 'hyper-assistant:search-people',
   Dispatch: 'hyper-assistant:dispatch',
   DecideApproval: 'hyper-assistant:decide-approval',
+  Execution: 'hyper-assistant:execution',
   ListBots: 'hyper-assistant:list-bots',
 } as const;
 
@@ -46,6 +49,7 @@ export interface HyperAssistantPersonSlot {
   rawName: string;
   /** Normalized lookup query (e.g., "Aaron Mitchel" or "ישראל ישראלי"). */
   query: string;
+  sourceSpan?: HyperAssistantSourceSpan;
   role?: 'to' | 'cc' | 'attendee' | 'person';
   status: HyperAssistantPersonStatus;
   selected: HyperAssistantPerson | null;
@@ -83,9 +87,17 @@ export interface HyperAssistantSearchPeopleInput {
   limit?: number;
 }
 
+/** UTF-16 offsets in the command body, including any serialized mention markup. */
+export interface HyperAssistantSourceSpan {
+  start: number;
+  end: number;
+  text: string;
+}
+
 export interface HyperAssistantConfirmedPerson {
   slotId?: string;
   rawName?: string;
+  sourceSpan?: HyperAssistantSourceSpan;
   name: string;
   email: string;
 }
@@ -117,10 +129,18 @@ export interface HyperAssistantDecideApprovalInput {
   delivery?: HyperBotsDelivery;
 }
 
+export interface HyperAssistantExecution {
+  runs: import('./HyperBots').HyperBotsRunSummary[];
+  approvals: import('./HyperBots').HyperBotsApproval[];
+  settings: import('./HyperBots').HyperBotsSettings;
+  reply: { text: string; botId: string } | null;
+}
+
 export interface HyperAssistantApi {
   parseCommand(input: HyperAssistantParseInput): Promise<HyperVoiceCommandPlan>;
   searchPeople(input: HyperAssistantSearchPeopleInput): Promise<HyperAssistantPerson[]>;
   dispatch(input: HyperAssistantDispatchInput): Promise<HyperAssistantDispatchResult>;
+  execution(input: { roomId: string; messageId: string; runId: string }): Promise<HyperAssistantExecution | null>;
   decideApproval(input: HyperAssistantDecideApprovalInput): Promise<{ ok: boolean; error?: string }>;
   listBots(): Promise<HyperAssistantBotCandidate[]>;
 }

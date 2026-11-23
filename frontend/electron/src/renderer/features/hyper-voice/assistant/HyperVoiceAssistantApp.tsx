@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Square, X } from 'lucide-react';
 import { HYPER_DESKTOP_HOTKEY_LABEL } from '@shared/HyperDesktop';
-import { useTr } from '@/i18n';
+import { HYPER_OVERLAY_LOCALE_KEY, resolveLocale, setLocale, useTr } from '@/i18n';
+import { UserEventGetAppearanceSetting } from '@/backend/events/hyper-user';
 import type { TrOptions } from '@/i18n/translator';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -31,6 +32,39 @@ function useT() {
 export function HyperVoiceAssistantApp() {
   const t = useT();
   const assistant = useHyperVoiceAssistant();
+
+  useEffect(() => {
+    let disposed = false;
+    let changed = false;
+    let applying = Promise.resolve();
+    const apply = (locale: string) => {
+      applying = applying.then(async () => {
+        if (!disposed) await setLocale(locale);
+      }).catch(() => undefined);
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== HYPER_OVERLAY_LOCALE_KEY || !event.newValue) return;
+      changed = true;
+      apply(event.newValue);
+    };
+    window.addEventListener('storage', onStorage);
+    try {
+      const cached = localStorage.getItem(HYPER_OVERLAY_LOCALE_KEY);
+      if (cached) apply(cached);
+    } catch { /* The core still holds the saved locale. */ }
+    void UserEventGetAppearanceSetting().then((result) => {
+      if (disposed || changed || !result.ok) return;
+      const { locale, resetToDefault } = result.value;
+      const [language, country = ''] = navigator.language.split('-');
+      apply(!resetToDefault && locale?.languageCode
+        ? resolveLocale(locale.languageCode, locale.countryCode)
+        : resolveLocale(language!, country));
+    }).catch(() => undefined);
+    return () => {
+      disposed = true;
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   // Enable transparent overlay root styling and match system/app light-dark polarity.
   useEffect(() => {
@@ -196,6 +230,7 @@ export function HyperVoiceAssistantApp() {
           downloadingModel={assistant.downloadingModel}
           downloadProgress={assistant.downloadProgress}
           plan={assistant.plan}
+          commandChanged={assistant.commandChanged}
           commandText={assistant.commandText}
           onCommandTextChange={assistant.setCommandText}
           selectedBot={assistant.selectedBot}

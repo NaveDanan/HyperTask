@@ -284,6 +284,13 @@ export class HyperBotsStore {
     if (excess <= 0) return;
     const busy = new Set(st.approvals.filter((a) => ACTIVE.includes(a.status)).map((a) => a.runId));
     const keepRuns = new Set(st.runs.filter((r) => !finished(r.status) || busy.has(r.id)).map((r) => r.id));
+    // Preserve hand-off ancestry while any descendant is active so an assistant can track its original request.
+    const messages = new Map(room.map((message) => [message.id, message]));
+    for (const run of [...st.runs].reverse()) {
+      if (!keepRuns.has(run.id)) continue;
+      const parentId = messages.get(run.triggerMessageId)?.runId;
+      if (parentId) keepRuns.add(parentId);
+    }
     const pinned = new Set(st.runs.filter((r) => keepRuns.has(r.id)).map((r) => r.triggerMessageId));
     const dropped = new Set<string>();
     for (const m of room) {

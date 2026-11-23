@@ -36,7 +36,7 @@ import { HyperBotAvatar, hyperBotAvatarOf } from '@/features/hyper-bots/HyperBot
 import { HyperBotsApprovalCard } from '@/features/hyper-bots/HyperBotApproval';
 import { HyperBotRichText } from '@/features/hyper-bots/HyperBotMentionPopover';
 import { HyperMarkdown } from '@/features/hyper-openbot/transcript/HyperMarkdown';
-import { hyperParseMentions, hyperSerializeMention } from '@/features/hyper-people/hyperMentions';
+import { hyperApplyConfirmedPeople } from '@shared/HyperAssistantPeople';
 import { HyperPersonAvatar } from '@/features/hyper-people/HyperPersonCard';
 import { cn } from '@/lib/utils';
 import type { HyperVoiceAssistantPhase, HyperVoiceExecutionState } from './useHyperVoiceAssistant';
@@ -67,48 +67,9 @@ export function buildStep1CommandPreview(
     }
   }
 
-  // Substitute live selected people into text segments (skipping already-serialized @[...](mailto:...)).
-  const replaceOutsideMentions = (input: string, target: string, replacement: string): { text: string; matched: boolean } => {
-    const trimmed = target.trim();
-    if (!trimmed) return { text: input, matched: false };
-    const re = new RegExp(`@?${escapeRegExp(trimmed)}`, 'iu');
-    let matched = false;
-    const rebuilt = hyperParseMentions(input)
-      .map((part) => {
-        if (part.kind === 'mention') return input.slice(part.start, part.end);
-        if (matched) return part.text;
-        const hit = re.exec(part.text);
-        if (!hit) return part.text;
-        matched = true;
-        return part.text.slice(0, hit.index) + replacement + part.text.slice(hit.index + hit[0].length);
-      })
-      .join('');
-    return { text: rebuilt, matched };
-  };
-
-  const extraTokens: string[] = [];
-  for (const slot of peopleSlots) {
-    if (!slot.selected) continue;
-    const token = hyperSerializeMention({ name: slot.selected.name, email: slot.selected.email });
-    if (body.toLowerCase().includes(`mailto:${slot.selected.email.toLowerCase()})`)) continue;
-    const candidates = [...new Set([slot.rawName, slot.query, slot.selected.name].filter(Boolean))].sort(
-      (a, b) => b.length - a.length,
-    );
-    let replaced = false;
-    for (const candidate of candidates) {
-      const attempt = replaceOutsideMentions(body, candidate, token);
-      if (attempt.matched) {
-        body = attempt.text;
-        replaced = true;
-        break;
-      }
-    }
-    if (!replaced) extraTokens.push(token);
-  }
-
-  if (extraTokens.length > 0) {
-    body = body ? `${body} · ${extraTokens.join(', ')}` : extraTokens.join(', ');
-  }
+  body = hyperApplyConfirmedPeople(body, peopleSlots.flatMap((slot) =>
+    slot.selected ? [{ ...slot.selected, rawName: slot.rawName, sourceSpan: slot.sourceSpan }] : [],
+  ), true);
 
   return { previewText: body, hasLeadingBotChip };
 }
@@ -423,6 +384,7 @@ export interface HyperVoiceHudProps {
   readonly downloadProgress: number | null;
   readonly plan: HyperVoiceCommandPlan | null;
   readonly commandText: string;
+  readonly commandChanged: boolean;
   readonly onCommandTextChange: (text: string) => void;
   readonly selectedBot: HyperAssistantBotCandidate | null;
   readonly onSelectBot: (botId: string) => void;
@@ -538,10 +500,12 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
   }
 
   if (props.phase === 'confirming' && props.plan) {
-    const { plan, selectedBot, peopleSlots, missingTools } = props;
+    const { plan, selectedBot, commandChanged } = props;
+    const peopleSlots = commandChanged ? [] : props.peopleSlots;
+    const missingTools = commandChanged ? [] : props.missingTools;
     const intent = intentBadge(plan.intent, t);
     const botAvatar = selectedBot ? hyperBotAvatarOf(selectedBot) : null;
-    const canDispatch = Boolean(selectedBot && plan.signedIn && props.unresolvedCount === 0 && props.commandText.trim());
+    const canDispatch = Boolean(props.commandText.trim() && (commandChanged || (selectedBot && plan.signedIn && props.unresolvedCount === 0)));
     const livePreview = buildStep1CommandPreview(props.commandText, peopleSlots, selectedBot);
 
     return (
@@ -724,8 +688,9 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
             data-testid="hyper-voice-confirm-send"
           >
             <Send className="size-3.5" />
-            {selectedBot
-              ? t('hyperVoiceAssistant.confirmAndSendTo', 'Confirm & Send to {bot}', {
+            {commandChanged
+              ? t('hyperVoiceAssistant.reviewChanges', 'Review changes')
+              : selectedBot ? t('hyperVoiceAssistant.confirmAndSendTo', 'Confirm & Send to {bot}', {
                   namedArgs: { bot: selectedBot.handle },
                 })
               : t('hyperVoiceAssistant.confirmAndSend', 'Confirm & Send')}
@@ -816,14 +781,16 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
             </div>
           )}
 
-          {execution.replyText ? (
+          {execution.reply ? (
             <div className="rounded-xl border border-border/70 bg-card/90 p-3 text-xs">
               <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
                 <Bot className="size-3.5" aria-hidden="true" />
-                <span dir="auto">{execution.botName}</span>
+                <span dir="auto">
+                  {execution.botSettings?.bots.find((bot) => bot.id === execution.reply?.botId)?.name ?? execution.reply.botId}
+                </span>
               </div>
               <HyperMarkdown
-                content={execution.replyText}
+                content={execution.reply.text}
                 className="[&_li]:[unicode-bidi:plaintext] [&_p]:[unicode-bidi:plaintext] [&_li]:text-start [&_p]:text-start"
               />
             </div>

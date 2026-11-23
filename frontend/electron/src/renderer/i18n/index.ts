@@ -15,6 +15,8 @@ for (const [file, load] of Object.entries(loaders)) {
 /** Locale file names available (e.g. "en-US", "fa"), as EasyLocalization's supported locales. */
 export const supportedLocales = [...localeFiles.keys()].sort();
 
+export const HYPER_OVERLAY_LOCALE_KEY = 'hypertask.appearance.locale';
+
 interface I18nState {
   locale: string;
   translator: Translator;

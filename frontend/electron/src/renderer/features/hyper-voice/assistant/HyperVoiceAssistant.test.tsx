@@ -15,6 +15,7 @@ const baseHudProps = (patch: Partial<HyperVoiceHudProps> = {}): HyperVoiceHudPro
   downloadProgress: null,
   plan: null,
   commandText: '',
+  commandChanged: false,
   onCommandTextChange: noop,
   selectedBot: null,
   onSelectBot: noop,
@@ -269,7 +270,7 @@ describe('HyperVoiceSphere & HyperVoiceHud', () => {
             pendingApprovals: [approval],
             decidedApprovals: [],
             botSettings: null,
-            replyText: null,
+            reply: null,
             error: null,
           },
         })}

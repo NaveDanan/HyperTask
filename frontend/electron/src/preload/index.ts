@@ -106,6 +106,7 @@ const api: HypertaskApi = {
     parseCommand: input => ipcRenderer.invoke(A.ParseCommand, input),
     searchPeople: input => ipcRenderer.invoke(A.SearchPeople, input),
     dispatch: input => ipcRenderer.invoke(A.Dispatch, input),
+    execution: input => ipcRenderer.invoke(A.Execution, input),
     decideApproval: input => ipcRenderer.invoke(A.DecideApproval, input),
     listBots: () => ipcRenderer.invoke(A.ListBots),
   },

@@ -248,7 +248,7 @@ export function matchBotName<T extends HyperBotLike>(
       best = match;
       tied = false;
     } else if (Math.abs(match.score - best.score) <= 0.001) {
-      // Exact name beats generic id collision; otherwise keep higher-specificity name
+      // Exact matches beat fuzzy ones at the same score.
       if (match.confidence === 'exact' && best.confidence !== 'exact') {
         best = match;
         tied = false;
@@ -277,6 +277,7 @@ export function extractExplicitBotMentions<T extends HyperBotLike>(
   if (!text || !bots.length) return [];
   const maxWords = Math.max(1, ...bots.map((b) => hyperNormalizeBotToken(b.name).split(' ').filter(Boolean).length));
   const results: HyperBotMentionMatch<T>[] = [];
+  const byId = new Map(bots.map((bot) => [bot.id.toLowerCase(), bot]));
   const seen = new Set<string>();
 
   for (let i = 0; i < text.length; i++) {
@@ -302,7 +303,8 @@ export function extractExplicitBotMentions<T extends HyperBotLike>(
     for (let count = tokens.length; count >= 1; count--) {
       const endOffset = tokens[count - 1]!.end;
       const candidate = spanText.slice(0, endOffset);
-      const match = matchBotName(candidate, bots);
+      const bot = byId.get(candidate.toLowerCase());
+      const match: HyperBotMatch<T> | null = bot ? { bot, confidence: 'exact', score: 1 } : matchBotName(candidate, bots);
       if (match) {
         // Prefer exact multi-word match over partial fuzzy match
         if (!picked || match.score > picked.match.score || (match.score === picked.match.score && endOffset > picked.endOffset)) {
@@ -367,38 +369,43 @@ function tryMatchLeadingBot<T extends HyperBotLike>(
   }
   if (!tokens.length || tokens[0]!.start > 0) return null;
 
+  let picked: { match: HyperBotMatch<T>; end: number } | undefined;
   for (let count = tokens.length; count >= 1; count--) {
-    const endInRest = tokens[count - 1]!.end;
-    const candidate = rest.slice(0, endInRest);
-    const afterCandidate = rest.slice(endInRest);
-    if (requirePunctuationAfterVocative && !/^\s*[,:\-–—]\s*\S/.test(afterCandidate)) {
-      continue;
-    }
-    const match = matchBotName(candidate, bots);
+    const end = tokens[count - 1]!.end;
+    const afterCandidate = rest.slice(end);
+    if (requirePunctuationAfterVocative && !/^\s*[,:\-–—]\s*\S/.test(afterCandidate)) continue;
+    const match = matchBotName(rest.slice(0, end), bots);
     if (!match) continue;
-
-    // Strip joiner ("to ", ", ", ": ", or whitespace) to isolate commandText
-    let commandText = afterCandidate;
-    const joiner = TRIGGER_JOINER.exec(afterCandidate);
-    if (joiner) {
-      commandText = afterCandidate.slice(joiner[0].length);
+    if (match.confidence === 'exact') {
+      picked = { match, end };
+      break;
     }
-    // In Hebrew, "תגיד למשה שיקבע פגישה" often leaves a leading "ש" on the verb; keep it readable & intact.
-    commandText = commandText.trim();
-
-    return {
-      bot: match.bot,
-      botId: match.bot.id,
-      handle: hyperBotDisplayHandle(match.bot),
-      confidence: match.confidence,
-      source: 'spoken-trigger',
-      matchedText: fullText.slice(0, candidateStart + endInRest),
-      start: 0,
-      end: candidateStart + endInRest,
-      commandText,
-    };
+    if (!picked || match.score > picked.match.score) picked = { match, end };
   }
-  return null;
+  if (!picked) return null;
+  const { match, end: endInRest } = picked;
+  const afterCandidate = rest.slice(endInRest);
+
+  // Strip joiner ("to ", ", ", ": ", or whitespace) to isolate commandText
+  let commandText = afterCandidate;
+  const joiner = TRIGGER_JOINER.exec(afterCandidate);
+  if (joiner) {
+    commandText = afterCandidate.slice(joiner[0].length);
+  }
+  // In Hebrew, "תגיד למשה שיקבע פגישה" often leaves a leading "ש" on the verb; keep it readable & intact.
+  commandText = commandText.trim();
+
+  return {
+    bot: match.bot,
+    botId: match.bot.id,
+    handle: hyperBotDisplayHandle(match.bot),
+    confidence: match.confidence,
+    source: 'spoken-trigger',
+    matchedText: fullText.slice(0, candidateStart + endInRest),
+    start: 0,
+    end: candidateStart + endInRest,
+    commandText,
+  };
 }
 
 /**

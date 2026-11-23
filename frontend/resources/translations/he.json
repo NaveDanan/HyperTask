@@ -2160,6 +2160,7 @@
     "enableMissingTools": "הפעל כלי Outlook ({tools}) עבור {bot} והרץ. כל שליחת אימייל או זימון תבקש אישור לפני השליחה.",
     "rerecord": "הקלט שוב",
     "confirmAndSendTo": "אשר ושלח אל {bot}",
+    "reviewChanges": "סקירת שינויים",
     "confirmAndSend": "אשר ושלח",
     "executionTitle": "התקדמות Hyper-Bot",
     "waitingApproval": "{bot} ממתין לאישור שלך לפני השליחה",

@@ -155,7 +155,10 @@ describe('extractSpokenBotTrigger & extractBotMentions', () => {
   });
 
   it('gives explicit @mentions precedence over spoken triggers', () => {
-    expect(extractBotMentions('Tell Abby to ping @משה', BOTS)).toMatchObject([
+    expect(extractBotMentions('@Sales Bot find prospects', [
+    { id: 'sales', name: 'Sales' }, { id: 'prospects', name: 'Sales Bot' },
+  ])[0]?.botId).toBe('prospects');
+  expect(extractBotMentions('Tell Abby to ping @משה', BOTS)).toMatchObject([
       { botId: 'bot', source: 'at-mention', handle: '@משה' },
     ]);
   });
@@ -166,4 +169,16 @@ describe('extractSpokenBotTrigger & extractBotMentions', () => {
     expect(filterBotsByQuery('אבי', BOTS).map((b) => b.handle)).toEqual(['@אבי']);
     expect(matchBotName('Abbey', BOTS)?.bot.id).toBe('abby');
   });
+});
+
+it('prioritizes explicit IDs and shorter exact spoken bot names', () => {
+  expect(extractBotMentions('@scout check mail', [
+    { id: 'helper', name: 'Scout' }, { id: 'scout', name: 'Research' },
+  ])[0]?.botId).toBe('scout');
+  expect(extractBotMentions('@Sales Bot find prospects', [
+    { id: 'sales', name: 'Sales' }, { id: 'prospects', name: 'Sales Bot' },
+  ])[0]?.botId).toBe('prospects');
+  expect(extractBotMentions('Tell Abby to send email', [
+    { id: 'abby', name: 'Abby' }, { id: 'abby-b', name: 'Abby B' },
+  ])[0]).toMatchObject({ botId: 'abby', commandText: 'send email' });
 });

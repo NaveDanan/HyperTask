@@ -3,6 +3,7 @@ import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
 import {
   HyperAssistantChannel as A,
+  HYPER_ASSISTANT_MAX_PEOPLE,
   type HyperAssistantBotCandidate,
   type HyperAssistantConfirmedPerson,
   type HyperAssistantDispatchResult,
@@ -11,13 +12,13 @@ import {
 } from '@shared/HyperAssistant';
 import { HYPER_BOTS_TOOLS, type HyperBotConfig, type HyperBotsToolName } from '@shared/HyperBots';
 import { extractBotMentions, hyperBotDisplayHandle } from '@shared/HyperBotResolver';
+import { hyperApplyConfirmedPeople } from '@shared/HyperAssistantPeople';
 import type { HyperBotsHub } from './HyperBotsHub';
 import { HyperPeopleResolver, type HyperPeopleBridge } from './HyperPeopleResolver';
 import type { HyperTrustedWindowRegistry } from './HyperTrustedWindows';
 import {
   HyperVoiceCommandParser,
   buildBotCandidate,
-  serializeVerifiedMention,
 } from './HyperVoiceCommandParser';
 import { SettingsError } from './settings-error';
 
@@ -46,6 +47,11 @@ const SearchPeopleArgs = z.strictObject({
 const ConfirmedPersonSchema = z.strictObject({
   slotId: z.string().max(64).optional(),
   rawName: z.string().max(256).optional(),
+  sourceSpan: z.strictObject({
+    start: z.number().int().min(0).max(20000),
+    end: z.number().int().min(1).max(20000),
+    text: z.string().min(1).max(20000),
+  }).optional(),
   name: z.string().trim().min(1).max(512),
   email: z.email().max(320),
 });
@@ -54,7 +60,7 @@ const DispatchArgs = z.strictObject({
   botId: slug,
   targetRoomId: slug.nullable().optional(),
   text: z.string().trim().min(1, 'Write or speak a command first.').max(20000),
-  confirmedPeople: z.array(ConfirmedPersonSchema).max(20).default([]),
+  confirmedPeople: z.array(ConfirmedPersonSchema).max(HYPER_ASSISTANT_MAX_PEOPLE).default([]),
   enableMissingTools: z.array(z.enum(toolNames)).max(toolNames.length).optional(),
   clientMessageId: uuid.optional(),
   model: z.string().trim().min(1).max(200).nullable().optional(),
@@ -66,10 +72,6 @@ const DecideApprovalArgs = z.strictObject({
   delivery: z.enum(['send', 'draft']).optional(),
 });
 
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /**
  * Produces the final message posted to Hyper-Bot: ensures the confirmed target bot handle is present
  * and substitutes/attaches verified `@[Display Name](mailto:email)` tokens for every confirmed person.
@@ -79,43 +81,7 @@ export function buildDispatchedAssistantText(
   bot: Pick<HyperBotConfig, 'id' | 'name'>,
   confirmedPeople: readonly HyperAssistantConfirmedPerson[],
 ): string {
-  let out = text.trim();
-  const uninserted: string[] = [];
-
-  for (const person of confirmedPeople) {
-    const emailLower = person.email.trim().toLowerCase();
-    const token = serializeVerifiedMention(person.name.trim(), emailLower);
-    if (out.toLowerCase().includes(`(mailto:${emailLower})`)) {
-      continue;
-    }
-
-    const needles = [
-      person.rawName ? `@${person.rawName.trim()}` : '',
-      `@${person.name.trim()}`,
-      person.rawName?.trim() ?? '',
-      person.name.trim(),
-    ]
-      .filter((n) => n.length >= 2)
-      .sort((a, b) => b.length - a.length);
-
-    let replaced = false;
-    for (const needle of [...new Set(needles)]) {
-      // Avoid replacing inside an existing @[...](mailto:...) token
-      const re = new RegExp(`(?<!@\\[)${escapeRegex(needle)}(?!\\]\\(mailto:)`, 'iu');
-      if (re.test(out)) {
-        out = out.replace(re, token);
-        replaced = true;
-        break;
-      }
-    }
-    if (!replaced) {
-      uninserted.push(token);
-    }
-  }
-
-  if (uninserted.length) {
-    out = `${out} (${uninserted.join(', ')})`.trim();
-  }
+  let out = hyperApplyConfirmedPeople(text.trim(), confirmedPeople);
 
   const handle = hyperBotDisplayHandle(bot);
   if (!extractBotMentions(out, [bot]).length) {
@@ -125,7 +91,7 @@ export function buildDispatchedAssistantText(
   return out;
 }
 
-const CHANNELS = [A.ParseCommand, A.SearchPeople, A.Dispatch, A.DecideApproval, A.ListBots];
+const CHANNELS = [A.ParseCommand, A.SearchPeople, A.Dispatch, A.Execution, A.DecideApproval, A.ListBots];
 
 /**
  * Registers IPC handlers for `window.hypertask.assistant` across all trusted HyperTask windows
@@ -207,35 +173,23 @@ export function registerHyperAssistantIpc(deps: HyperAssistantIpcDeps): () => vo
     }
 
     const input = parsed.data;
-    let settings = active.runtime.settings();
-    let bot = settings.bots.find((b) => b.id === input.botId);
+    const settings = active.runtime.settings();
+    const bot = settings.bots.find((b) => b.id === input.botId);
     if (!bot) {
       return { ok: false, error: 'That bot is no longer configured.' };
     }
-
-    // Enable requested missing Outlook tools on the target bot before posting (writes still require owner approval).
-    if (input.enableMissingTools?.length) {
-      const mergedTools = toolNames.filter((name) => bot!.tools.includes(name) || input.enableMissingTools!.includes(name));
-      if (mergedTools.length !== bot.tools.length) {
-        try {
-          settings = active.runtime.saveSettings({
-            ...settings,
-            bots: settings.bots.map((row) => (row.id === bot!.id ? { ...row, tools: mergedTools } : row)),
-          });
-          bot = settings.bots.find((b) => b.id === input.botId) ?? bot;
-        } catch (error) {
-          return { ok: false, error: error instanceof Error ? error.message : String(error) };
-        }
-      }
+    if (input.confirmedPeople.some(({ sourceSpan }) => sourceSpan &&
+      (sourceSpan.start >= sourceSpan.end || input.text.slice(sourceSpan.start, sourceSpan.end) !== sourceSpan.text))) {
+      return { ok: false, error: 'The command changed. Review its recipients and confirm again.' };
     }
 
     const requestedRoom = input.targetRoomId
-      ? settings.rooms.find((r) => r.id === input.targetRoomId && r.botIds.includes(bot!.id))
+      ? settings.rooms.find((r) => r.id === input.targetRoomId && r.botIds.includes(bot.id))
       : undefined;
     const directRoom = settings.rooms.find(
-      (r) => r.kind === 'direct' && r.botIds.length === 1 && r.botIds[0] === bot!.id,
+      (r) => r.kind === 'direct' && r.botIds.length === 1 && r.botIds[0] === bot.id,
     );
-    const fallbackRoom = settings.rooms.find((r) => r.botIds.includes(bot!.id));
+    const fallbackRoom = settings.rooms.find((r) => r.botIds.includes(bot.id));
     const room = requestedRoom ?? directRoom ?? fallbackRoom;
     if (!room) {
       return { ok: false, error: `Could not find a conversation room for ${bot.name}.` };
@@ -243,25 +197,43 @@ export function registerHyperAssistantIpc(deps: HyperAssistantIpcDeps): () => vo
 
     const dispatchedText = buildDispatchedAssistantText(input.text, bot, input.confirmedPeople);
 
+    let enabledTools: HyperBotsToolName[] = [];
     try {
       const posted = await active.runtime.post({
         roomId: room.id,
         clientMessageId: input.clientMessageId ?? randomUUID(),
         text: dispatchedText,
         model: input.model ?? null,
+      }, {
+        botId: bot.id,
+        enableTools: input.enableMissingTools ?? [],
+        onToolsEnabled: (tools) => { enabledTools = tools; },
       });
+      const run = posted.runs.find((row) => row.botId === bot.id);
+      if (!run) throw new Error('The confirmed bot run is no longer available.');
       return {
         ok: true,
         roomId: room.id,
         messageId: posted.message.id,
-        runId: posted.runs[0]?.id ?? null,
+        runId: run.id,
         botId: bot.id,
         botName: bot.name,
         dispatchedText,
       };
     } catch (error) {
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      const message = error instanceof Error ? error.message : String(error);
+      return { ok: false, error: enabledTools.length ? message + ' Enabled tools: ' + enabledTools.join(', ') + '.' : message };
     }
+  });
+
+  const executionArgs = z.strictObject({ roomId: slug, messageId: uuid, runId: uuid });
+  ipcMain.handle(A.Execution, async (event, rawArgs: unknown) => {
+    assertTrusted(event);
+    const parsed = executionArgs.safeParse(rawArgs);
+    if (!parsed.success) return null;
+    const active = await deps.botsHub?.current();
+    const { roomId, messageId, runId } = parsed.data;
+    return active?.runtime.assistantExecution(roomId, messageId, runId) ?? null;
   });
 
   ipcMain.handle(A.DecideApproval, async (event, rawArgs: unknown): Promise<{ ok: boolean; error?: string }> => {

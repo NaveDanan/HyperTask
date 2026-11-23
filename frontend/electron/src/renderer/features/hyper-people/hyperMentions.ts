@@ -1,23 +1,6 @@
 import type { HyperPerson } from '@shared/api';
-export interface HyperMention { name: string; email: string }
-export type HyperMentionPart = { kind: 'text'; text: string; start: number; end: number } | { kind: 'mention'; person: HyperMention; start: number; end: number };
-const emailPattern = /^[^\s@<>()[\]\\]+@[^\s@<>()[\]\\]+\.[^\s@<>()[\]\\]+$/u;
-export function hyperSerializeMention(person: HyperMention): string {
-  if (!emailPattern.test(person.email)) return person.name;
-  return '@[' + person.name.replace(/[\r\n]/g, ' ').replace(/\\/g, '\\\\').replace(/\]/g, '\\]') + '](mailto:' + person.email.toLowerCase() + ')';
-}
-export function hyperParseMentions(value: string): HyperMentionPart[] {
-  const pattern = /@\[((?:\\.|[^\]\\\r\n])*)\]\(mailto:([^\s()]+)\)/gu;
-  const parts: HyperMentionPart[] = []; let start = 0;
-  for (const match of value.matchAll(pattern)) {
-    if (!emailPattern.test(match[2])) continue;
-    if (match.index > start) parts.push({ kind: 'text', text: value.slice(start, match.index), start, end: match.index });
-    const end = match.index + match[0].length;
-    parts.push({ kind: 'mention', person: { name: match[1].replace(/\\(.)/gu, '$1'), email: match[2].toLowerCase() }, start: match.index, end }); start = end;
-  }
-  if (start < value.length) parts.push({ kind: 'text', text: value.slice(start), start, end: value.length });
-  return parts;
-}
+import { hyperParseMentions, type HyperMention } from '@shared/HyperPeopleMentions';
+export { hyperParseMentions, hyperSerializeMention, type HyperMention, type HyperMentionPart } from '@shared/HyperPeopleMentions';
 export function hyperMentionText(value: string): string { return hyperParseMentions(value).map(part => part.kind === 'text' ? part.text : '@' + part.person.name).join(''); }
 export function hyperMentionPeople(value: string): HyperMention[] {
   return [...new Map(hyperParseMentions(value).flatMap(part => part.kind === 'mention' ? [[part.person.email, part.person] as const] : [])).values()];

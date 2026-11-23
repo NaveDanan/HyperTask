@@ -3545,6 +3545,7 @@
     "enableMissingTools": "Enable Outlook tool(s) ({tools}) for {bot} and run. Every email or invite still asks for your approval.",
     "rerecord": "Re-record",
     "confirmAndSendTo": "Confirm & Send to {bot}",
+    "reviewChanges": "Review changes",
     "confirmAndSend": "Confirm & Send",
     "executionTitle": "Hyper-Bot progress",
     "waitingApproval": "{bot} needs your approval before sending",

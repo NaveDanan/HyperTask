@@ -159,7 +159,7 @@ export interface HyperVoiceExecutionState {
   readonly pendingApprovals: HyperBotsApproval[];
   readonly decidedApprovals: HyperBotsApproval[];
   readonly botSettings: HyperBotsSettings | null;
-  readonly replyText: string | null;
+  readonly reply: { text: string; botId: string } | null;
   readonly error: string | null;
 }
 
@@ -213,6 +213,8 @@ export function useHyperVoiceAssistant() {
   phaseRef.current = phase;
   const botsCacheRef = useRef<HyperAssistantBotCandidate[]>([]);
   const captureRef = useRef<ActiveCapture | null>(null);
+  const captureAbortRef = useRef<AbortController | null>(null);
+  const snapshotInFlight = useRef<number | null>(null);
   const stoppingRef = useRef(false);
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const settingsRef = useRef(clientSettings);
@@ -232,6 +234,8 @@ export function useHyperVoiceAssistant() {
 
   const disposeCapture = useCallback(() => {
     clearTimers();
+    captureAbortRef.current?.abort();
+    captureAbortRef.current = null;
     const active = captureRef.current;
     captureRef.current = null;
     stoppingRef.current = false;
@@ -305,7 +309,10 @@ export function useHyperVoiceAssistant() {
     }
   }, [grant, cloudProvider, probeLocalSpeech]);
 
-  const parseTranscript = useCallback(async (transcript: string) => {
+  const parseTranscript = useCallback(async (transcript: string, previous?: {
+    selectedBotId: string;
+    enableTools: boolean;
+  }) => {
     const trimmed = transcript.trim();
     if (!trimmed) {
       setPhase('idle');
@@ -323,10 +330,13 @@ export function useHyperVoiceAssistant() {
       if (gen !== generationRef.current) return;
       setPlan(parsed);
       setCommandText(parsed.cleanedCommand || parsed.rawText);
-      const chosenBotId = parsed.resolvedBot?.id ?? parsed.availableBots[0]?.id ?? null;
+      const keepBot = previous &&
+        (!parsed.resolvedBot || parsed.resolvedBot.confidence === 'default') &&
+        parsed.availableBots.some((bot) => bot.id === previous.selectedBotId);
+      const chosenBotId = keepBot ? previous.selectedBotId : parsed.resolvedBot?.id ?? parsed.availableBots[0]?.id ?? null;
       setSelectedBotId(chosenBotId);
       setPeopleSlots(parsed.people.map((slot) => ({ ...slot })));
-      setEnableMissingTools(true);
+      setEnableMissingTools(previous?.enableTools ?? true);
       setExecution(null);
       setPhase('confirming');
     } catch (error) {
@@ -435,6 +445,9 @@ export function useHyperVoiceAssistant() {
       return;
     }
 
+    const abort = new AbortController();
+    captureAbortRef.current = abort;
+    phaseRef.current = 'preparing';
     setPhase('preparing');
     const bots = await refreshBotsCache();
     if (gen !== generationRef.current) return;
@@ -459,7 +472,6 @@ export function useHyperVoiceAssistant() {
       speechSilenceFiltering: settings.speechSilenceFiltering,
     };
 
-    const abort = new AbortController();
     let streamingSession: (VoiceStreamingSession & { readonly feed: (pcm: Float32Array) => void }) | undefined;
     let recordingUriToDelete: string | null = null;
     let vadTracker: ReturnType<typeof createHyperVoiceVadTracker> | null = null;
@@ -574,6 +586,8 @@ export function useHyperVoiceAssistant() {
       },
     );
 
+    // While recorder setup is awaiting the audio worklet, abort must also stop any acquired tracks.
+    abort.signal.addEventListener('abort', capture.cancelRecording, { once: true });
     try {
       const prepared = await capture.transcriber.prepare({ signal: abort.signal });
       if (gen !== generationRef.current || abort.signal.aborted) {
@@ -588,6 +602,7 @@ export function useHyperVoiceAssistant() {
         return;
       }
 
+      abort.signal.removeEventListener('abort', capture.cancelRecording);
       const startedAt = Date.now();
       vadTracker = createHyperVoiceVadTracker(startedAt);
       captureRef.current = {
@@ -623,6 +638,7 @@ export function useHyperVoiceAssistant() {
       abort.abort();
       capture.cancelRecording();
       if (gen !== generationRef.current) return;
+      disposeCapture();
       if (error instanceof Error && error.message === 'MISSING_LOCAL_MODEL') {
         setPhase('needs-setup');
         return;
@@ -761,55 +777,69 @@ export function useHyperVoiceAssistant() {
   // Step 2: dispatch confirmed plan to Hyper-Bot and track live run & Outlook approvals
   const syncExecutionSnapshot = useCallback(
     async (roomId: string, runId: string | null, messageId: string | null, gen: number) => {
-      const botsApi = window.hypertask?.hyperBots;
-      if (!botsApi) return;
-      const result = await botsApi.snapshot({ roomId });
-      if (!result.ok || gen !== generationRef.current) return;
-      const snap = result.value;
-      const matchedRun =
-        (runId ? snap.runs.find((r) => r.id === runId) : undefined) ??
-        (messageId ? snap.runs.find((r) => r.triggerMessageId === messageId) : undefined) ??
-        snap.runs.at(-1);
-      const effectiveRunId = matchedRun?.id ?? runId;
-      const runApprovals = effectiveRunId
-        ? snap.approvals.filter((a) => a.runId === effectiveRunId)
-        : snap.approvals.filter((a) => a.status === 'pending');
-      const pendingApprovals = runApprovals.filter((a) => a.status === 'pending');
-      const decidedApprovals = runApprovals.filter((a) => a.status !== 'pending');
-      const botReply = effectiveRunId
-        ? [...snap.messages]
-            .reverse()
-            .find((m) => m.runId === effectiveRunId && m.author.kind === 'bot')?.text ?? null
-        : null;
-      const status: HyperBotsRunStatus = matchedRun?.status ?? (pendingApprovals.length ? 'waiting_approval' : 'running');
+      const api = window.hypertask?.assistant;
+      if (!api || gen !== generationRef.current || snapshotInFlight.current === gen) return;
+      snapshotInFlight.current = gen;
+      let snapshot;
+      try {
+        snapshot = runId && messageId ? await api.execution({ roomId, runId, messageId }) : null;
+      } catch {
+        // The runtime can be temporarily unavailable. Keep the current request and retry on the next poll.
+        return;
+      } finally {
+        if (snapshotInFlight.current === gen) snapshotInFlight.current = null;
+      }
+      if (gen !== generationRef.current) return;
+      if (!snapshot) {
+        setExecution(null);
+        setErrorMessage('This bot request is no longer available.');
+        setPhase('error');
+        return;
+      }
+
+      const { runs, approvals, reply, settings } = snapshot;
+      const pendingApprovals = approvals.filter((a) => a.status === 'pending');
+      const decidedApprovals = approvals.filter((a) => a.status !== 'pending');
+      const failed = runs.find((run) => run.status === 'failed');
+      const active = runs.some((run) => run.status !== 'done' && run.status !== 'failed');
+      const status: HyperBotsRunStatus = pendingApprovals.length ? 'waiting_approval' :
+        active ? 'running' : failed ? 'failed' : 'done';
 
       setExecution((prev) =>
         prev && prev.roomId === roomId
           ? {
               ...prev,
-              runId: effectiveRunId,
               runStatus: status,
               pendingApprovals,
               decidedApprovals,
-              botSettings: snap.settings,
-              replyText: botReply ?? prev.replyText,
-              error: matchedRun?.error ?? prev.error,
+              botSettings: settings,
+              reply: reply ?? prev.reply,
+              error: failed?.error ?? null,
             }
           : prev,
       );
 
-      if (status === 'done' && pendingApprovals.length === 0) {
+      if (status === 'done') {
         setPhase('done');
       } else if (status === 'failed') {
-        setErrorMessage(matchedRun?.error ?? 'The bot could not finish this request.');
+        setErrorMessage(failed?.error ?? 'The bot could not finish this request.');
         setPhase('error');
       }
     },
     [],
   );
 
+  const commandChanged = plan !== null && commandText.trim() !== (plan.cleanedCommand || plan.rawText);
   const confirmAndDispatch = useCallback(async () => {
-    if (!plan || !selectedBot || unresolvedCount > 0) return;
+    if (!plan || !commandText.trim()) return;
+    if (commandChanged) {
+      await parseTranscript(commandText, selectedBot ? {
+        selectedBotId: selectedBot.id,
+        enableTools: enableMissingTools,
+      } : undefined);
+      return;
+    }
+    if (!selectedBot || unresolvedCount > 0) return;
     const api = window.hypertask?.assistant;
     if (!api) {
       setErrorMessage('Hyper-Bot assistant service is unavailable.');
@@ -826,6 +856,7 @@ export function useHyperVoiceAssistant() {
             {
               slotId: slot.id,
               rawName: slot.rawName,
+              sourceSpan: slot.sourceSpan,
               name: slot.selected.name,
               email: slot.selected.email,
             },
@@ -837,7 +868,7 @@ export function useHyperVoiceAssistant() {
       const result = await api.dispatch({
         botId: selectedBot.id,
         targetRoomId: selectedBot.roomId ?? plan.targetRoomId,
-        text: commandText.trim() || plan.cleanedCommand || plan.rawText,
+        text: commandText.trim(),
         confirmedPeople,
         enableMissingTools: enableMissingTools && missingTools.length > 0 ? missingTools : undefined,
         clientMessageId:
@@ -863,7 +894,7 @@ export function useHyperVoiceAssistant() {
         pendingApprovals: [],
         decidedApprovals: [],
         botSettings: null,
-        replyText: null,
+        reply: null,
         error: null,
       });
 
@@ -874,7 +905,9 @@ export function useHyperVoiceAssistant() {
       setPhase('error');
     }
   }, [
+    commandChanged,
     commandText,
+    parseTranscript,
     enableMissingTools,
     missingTools,
     peopleSlots,
@@ -914,6 +947,7 @@ export function useHyperVoiceAssistant() {
           approved,
           ...(delivery ? { delivery } : {}),
         });
+        if (gen !== generationRef.current) return;
         if (res && !res.ok && res.error) {
           setErrorMessage(res.error);
         }
@@ -921,7 +955,7 @@ export function useHyperVoiceAssistant() {
           await syncExecutionSnapshot(execution.roomId, execution.runId, execution.messageId, gen);
         }
       } catch (error) {
-        setErrorMessage(normalizeError(error));
+        if (gen === generationRef.current) setErrorMessage(normalizeError(error));
       } finally {
         setDecidingIds((prev) => prev.filter((id) => id !== approvalId));
       }
@@ -970,6 +1004,7 @@ export function useHyperVoiceAssistant() {
         }
       } else if (event.type === 'hidden') {
         if (phaseRef.current === 'preparing' || phaseRef.current === 'listening') {
+          generationRef.current += 1;
           disposeCapture();
           setPhase('idle');
         } else if (phaseRef.current === 'done' || phaseRef.current === 'error') {
@@ -1005,7 +1040,10 @@ export function useHyperVoiceAssistant() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [cancelAndHide, stopAndProcess]);
 
-  useEffect(() => () => disposeCapture(), [disposeCapture]);
+  useEffect(() => () => {
+    generationRef.current += 1;
+    disposeCapture();
+  }, [disposeCapture]);
 
   return {
     phase,
@@ -1022,6 +1060,7 @@ export function useHyperVoiceAssistant() {
     levelRef,
     // Step 1
     plan,
+    commandChanged,
     commandText,
     setCommandText,
     selectedBot,

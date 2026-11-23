@@ -18,7 +18,7 @@ const event = (extra: object = {}) => ({
   organizer: 'Nave', isOrganizer: true, responseStatus: 1, attendees: [{ name: 'Lee', email: 'lee@corp.example', type: 1, response: 3 }], attendeeCount: 1,
   busyStatus: 2, isRecurring: false, recurrenceState: 0, isCancelled: false, isPrivate: false, joinUrl: null, lastModified: '2026-11-17T06:00:00.000Z', ...extra,
 });
-function setup(over: Record<string, (args: any) => unknown> = {}) {
+function setup(over: Record<string, (args: any) => unknown> = {}, cachedPerson?: (email: string) => unknown) {
   const ops: Record<string, (args: any) => unknown> = {
     'mail.account': () => account, 'mail.read': () => mail(), 'event.get': () => event(), list: () => [event()],
     'mail.list': () => [mail(), mail({ id: 'EF56', protected: true, preview: '' })],
@@ -27,7 +27,7 @@ function setup(over: Record<string, (args: any) => unknown> = {}) {
     create: a => event({ subject: a.subject }), update: () => event({ subject: 'Moved' }), 'event.forward': a => ({ mode: 'organizer', to: a.to }), ...over,
   };
   const request = vi.fn(async (op: string, args: unknown) => ops[op]!(args));
-  const tools = Object.fromEntries(hyperBotsOutlookTools({ request } as never).map(tool => [tool.name, tool]));
+  const tools = Object.fromEntries(hyperBotsOutlookTools({ request, cachedPerson } as never).map(tool => [tool.name, tool]));
   return { request, tools, tool: (name: string) => tools[name]! };
 }
 const failsWith = async (run: Promise<unknown>, kind: string, pattern?: RegExp) => {
@@ -290,7 +290,7 @@ it('enriches create_event and send_message approval cards with Display Name, ema
     'aaron.mitchell@corp.example': { name: 'Aaron Mitchell', email: 'aaron.mitchell@corp.example', title: 'Staff Engineer', department: 'Platform', phone: '', office: '', company: '', source: 'ad' },
     'israel@corp.example': { name: 'ישראל ישראלי', email: 'israel@corp.example', title: 'מנהל פרויקט', department: 'הנדסה', phone: '', office: '', company: '', source: 'outlook' },
   };
-  const { tool } = setup({ 'people.lookup': a => people[a.email] ?? null });
+  const { request, tool } = setup({}, (email) => people[email] ?? null);
   const create = tool('outlook_create_event');
   const createBound = await create.bind!(create.parse({
     subject: 'Sync', start: '2026-11-18T18:00:00Z', end: '2026-11-18T18:30:00Z',
@@ -310,4 +310,5 @@ it('enriches create_event and send_message approval cards with Display Name, ema
   expect(sendBound.card?.find(r => r.label === 'To')?.value).toContain('Aaron Mitchell');
   expect(sendBound.card?.find(r => r.label === 'Cc')?.value).toBe('unknown@vendor.example');
   expect(sendBound.card?.find(r => r.label === 'Outside corp.example')?.value).toBe('unknown@vendor.example');
+  expect(request.mock.calls.map(([op]) => op)).toEqual(['mail.account', 'mail.account']);
 });

@@ -124,7 +124,7 @@ export class HyperVoiceOverlayWindow {
       },
     });
     win.setAlwaysOnTop?.(true, 'floating');
-    win.setVisibleOnAllWorkspaces?.(true, { visibleOnFullScreen: true });
+    win.setVisibleOnAllWorkspaces?.(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
     this.deps.trustedWindows.add(win);
 
     win.on('close', (event) => {
