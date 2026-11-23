@@ -109,6 +109,7 @@ const api: HypertaskApi = {
     execution: input => ipcRenderer.invoke(A.Execution, input),
     decideApproval: input => ipcRenderer.invoke(A.DecideApproval, input),
     listBots: () => ipcRenderer.invoke(A.ListBots),
+    openGroup: input => ipcRenderer.invoke(A.OpenGroup, input),
   },
   hyperVoice: {
     status: () => ipcRenderer.invoke(V.Status),

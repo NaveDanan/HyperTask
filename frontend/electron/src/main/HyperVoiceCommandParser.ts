@@ -5,9 +5,11 @@ import { HYPER_ASSISTANT_MAX_PEOPLE, type HyperAssistantBotCandidate,
   type HyperAssistantPersonSlot,
   type HyperVoiceCommandPlan,
 } from '@shared/HyperAssistant';
-import type { HyperBotConfig, HyperBotsRoom, HyperBotsSettings, HyperBotsToolName } from '@shared/HyperBots';
+import { hyperBotFindGroup, type HyperBotConfig, type HyperBotsRoom, type HyperBotsSettings, type HyperBotsToolName } from '@shared/HyperBots';
 import {
-  extractBotMentions,
+  extractVoiceBotConversation,
+  extractVoiceBotGroupTask,
+  extractVoiceBotMention,
   hyperBotDisplayHandle,
   hyperStripDiacritics,
 } from '@shared/HyperBotResolver';
@@ -407,12 +409,47 @@ export class HyperVoiceCommandParser {
     const rooms = input.settings?.rooms ?? [];
     const availableBots = bots.map((b) => buildBotCandidate(b, rooms));
 
+    const conversation = extractVoiceBotConversation(rawText, bots);
+    if (conversation) {
+      const { botIds, normalizedText, unresolved } = conversation;
+      if (input.signedIn && unresolved.length) {
+        warnings.push('Could not find a configured bot for ' + unresolved.map(name => '"' + name + '"').join(', ') + '.');
+      } else if (input.signedIn && botIds.length < 2) {
+        warnings.push('Name at least two different bots to open a group chat.');
+      }
+      const groupBotIds = unresolved.length || botIds.length < 2 ? [] : botIds;
+      const room = groupBotIds.length ? hyperBotFindGroup(rooms, groupBotIds) : undefined;
+      return {
+        rawText,
+        cleanedCommand: rawText,
+        normalizedText,
+        canonicalText: normalizedText,
+        language,
+        intent: 'general',
+        resolvedBot: null,
+        groupBotIds,
+        targetRoomId: room?.id ?? null,
+        availableBots,
+        people: [],
+        missingTools: [],
+        requiresConfirmation: true,
+        warnings,
+        signedIn: input.signedIn,
+      };
+    }
+
     // 1. Resolve target bot (explicit @mention or spoken EN/HE trigger; fallback to active room bot or first personal bot)
-    const botMentions = extractBotMentions(rawText, bots);
-    const matched = botMentions[0] ?? null;
+    const groupTask = extractVoiceBotGroupTask(rawText, bots);
+    const groupBotIds = groupTask ? groupTask.unresolved.length || groupTask.botIds.length < 2 ? [] : groupTask.botIds : undefined;
+    if (groupTask?.unresolved.length) {
+      warnings.push('Could not find a configured bot for ' + groupTask.unresolved.map(name => '"' + name + '"').join(', ') + '.');
+    } else if (groupBotIds?.length === 0) {
+      warnings.push('Name at least two different bots for the group task.');
+    }
+    const matched = groupTask ? null : extractVoiceBotMention(rawText, bots);
 
     let resolvedBot: HyperAssistantBotCandidate | null = null;
-    let cleanedCommand = rawText;
+    let cleanedCommand = groupTask?.commandText ?? rawText;
 
     if (matched) {
       resolvedBot = buildBotCandidate(matched.bot, rooms, {
@@ -427,14 +464,16 @@ export class HyperVoiceCommandParser {
         const after = rawText.slice(matched.end).replace(/^[\s,:-]+/, '').trim();
         cleanedCommand = [before, after].filter(Boolean).join(' ');
       }
-    } else if (bots.length) {
+    } else if (!groupTask && bots.length) {
       const activeRoom = input.activeRoomId ? rooms.find((r) => r.id === input.activeRoomId) : undefined;
       const activeBot = activeRoom?.kind === 'direct' ? bots.find((b) => b.id === activeRoom.botIds[0]) : undefined;
       const defaultBot = activeBot ?? bots.find((b) => (b.mode ?? 'personal') === 'personal') ?? bots[0]!;
       resolvedBot = buildBotCandidate(defaultBot, rooms, { confidence: 'default' });
     }
 
-    const targetRoomId = resolvedBot?.roomId ?? input.activeRoomId ?? rooms[0]?.id ?? null;
+    const targetRoomId = groupBotIds
+      ? hyperBotFindGroup(rooms, groupBotIds)?.id ?? null
+      : resolvedBot?.roomId ?? input.activeRoomId ?? rooms[0]?.id ?? null;
 
     // 2. Detect intent on the cleaned command (fallback to rawText if cleanedCommand is empty)
     let intent = detectCommandIntent(cleanedCommand || rawText);
@@ -565,13 +604,16 @@ export class HyperVoiceCommandParser {
       canonicalBody = `${canonicalBody} (${canonExtras})`.trim();
     }
 
-    const prefix = resolvedBot ? `${resolvedBot.handle} ` : '';
-    const normalizedText = (prefix + normalizedBody).trim();
-    const canonicalText = (prefix + canonicalBody).trim();
+    const handles = groupTask
+      ? groupTask.botIds.map(id => availableBots.find(bot => bot.id === id)!.handle)
+      : resolvedBot ? [resolvedBot.handle] : [];
+    const normalizedText = [...handles, normalizedBody].join(' ').trim();
+    const canonicalText = [...handles, canonicalBody].join(' ').trim();
 
     // 7. Missing tools & confirmation requirement (User Decision A1: confirm people/bot/tools before dispatching)
     const missingTools = computeMissingTools(resolvedBot, intent, people.length > 0);
     const requiresConfirmation =
+      groupTask !== null ||
       people.length > 0 ||
       resolvedBot !== null ||
       missingTools.length > 0 ||
@@ -585,6 +627,7 @@ export class HyperVoiceCommandParser {
       language,
       intent,
       resolvedBot,
+      ...(groupBotIds ? { groupBotIds, groupAction: 'send' as const } : {}),
       targetRoomId,
       availableBots,
       people,

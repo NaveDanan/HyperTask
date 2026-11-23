@@ -501,12 +501,17 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
 
   if (props.phase === 'confirming' && props.plan) {
     const { plan, selectedBot, commandChanged } = props;
+    const { groupBotIds } = plan;
+    const opensGroup = groupBotIds && plan.groupAction !== 'send';
     const peopleSlots = commandChanged ? [] : props.peopleSlots;
     const missingTools = commandChanged ? [] : props.missingTools;
     const intent = intentBadge(plan.intent, t);
     const botAvatar = selectedBot ? hyperBotAvatarOf(selectedBot) : null;
-    const canDispatch = Boolean(props.commandText.trim() && (commandChanged || (selectedBot && plan.signedIn && props.unresolvedCount === 0)));
-    const livePreview = buildStep1CommandPreview(props.commandText, peopleSlots, selectedBot);
+    const targetReady = props.unresolvedCount === 0 && (groupBotIds ? groupBotIds.length >= 2 : selectedBot);
+    const canDispatch = Boolean(props.commandText.trim() && (commandChanged || (plan.signedIn && targetReady)));
+    const groupHandles = groupBotIds?.flatMap(id => plan.availableBots.find(bot => bot.id === id)?.handle ?? []) ?? [];
+    const previewCommand = opensGroup && !commandChanged ? plan.normalizedText : props.commandText;
+    const livePreview = buildStep1CommandPreview(previewCommand, peopleSlots, selectedBot);
 
     return (
       <section
@@ -521,10 +526,13 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
               {intent.label}
             </span>
             <h2 className="truncate text-xs font-semibold text-foreground">
-              {t('hyperVoiceAssistant.step1Title', 'Confirm bot & people')}
+              {opensGroup
+                ? t('hyperVoiceAssistant.confirmGroupTitle', 'Confirm group chat')
+                : groupBotIds ? t('hyperVoiceAssistant.confirmTitle', 'Confirm voice command')
+                : t('hyperVoiceAssistant.step1Title', 'Confirm bot & people')}
             </h2>
           </div>
-          {plan.availableBots.length > 0 && (
+          {!groupBotIds && plan.availableBots.length > 0 && (
             <div className="flex items-center gap-1.5">
               {botAvatar && (
                 <HyperBotAvatar shape={botAvatar.shape} color={botAvatar.color} size={20} />
@@ -575,6 +583,9 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
                   {selectedBot.handle}
                 </span>
               )}
+              {plan.groupAction === 'send' && !commandChanged && groupHandles.map((handle) => (
+                <span key={handle} dir="auto" className="hva-chip-bot me-1.5">{handle}</span>
+              ))}
               <HyperBotRichText
                 text={livePreview.previewText}
                 bots={plan.availableBots}
@@ -592,7 +603,7 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
             />
           </div>
 
-          <div>
+          {!opensGroup && <div>
             <div className="flex items-center justify-between">
               <div className="hva-section-label">
                 {t('hyperVoiceAssistant.matchedPeople', 'Matched people ({count})', {
@@ -642,7 +653,7 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
                 onClose={() => setAddingPerson(false)}
               />
             )}
-          </div>
+          </div>}
 
           {missingTools.length > 0 && selectedBot && (
             <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-amber-500/35 bg-amber-500/10 p-2.5 text-xs">
@@ -690,6 +701,10 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
             <Send className="size-3.5" />
             {commandChanged
               ? t('hyperVoiceAssistant.reviewChanges', 'Review changes')
+              : plan.groupAction === 'send' ? t('hyperVoiceAssistant.sendToGroup', 'Confirm & Send to group')
+              : opensGroup ? plan.targetRoomId
+                ? t('hyperVoiceAssistant.openGroup', 'Open group chat')
+                : t('hyperVoiceAssistant.createGroup', 'Create group chat')
               : selectedBot ? t('hyperVoiceAssistant.confirmAndSendTo', 'Confirm & Send to {bot}', {
                   namedArgs: { bot: selectedBot.handle },
                 })

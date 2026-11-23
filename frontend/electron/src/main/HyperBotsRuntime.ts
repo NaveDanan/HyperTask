@@ -287,7 +287,7 @@ export class HyperBotsRuntime {
 
   async post(
     input: HyperBotsPostInput,
-    confirmed?: { botId: string; enableTools: readonly HyperBotsToolName[]; onToolsEnabled: (tools: HyperBotsToolName[]) => void },
+    confirmed?: { botIds: readonly string[]; enableTools: readonly HyperBotsToolName[]; onToolsEnabled: (tools: HyperBotsToolName[]) => void },
   ): Promise<HyperBotsPosted> {
     const lifetime = this.abort.signal;
     const room = this.room(input?.roomId);
@@ -305,9 +305,11 @@ export class HyperBotsRuntime {
     // A stored plan is reused as is (its runs keep their models); a message from an older file without a plan or runs
     // is planned with the model it was stored with.
     const needsPlan = !existing || (existing.live && !existing.plan && !this.store.runsForMessage(existing.message.id).length);
-    const target = confirmed && room.botIds.includes(confirmed.botId) ? this.bot(confirmed.botId) : undefined;
-    if (confirmed && !target) throw new HyperBotsRuntimeError('not_found', 'The confirmed bot is no longer in this room.');
-    const plans = needsPlan ? await this.plan(target ? [target] : this.targets(room, input.text), existing ? existing.message.model : model) : [];
+    const targets = confirmed?.botIds.flatMap(id => room.botIds.includes(id) ? this.bot(id) ?? [] : []);
+    if (confirmed && (!targets?.length || targets.length !== confirmed.botIds.length)) {
+      throw new HyperBotsRuntimeError('not_found', 'A confirmed bot is no longer in this room.');
+    }
+    const plans = needsPlan ? await this.plan(targets ?? this.targets(room, input.text), existing ? existing.message.model : model) : [];
     if (lifetime.aborted) throw new HyperBotsRuntimeError('conflict', 'The bot session changed. Try again.');
     if (confirmed) {
       // Model discovery may yield to another post or settings edit.
@@ -316,17 +318,21 @@ export class HyperBotsRuntime {
         if (!prior.sameText) throw conflict();
         const botIds = prior.plan?.map((entry) => entry.botId) ??
           this.store.runsForMessage(prior.message.id).map((run) => run.botId);
-        if (!prior.live || botIds.some((id) => id !== confirmed.botId) || botIds.length > 1) {
+        if (!prior.live || (botIds.length > 0 &&
+          (botIds.length !== confirmed.botIds.length || botIds.some(id => !confirmed.botIds.includes(id))))) {
           throw new HyperBotsRuntimeError('conflict', 'This message was already used for a different bot request.');
         }
       }
       const settings = this.settings();
-      const bot = settings.bots.find((row) => row.id === confirmed.botId);
-      if (!bot || !settings.rooms.some((row) => row.id === room.id && row.botIds.includes(bot.id))) {
-        throw new HyperBotsRuntimeError('not_found', 'The confirmed bot is no longer in this room.');
+      const currentRoom = settings.rooms.find(row => row.id === room.id);
+      const currentBots = settings.bots.filter(row => confirmed.botIds.includes(row.id));
+      if (currentBots.length !== confirmed.botIds.length || !currentRoom ||
+          confirmed.botIds.some(id => !currentRoom.botIds.includes(id))) {
+        throw new HyperBotsRuntimeError('not_found', 'A confirmed bot is no longer in this room.');
       }
-      const enabled = [...new Set(confirmed.enableTools)].filter((tool) => !bot.tools.includes(tool));
-      if (enabled.length) {
+      const bot = currentBots.length === 1 ? currentBots[0] : undefined;
+      const enabled = bot ? [...new Set(confirmed.enableTools)].filter(tool => !bot.tools.includes(tool)) : [];
+      if (bot && enabled.length) {
         this.saveSettings({
           ...settings,
           bots: settings.bots.map((row) => row.id === bot.id ? { ...row, tools: [...row.tools, ...enabled] } : row),

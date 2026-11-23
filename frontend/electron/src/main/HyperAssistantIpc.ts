@@ -10,10 +10,11 @@ import {
   type HyperAssistantPerson,
   type HyperVoiceCommandPlan,
 } from '@shared/HyperAssistant';
-import { HYPER_BOTS_TOOLS, type HyperBotConfig, type HyperBotsToolName } from '@shared/HyperBots';
-import { extractBotMentions, hyperBotDisplayHandle } from '@shared/HyperBotResolver';
+import { hyperBotCreateGroup, hyperBotFindGroup, HYPER_BOTS_TOOLS, type HyperBotConfig, type HyperBotsToolName } from '@shared/HyperBots';
+import { extractExplicitBotMentions, hyperBotDisplayHandle } from '@shared/HyperBotResolver';
 import { hyperApplyConfirmedPeople } from '@shared/HyperAssistantPeople';
 import type { HyperBotsHub } from './HyperBotsHub';
+import type { HyperBotsRuntime } from './HyperBotsRuntime';
 import { HyperPeopleResolver, type HyperPeopleBridge } from './HyperPeopleResolver';
 import type { HyperTrustedWindowRegistry } from './HyperTrustedWindows';
 import {
@@ -44,6 +45,10 @@ const SearchPeopleArgs = z.strictObject({
   limit: z.number().int().min(1).max(20).optional(),
 });
 
+const groupBotIdsSchema = z.array(slug).min(2).max(8)
+  .refine(ids => new Set(ids).size === ids.length, 'Choose different bots for the group.');
+const OpenGroupArgs = z.strictObject({ botIds: groupBotIdsSchema });
+
 const ConfirmedPersonSchema = z.strictObject({
   slotId: z.string().max(64).optional(),
   rawName: z.string().max(256).optional(),
@@ -57,14 +62,16 @@ const ConfirmedPersonSchema = z.strictObject({
 });
 
 const DispatchArgs = z.strictObject({
-  botId: slug,
+  botId: slug.optional(),
+  botIds: groupBotIdsSchema.optional(),
   targetRoomId: slug.nullable().optional(),
   text: z.string().trim().min(1, 'Write or speak a command first.').max(20000),
   confirmedPeople: z.array(ConfirmedPersonSchema).max(HYPER_ASSISTANT_MAX_PEOPLE).default([]),
   enableMissingTools: z.array(z.enum(toolNames)).max(toolNames.length).optional(),
   clientMessageId: uuid.optional(),
   model: z.string().trim().min(1).max(200).nullable().optional(),
-});
+}).refine(input => Boolean(input.botId) !== Boolean(input.botIds), 'Confirm a bot or a group of bots.')
+  .refine(input => !input.botIds || !input.enableMissingTools?.length, 'Configure tools for each group member separately.');
 
 const DecideApprovalArgs = z.strictObject({
   approvalId: uuid,
@@ -84,14 +91,29 @@ export function buildDispatchedAssistantText(
   let out = hyperApplyConfirmedPeople(text.trim(), confirmedPeople);
 
   const handle = hyperBotDisplayHandle(bot);
-  if (!extractBotMentions(out, [bot]).length) {
+  if (!extractExplicitBotMentions(out, [bot]).length) {
     out = `${handle} ${out}`.trim();
   }
 
   return out;
 }
 
-const CHANNELS = [A.ParseCommand, A.SearchPeople, A.Dispatch, A.Execution, A.DecideApproval, A.ListBots];
+const CHANNELS = [A.ParseCommand, A.SearchPeople, A.Dispatch, A.Execution, A.DecideApproval, A.ListBots, A.OpenGroup];
+
+function getOrCreateAssistantGroup(runtime: HyperBotsRuntime, botIds: readonly string[]) {
+  const settings = runtime.settings();
+  const bots = settings.bots.filter(bot => botIds.includes(bot.id));
+  if (bots.length !== botIds.length) {
+    throw new SettingsError('state', 'A bot in this group is no longer configured.');
+  }
+  const existing = hyperBotFindGroup(settings.rooms, botIds);
+  if (existing) return existing;
+
+  const name = bots.map(bot => bot.name).join(' & ').slice(0, 40).trim();
+  const group = hyperBotCreateGroup(settings, name, botIds, 'group-' + randomUUID().slice(0, 16));
+  runtime.saveSettings(group.settings);
+  return group.room;
+}
 
 /**
  * Registers IPC handlers for `window.hypertask.assistant` across all trusted HyperTask windows
@@ -156,6 +178,14 @@ export function registerHyperAssistantIpc(deps: HyperAssistantIpcDeps): () => vo
     });
   });
 
+  ipcMain.handle(A.OpenGroup, async (event, rawArgs: unknown): Promise<{ roomId: string }> => {
+    assertTrusted(event);
+    const { botIds } = OpenGroupArgs.parse(rawArgs);
+    if (!deps.botsHub) throw new SettingsError('state', 'Hyper-Bot is currently unavailable.');
+    const { runtime } = await deps.botsHub.current();
+    return { roomId: getOrCreateAssistantGroup(runtime, botIds).id };
+  });
+
   ipcMain.handle(A.Dispatch, async (event, rawArgs: unknown): Promise<HyperAssistantDispatchResult> => {
     assertTrusted(event);
     const parsed = DispatchArgs.safeParse(rawArgs);
@@ -174,10 +204,12 @@ export function registerHyperAssistantIpc(deps: HyperAssistantIpcDeps): () => vo
 
     const input = parsed.data;
     const settings = active.runtime.settings();
-    const bot = settings.bots.find((b) => b.id === input.botId);
-    if (!bot) {
+    const botIds = input.botIds ?? [input.botId!];
+    const bots = botIds.flatMap(id => settings.bots.find(bot => bot.id === id) ?? []);
+    if (bots.length !== botIds.length) {
       return { ok: false, error: 'That bot is no longer configured.' };
     }
+    const bot = bots[0]!;
     if (input.confirmedPeople.some(({ sourceSpan }) => sourceSpan &&
       (sourceSpan.start >= sourceSpan.end || input.text.slice(sourceSpan.start, sourceSpan.end) !== sourceSpan.text))) {
       return { ok: false, error: 'The command changed. Review its recipients and confirm again.' };
@@ -190,27 +222,29 @@ export function registerHyperAssistantIpc(deps: HyperAssistantIpcDeps): () => vo
       (r) => r.kind === 'direct' && r.botIds.length === 1 && r.botIds[0] === bot.id,
     );
     const fallbackRoom = settings.rooms.find((r) => r.botIds.includes(bot.id));
-    const room = requestedRoom ?? directRoom ?? fallbackRoom;
-    if (!room) {
-      return { ok: false, error: `Could not find a conversation room for ${bot.name}.` };
-    }
-
-    const dispatchedText = buildDispatchedAssistantText(input.text, bot, input.confirmedPeople);
-
     let enabledTools: HyperBotsToolName[] = [];
     try {
+      const room = input.botIds
+        ? getOrCreateAssistantGroup(active.runtime, botIds)
+        : requestedRoom ?? directRoom ?? fallbackRoom;
+      if (!room) {
+        return { ok: false, error: `Could not find a conversation room for ${bot.name}.` };
+      }
+      const dispatchedText = input.botIds
+        ? [...bots.map(hyperBotDisplayHandle), hyperApplyConfirmedPeople(input.text, input.confirmedPeople)].join(' ')
+        : buildDispatchedAssistantText(input.text, bot, input.confirmedPeople);
       const posted = await active.runtime.post({
         roomId: room.id,
         clientMessageId: input.clientMessageId ?? randomUUID(),
         text: dispatchedText,
         model: input.model ?? null,
       }, {
-        botId: bot.id,
+        botIds,
         enableTools: input.enableMissingTools ?? [],
         onToolsEnabled: (tools) => { enabledTools = tools; },
       });
       const run = posted.runs.find((row) => row.botId === bot.id);
-      if (!run) throw new Error('The confirmed bot run is no longer available.');
+      if (!run || posted.runs.length !== botIds.length) throw new Error('The confirmed bot runs are no longer available.');
       return {
         ok: true,
         roomId: room.id,

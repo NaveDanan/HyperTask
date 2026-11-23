@@ -181,13 +181,18 @@ describe('buildDispatchedAssistantText', () => {
       ),
     ).toBe('@משה לקבוע פגישה עם @[ישראל ישראלי](mailto:israel.israeli@corp.example) מחר');
   });
+
+  it('adds the confirmed handle even if the command only addresses that bot by name', () => {
+    expect(buildDispatchedAssistantText('Ask Dana to check my emails', { id: 'dana', name: 'Dana' }, []))
+      .toBe('@dana Ask Dana to check my emails');
+  });
 });
 
 describe('registerHyperAssistantIpc', () => {
   it('refuses untrusted callers on every channel', async () => {
     const h = setup();
     try {
-      for (const ch of [A.ParseCommand, A.SearchPeople, A.Dispatch, A.Execution, A.DecideApproval, A.ListBots]) {
+      for (const ch of Object.values(A)) {
         await expect(h.invoke(ch, {}, h.untrustedEvent)).rejects.toThrow(/Untrusted HyperAssistant/);
       }
     } finally {
@@ -205,6 +210,161 @@ describe('registerHyperAssistantIpc', () => {
       ]);
       const found = await h.invoke(A.SearchPeople, { query: 'לישראל ישראלי' });
       expect(found).toEqual([ISRAEL]);
+    } finally {
+      h.unregister();
+    }
+  });
+
+  it.each([
+    ['I needed to use dana and then with her check my emails', 'check my emails', 'exact'],
+    ['I need you to use dana and check my emails', 'check my emails', 'exact'],
+    ['Using dana, check my emails', 'check my emails', 'exact'],
+    ['אני רוצה שדנה תבדוק את המיילים שלי', 'תבדוק את המיילים שלי', 'fuzzy'],
+  ])('shows and runs Dana for "%s"', async (text, cleanedCommand, confidence) => {
+    const h = setup();
+    try {
+      const settings = h.runtime.settings();
+      h.runtime.saveSettings(hyperBotsWithDirectRooms({
+        ...settings,
+        bots: [...settings.bots, {
+          id: 'dana', name: 'Dana', instructions: 'You are Dana.', model: '', tools: ['outlook_list_messages'],
+        }],
+      }));
+
+      const plan = await h.invoke(A.ParseCommand, {
+        text,
+        activeRoomId: 'dm-abby',
+      });
+      expect(plan).toMatchObject({
+        cleanedCommand,
+        normalizedText: '@dana ' + cleanedCommand,
+        resolvedBot: { id: 'dana', handle: '@dana', confidence },
+        targetRoomId: 'dm-dana',
+        people: [],
+      });
+
+      const dispatched = await h.invoke(A.Dispatch, {
+        botId: plan.resolvedBot.id, targetRoomId: plan.targetRoomId, text: plan.cleanedCommand,
+      });
+      expect(dispatched).toMatchObject({
+        ok: true, botId: 'dana', roomId: 'dm-dana', dispatchedText: '@dana ' + cleanedCommand,
+      });
+      await h.runtime.idle();
+      expect(h.store.runsForMessage(dispatched.messageId)).toMatchObject([{ botId: 'dana', status: 'done' }]);
+    } finally {
+      h.unregister();
+    }
+  });
+
+  it('confirms and opens one group for both named bots without starting a run', async () => {
+    const h = setup();
+    try {
+      const settings = h.runtime.settings();
+      h.runtime.saveSettings(hyperBotsWithDirectRooms({
+        ...settings,
+        bots: [...settings.bots,
+          { id: 'scout', name: 'Scout', instructions: '', model: '', tools: [] },
+          { id: 'dana', name: 'Dana', instructions: '', model: '', tools: [] },
+        ],
+      }));
+
+      const text = 'Please make sure that Scout and dana are in the conversation.';
+      const plan = await h.invoke(A.ParseCommand, { text });
+      expect(plan).toMatchObject({
+        resolvedBot: null,
+        normalizedText: 'Please make sure that @scout and @dana are in the conversation.',
+        groupBotIds: ['scout', 'dana'],
+        targetRoomId: null,
+      });
+      expect(h.runtime.settings().rooms.some(room => room.kind === 'group' && room.botIds.includes('dana'))).toBe(false);
+
+      const opened = await h.invoke(A.OpenGroup, { botIds: plan.groupBotIds });
+      expect(h.runtime.settings().rooms.find(room => room.id === opened.roomId)).toMatchObject({
+        kind: 'group', name: 'Scout & Dana', botIds: ['scout', 'dana'],
+      });
+      expect(await h.invoke(A.OpenGroup, { botIds: ['dana', 'scout'] })).toEqual(opened);
+      expect(await h.invoke(A.ParseCommand, { text })).toMatchObject({ targetRoomId: opened.roomId });
+      expect(await h.invoke(A.ParseCommand, { text: 'פתח שיחה קבוצתית עם סקאוט ודנה' })).toMatchObject({
+        normalizedText: 'פתח שיחה קבוצתית עם @scout ו @dana',
+        groupBotIds: ['scout', 'dana'],
+        targetRoomId: opened.roomId,
+      });
+      expect(h.store.listRuns({})).toEqual([]);
+
+      const unavailable = await h.invoke(A.ParseCommand, { text: 'Open a group chat with Scout and Missing Bot' });
+      expect(unavailable).toMatchObject({
+        resolvedBot: null, groupBotIds: [], warnings: ['Could not find a configured bot for "Missing Bot".'],
+      });
+      await expect(h.invoke(A.OpenGroup, { botIds: ['scout', 'missing-bot'] })).rejects.toThrow(/no longer configured/i);
+    } finally {
+      h.unregister();
+    }
+  });
+
+  it.each([
+    [
+      'I needed to verify with Scout and dana that all my mails are evenly corrected.',
+      ['scout', 'dana'],
+      '@scout @dana verify that all my mails are evenly corrected.',
+    ],
+    [
+      'אני צריך לוודא עם סקאוט ודנה שכל המיילים שלי תקינים.',
+      ['scout', 'dana'],
+      '@scout @dana לוודא שכל המיילים שלי תקינים.',
+    ],
+    [
+      'תגיד לדנה ולמשה לבדוק את המיילים שלי',
+      ['dana', 'bot'],
+      '@dana @משה לבדוק את המיילים שלי',
+    ],
+    [
+      'אני רוצה שדנה ומשה יבדקו את המיילים שלי',
+      ['dana', 'bot'],
+      '@dana @משה יבדקו את המיילים שלי',
+    ],
+    [
+      'היי דנה ומשה, תבדקו את המיילים שלי',
+      ['dana', 'bot'],
+      '@dana @משה תבדקו את המיילים שלי',
+    ],
+  ])('sends a task to both bots addressed in "%s"', async (text, botIds, normalizedText) => {
+    const h = setup();
+    try {
+      const settings = h.runtime.settings();
+      h.runtime.saveSettings(hyperBotsWithDirectRooms({
+        ...settings,
+        bots: [...settings.bots,
+          { id: 'scout', name: 'Scout', instructions: '', model: '', tools: ['outlook_list_messages'] },
+          { id: 'dana', name: 'Dana', instructions: '', model: '', tools: ['outlook_list_messages'] },
+        ],
+      }));
+      const plan = await h.invoke(A.ParseCommand, { text });
+      expect(plan).toMatchObject({
+        resolvedBot: null,
+        groupBotIds: botIds,
+        groupAction: 'send',
+        normalizedText,
+        people: [],
+      });
+
+      const input = {
+        botIds: plan.groupBotIds,
+        text: plan.cleanedCommand,
+        clientMessageId: '11111111-1111-4111-8111-111111111111',
+      };
+      const sent = await h.invoke(A.Dispatch, input);
+      expect(sent).toMatchObject({ ok: true, dispatchedText: plan.normalizedText });
+      await h.runtime.idle();
+      expect(h.store.runsForMessage(sent.messageId).map(run => [run.botId, run.status])).toEqual(
+        botIds.map(id => [id, 'done']),
+      );
+      expect(await h.invoke(A.Dispatch, input)).toEqual(sent);
+      expect(h.store.runsForMessage(sent.messageId)).toHaveLength(2);
+
+      const unavailable = await h.invoke(A.ParseCommand, { text: 'Verify with Scout and Missing Bot that the mail is correct.' });
+      expect(unavailable).toMatchObject({
+        groupBotIds: [], resolvedBot: null, warnings: ['Could not find a configured bot for "Missing Bot".'],
+      });
     } finally {
       h.unregister();
     }

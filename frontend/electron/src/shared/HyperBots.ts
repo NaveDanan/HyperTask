@@ -61,6 +61,28 @@ export interface HyperBotsSettings {
   rooms: HyperBotsRoom[];      // 1..24 (8 direct rooms plus up to 16 groups)
   policy: Partial<Record<HyperBotsReadToolName, HyperBotsPolicy>>; // a read tool left out asks; writes always ask
 }
+
+export function hyperBotFindGroup(rooms: readonly HyperBotsRoom[], botIds: readonly string[]) {
+  return rooms.find(room => room.kind !== 'direct' && room.botIds.length === botIds.length &&
+    botIds.every(id => room.botIds.includes(id)));
+}
+
+export function hyperBotUniqueId(name: string, ids: string[], max = 24, fallback = 'bot') {
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, max).replace(/-+$/g, '') || fallback;
+  let id = base, n = 2;
+  while (ids.includes(id)) { const tail = '-' + n++; id = base.slice(0, max - tail.length).replace(/-+$/g, '') + tail; }
+  return id;
+}
+
+export function hyperBotCreateGroup(settings: HyperBotsSettings, name: string, picked: readonly string[], idBase = name) {
+  const botIds = settings.bots.filter(bot => picked.includes(bot.id)).map(bot => bot.id);
+  if (botIds.length < 2) throw new Error('Choose at least 2 bots for a new group.');
+  if (!name.trim() || name.trim().length > 40) throw new Error('Give the group a name (up to 40 characters).');
+  if (settings.rooms.filter(room => room.kind !== 'direct').length >= 16) throw new Error('You can have up to 16 group chats.');
+  const room = { id: hyperBotUniqueId(idBase, settings.rooms.map(room => room.id), 32, 'group'), name: name.trim(), kind: 'group' as const, botIds };
+  return { room, settings: { ...settings, rooms: [...settings.rooms, room] } };
+}
+
 export const HYPER_BOTS_DEFAULT_SETTINGS: HyperBotsSettings = {
   version: 1,
   bots: [

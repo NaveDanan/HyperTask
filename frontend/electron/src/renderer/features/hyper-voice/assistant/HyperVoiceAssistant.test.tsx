@@ -230,6 +230,57 @@ describe('HyperVoiceSphere & HyperVoiceHud', () => {
     expect(html).toContain('[unicode-bidi:plaintext]');
   });
 
+  it('shows both requested bot handles and a group action in the confirmation HUD', () => {
+    const command = 'Please make sure that Scout and dana are in the conversation.';
+    const tagged = 'Please make sure that @scout and @dana are in the conversation.';
+    const plan: HyperVoiceCommandPlan = {
+      rawText: command,
+      cleanedCommand: command,
+      normalizedText: tagged,
+      canonicalText: tagged,
+      language: 'en',
+      intent: 'general',
+      resolvedBot: null,
+      groupBotIds: ['scout', 'dana'],
+      targetRoomId: null,
+      availableBots: [
+        { id: 'scout', handle: '@scout', name: 'Scout', roomId: 'dm-scout', mode: 'personal', tools: [] },
+        { id: 'dana', handle: '@dana', name: 'Dana', roomId: 'dm-dana', mode: 'personal', tools: [] },
+      ],
+      people: [],
+      missingTools: [],
+      requiresConfirmation: true,
+      warnings: [],
+      signedIn: true,
+    };
+    const props = baseHudProps({ phase: 'confirming', plan, commandText: command });
+    const html = renderToStaticMarkup(<HyperVoiceHud {...props} />);
+    const preview = /data-testid="hyper-voice-step1-preview"[^>]*>([\s\S]*?)<\/div>/.exec(html)?.[1];
+    expect(preview).toMatch(/hva-chip-bot[^>]*>@scout</);
+    expect(preview).toMatch(/hva-chip-bot[^>]*>@dana</);
+    expect(html).toContain('Create group chat');
+    expect(html).not.toContain('aria-label="Target bot"');
+
+    const existing = renderToStaticMarkup(<HyperVoiceHud {...props} plan={{ ...plan, targetRoomId: 'existing-group' }} />);
+    expect(existing).toContain('Open group chat');
+
+    const task = 'verify that all my mails are evenly corrected.';
+    const taskPlan: HyperVoiceCommandPlan = {
+      ...plan,
+      rawText: 'I needed to verify with Scout and dana that all my mails are evenly corrected.',
+      cleanedCommand: task,
+      normalizedText: '@scout @dana ' + task,
+      canonicalText: '@scout @dana ' + task,
+      groupAction: 'send',
+    };
+    const taskHtml = renderToStaticMarkup(<HyperVoiceHud {...props} plan={taskPlan} commandText={task} />);
+    const taskPreview = /data-testid="hyper-voice-step1-preview"[^>]*>([\s\S]*?)<\/div>/.exec(taskHtml)?.[1];
+    expect(taskPreview).toMatch(/hva-chip-bot[^>]*>@scout</);
+    expect(taskPreview).toMatch(/hva-chip-bot[^>]*>@dana</);
+    expect(taskPreview).toContain(task);
+    expect(taskHtml).toContain('Confirm &amp; Send to group');
+  });
+
   it('renders Step 2 inline Outlook Write Approval card inside the floating overlay', () => {
     const approval: HyperBotsApproval = {
       id: '00000000-0000-4000-8000-000000000099',
