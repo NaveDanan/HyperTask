@@ -2079,5 +2079,101 @@
     "privacyPolicy": "מדיניות פרטיות",
     "signInError": "שגיאת כניסה",
     "login": "הרשמה או כניסה"
+  },
+  "hyperDesktop": {
+    "menuLabel": "שולחן עבודה",
+    "title": "שולחן עבודה",
+    "description": "ניהול הפעלה אוטומטית, ריצה ברקע במגש המערכת וקיצור המקשים הקולי הגלובלי של Hyper-Bot.",
+    "startupSectionTitle": "הפעלה ורקע",
+    "autoStart": {
+      "title": "הפעל את HyperTask עם המערכת",
+      "description": "הפעל את HyperTask אוטומטית ברקע בעת הכניסה למערכת כדי שהעוזר האישי יהיה זמין תמיד.",
+      "devNotice": "נשמר. רישום להפעלה אוטומטית חל בגרסת שולחן העבודה הארוזה.",
+      "unsupported": "הפעלה אוטומטית עם המערכת אינה נתמכת בפלטפורמה זו."
+    },
+    "closeToTray": {
+      "title": "השאר פועל במגש המערכת בעת סגירה",
+      "description": "סגירת החלון הראשי תסתיר את HyperTask למגש המערכת. ליציאה מלאה יש לבחור ביציאה מתפריט המגש."
+    },
+    "voiceShortcutSectionTitle": "קיצור קולי גלובלי ל-Hyper-Bot",
+    "voiceShortcut": {
+      "title": "קיצור העוזר הקולי",
+      "description": "לחץ על {hotkey} מכל מקום—גם כש-HyperTask מוסתר במגש—כדי לפתוח את הכדור הקולי הצף.",
+      "registered": "פעיל",
+      "unavailable": "לא זמין",
+      "conflictHint": "ייתכן שאפליקציה אחרת משתמשת ב-{hotkey}."
+    }
+  },
+  "hyperVoiceAssistant": {
+    "status": {
+      "idle": "לחץ על הכדור או הקש {hotkey}",
+      "preparing": "מפעיל מיקרופון…",
+      "listening": "מאזין…",
+      "transcribing": "מתמלל…",
+      "parsing": "מאתר בוט ואנשים…"
+    },
+    "sphereStartLabel": "התחל לדבר עם Hyper-Bot",
+    "sphereStopLabel": "עצור הקלטה ועבד פקודה קולית",
+    "closeOverlay": "סגור עוזר קולי",
+    "stopHint": "עצור לשנייה לסיום · Enter או {hotkey} לשליחה · Esc לביטול",
+    "hebrewModelTip": "טיפ: מומלץ לעבור ל-Whisper Large v3 Turbo או Cloud STT עבור עברית.",
+    "finishSpeaking": "סיום",
+    "cancel": "ביטול",
+    "intent": {
+      "meeting": "פגישה",
+      "email": "אימייל",
+      "general": "פקודה"
+    },
+    "personStatus": {
+      "exact": "הותאם",
+      "fuzzy": "התאמה קרובה",
+      "ambiguous": "בחר איש קשר",
+      "unresolved": "לא נמצא"
+    },
+    "searchUnavailable": "חיפוש בספר הכתובות אינו זמין כרגע.",
+    "searchingDirectory": "מחפש באנשי הקשר של Outlook…",
+    "noPeopleFound": "לא נמצאו אנשים תואמים.",
+    "typeToSearchPeople": "הקלד לפחות 2 תווים (עברית או אנגלית).",
+    "closeSearch": "סגור",
+    "changeOrSearch": "החלף / חפש",
+    "removePerson": "הסר איש קשר",
+    "personUnresolvedHint": "לא ניתן להתאים איש קשר זה אוטומטית. חפש ב-Outlook למטה או הסר.",
+    "possibleMatches": "התאמות אפשריות:",
+    "searchPeoplePlaceholder": "חפש לפי שם או אימייל…",
+    "setupTitle": "הפעלת קול עבור Hyper-Bot",
+    "downloadModelTitle": "הורדת מודל דיבור",
+    "setupDescription": "בחר במודל Whisper מקומי (עברית ואנגלית, פועל במחשב) או הגדר תמלול ענן בהגדרות ← קול.",
+    "downloadingProgress": "מוריד את Whisper ({percent}%)…",
+    "downloadingModel": "מכין את Whisper (עברית + אנגלית)…",
+    "enableLocalWhisper": "הפעל Whisper מקומי (עברית + אנגלית)",
+    "openVoiceSettings": "פתח הגדרות קול",
+    "typeFallbackPlaceholder": "או הקלד פקודה (למשל: תגיד לאבי לקבוע פגישה…)",
+    "confirmTitle": "אישור פקודה קולית",
+    "step1Title": "אישור בוט ואנשים",
+    "targetBot": "בוט יעד",
+    "signInRequired": "התחבר ל-HyperTask כדי לשלוח פקודות ל-Hyper-Bot.",
+    "recognizedCommand": "פקודה",
+    "editCommand": "ערוך פקודה שזוהתה",
+    "matchedPeople": "אנשים שזוהו ({count})",
+    "addPerson": "הוסף איש קשר",
+    "noPeopleDetected": "לא זוהו עמיתים ספציפיים. ניתן להוסיף מ-Outlook או להמשיך.",
+    "enableMissingTools": "הפעל כלי Outlook ({tools}) עבור {bot} והרץ. כל שליחת אימייל או זימון תבקש אישור לפני השליחה.",
+    "rerecord": "הקלט שוב",
+    "confirmAndSendTo": "אשר ושלח אל {bot}",
+    "confirmAndSend": "אשר ושלח",
+    "executionTitle": "התקדמות Hyper-Bot",
+    "waitingApproval": "{bot} ממתין לאישור שלך לפני השליחה",
+    "completedBy": "{bot} סיים",
+    "working": "{bot} עובד…",
+    "openInHyperBot": "פתח ב-Hyper-Bot",
+    "savedToDrafts": "נשמר בטיוטות",
+    "sent": "נשלח",
+    "preparingAction": "מכין פעולת Outlook ובודק פרטים…",
+    "newCommand": "פקודה חדשה",
+    "done": "סיום",
+    "hide": "הסתר",
+    "errorTitle": "אירעה שגיאה",
+    "genericError": "לא ניתן להשלים את הפקודה הקולית.",
+    "tryAgain": "נסה שוב"
   }
 }

@@ -14,10 +14,64 @@ type PreparedBrowserTranscription = PreparedVoiceTranscription & {
   readonly streaming?: VoiceStreamingSession & { readonly feed: (pcm: Float32Array) => void };
 };
 
+export interface HyperVoiceAudioSpectrum {
+  readonly rms: number;
+  readonly bass: number;
+  readonly mid: number;
+  readonly treble: number;
+  readonly peak: number;
+  readonly bins: Float32Array;
+}
+
+/** Samples live frequency/amplitude bands from a Web Audio AnalyserNode without allocations. */
+export function sampleHyperVoiceSpectrum(
+  analyser: AnalyserNode,
+  freqBuf: Uint8Array<ArrayBuffer>,
+  timeBuf: Uint8Array<ArrayBuffer>,
+  outBins: Float32Array,
+): HyperVoiceAudioSpectrum {
+  analyser.getByteFrequencyData(freqBuf);
+  analyser.getByteTimeDomainData(timeBuf);
+
+  let energy = 0;
+  let peak = 0;
+  for (let i = 0; i < timeBuf.length; i++) {
+    const centered = (timeBuf[i]! - 128) / 128;
+    const abs = Math.abs(centered);
+    if (abs > peak) peak = abs;
+    energy += centered * centered;
+  }
+  const rms = Math.min(1, Math.sqrt(energy / Math.max(1, timeBuf.length)) * 3.2);
+
+  const count = freqBuf.length;
+  const bassEnd = Math.max(1, Math.floor(count * 0.14));
+  const midEnd = Math.max(bassEnd + 1, Math.floor(count * 0.48));
+  const bandAvg = (from: number, to: number) => {
+    let sum = 0;
+    const span = Math.max(1, to - from);
+    for (let i = from; i < to; i++) sum += freqBuf[i]! / 255;
+    return sum / span;
+  };
+  const bass = bandAvg(0, bassEnd);
+  const mid = bandAvg(bassEnd, midEnd);
+  const treble = bandAvg(midEnd, count);
+
+  const step = Math.max(1, Math.floor(count / Math.max(1, outBins.length)));
+  for (let i = 0; i < outBins.length; i++) {
+    const start = i * step;
+    const end = Math.min(count, start + step);
+    let acc = 0;
+    for (let j = start; j < end; j++) acc += freqBuf[j]! / 255;
+    outBins[i] = acc / Math.max(1, end - start);
+  }
+  return { rms, bass, mid, treble, peak, bins: outBins };
+}
+
 export function createBrowserPcmCapture(
   input: {
     readonly getMicrophoneId: () => string | Promise<string>;
     readonly onLevel: (level: number) => void;
+    readonly onAnalyser?: (analyser: AnalyserNode | null) => void;
     readonly onDurationLimit: () => void;
     readonly onError: (message: string, code?: VoiceInputErrorCode) => void;
   },
@@ -27,6 +81,7 @@ export function createBrowserPcmCapture(
   let recordingUri: string | null = null;
   let chunks: Float32Array<ArrayBuffer>[] = [];
   let audioContext: AudioContext | undefined;
+  let analyser: AnalyserNode | undefined;
   let worklet: AudioWorkletNode | undefined;
   let durationTimer: ReturnType<typeof setTimeout> | undefined;
   let signal: AbortSignal | undefined;
@@ -38,6 +93,9 @@ export function createBrowserPcmCapture(
   const cleanupCapture = () => {
     if (durationTimer) clearTimeout(durationTimer);
     durationTimer = undefined;
+    analyser?.disconnect();
+    analyser = undefined;
+    input.onAnalyser?.(null);
     worklet?.disconnect();
     worklet?.port.close();
     worklet = undefined;
@@ -124,7 +182,16 @@ export function createBrowserPcmCapture(
               once: true,
             },
           );
-        context.createMediaStreamSource(captured).connect(node);
+        const source = context.createMediaStreamSource(captured);
+        if (input.onAnalyser && typeof context.createAnalyser === "function") {
+          const analyserNode = context.createAnalyser();
+          analyserNode.fftSize = 256;
+          analyserNode.smoothingTimeConstant = 0.75;
+          source.connect(analyserNode);
+          analyser = analyserNode;
+          input.onAnalyser(analyserNode);
+        }
+        source.connect(node);
         // The processor emits silence, keeping the graph active without microphone playback.
         node.connect(context.destination);
         await context.resume();

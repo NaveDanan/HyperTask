@@ -404,3 +404,11 @@ html[data-theme-id]:not([data-theme-id='']) {
 @utility no-drag {
   -webkit-app-region: no-drag;
 }
+
+/* Floating transparent voice sphere overlay (loaded with ?mode=voice-overlay). */
+html[data-hyper-overlay='true'],
+html[data-hyper-overlay='true'] body,
+html[data-hyper-overlay='true'] #root {
+  background: transparent !important;
+  background-color: transparent !important;
+}

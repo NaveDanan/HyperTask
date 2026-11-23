@@ -10,7 +10,11 @@ it('uses ROT attachment only, including the directory fallback, and checks sessi
   expect(connect.indexOf('Get-Process')).toBeLessThan(connect.indexOf('GetActiveObject')); expect(connect).toContain('SessionId -eq $session');
   expect(connect).toContain("Hyper-ComGet $calendar 'EntryID'");
   expect(HyperOutlookScript).toContain("Hyper-ComGet $ns 'CurrentUser'");
-  const gal = HyperOutlookScript.slice(HyperOutlookScript.indexOf('function Hyper-GalPeople'), HyperOutlookScript.indexOf('function Hyper-People'));
+  const galStart = HyperOutlookScript.indexOf('function Hyper-OutlookPeople');
+  const peopleStart = HyperOutlookScript.indexOf('function Hyper-People');
+  expect(galStart).toBeGreaterThanOrEqual(0);
+  expect(peopleStart).toBeGreaterThan(galStart);
+  const gal = HyperOutlookScript.slice(galStart, peopleStart);
   expect(gal).toContain('Connect-Hyper');
   expect(HyperOutlookScript).toContain('if (Hyper-Disconnected $_.Exception) { Reset-Hyper;');
   expect(HyperOutlookScript).not.toMatch(/\$outlook\.Quit|\$script:outlook\.Quit/i);

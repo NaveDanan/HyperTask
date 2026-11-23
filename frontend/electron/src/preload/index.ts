@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import { IpcChannel as C, type HypertaskApi } from '@shared/api';
 import { HyperBotsChannel as B } from '@shared/HyperBots';
+import { HyperDesktopChannel as D } from '@shared/HyperDesktop';
+import { HyperAssistantChannel as A } from '@shared/HyperAssistant';
 import { HyperVoiceChannel as V } from '@shared/hyper-voice/api';
 
 function on<T>(channel: string, listener: (value: T) => void): () => void {
@@ -8,6 +10,53 @@ function on<T>(channel: string, listener: (value: T) => void): () => void {
   ipcRenderer.on(channel, handler);
   return () => ipcRenderer.off(channel, handler);
 }
+
+/**
+ * Buffers events that arrive before the first renderer listener subscribes (e.g. cold-launch
+ * overlay triggers while React.lazy mounts) and flushes them in a microtask so React StrictMode's
+ * mount/unmount/remount cycle never drops or double-delivers a queued event.
+ */
+export function createHyperBufferedListener<T>(
+  channel: string,
+  bus: Pick<typeof ipcRenderer, 'on'> = ipcRenderer,
+): (listener: (value: T) => void) => () => void {
+  const listeners = new Set<(value: T) => void>();
+  const pending: T[] = [];
+  let flushScheduled = false;
+
+  const scheduleFlush = () => {
+    if (flushScheduled || pending.length === 0 || listeners.size === 0) return;
+    flushScheduled = true;
+    queueMicrotask(() => {
+      flushScheduled = false;
+      if (listeners.size === 0 || pending.length === 0) return;
+      const queued = pending.splice(0, pending.length);
+      for (const item of queued) {
+        for (const listener of [...listeners]) listener(item);
+      }
+    });
+  };
+
+  bus.on(channel, (_: IpcRendererEvent, value: T) => {
+    if (listeners.size === 0) {
+      if (pending.length >= 8) pending.shift();
+      pending.push(value);
+      return;
+    }
+    for (const listener of [...listeners]) listener(value);
+  });
+
+  return (listener) => {
+    listeners.add(listener);
+    scheduleFlush();
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+}
+
+const onOverlayEvent = createHyperBufferedListener<import('@shared/HyperDesktop').HyperDesktopOverlayEvent>(D.OverlayEvent);
+const onMainEvent = createHyperBufferedListener<import('@shared/HyperDesktop').HyperDesktopMainEvent>(D.MainEvent);
 
 const api: HypertaskApi = {
   auth: { devJwtSession: () => ipcRenderer.invoke(C.AuthDevJwtSession), entraIdToken: config => ipcRenderer.invoke(C.AuthEntraIdToken, config), entraCancel: () => ipcRenderer.invoke(C.AuthEntraCancel) },
@@ -43,6 +92,22 @@ const api: HypertaskApi = {
     saveSettings: settings => ipcRenderer.invoke(B.SaveSettings, settings),
     models: () => ipcRenderer.invoke(B.Models),
     onEvent: listener => on(B.Event, listener),
+  },
+  desktop: {
+    getSettings: () => ipcRenderer.invoke(D.GetSettings),
+    setSettings: patch => ipcRenderer.invoke(D.SetSettings, patch),
+    resizeOverlay: bounds => ipcRenderer.invoke(D.OverlayResize, bounds),
+    hideOverlay: () => ipcRenderer.invoke(D.OverlayHide),
+    openMain: target => ipcRenderer.invoke(D.OverlayOpenMain, target),
+    onOverlayEvent: listener => onOverlayEvent(listener),
+    onMainEvent: listener => onMainEvent(listener),
+  },
+  assistant: {
+    parseCommand: input => ipcRenderer.invoke(A.ParseCommand, input),
+    searchPeople: input => ipcRenderer.invoke(A.SearchPeople, input),
+    dispatch: input => ipcRenderer.invoke(A.Dispatch, input),
+    decideApproval: input => ipcRenderer.invoke(A.DecideApproval, input),
+    listBots: () => ipcRenderer.invoke(A.ListBots),
   },
   hyperVoice: {
     status: () => ipcRenderer.invoke(V.Status),

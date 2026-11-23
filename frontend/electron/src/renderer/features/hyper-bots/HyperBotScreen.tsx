@@ -43,6 +43,18 @@ export function HyperBotScreen({ userId }: { userId: string }) {
   }, [controller, userId]);
   const state = useSyncExternalStore(controller.subscribe, controller.getState);
   useEffect(() => { if (!restoring && state.snapshot && state.phase === 'ready') hyperBotRememberRoom(userId, state.snapshot.roomId); }, [userId, state.snapshot?.roomId, state.phase, restoring]);
+  useEffect(() => {
+    const onSelectRoom = (event: Event) => {
+      const roomId = (event as CustomEvent<{ roomId?: unknown }>).detail?.roomId;
+      if (typeof roomId !== 'string' || !roomId) return;
+      hyperBotRememberRoom(userId, roomId);
+      const rooms = controller.getState().snapshot?.settings.rooms;
+      if (rooms?.some(room => room.id === roomId)) void controller.select(roomId);
+      else void controller.start(roomId);
+    };
+    window.addEventListener('hyper-bots:select-room', onSelectRoom);
+    return () => window.removeEventListener('hyper-bots:select-room', onSelectRoom);
+  }, [controller, userId]);
   return <HyperBotsView state={restoring ? { ...state, snapshot: null, phase: 'opening' } : state} outbox={controller.outbox} actions={{ reload: () => void controller.reload(), select: id => void controller.select(id), send: (text, model) => controller.send(text, model), decide: (id, approved, delivery) => void controller.decide(id, approved, delivery), saveSettings: settings => controller.saveSettings(settings) }} />;
 }
 export function HyperBotsView({ state, outbox, actions }: { state: HyperBotsViewState; outbox: HyperBotsOutbox; actions: HyperBotActions }) {

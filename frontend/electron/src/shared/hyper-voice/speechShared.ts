@@ -102,7 +102,7 @@ export function recommendSpeechModels(
 export const cloudSpeechLanguages = {
   supportsLanguageDetection: true,
   languages:
-    "ar bg ca cs da de el en es fa fi fr hi hr hu id it ja ko mk ms nl pl pt ro ru sk sv th tr uk ur vi zh".split(
+    "ar bg ca cs da de el en es fa fi fr he hi hr hu id it ja ko mk ms nl pl pt ro ru sk sv th tr uk ur vi zh".split(
       " ",
     ),
 };

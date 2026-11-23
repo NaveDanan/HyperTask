@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { HyperBotsCardRow, HyperBotsDelivery, HyperBotsToolName } from '@shared/HyperBots';
+import { HyperPeopleResolver } from './HyperPeopleResolver';
 import { HyperBotsToolError, type HyperBotsBinding, type HyperBotsTool } from './HyperBotsRuntime';
 import { HyperOutlookLost, type HyperOutlookBridge } from './HyperOutlookBridge';
 import type { HyperOutlookArgs, HyperOutlookOp, HyperOutlookValues } from './HyperOutlookSchema';
@@ -16,6 +17,7 @@ export type HyperBotsBoundTool = HyperBotsTool & Required<Pick<HyperBotsTool, 'b
 const DAY = 86_400_000;
 const CALENDAR: HyperBotsBinding = { destination: 'Outlook calendar on this PC', fingerprint: 'outlook:local-classic' };
 const MAIL: HyperBotsBinding = { destination: 'Outlook mail on this PC', fingerprint: 'outlook:local-mail' };
+const DIRECTORY: HyperBotsBinding = { destination: 'Employee & Outlook directory on this PC', fingerprint: 'outlook:local-directory' };
 // The content hash binds a reply or forward to what was approved; without it the message cannot be checked.
 const UNREADABLE = 'Outlook could not read all of this message (its text or attachment details), so a bot cannot reply to or forward it; do it in Outlook.';
 const clip = (text: string, max: number) => text.length > max ? text.slice(0, max) + '…' : text;
@@ -73,12 +75,27 @@ const row = (label: string, value: string, extra: Omit<HyperBotsCardRow, 'label'
  * isolated (FSI/PDI) so a Hebrew title keeps its own direction without flipping the line or moving its punctuation. */
 const isolate = (text: string) => `\u2068${text}\u2069`;
 const meetingRow = (subject: string, when: string) => row('Meeting', `\u200E"${isolate(subject)}", ${when}`);
-function recipientRows(to: string[], cc: string[], own: string, label = 'To', ccLabel = 'Cc'): HyperBotsCardRow[] {
-  const rows = [row(label, to.join(', '))];
-  if (cc.length) rows.push(row(ccLabel, cc.join(', ')));
+function recipientRows(to: string[], cc: string[], own: string, label = 'To', ccLabel = 'Cc', display?: Map<string, string>): HyperBotsCardRow[] {
+  const show = (addr: string) => display?.get(addr.toLowerCase()) ?? addr;
+  const rows = [row(label, to.map(show).join(', '))];
+  if (cc.length) rows.push(row(ccLabel, cc.map(show).join(', ')));
   const away = hyperBotsOutside([...to, ...cc], own);
-  if (away.length) rows.push(row(`Outside ${domain(own)}`, away.join(', '), { tone: 'warning' }));
+  if (away.length) rows.push(row(`Outside ${domain(own)}`, away.map(show).join(', '), { tone: 'warning' }));
   return rows;
+}
+/** Best-effort directory enrichment for approval cards so recipients show Display Name <email> (Title · Department). */
+async function enrichRecipients(resolver: HyperPeopleResolver, addresses: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(addresses.map((a) => a.trim().toLowerCase()).filter((a) => a.includes('@')))].slice(0, 20);
+  const out = new Map<string, string>();
+  if (!unique.length) return out;
+  const found = await Promise.all(unique.map(async (addr) => [addr, await resolver.lookupEmail(addr)] as const));
+  for (const [addr, info] of found) {
+    if (!info || !info.name || info.name.toLowerCase() === addr) continue;
+    const meta = [info.title, info.department].filter(Boolean).join(' · ');
+    const display = `\u200E${isolate(info.name)} <${info.email}>${meta ? ` (${isolate(meta)})` : ''}`;
+    out.set(addr, display);
+  }
+  return out;
 }
 const fingerprint = (parts: unknown[]) => createHash('sha256').update(JSON.stringify(parts)).digest('hex');
 
@@ -184,6 +201,10 @@ export function hyperBotsOutlookTool(bridge: HyperBotsOutlook): HyperBotsBoundTo
 }
 
 const GetArgs = z.strictObject({ id: eventId });
+const PeopleSearchArgs = z.strictObject({
+  query: z.string().trim().min(2, 'Give at least two characters to search.').max(128),
+  limit: z.number().int().min(1).max(20).default(10),
+});
 const MailListArgs = z.strictObject({
   folder: z.enum(['inbox', 'sent', 'drafts']).default('inbox'), unreadOnly: z.boolean().default(false), since: instant.optional(),
   from: z.string().trim().max(100).default(''), subject: z.string().trim().max(100).default(''), max: z.number().int().min(1).max(50).default(10),
@@ -220,6 +241,7 @@ type Mail = z.output<(typeof HyperOutlookValues)['mail.read']>;
 
 /** Every Outlook tool HyperBots offers. Bots get only the ones ticked for them in Bot settings. */
 export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundTool[] {
+  const peopleResolver = new HyperPeopleResolver(bridge);
   const header = (id: string) => outlook(bridge, 'mail.read', { id, maxChars: 0 });
   const event = (id: string) => outlook(bridge, 'event.get', { id });
   /** An answerable invitation, from a calendar event id or an invitation message id. */
@@ -267,11 +289,11 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
       },
       summarize: a => `Create ${a.attendees.length ? 'meeting' : 'event'} "${a.subject}", ${span(a.start, a.end, a.allDay)}${a.onlineMeeting === 'teams' ? ' with Teams' : a.onlineMeeting === 'skype' ? ' with Skype' : ''}${a.attendees.length ? `, inviting ${a.attendees.length}` : ''}`,
       async prepare(a) {
-        const from = await account(bridge);
+        const [from, display] = await Promise.all([account(bridge), a.attendees.length ? enrichRecipients(peopleResolver, a.attendees) : Promise.resolve(new Map<string, string>())]);
         const card = [row('Organizer', fromRow(from).value), row('Title', a.subject), row('When', span(a.start, a.end, a.allDay))];
         if (a.location) card.push(row('Location', a.location));
         if (a.onlineMeeting) card.push(row('Online meeting', a.onlineMeeting === 'teams' ? 'Microsoft Teams' : 'Skype for Business'));
-        if (a.attendees.length) card.push(...recipientRows(a.attendees, [], from.address, 'Invites'));
+        if (a.attendees.length) card.push(...recipientRows(a.attendees, [], from.address, 'Invites', 'Cc', display));
         if (a.description) card.push(row('Description', a.description, { long: true }));
         const destination = `Outlook calendar as ${from.address} on this PC${a.attendees.length ? `; Outlook sends ${plural(a.attendees.length, 'invitation')}` : ''}`;
         return { destination, fingerprint: fingerprint(['create', identity(from)]), card, account: from, extra: null };
@@ -321,7 +343,10 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
         if (patch.location !== undefined) card.push(row('New location', patch.location || '(none)'));
         if (patch.body !== undefined) card.push(row('New description', patch.body || '(empty)', { long: true }));
         const invited = recipientsOf(e, from.address);
-        if (invited.length) card.push(...recipientRows(invited, [], from.address, 'Update goes to'));
+        if (invited.length) {
+          const display = await enrichRecipients(peopleResolver, invited);
+          card.push(...recipientRows(invited, [], from.address, 'Update goes to', 'Cc', display));
+        }
         return { destination: `Outlook calendar as ${from.address} on this PC`, fingerprint: fingerprint(['update', identity(from), e.id, e.lastModified, patch]), card, account: from, extra: { lastModified: e.lastModified, patch } };
       },
       async perform(a, p) {
@@ -345,10 +370,11 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
       async prepare(a) {
         const [from, e] = await Promise.all([account(bridge), event(a.id)]);
         const existing = e.isOrganizer ? recipientsOf(e, from.address) : [];
+        const display = await enrichRecipients(peopleResolver, [...a.to, ...existing]);
         const card = [fromRow(from), meetingRow(e.subject, span(e.start, e.end, e.allDay)),
           row('How', e.isOrganizer ? `You organize it: adds them as attendees and sends the updated meeting to ${plural(existing.length + a.to.length, 'attendee', true)}.`
             : `Forwards the invitation you received${e.isRecurring ? ' (the whole series)' : ''}; Exchange tells the organizer.`),
-          ...(e.isOrganizer ? recipientRows(a.to, existing, from.address, 'Adds', 'Update also goes to') : recipientRows(a.to, [], from.address))];
+          ...(e.isOrganizer ? recipientRows(a.to, existing, from.address, 'Adds', 'Update also goes to', display) : recipientRows(a.to, [], from.address, 'To', 'Cc', display))];
         if (a.comment && !e.isOrganizer) card.push(row('Comment', a.comment, { long: true }));
         return { destination: `Outlook as ${from.address} on this PC`, fingerprint: fingerprint(['forward-event', identity(from), e.id, e.lastModified]), card, account: from, extra: e.lastModified };
       },
@@ -396,6 +422,30 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
         };
       },
     }),
+    readTool({
+      name: 'outlook_search_people', binding: DIRECTORY, schema: PeopleSearchArgs,
+      description: 'Search the company employee directory (Active Directory) and classic Outlook contacts/GAL by name or email (supports English and Hebrew) to find verified email addresses before scheduling meetings or sending emails.',
+      parameters: {
+        type: 'object', additionalProperties: false, required: ['query'],
+        properties: {
+          query: { type: 'string', minLength: 2, maxLength: 128, description: 'Person name (English or Hebrew) or email address to look up' },
+          limit: { type: 'integer', minimum: 1, maximum: 20, description: 'Maximum matches to return (default 10)' },
+        },
+      },
+      summarize: a => `Search directory & Outlook people for "${a.query}"`,
+      async read(a) {
+        const { ranked, error } = await peopleResolver.search(a.query, a.limit);
+        if (!ranked.length && error) throw new HyperBotsToolError('refused', error);
+        return ranked.map(({ person: p }) => ({
+          name: p.name, email: p.email,
+          ...(p.title ? { title: p.title } : {}),
+          ...(p.department ? { department: p.department } : {}),
+          ...(p.office ? { office: p.office } : {}),
+          ...(p.company ? { company: p.company } : {}),
+          source: p.source,
+        }));
+      },
+    }),
     writeTool({
       name: 'outlook_send_message', schema: SendArgs, delivery: true,
       description: 'Write a new plain-text email from the owner\'s Outlook account. The owner approves it and chooses Send or Save to Drafts. Email addresses only; no attachments.',
@@ -410,8 +460,8 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
       },
       summarize: a => `Email ${a.to.join(', ')}: "${a.subject}"`,
       async prepare(a) {
-        const from = await account(bridge);
-        const card = [fromRow(from), ...recipientRows(a.to, a.cc, from.address), row('Subject', a.subject), row('Message', a.body, { long: true })];
+        const [from, display] = await Promise.all([account(bridge), enrichRecipients(peopleResolver, [...a.to, ...a.cc])]);
+        const card = [fromRow(from), ...recipientRows(a.to, a.cc, from.address, 'To', 'Cc', display), row('Subject', a.subject), row('Message', a.body, { long: true })];
         return { destination: `Outlook mail as ${from.address} on this PC`, fingerprint: fingerprint(['send', identity(from)]), card, account: from, extra: null };
       },
       async perform(a, p, delivery) {
@@ -432,7 +482,8 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
         // The recipients are the ones Outlook's own Reply / Reply All gives (Reply-To included), and the reply is sent only to them.
         const [from, m, to] = await Promise.all([account(bridge), header(a.id), outlook(bridge, 'mail.recipients', { id: a.id, replyAll: a.replyAll })]);
         if (!m.version) throw new HyperBotsToolError('refused', UNREADABLE);
-        const card = [fromRow(from), row(a.replyAll ? 'Reply all to' : 'Reply to', target(m)), ...recipientRows(to.to, to.cc, from.address), row('Message', a.body, { long: true })];
+        const display = await enrichRecipients(peopleResolver, [...to.to, ...to.cc]);
+        const card = [fromRow(from), row(a.replyAll ? 'Reply all to' : 'Reply to', target(m)), ...recipientRows(to.to, to.cc, from.address, 'To', 'Cc', display), row('Message', a.body, { long: true })];
         const recipients = [...to.to, ...to.cc].map(x => x.toLowerCase()).sort();
         return { destination: `Outlook mail as ${from.address} on this PC`, fingerprint: fingerprint(['reply', identity(from), m.id, m.version, a.replyAll, recipients]), card, account: from, extra: { expect: [...to.to, ...to.cc], version: m.version } };
       },
@@ -456,9 +507,9 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
       },
       summarize: a => `Forward an Outlook message to ${a.to.join(', ')}`,
       async prepare(a) {
-        const [from, m] = await Promise.all([account(bridge), header(a.id)]);
+        const [from, m, display] = await Promise.all([account(bridge), header(a.id), enrichRecipients(peopleResolver, [...a.to, ...a.cc])]);
         if (!m.version) throw new HyperBotsToolError('refused', UNREADABLE);
-        const card = [fromRow(from), row(m.kind === 'meeting_request' ? 'Forwarding invitation' : 'Forwarding', target(m)), ...recipientRows(a.to, a.cc, from.address)];
+        const card = [fromRow(from), row(m.kind === 'meeting_request' ? 'Forwarding invitation' : 'Forwarding', target(m)), ...recipientRows(a.to, a.cc, from.address, 'To', 'Cc', display)];
         if (m.hasAttachments) card.push(row('Attachments', 'Its attachments are forwarded too', { tone: 'warning' }));
         if (a.body) card.push(row('Note', a.body, { long: true }));
         return { destination: `Outlook mail as ${from.address} on this PC`, fingerprint: fingerprint(['forward', identity(from), m.id, m.version]), card, account: from, extra: m.version };

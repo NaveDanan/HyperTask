@@ -95,6 +95,8 @@ it('writes the host script as ASCII with a byte order mark, so any Windows code 
   const args = mock.spawn.mock.calls[0][1] as string[], text = readFileSync(args[args.length - 1], 'utf8');
   expect(text.charCodeAt(0)).toBe(0xfeff);
   expect(/[^\x00-\x7f]/.test(text.slice(1))).toBe(false);
+  expect(text).toContain('GetDefaultFolder(10)');
+  expect(text).toContain('Hyper-OutlookPeople');
 });
 
 it('fails immediately while presence is closed, resets only the helper, and reconnects on the next new request', async () => {

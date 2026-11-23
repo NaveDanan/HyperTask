@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { HyperMarkdown } from '@/features/hyper-openbot/transcript/HyperMarkdown';
 import { HyperBotAvatarFor, HyperBotMembersAvatar } from './HyperBotAvatar';
 import { HyperBotsApprovalCard, HyperBotsDecided } from './HyperBotApproval';
+import { HyperBotRichText } from './HyperBotMentionPopover';
 import { hyperBotDescription } from './HyperBotSettings';
 const clock = (iso: string) => { const date = new Date(iso); return isNaN(date.getTime()) ? '' : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
 const author = (message: HyperBotsMessage) => message.author.kind === 'user' ? 'user' : message.author.botId;
@@ -52,7 +53,7 @@ export function HyperBotTranscript({ snapshot, bot, name, members, deciding, onD
         {group.messages.map((message, index) => <article key={message.id} className={cn('bubble-wrap', user ? 'is-right' : 'is-left')} aria-label={user ? 'You' : botName(message.author.kind === 'bot' ? message.author.botId : '')} tabIndex={0}>
           <div className={cn('bubble', user ? 'is-user' : 'is-agent', group.messages.length > 1 && (index === 0 ? 'is-first' : index === group.messages.length - 1 ? 'is-last' : 'is-mid'))}>
             {message.model && <span className="bubble__model">{message.model}</span>}
-            {user ? <p className="bubble__plain [unicode-bidi:plaintext] text-start">{message.text}</p> : <HyperMarkdown content={message.text} className="md [&_li]:[unicode-bidi:plaintext] [&_p]:[unicode-bidi:plaintext] [&_li]:text-start [&_p]:text-start" />}
+            {user ? <p className="bubble__plain [unicode-bidi:plaintext] text-start"><HyperBotRichText text={message.text} bots={snapshot.settings.bots} /></p> : <HyperMarkdown content={message.text} className="md [&_li]:[unicode-bidi:plaintext] [&_p]:[unicode-bidi:plaintext] [&_li]:text-start [&_p]:text-start" />}
           </div><time dateTime={message.createdAt} className="bubble__time">{clock(message.createdAt)}</time>
         </article>)}
       </div>{failures.get(group.key)?.map(run => failure(run, false))}</div>;

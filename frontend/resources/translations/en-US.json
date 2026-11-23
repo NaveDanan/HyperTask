@@ -3464,5 +3464,101 @@
   },
   "shareSection": {
     "shared": "Shared with me"
+  },
+  "hyperDesktop": {
+    "menuLabel": "Desktop",
+    "title": "Desktop",
+    "description": "Control startup, background system tray behavior, and the global Hyper-Bot voice shortcut.",
+    "startupSectionTitle": "Startup & Background",
+    "autoStart": {
+      "title": "Start HyperTask with your OS",
+      "description": "Launch HyperTask automatically at sign-in in the background so your assistant is always ready.",
+      "devNotice": "Saved. OS login registration applies in the packaged desktop app.",
+      "unsupported": "Automatic OS startup is not supported on this platform."
+    },
+    "closeToTray": {
+      "title": "Keep running in system tray when closed",
+      "description": "Closing the main window hides HyperTask to the system tray. Choose Quit HyperTask from the tray menu to exit."
+    },
+    "voiceShortcutSectionTitle": "Global Hyper-Bot Voice Shortcut",
+    "voiceShortcut": {
+      "title": "Voice Assistant Hotkey",
+      "description": "Press {hotkey} anywhere—even when HyperTask is hidden in the tray—to open the floating voice sphere.",
+      "registered": "Active",
+      "unavailable": "Unavailable",
+      "conflictHint": "Another application may be using {hotkey}."
+    }
+  },
+  "hyperVoiceAssistant": {
+    "status": {
+      "idle": "Click sphere or press {hotkey}",
+      "preparing": "Starting microphone…",
+      "listening": "Listening…",
+      "transcribing": "Transcribing…",
+      "parsing": "Finding bot & people…"
+    },
+    "sphereStartLabel": "Start speaking to Hyper-Bot",
+    "sphereStopLabel": "Stop listening and process voice command",
+    "closeOverlay": "Close voice assistant",
+    "stopHint": "Pause to finish · Enter or {hotkey} to send · Esc to cancel",
+    "hebrewModelTip": "Tip: switch to Whisper Large v3 Turbo or Cloud STT for Hebrew.",
+    "finishSpeaking": "Done",
+    "cancel": "Cancel",
+    "intent": {
+      "meeting": "Meeting",
+      "email": "Email",
+      "general": "Command"
+    },
+    "personStatus": {
+      "exact": "Matched",
+      "fuzzy": "Closest match",
+      "ambiguous": "Pick person",
+      "unresolved": "Not found"
+    },
+    "searchUnavailable": "Directory search is unavailable.",
+    "searchingDirectory": "Searching Outlook directory…",
+    "noPeopleFound": "No matching people found.",
+    "typeToSearchPeople": "Type at least 2 characters (English or Hebrew).",
+    "closeSearch": "Close",
+    "changeOrSearch": "Change / Search",
+    "removePerson": "Remove person",
+    "personUnresolvedHint": "Could not match this person automatically. Search Outlook below or remove.",
+    "possibleMatches": "Possible matches:",
+    "searchPeoplePlaceholder": "Search by name or email…",
+    "setupTitle": "Enable Hyper-Bot Voice",
+    "downloadModelTitle": "Download speech model",
+    "setupDescription": "Choose local Whisper (English & Hebrew, runs offline on this PC) or configure Cloud STT in Settings → Voice.",
+    "downloadingProgress": "Downloading Whisper ({percent}%)…",
+    "downloadingModel": "Preparing Whisper (EN + HE)…",
+    "enableLocalWhisper": "Enable local Whisper (English + Hebrew)",
+    "openVoiceSettings": "Open Voice Settings",
+    "typeFallbackPlaceholder": "Or type a command (e.g. Tell Abby to set meeting…)",
+    "confirmTitle": "Confirm voice command",
+    "step1Title": "Confirm bot & people",
+    "targetBot": "Target bot",
+    "signInRequired": "Sign in to HyperTask to send commands to Hyper-Bot.",
+    "recognizedCommand": "Command",
+    "editCommand": "Edit recognized command",
+    "matchedPeople": "Matched people ({count})",
+    "addPerson": "Add person",
+    "noPeopleDetected": "No specific co-workers detected. You can add someone from Outlook or continue.",
+    "enableMissingTools": "Enable Outlook tool(s) ({tools}) for {bot} and run. Every email or invite still asks for your approval.",
+    "rerecord": "Re-record",
+    "confirmAndSendTo": "Confirm & Send to {bot}",
+    "confirmAndSend": "Confirm & Send",
+    "executionTitle": "Hyper-Bot progress",
+    "waitingApproval": "{bot} needs your approval before sending",
+    "completedBy": "{bot} finished",
+    "working": "{bot} is working…",
+    "openInHyperBot": "Open in Hyper-Bot",
+    "savedToDrafts": "Saved to Drafts",
+    "sent": "Sent",
+    "preparingAction": "Preparing Outlook action and checking details…",
+    "newCommand": "New command",
+    "done": "Done",
+    "hide": "Hide",
+    "errorTitle": "Something went wrong",
+    "genericError": "Could not complete the voice command.",
+    "tryAgain": "Try again"
   }
 }

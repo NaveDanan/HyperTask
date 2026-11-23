@@ -48,7 +48,7 @@ function testSettings(over: Partial<HyperBotsSettings> = {}): HyperBotsSettings 
       { id: 'scribe', name: 'Scribe', instructions: 'You file issues.', model: 'm-scribe', tools: ['jira_create_issue'] },
     ],
     rooms: [{ id: 'ops', name: 'Ops', botIds: ['scout', 'scribe'] }],
-    policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask' }, ...over,
+    policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'allow' }, ...over,
   };
 }
 
@@ -833,11 +833,11 @@ describe('mail writes', () => {
     expect(t.runtime.decide(a.id, true)).toMatchObject({ status: 'approved', delivery: null, card: null });
   });
 
-  test('an older calendar-read policy also covers reading one event in full', () => {
+  test('an older calendar-read policy also covers reading one event in full and defaults directory search to allow', () => {
     const store = new HyperBotsStore(null);
     store.saveSettings({ ...testSettings(), policy: { outlook_list_events: 'allow' } } as HyperBotsSettings);
     const runtime = new HyperBotsRuntime({ store, engine: fakeEngine(() => say('ok')), tools: fakeRegistry([]), defaultModel: async () => 'm' });
-    expect(runtime.settings().policy).toEqual({ outlook_list_events: 'allow', outlook_get_event: 'allow', outlook_list_messages: 'ask', outlook_read_message: 'ask' });
+    expect(runtime.settings().policy).toEqual({ outlook_list_events: 'allow', outlook_get_event: 'allow', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'allow' });
   });
 });
 
@@ -879,5 +879,37 @@ describe('items a write acts on', () => {
     expect(binds).toEqual([{ id: 'AB12', body: 'x' }]);
     expect(toolMsgs(engine.calls[1])[0]).toMatch(/acts only on items an Outlook tool showed you/);
     expect(store.listApprovals({ status: ['pending'] }).map((a) => a.tool)).toEqual(['outlook_reply_message']);
+  });
+});
+
+describe('bilingual bot mentions and verified person prompt formatting', () => {
+  test('routes case-insensitive English, Hebrew (@משה, @אבי) and spoken triggers to the matching bot in a group room', async () => {
+    const t = setup(() => say('ok'), {
+      settings: {
+        bots: [
+          { id: 'abby', name: 'Abby', instructions: 'You are Abby.', model: 'm-abby', tools: ['outlook_list_events'] },
+          { id: 'bot', name: 'משה', instructions: 'אתה משה.', model: 'm-moshe', tools: ['outlook_list_events'] },
+          { id: 'bot-2', name: 'אבי', instructions: 'אתה אבי.', model: 'm-avi', tools: ['outlook_list_events'] },
+        ],
+        rooms: [{ id: 'ops', name: 'Ops', botIds: ['abby', 'bot', 'bot-2'] }],
+      },
+    });
+    expect((await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@Abby check tomorrow' })).runs.map((r) => r.botId)).toEqual(['abby']);
+    expect((await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@משה תקבע פגישה' })).runs.map((r) => r.botId)).toEqual(['bot']);
+    expect((await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@אבי שלח מייל' })).runs.map((r) => r.botId)).toEqual(['bot-2']);
+    expect((await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: 'תגיד למשה לקבוע פגישה' })).runs.map((r) => r.botId)).toEqual(['bot']);
+    expect((await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: 'Tell Abby to check mail' })).runs.map((r) => r.botId)).toEqual(['abby']);
+    await t.runtime.idle();
+  });
+
+  test('normalizes serialized @[Name](mailto:email) mentions into @Name <email> in LLM prompts while keeping stored text intact', async () => {
+    const t = setup(() => say('Scheduled.'));
+    const raw = '@scout set meeting with @[Aaron Mitchell](mailto:aaron.mitchell@corp.example) and @[ישראל ישראלי](mailto:israel@corp.example)';
+    await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: raw });
+    await t.runtime.idle();
+    const userPrompt = (t.engine.calls[0]!.messages[1] as { content: string }).content;
+    expect(userPrompt).toContain('@Aaron Mitchell <aaron.mitchell@corp.example>');
+    expect(userPrompt).toContain('@ישראל ישראלי <israel@corp.example>');
+    expect(t.store.listMessages('ops')[0]!.text).toBe(raw);
   });
 });

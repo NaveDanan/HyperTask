@@ -6,7 +6,7 @@
 export type HyperBotsAccess = 'read' | 'write';
 export type HyperBotsPolicy = 'ask' | 'allow';
 /** Read tools: each can be pre-allowed in Bot settings. */
-export type HyperBotsReadToolName = 'outlook_list_events' | 'outlook_get_event' | 'outlook_list_messages' | 'outlook_read_message';
+export type HyperBotsReadToolName = 'outlook_list_events' | 'outlook_get_event' | 'outlook_list_messages' | 'outlook_read_message' | 'outlook_search_people';
 export type HyperBotsToolName = HyperBotsReadToolName
   | 'outlook_create_event' | 'outlook_update_event' | 'outlook_forward_event' | 'outlook_respond_meeting'
   | 'outlook_send_message' | 'outlook_reply_message' | 'outlook_forward_message' | 'jira_create_issue';
@@ -23,16 +23,18 @@ export const HYPER_BOTS_TOOLS: Record<HyperBotsToolName, { access: HyperBotsAcce
   outlook_forward_event: { access: 'write', label: 'Forward meetings', group: 'outlook-calendar' },
   outlook_list_messages: { access: 'read', label: 'List Outlook mail', group: 'outlook-mail' },
   outlook_read_message: { access: 'read', label: 'Read Outlook mail', group: 'outlook-mail' },
+  outlook_search_people: { access: 'read', label: 'Search Outlook and employee directory', group: 'outlook-mail' },
   outlook_send_message: { access: 'write', label: 'Send mail', group: 'outlook-mail', delivery: true },
   outlook_reply_message: { access: 'write', label: 'Reply to mail', group: 'outlook-mail', delivery: true },
   outlook_forward_message: { access: 'write', label: 'Forward mail', group: 'outlook-mail', delivery: true },
   outlook_respond_meeting: { access: 'write', label: 'Answer meeting invitations', group: 'outlook-mail', delivery: true },
   jira_create_issue: { access: 'write', label: 'Create Jira issues', group: 'jira' },
 };
-/** Pre-allowing reads is set per kind in Bot settings: calendar reads and mail reads. */
+/** Pre-allowing reads is set per kind in Bot settings: calendar reads, mail reads, and people directory search. */
 export const HYPER_BOTS_READ_POLICIES: { label: string; allow: string; tools: HyperBotsReadToolName[] }[] = [
   { label: 'Outlook calendar reads', allow: 'Allow calendar reads without asking', tools: ['outlook_list_events', 'outlook_get_event'] },
   { label: 'Outlook mail reads', allow: 'Allow mail reads without asking', tools: ['outlook_list_messages', 'outlook_read_message'] },
+  { label: 'Directory & Outlook people search', allow: 'Allow employee & Outlook contact search without asking', tools: ['outlook_search_people'] },
 ];
 /** A line of an approval card, built in main from the call and what it acts on (sender account, recipients, the message). */
 export interface HyperBotsCardRow { label: string; value: string; tone?: 'warning'; long?: boolean }
@@ -62,14 +64,15 @@ export interface HyperBotsSettings {
 export const HYPER_BOTS_DEFAULT_SETTINGS: HyperBotsSettings = {
   version: 1,
   bots: [
-    // Outlook writes are opt-in: the owner ticks them in Bot settings.
-    { id: 'scout', name: 'Scout', avatar: { shape: 'sparkle', color: 'blue' }, mode: 'personal', model: '', tools: ['outlook_list_events', 'outlook_get_event', 'outlook_list_messages', 'outlook_read_message'],
-      instructions: 'You are Scout. You read the owner\'s Outlook calendar and mail and summarize them clearly. When something needs a Jira ticket, hand it to @scribe with the exact details.' },
+    // Personal assistant defaults include directory search plus calendar/mail create & send (writes always require approval).
+    { id: 'scout', name: 'Scout', avatar: { shape: 'sparkle', color: 'blue' }, mode: 'personal', model: '',
+      tools: ['outlook_list_events', 'outlook_get_event', 'outlook_create_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people', 'outlook_send_message'],
+      instructions: 'You are Scout. You read and manage the owner\'s Outlook calendar, mail, and employee directory, and summarize them clearly. When something needs a Jira ticket, hand it to @scribe with the exact details.' },
     { id: 'scribe', name: 'Scribe', avatar: { shape: 'tablet', color: 'green' }, mode: 'personal', model: '', tools: ['jira_create_issue'],
       instructions: 'You are Scribe. You file concise, actionable Jira issues when asked. Reply with the new issue key.' },
   ],
   rooms: [{ id: 'ops', name: 'Ops', kind: 'group', botIds: ['scout', 'scribe'] }],
-  policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask' },
+  policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'allow' },
 };
 
 /** Add direct rooms without mutating settings. Legacy rooms remain group conversations. */

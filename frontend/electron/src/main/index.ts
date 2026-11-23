@@ -22,6 +22,13 @@ import { HyperBotsOpenAIEngine, hyperBotsReadEndpoint } from './HyperBotsEngine'
 import { HyperBotsRuntime } from './HyperBotsRuntime';
 import { HyperBotsTools, hyperBotsConnections, hyperBotsJiraTool, hyperBotsOutlookTools, hyperBotsReadJira } from './HyperBotsConnectors';
 import { registerHyperBotsIpc, registerHyperBotsUnavailable } from './HyperBotsIpc';
+import { registerHyperAssistantIpc } from './HyperAssistantIpc';
+import { registerHyperDesktopIpc } from './HyperDesktopIpc';
+import { HyperDesktopSettings, isHyperAutoStartLaunch } from './HyperDesktopSettings';
+import { HyperGlobalShortcuts } from './HyperGlobalShortcuts';
+import { HyperTray } from './HyperTray';
+import { HyperTrustedWindows } from './HyperTrustedWindows';
+import { HyperVoiceOverlayWindow } from './HyperVoiceOverlayWindow';
 import { registerHyperVoiceIpc, type HyperVoiceMain } from './hyper-voice/HyperVoiceIpc';
 import { HYPER_BOTS_SIGN_IN, HyperBotsHub, hyperBotsReadIdentity, type HyperBotsUser } from './HyperBotsHub';
 import { JiraCredentialFiles } from './jira-credentials';
@@ -34,6 +41,7 @@ import { supportPath } from './support-path';
 import path from 'node:path';
 import { app, BrowserWindow, clipboard, dialog, ipcMain, net, session, shell } from 'electron';
 import { IpcChannel as C, type AppInfo, type CoreInitConfig, type FileFilter } from '@shared/api';
+import { HyperDesktopChannel, type HyperDesktopOpenMainTarget } from '@shared/HyperDesktop';
 import { isVendorUrl } from '@shared/self-hosted-policy';
 import { scheduleCapture } from './capture';
 import { coreBinaryPath } from './core/binary';
@@ -46,6 +54,10 @@ import { restoreWindowBounds, trackWindowBounds } from './window-state';
 import { registerSettingsIpc } from './settings-ipc';
 
 const DEEP_LINK_SCHEME = 'hypertask-flutter';
+const TRUSTED_WEB_PERMISSIONS = new Set(['media', 'audioCapture', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'notifications']);
+
+// Allow WebAudio/AudioWorklet capture to resume immediately when triggered via global hotkey IPC.
+app.commandLine?.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 /**
  * Flutter's getApplicationSupportDirectory(): `%APPDATA%\<CompanyName>\<ProductName>` on
@@ -69,6 +81,51 @@ let hyperBots: HyperBotsHub | null = null;
 /** Voice input (local speech models, cloud transcription, transcript cleanup), ported from t3code. */
 let hyperVoice: HyperVoiceMain | null = null;
 let mainWindow: BrowserWindow | null = null;
+let isQuitting = false;
+const trustedWindows = new HyperTrustedWindows();
+const voiceOverlay = new HyperVoiceOverlayWindow({
+  preloadPath: path.join(__dirname, '../preload/index.js'),
+  rendererHtmlPath: path.join(__dirname, '../renderer/index.html'),
+  rendererUrl: process.env.ELECTRON_RENDERER_URL,
+  isPackaged: app.isPackaged,
+  trustedWindows,
+});
+const globalShortcuts = new HyperGlobalShortcuts({
+  onTrigger: () => {
+    void voiceOverlay.trigger('hotkey');
+  },
+});
+const desktopSettings = new HyperDesktopSettings({
+  prefs,
+  isPackaged: app.isPackaged,
+  hotkeyStatus: () => globalShortcuts.status(),
+});
+const wasOpenedAtLogin =
+  process.platform === 'darwin' && typeof app.getLoginItemSettings === 'function'
+    ? Boolean(app.getLoginItemSettings().wasOpenedAtLogin)
+    : false;
+const startedHidden = isHyperAutoStartLaunch(process.argv, process.platform, wasOpenedAtLogin);
+const hyperTray = new HyperTray({
+  appRoot,
+  isMainVisible: () => Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()),
+  onAskVoice: () => {
+    void voiceOverlay.trigger('tray');
+  },
+  onShowMain: () => {
+    void openMainTarget();
+  },
+  onHideMain: () => {
+    mainWindow?.hide();
+    hyperTray.refreshMenu();
+  },
+  onOpenSettings: () => {
+    void openMainTarget({ route: 'settings' });
+  },
+  onQuit: () => {
+    isQuitting = true;
+    app.quit();
+  },
+});
 const hyperOutlookWindows = new HyperOutlookWindows();
 const hyperOutlookPresence = new HyperOutlookPresence(hyperOutlook, { detect: () => hyperOutlookWindows.detect(), launch: () => hyperOutlookWindows.launch(), hidden: () => !mainWindow || mainWindow.isMinimized() || !mainWindow.isVisible() });
 let launchDeepLink: string | null = findDeepLink(process.argv);
@@ -115,7 +172,7 @@ async function openExternal(url: string): Promise<void> {
   await shell.openExternal(target);
 }
 
-async function createWindow() {
+async function createWindow({ showOnReady = !startedHidden }: { showOnReady?: boolean } = {}) {
   const bounds = await restoreWindowBounds(prefs);
   mainWindow = new BrowserWindow({
     ...bounds.rect,
@@ -136,17 +193,38 @@ async function createWindow() {
       nodeIntegration: false,
     },
   });
-  if (bounds.maximized) mainWindow.maximize();
+  trustedWindows.add(mainWindow);
+  if (bounds.maximized && showOnReady) mainWindow.maximize();
   trackWindowBounds(mainWindow, prefs);
   scheduleCapture(mainWindow);
 
   const zoom = Number(await prefs.get('scaleFactor'));
   if (Number.isFinite(zoom) && zoom > 0) mainWindow.webContents.setZoomFactor(Math.min(2, Math.max(0.5, zoom)));
 
-  mainWindow.on('ready-to-show', () => mainWindow?.show());
+  mainWindow.on('ready-to-show', () => {
+    if (showOnReady) mainWindow?.show();
+    hyperTray.refreshMenu();
+  });
+  mainWindow.on('show', () => hyperTray.refreshMenu());
+  mainWindow.on('hide', () => hyperTray.refreshMenu());
   mainWindow.on('maximize', () => mainWindow?.webContents.send(C.WindowMaximizedChanged, true));
   mainWindow.on('unmaximize', () => mainWindow?.webContents.send(C.WindowMaximizedChanged, false));
-  mainWindow.on('closed', () => (mainWindow = null));
+  mainWindow.on('close', (event) => {
+    if (!isQuitting && desktopSettings.shouldCloseToTray) {
+      event.preventDefault();
+      mainWindow?.hide();
+      hyperTray.refreshMenu();
+    }
+  });
+  mainWindow.on('closed', () => {
+    if (mainWindow) trustedWindows.remove(mainWindow);
+    mainWindow = null;
+    hyperTray.refreshMenu();
+    if (!isQuitting && !desktopSettings.shouldCloseToTray) {
+      isQuitting = true;
+      app.quit();
+    }
+  });
 
   // Links open in the system browser, as url_launcher does in the Flutter app.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -169,6 +247,22 @@ function focusWindow() {
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();
+  hyperTray.refreshMenu();
+}
+
+async function openMainTarget(target?: HyperDesktopOpenMainTarget): Promise<void> {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    await createWindow({ showOnReady: true });
+  }
+  focusWindow();
+  if (target?.route && mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(HyperDesktopChannel.MainEvent, {
+      type: 'navigate',
+      route: target.route,
+      ...(target.roomId ? { roomId: target.roomId } : {}),
+      ...(target.settingsPage ? { settingsPage: target.settingsPage } : {}),
+    });
+  }
 }
 
 /**
@@ -204,24 +298,35 @@ function createHyperBots() {
 }
 
 function registerIpc() {
-  registerHyperOutlookIpc(hyperOutlook, () => mainWindow);
-  registerHyperOutlookPresenceIpc(hyperOutlookPresence, () => mainWindow);
+  registerHyperOutlookIpc(hyperOutlook, trustedWindows);
+  registerHyperOutlookPresenceIpc(hyperOutlookPresence, trustedWindows);
   registerHyperEntraIpc(() => mainWindow);
   const openBotSessions = createHyperOpenBotSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
   const nodSessions = createHyperNodSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
   nodSessions.onInvalidate(() => hyperNodTunnel.close());
   registerHyperNodIpc(() => mainWindow, nodSessions, new HyperNodClient({ socketPath: () => hyperNodTunnel.socketPath(), readAccess: signal => hyperNodReadAccess(signal) }));
-  hyperVoice = registerHyperVoiceIpc({ window: () => mainWindow, userData: app.getPath('userData'), supportDirectory });
+  hyperVoice = registerHyperVoiceIpc({ window: () => mainWindow, trustedWindows, userData: app.getPath('userData'), supportDirectory });
   let openBotService: HyperOpenBotService | undefined;
   const openBotBridge = registerHyperOpenBotIpc(() => mainWindow, openBotSessions, () => openBotService?.snapshot().ready === true);
   openBotService = createHyperOpenBotService(app.getPath('userData'), openBotSessions, openBotBridge.disconnect);
   registerHyperOpenBotServiceIpc(() => mainWindow, openBotService);
   // HyperBots state that cannot be opened must not stop the app from starting: the hub reports it per account from current().
-  try { registerHyperBotsIpc(() => mainWindow, createHyperBots()); } catch (error) {
+  try { registerHyperBotsIpc(trustedWindows, createHyperBots()); } catch (error) {
     hyperBots = null;
     console.error('[hyper-bots] unavailable', error);
     registerHyperBotsUnavailable(error instanceof Error ? error.message : String(error));
   }
+  if (hyperBots) {
+    registerHyperAssistantIpc({ trustedWindows, botsHub: hyperBots, outlookBridge: hyperOutlook });
+  }
+  registerHyperDesktopIpc({
+    trustedWindows,
+    getSettings: () => desktopSettings.getSnapshot(),
+    setSettings: (patch) => desktopSettings.update(patch),
+    resizeOverlay: (bounds) => voiceOverlay.resize(bounds),
+    hideOverlay: () => voiceOverlay.hide(),
+    openMain: (target) => openMainTarget(target),
+  });
   // Re-reads who is signed in: switches or stops the bots runtime so one account's work never runs as another's.
   const reconcileBots = () => { void hyperBots?.current().catch((error: unknown) => { if (!(error instanceof Error && error.message === HYPER_BOTS_SIGN_IN)) console.error('[hyper-bots] unavailable for this account', error); }); };
   let returnBusy = false;
@@ -284,6 +389,10 @@ function registerIpc() {
   }));
   ipcMain.handle(C.AppDeviceId, () => readDeviceId());
   ipcMain.on(C.AppRelaunch, async () => {
+    isQuitting = true;
+    globalShortcuts.dispose();
+    hyperTray.dispose();
+    voiceOverlay.dispose();
     await core.stop();
     app.relaunch();
     app.exit(0);
@@ -395,25 +504,48 @@ if (!app.requestSingleInstanceLock()) {
     deliverDeepLink(url);
   });
 
+  app.on('activate', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) void createWindow({ showOnReady: true });
+    else focusWindow();
+  });
+
   app.whenReady().then(async () => {
     // SelfHostedPolicy.installNetworkPolicy: no request may reach Hypertask hosted services.
     session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
       callback({ cancel: isVendorUrl(details.url) });
     });
+    session.defaultSession.setPermissionCheckHandler?.((webContents, permission) => {
+      return TRUSTED_WEB_PERMISSIONS.has(permission) && trustedWindows.hasWebContents(webContents);
+    });
+    session.defaultSession.setPermissionRequestHandler?.((webContents, permission, callback) => {
+      callback(TRUSTED_WEB_PERMISSIONS.has(permission) && trustedWindows.hasWebContents(webContents));
+    });
+    await desktopSettings.init();
+    globalShortcuts.register();
     registerIpc();
+    try {
+      hyperTray.init();
+    } catch (error) {
+      console.warn('[hyper-desktop] system tray unavailable', error);
+    }
     hyperOutlookPresence.start();
     // The renderer-reported 'last Bots user' is retired: the account now always comes from the core.
     void Promise.resolve().then(() => prefs.remove('hyperBots.userId')).catch(() => {});
     // Once the core is up, approved work resumes for the signed-in account only (none when signed out).
     void startCore().then(() => hyperBots?.current()).catch((error: unknown) => { if (!(error instanceof Error && error.message === HYPER_BOTS_SIGN_IN)) console.error('[hyper-bots] could not resume runs', error); });
-    await createWindow();
+    await createWindow({ showOnReady: !startedHidden });
+    void voiceOverlay.prewarm();
   });
 
   let quitting = false;
   app.on('before-quit', (event) => {
+    isQuitting = true;
     if (quitting) return;
     event.preventDefault();
     quitting = true;
+    globalShortcuts.dispose();
+    hyperTray.dispose();
+    voiceOverlay.dispose();
     hyperOutlookPresence.stop();
     hyperNodTunnel.close();
     // Bots stop first, so no connector call starts against a stopped Outlook bridge. Bounded: an Outlook read can
@@ -423,5 +555,7 @@ if (!app.requestSingleInstanceLock()) {
     const voiceStopped = Promise.race([Promise.resolve().then(() => hyperVoice?.dispose()), new Promise(resolve => setTimeout(resolve, 3000))]);
     void Promise.all([botsStopped.catch(() => {}), voiceStopped.catch(() => {})]).then(() => { hyperOutlook.stop(); return core.stop(); }).finally(() => app.quit());
   });
-  app.on('window-all-closed', () => app.quit());
+  app.on('window-all-closed', () => {
+    if (isQuitting || !desktopSettings.shouldCloseToTray) app.quit();
+  });
 }

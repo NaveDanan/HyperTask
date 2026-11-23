@@ -27,3 +27,6 @@ directories:
 win:
   target: dir
   signAndEditExecutable: false
+mac:
+  extendInfo:
+    NSMicrophoneUsageDescription: HyperTask uses your microphone to capture voice commands for Hyper-Bot.

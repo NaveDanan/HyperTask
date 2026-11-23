@@ -1,9 +1,10 @@
-import { ipcMain, type BrowserWindow, type IpcMainInvokeEvent } from 'electron';
+import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
 import { HYPER_BOT_AVATAR_SHAPES, HYPER_BOT_AVATAR_COLORS, HYPER_BOTS_TOOLS, HyperBotsChannel as B, type HyperBotsConnections, type HyperBotsEvent, type HyperBotsSnapshot, type HyperBotsToolName } from '@shared/HyperBots';
 import { HyperBotsRuntimeError, type HyperBotsRuntime } from './HyperBotsRuntime';
 import type { HyperBotsActive, HyperBotsHub, HyperBotsUser } from './HyperBotsHub';
 import { SettingsError, toIpcResult } from './settings-error';
+import { hyperTrustedWindowAdapter, type HyperWindowSource } from './HyperTrustedWindows';
 
 const uuid = z.uuid();
 const slug = z.string().regex(/^[a-z0-9-]{1,32}$/, 'Use 1..32 lowercase letters, digits or dashes.');
@@ -62,8 +63,9 @@ export function registerHyperBotsUnavailable(problem: string): () => void {
  * Every call first asks the hub who is signed in (verified with the core in main) and acts only on that account's
  * runtime; events are forwarded only from the active runtime.
  */
-export function registerHyperBotsIpc(window: () => BrowserWindow | null, deps: { hub: Pick<HyperBotsHub, 'current' | 'onSwitch'>; connections: (user: HyperBotsUser) => Promise<HyperBotsConnections>; models: () => Promise<string[]>; onOutlookPresenceChange?: (listener: () => void) => () => void }): () => void {
-  const trusted = (event: IpcMainInvokeEvent) => event.sender === window()?.webContents && event.senderFrame === event.sender.mainFrame;
+export function registerHyperBotsIpc(window: HyperWindowSource, deps: { hub: Pick<HyperBotsHub, 'current' | 'onSwitch'>; connections: (user: HyperBotsUser) => Promise<HyperBotsConnections>; models: () => Promise<string[]>; onOutlookPresenceChange?: (listener: () => void) => () => void }): () => void {
+  const registry = hyperTrustedWindowAdapter(window);
+  const trusted = (event: IpcMainInvokeEvent) => registry.isTrustedSender(event);
   const handle = <T extends z.ZodType | null, R>(channel: string, schema: T, run: (args: T extends z.ZodType ? z.output<T> : undefined, active: HyperBotsActive) => Promise<R> | R) =>
     ipcMain.handle(channel, (event, args: unknown) => toIpcResult(async () => {
       if (!trusted(event)) throw new SettingsError('state', 'Untrusted HyperBots caller refused.');
@@ -97,8 +99,7 @@ export function registerHyperBotsIpc(window: () => BrowserWindow | null, deps: {
   handle(B.SaveSettings, HyperBotsArgs.settings, (args, { runtime }) => runtime.saveSettings(args));
   handle(B.Models, null, () => deps.models());
   const forward = (event: HyperBotsEvent) => {
-    const owner = window();
-    try { if (owner && !owner.isDestroyed() && !owner.webContents.isDestroyed()) owner.webContents.send(B.Event, event); } catch { /* the window is going away */ }
+    registry.broadcast(B.Event, event);
   };
   let followed: HyperBotsRuntime | null = null;
   const follow = (runtime: HyperBotsRuntime | null) => {

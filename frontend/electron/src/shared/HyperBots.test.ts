@@ -26,3 +26,8 @@ it('allocates successive collision suffixes without changing group IDs', () => {
   settings.rooms.push({ id: 'dm-scout', name: 'One', botIds: [] }, { id: 'dm-scout-2', name: 'Two', botIds: [] });
   expect(hyperBotsWithDirectRooms(settings).rooms.at(-2)?.id).toBe('dm-scout-3');
 });
+it('enables people search, meeting creation and mail send by default on personal bot Scout with directory read allowed', () => {
+  const scout = HYPER_BOTS_DEFAULT_SETTINGS.bots.find(b => b.id === 'scout')!;
+  expect(scout.tools).toEqual(expect.arrayContaining(['outlook_search_people', 'outlook_create_event', 'outlook_send_message']));
+  expect(HYPER_BOTS_DEFAULT_SETTINGS.policy.outlook_search_people).toBe('allow');
+});
