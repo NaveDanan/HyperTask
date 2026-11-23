@@ -7,6 +7,7 @@ import type {
   HyperAssistantPersonSlot,
   HyperVoiceCommandPlan,
 } from '@shared/HyperAssistant';
+import { hyperRemoveAssistantPerson } from '@shared/HyperAssistantPeople';
 import type {
   HyperBotsApproval,
   HyperBotsDelivery,
@@ -199,6 +200,7 @@ export function useHyperVoiceAssistant() {
   // Step 1 confirmation state
   const [plan, setPlan] = useState<HyperVoiceCommandPlan | null>(null);
   const [commandText, setCommandText] = useState('');
+  const [reviewedCommandText, setReviewedCommandText] = useState('');
   const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
   const [peopleSlots, setPeopleSlots] = useState<HyperAssistantPersonSlot[]>([]);
   const [enableMissingTools, setEnableMissingTools] = useState(true);
@@ -213,7 +215,11 @@ export function useHyperVoiceAssistant() {
   phaseRef.current = phase;
   const botsCacheRef = useRef<HyperAssistantBotCandidate[]>([]);
   const captureRef = useRef<ActiveCapture | null>(null);
-  const captureAbortRef = useRef<AbortController | null>(null);
+  const captureSessionRef = useRef<{
+    abort: AbortController;
+    grantId: string;
+    hasAudioConsent: () => boolean;
+  } | null>(null);
   const snapshotInFlight = useRef<number | null>(null);
   const stoppingRef = useRef(false);
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -234,8 +240,9 @@ export function useHyperVoiceAssistant() {
 
   const disposeCapture = useCallback(() => {
     clearTimers();
-    captureAbortRef.current?.abort();
-    captureAbortRef.current = null;
+    const session = captureSessionRef.current;
+    captureSessionRef.current = null;
+    session?.abort.abort();
     const active = captureRef.current;
     captureRef.current = null;
     stoppingRef.current = false;
@@ -247,6 +254,22 @@ export function useHyperVoiceAssistant() {
     analyserRef.current = null;
     levelRef.current = 0;
   }, [clearTimers]);
+
+  const cancelRevokedCapture = useCallback(() => {
+    generationRef.current += 1;
+    disposeCapture();
+    setPreview(null);
+    setElapsedSeconds(0);
+    setPhase('idle');
+  }, [disposeCapture]);
+
+  const grantId = grant?.id;
+  useEffect(() => {
+    const session = captureSessionRef.current;
+    if (session && session.grantId !== grantId) {
+      cancelRevokedCapture();
+    }
+  }, [cancelRevokedCapture, grantId]);
 
   // Keep overlay window sized cleanly for each phase.
   useEffect(() => {
@@ -329,7 +352,9 @@ export function useHyperVoiceAssistant() {
       const parsed = await api.parseCommand({ text: trimmed });
       if (gen !== generationRef.current) return;
       setPlan(parsed);
-      setCommandText(parsed.cleanedCommand || parsed.rawText);
+      const reviewedText = parsed.cleanedCommand || parsed.rawText;
+      setCommandText(reviewedText);
+      setReviewedCommandText(reviewedText);
       const keepBot = previous &&
         (!parsed.resolvedBot || parsed.resolvedBot.confidence === 'default') &&
         parsed.availableBots.some((bot) => bot.id === previous.selectedBotId);
@@ -348,7 +373,12 @@ export function useHyperVoiceAssistant() {
 
   const stopAndProcess = useCallback(async () => {
     const active = captureRef.current;
-    if (!active || stoppingRef.current) return;
+    const session = captureSessionRef.current;
+    if (!active || !session || stoppingRef.current) return;
+    if (!session.hasAudioConsent()) {
+      cancelRevokedCapture();
+      return;
+    }
     stoppingRef.current = true;
     clearTimers();
     const gen = generationRef.current;
@@ -365,19 +395,10 @@ export function useHyperVoiceAssistant() {
       levelRef.current = 0;
       stoppingRef.current = false;
 
-      if (!rawTranscript) {
-        setPreview(null);
-        setPhase('idle');
-        setStatusNotice('Didn’t catch that. Click the sphere or press Ctrl+Alt+Space to try again.');
-        return;
-      }
-
       // Optional LLM transcript cleanup when user enabled it in Settings → Voice.
       let finalTranscript = rawTranscript;
       const cleanupGrant = readCleanupGrant();
-      const currentGrant = grantRef.current;
-      if (cleanupGrant && currentGrant) {
-        const hasAudioConsent = bindAudioGrant(currentGrant.id);
+      if (rawTranscript && cleanupGrant && session.hasAudioConsent()) {
         const settings = settingsRef.current;
         const cue = settings.speechCorrectionWord.trim();
         const botHints = botsCacheRef.current.flatMap((b) => [b.name, b.id]);
@@ -396,8 +417,9 @@ export function useHyperVoiceAssistant() {
                 speechPostProcessingPrompt: settings.speechPostProcessingPrompt,
                 ...(cue ? { speechCorrectionWord: cue } : {}),
               },
-              () => hasAudioConsent() && readCleanupGrant() === cleanupGrant,
+              () => session.hasAudioConsent() && readCleanupGrant() === cleanupGrant,
             ),
+            { signal: session.abort.signal },
           );
           if (cleaned.text.trim()) finalTranscript = cleaned.text.trim();
         } catch {
@@ -405,19 +427,26 @@ export function useHyperVoiceAssistant() {
         }
       }
       if (gen !== generationRef.current) return;
+      if (!session.hasAudioConsent()) {
+        cancelRevokedCapture();
+        return;
+      }
+      captureSessionRef.current = null;
+      if (!finalTranscript) {
+        setPreview(null);
+        setPhase('idle');
+        setStatusNotice('Didn’t catch that. Click the sphere or press Ctrl+Alt+Space to try again.');
+        return;
+      }
       setPreview({ committed: finalTranscript, tentative: '' });
       await parseTranscript(finalTranscript);
     } catch (error) {
       if (gen !== generationRef.current) return;
-      captureRef.current = null;
-      active.cleanup();
-      analyserRef.current = null;
-      levelRef.current = 0;
-      stoppingRef.current = false;
+      disposeCapture();
       setErrorMessage(normalizeError(error));
       setPhase('error');
     }
-  }, [clearTimers, parseTranscript]);
+  }, [cancelRevokedCapture, clearTimers, disposeCapture, parseTranscript]);
 
   const startListening = useCallback(async () => {
     disposeCapture();
@@ -446,15 +475,19 @@ export function useHyperVoiceAssistant() {
     }
 
     const abort = new AbortController();
-    captureAbortRef.current = abort;
+    const hasAudioConsent = bindAudioGrant(currentGrant.id);
+    captureSessionRef.current = { abort, grantId: currentGrant.id, hasAudioConsent };
     phaseRef.current = 'preparing';
     setPhase('preparing');
     const bots = await refreshBotsCache();
     if (gen !== generationRef.current) return;
+    if (!hasAudioConsent()) {
+      cancelRevokedCapture();
+      return;
+    }
 
     const { provider, model } = cloudRef.current;
     const settings = settingsRef.current;
-    const hasAudioConsent = bindAudioGrant(currentGrant.id);
     const cleanupGrant = readCleanupGrant();
     const cue = cleanupGrant ? settings.speechCorrectionWord : '';
     const botHints = bots.flatMap((bot) => [bot.name, bot.handle.replace(/^@/, '')]);
@@ -480,6 +513,7 @@ export function useHyperVoiceAssistant() {
       {
         getMicrophoneId: chooseRecordingMicrophone,
         onLevel: (level) => {
+          if (gen !== generationRef.current) return;
           levelRef.current = level;
           if (!vadTracker || phaseRef.current !== 'listening' || stoppingRef.current) return;
           const action = vadTracker.update(level, Date.now());
@@ -595,10 +629,19 @@ export function useHyperVoiceAssistant() {
         capture.cancelRecording();
         return;
       }
+      if (!hasAudioConsent()) {
+        cancelRevokedCapture();
+        return;
+      }
       await capture.recorder.prepareToRecordAsync(abort.signal);
       if (gen !== generationRef.current || abort.signal.aborted) {
         abort.abort();
         capture.cancelRecording();
+        return;
+      }
+
+      if (!hasAudioConsent()) {
+        cancelRevokedCapture();
         return;
       }
 
@@ -646,7 +689,7 @@ export function useHyperVoiceAssistant() {
       setErrorMessage(normalizeError(error));
       setPhase('error');
     }
-  }, [disposeCapture, probeLocalSpeech, refreshBotsCache, stopAndProcess]);
+  }, [cancelRevokedCapture, disposeCapture, probeLocalSpeech, refreshBotsCache, stopAndProcess]);
 
   const cancelAndHide = useCallback(() => {
     generationRef.current += 1;
@@ -729,8 +772,12 @@ export function useHyperVoiceAssistant() {
   }, []);
 
   const removePersonSlot = useCallback((slotId: string) => {
-    setPeopleSlots((prev) => prev.filter((slot) => slot.id !== slotId));
-  }, []);
+    if (commandText.trim() !== reviewedCommandText) return;
+    const { text, people } = hyperRemoveAssistantPerson(reviewedCommandText, peopleSlots, slotId);
+    setCommandText(text);
+    setReviewedCommandText(text);
+    setPeopleSlots(people);
+  }, [commandText, peopleSlots, reviewedCommandText]);
 
   const addPersonSlot = useCallback((person: HyperAssistantPerson) => {
     setPeopleSlots((prev) => {
@@ -829,7 +876,7 @@ export function useHyperVoiceAssistant() {
     [],
   );
 
-  const commandChanged = plan !== null && commandText.trim() !== (plan.cleanedCommand || plan.rawText);
+  const commandChanged = plan !== null && commandText.trim() !== reviewedCommandText;
   const confirmAndDispatch = useCallback(async () => {
     if (!plan || !commandText.trim()) return;
     if (commandChanged) {

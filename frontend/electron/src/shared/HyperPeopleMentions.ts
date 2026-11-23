@@ -19,14 +19,23 @@ export function hyperParseMentions(value: string): HyperMentionPart[] {
 }
 
 /** Find a complete plain-text name without searching inside serialized mentions. */
-export function hyperFindPlainPersonSpan(value: string, name: string) {
+export function hyperFindPlainPersonSpan(
+  value: string,
+  name: string,
+  claimed: readonly { start: number; end: number }[] = [],
+) {
   const needle = name.trim().replace(/^@/, '').replace(/[.*+?^\${}()|[\]\\]/g, '\\$&');
   if (!needle) return undefined;
   const nameChar = "[\\p{L}\\p{M}\\p{N}_@'’׳-]";
-  const pattern = new RegExp('(?<!' + nameChar + ')@?' + needle + '(?!' + nameChar + ')', 'iu');
+  const pattern = new RegExp('(?<!' + nameChar + ')@?' + needle + '(?!' + nameChar + ')', 'giu');
   for (const part of hyperParseMentions(value)) {
     if (part.kind !== 'text') continue;
-    const match = pattern.exec(part.text);
-    if (match) return { start: part.start + match.index, end: part.start + match.index + match[0].length, text: match[0] };
+    for (const match of part.text.matchAll(pattern)) {
+      const start = part.start + match.index;
+      const end = start + match[0].length;
+      if (!claimed.some((span) => start < span.end && end > span.start)) {
+        return { start, end, text: match[0] };
+      }
+    }
   }
 }
