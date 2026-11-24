@@ -44,3 +44,6 @@ frontend/*.deb
 **/.cargo/**
 # Keep the Electron application dependency lockfile.
 !frontend/hypertask_electron/package-lock.json
+
+# Build output
+**/dist/
