@@ -10,6 +10,7 @@ import * as Layer from 'effect/Layer';
 import { FetchHttpClient } from 'effect/http';
 import { describe, expect, it, vi } from 'vitest';
 import { CloudSpeechError, DEFAULT_SPEECH_POST_PROCESSING_PROMPT } from '@shared/hyper-voice/speech';
+import bundledModels from './HyperBundledSpeechModels.json';
 
 vi.mock('electron', () => ({ dialog: {}, ipcMain: {}, net: {} }));
 const { hyperVoiceFailure } = await import('./HyperVoiceIpc');
@@ -90,7 +91,7 @@ describe('voice settings file', () => {
   it('defaults to bundled Whisper and preserves a saved model choice', async () => {
     const directory = await NodeFs.mkdtemp(NodePath.join(NodeOs.tmpdir(), 'hyper-voice-bundled-'));
     const file = NodePath.join(directory, 'settings.json');
-    const whisperId = 'handy-computer/whisper-small-gguf';
+    const whisperId = bundledModels.whisperId;
     const savedId = 'handy-computer/whisper-large-v3-gguf';
     const read = () => Effect.runPromise(
       Effect.gen(function* () {

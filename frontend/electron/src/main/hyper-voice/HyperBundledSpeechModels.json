@@ -1,6 +1,6 @@
 {
   "directory": "models",
-  "whisperId": "handy-computer/whisper-small-gguf",
+  "whisperId": "handy-computer/whisper-large-v3-turbo-gguf",
   "silero": {
     "id": "handy-computer/silero-vad-v6.2-gguf",
     "revision": "97bbd75179f535e4708bccdf61e9278b8b60dfc7",

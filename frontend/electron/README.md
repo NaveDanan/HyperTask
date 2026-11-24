@@ -26,7 +26,7 @@ The core build generates Rust and protobuf types; run it before `npm run gen`. T
 
 On a Windows x64 build machine with the prerequisites above, run `npm install` and `npm run build:release:windows` from this directory. The build downloads and verifies the pinned voice models, builds the release Rust core and writes a setup EXE and a portable ZIP under `dist/windows`.
 
-The installer places the models under `resources/models`. To use the portable build, extract the entire ZIP and open `HyperTask.exe` in the extracted folder. A fresh profile selects the bundled multilingual Whisper Small model for local voice input. Existing profiles can select **Whisper Small** in **Settings → Voice**.
+The installer places the models under `resources/models`. To use the portable build, extract the entire ZIP and open `HyperTask.exe` in the extracted folder. A fresh profile selects the bundled multilingual Whisper Large v3 Turbo model for local voice input. Existing profiles can select **Whisper Large v3 Turbo** in **Settings → Voice**.
 
 ## Existing data
 

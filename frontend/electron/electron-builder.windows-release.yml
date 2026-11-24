@@ -10,7 +10,8 @@ extraResources:
   - from: .cache/windows-release-models
     to: models
     filter:
-      - "*.gguf"
+      - whisper-large-v3-turbo-Q8_0.gguf
+      - silero-vad-v6.2-F32.gguf
   - from: resources/model-licenses
     to: models/licenses
 win:
