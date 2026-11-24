@@ -57,6 +57,8 @@ export class SpeechModelStore extends Context.Service<
   {
     /** Cheap size check for status polls; never hashes the file. */
     readonly isReady: (model: ModelFile) => Effect.Effect<boolean>;
+    /** Whether this model is available only from the app's packaged resources. */
+    readonly isBundled: (model: ModelFile) => Effect.Effect<boolean>;
     /** The installed file once its SHA-256 has been verified, hashing it on first use. */
     readonly installedPath: (model: ModelFile) => Effect.Effect<string | undefined>;
     /** Links a copy the Hugging Face cache or Handy already holds; fetches only without one. */
@@ -89,7 +91,7 @@ const PARTIAL_FILENAME =
 const LINK_SEARCH_DEPTH = 5;
 const LINK_SEARCH_ENTRIES = 5_000;
 
-const make = (directory: string) => Effect.gen(function* () {
+const make = (directory: string, bundledDirectory?: string) => Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const home = yield* HostProcess.HomeDirectory;
@@ -103,6 +105,8 @@ const make = (directory: string) => Effect.gen(function* () {
     }
   }
   const modelPath = (model: ModelFile) => path.join(directory, model.filename);
+  const bundledPath = (model: ModelFile) =>
+    bundledDirectory === undefined ? undefined : path.join(bundledDirectory, model.filename);
   const appDataDirectories =
     platform === "darwin"
       ? [path.join(home, "Library", "Application Support")]
@@ -127,6 +131,7 @@ const make = (directory: string) => Effect.gen(function* () {
   ];
   // Files whose digest failed, by identity, so status polls stop calling them ready.
   const corrupt = new Map<string, string>();
+  const verifiedBundles = new Map<string, string>();
 
   const identity = (model: ModelFile, info: FileSystem.File.Info) =>
     [
@@ -145,6 +150,10 @@ const make = (directory: string) => Effect.gen(function* () {
         info?.type === "File" && Number(info.size) === model.size ? info : undefined,
       ),
     );
+  const readyFile = (model: ModelFile, file: string) =>
+    expectedFile(model, file).pipe(
+      Effect.map((info) => info !== undefined && corrupt.get(file) !== identity(model, info)),
+    );
 
   const digestMatches = Effect.fn("SpeechModelStore.digest")(
     function* (model: ModelFile, file: string) {
@@ -162,22 +171,40 @@ const make = (directory: string) => Effect.gen(function* () {
     model: ModelFile,
     file: string,
     onVerificationStart?: () => void,
+    bundled = false,
   ) {
     const info = yield* expectedFile(model, file);
     if (!info) return undefined;
     const marker = identity(model, info);
     if (corrupt.get(file) === marker) return undefined;
-    const recorded = yield* fs
-      .readFileString(`${file}.verified`)
-      .pipe(Effect.orElseSucceed(() => undefined));
+    const recorded = bundled
+      ? verifiedBundles.get(file)
+      : yield* fs.readFileString(`${file}.verified`).pipe(Effect.orElseSucceed(() => undefined));
     if (recorded === marker) return file;
     onVerificationStart?.();
     const valid = yield* digestMatches(model, file);
     if (!valid) corrupt.set(file, marker);
     const current = yield* expectedFile(model, file);
     if (!valid || !current || identity(model, current) !== marker) return undefined;
-    yield* fs.writeFileString(`${file}.verified`, marker, { mode: 0o600 }).pipe(Effect.ignore);
+    if (bundled) verifiedBundles.set(file, marker);
+    else yield* fs.writeFileString(`${file}.verified`, marker, { mode: 0o600 }).pipe(Effect.ignore);
     return file;
+  });
+
+  const installedPath = Effect.fn("SpeechModelStore.installedPath")(function* (
+    model: ModelFile,
+    onVerificationStart?: () => void,
+  ) {
+    const local = yield* verifiedPath(model, modelPath(model), onVerificationStart);
+    if (local) return local;
+    const bundled = bundledPath(model);
+    return bundled ? yield* verifiedPath(model, bundled, onVerificationStart, true) : undefined;
+  });
+
+  const isBundled = Effect.fn("SpeechModelStore.isBundled")(function* (model: ModelFile) {
+    const bundled = bundledPath(model);
+    if (!bundled || (yield* readyFile(model, modelPath(model)))) return false;
+    return yield* readyFile(model, bundled);
   });
 
   const fetchInto = Effect.fn("SpeechModelStore.fetch")(function* (
@@ -263,7 +290,7 @@ const make = (directory: string) => Effect.gen(function* () {
           const finalPath = modelPath(model);
           // Pointing at HyperTask's own model folder must not replace a file with a link to itself.
           if ((yield* realPath(file)) === (yield* realPath(finalPath))) continue;
-          if (yield* verifiedPath(model, finalPath)) continue;
+          if (yield* installedPath(model)) continue;
           const hashed = yield* expectedFile(model, file);
           if (!hashed || !(yield* digestMatches(model, file))) continue;
           // Staged then renamed, so a failed link never removes the file already installed.
@@ -300,8 +327,9 @@ const make = (directory: string) => Effect.gen(function* () {
     function* (model, progress = {}) {
       yield* Effect.annotateCurrentSpan({ modelId: model.id });
       const finalPath = modelPath(model);
+      const installed = yield* installedPath(model, progress.onVerificationStart);
+      if (installed) return installed;
       yield* fs.makeDirectory(directory, { recursive: true });
-      if (yield* verifiedPath(model, finalPath, progress.onVerificationStart)) return finalPath;
       for (const copy of knownCopies(model)) {
         const linked = yield* link([model], copy).pipe(Effect.orElseSucceed(() => []));
         if (linked.length > 0) return finalPath;
@@ -357,16 +385,13 @@ const make = (directory: string) => Effect.gen(function* () {
         Effect.orElseSucceed(() => undefined),
       ),
     ),
-    isReady: Effect.fn("SpeechModelStore.isReady")((model) =>
-      expectedFile(model, modelPath(model)).pipe(
-        Effect.map(
-          (info) => info !== undefined && corrupt.get(modelPath(model)) !== identity(model, info),
-        ),
-      ),
-    ),
-    installedPath: Effect.fn("SpeechModelStore.installedPath")((model) =>
-      verifiedPath(model, modelPath(model)),
-    ),
+    isReady: Effect.fn("SpeechModelStore.isReady")(function* (model) {
+      if (yield* readyFile(model, modelPath(model))) return true;
+      const bundled = bundledPath(model);
+      return bundled ? yield* readyFile(model, bundled) : false;
+    }),
+    isBundled,
+    installedPath,
     download,
     remove: Effect.fn("SpeechModelStore.remove")(function* (model) {
       const file = modelPath(model);
@@ -377,4 +402,5 @@ const make = (directory: string) => Effect.gen(function* () {
   });
 });
 
-export const layer = (directory: string) => Layer.effect(SpeechModelStore, make(directory));
+export const layer = (directory: string, bundledDirectory?: string) =>
+  Layer.effect(SpeechModelStore, make(directory, bundledDirectory));

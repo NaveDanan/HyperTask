@@ -37,7 +37,6 @@ export type VoiceSettingsPatch = Partial<Omit<VoiceSettings, "cloudSpeechCredent
   readonly cloudSpeechCredentials?: Partial<CloudSpeechCredentials>;
 };
 
-const decode = Schema.decodeUnknownSync(StoredSettings);
 const encode = Schema.encodeSync(StoredSettings);
 
 export class VoiceSettingsService extends Context.Service<
@@ -51,19 +50,26 @@ export class VoiceSettingsService extends Context.Service<
 >()("hypertask/hyper-voice/VoiceSettingsService") {}
 
 /** Keeps the settings in `file`. Writes are serialized and atomic (temp file, then rename). */
-export const layer = (file: string) =>
+export const layer = (file: string, defaultModelId?: string) =>
   Layer.sync(VoiceSettingsService, () => {
+    const decode = Schema.decodeUnknownSync(StoredSettings);
+    const decodeSettings = (value: unknown) => {
+      const settings = decode(value);
+      return defaultModelId && typeof value === "object" && value !== null && !("speechModelId" in value)
+        ? { ...settings, speechModelId: defaultModelId }
+        : settings;
+    };
     let cached: VoiceSettings | undefined;
     let queue: Promise<unknown> = Promise.resolve();
     const read = async () => {
       if (cached) return cached;
       try {
-        cached = decode(JSON.parse(await NodeFs.readFile(file, "utf8")));
+        cached = decodeSettings(JSON.parse(await NodeFs.readFile(file, "utf8")));
       } catch (error) {
         // A missing file is a fresh install; a damaged one falls back to defaults instead of breaking voice.
         if ((error as NodeJS.ErrnoException)?.code !== "ENOENT")
           console.warn("[hyper-voice] voice settings unreadable; using defaults", error);
-        cached = decode({});
+        cached = decodeSettings({});
       }
       return cached;
     };
