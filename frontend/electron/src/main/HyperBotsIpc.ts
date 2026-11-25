@@ -1,17 +1,18 @@
 import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
-import { HYPER_BOT_AVATAR_SHAPES, HYPER_BOT_AVATAR_COLORS, HYPER_BOTS_TOOLS, HyperBotsChannel as B, type HyperBotsConnections, type HyperBotsEvent, type HyperBotsSnapshot, type HyperBotsToolName } from '@shared/HyperBots';
+import { HYPER_BOT_AVATAR_SHAPES, HYPER_BOT_AVATAR_COLORS, HYPER_BOTS_TOOLS, HYPER_BOTS_READ_POLICIES, HyperBotsChannel as B, type HyperBotsConnections, type HyperBotsEvent, type HyperBotsSnapshot, type HyperBotsToolName } from '@shared/HyperBots';
 import { HyperBotsRuntimeError, type HyperBotsRuntime } from './HyperBotsRuntime';
 import type { HyperBotsActive, HyperBotsHub, HyperBotsUser } from './HyperBotsHub';
 import { SettingsError, toIpcResult } from './settings-error';
 import { hyperTrustedWindowAdapter, type HyperWindowSource } from './HyperTrustedWindows';
+import { HyperNewsletterConnectionInputSchema, type HyperNewsletterConnection } from './HyperNewsletterConnection';
 
 const uuid = z.uuid();
 const slug = z.string().regex(/^[a-z0-9-]{1,32}$/, 'Use 1..32 lowercase letters, digits or dashes.');
 const roomId = slug;
 const limit = z.int().min(1).max(100_000).optional();
 const toolNames = Object.keys(HYPER_BOTS_TOOLS) as [HyperBotsToolName, ...HyperBotsToolName[]];
-const readTools = toolNames.filter(name => HYPER_BOTS_TOOLS[name].access === 'read');
+const readTools = HYPER_BOTS_READ_POLICIES.flatMap(group => group.tools);
 export const HyperBotsArgs = {
   // Who the caller is comes from the core in main (hub.current()), never from the renderer.
   open: z.strictObject({ roomId: roomId.optional(), limit }),
@@ -52,7 +53,7 @@ export function hyperBotsFailure(error: unknown): SettingsError {
 }
 
 const CONNECTIONS_TTL_MS = 15_000;
-const CHANNELS = [B.Open, B.Snapshot, B.Post, B.Decide, B.SaveSettings, B.Models];
+const CHANNELS = [B.Open, B.Snapshot, B.Post, B.Decide, B.SaveSettings, B.Models, B.NewsletterConnection, B.SaveNewsletterConnection];
 
 /** When HyperBots could not start (e.g. its state file is unreadable), every call answers with why; the app keeps running. */
 export function registerHyperBotsUnavailable(problem: string): () => void {
@@ -64,7 +65,7 @@ export function registerHyperBotsUnavailable(problem: string): () => void {
  * Every call first asks the hub who is signed in (verified with the core in main) and acts only on that account's
  * runtime; events are forwarded only from the active runtime.
  */
-export function registerHyperBotsIpc(window: HyperWindowSource, deps: { hub: Pick<HyperBotsHub, 'current' | 'onSwitch'>; connections: (user: HyperBotsUser) => Promise<HyperBotsConnections>; models: () => Promise<string[]>; onOutlookPresenceChange?: (listener: () => void) => () => void }): () => void {
+export function registerHyperBotsIpc(window: HyperWindowSource, deps: { hub: Pick<HyperBotsHub, 'current' | 'onSwitch'>; connections: (user: HyperBotsUser) => Promise<HyperBotsConnections>; models: () => Promise<string[]>; newsletter: Pick<HyperNewsletterConnection, 'status' | 'save'>; onOutlookPresenceChange?: (listener: () => void) => () => void }): () => void {
   const registry = hyperTrustedWindowAdapter(window);
   const trusted = (event: IpcMainInvokeEvent) => registry.isTrustedSender(event);
   const handle = <T extends z.ZodType | null, R>(channel: string, schema: T, run: (args: T extends z.ZodType ? z.output<T> : undefined, active: HyperBotsActive) => Promise<R> | R) =>
@@ -97,14 +98,14 @@ export function registerHyperBotsIpc(window: HyperWindowSource, deps: { hub: Pic
       entry.result = result;
     }, () => {
       const failed = { ready: false as const, problem: 'Connection check failed.' };
-      entry.result = { model: failed, jira: failed, outlook: failed };
+      entry.result = { model: failed, jira: failed, outlook: failed, newsletter: failed };
     }).then(() => { if (entry.notify && probe === entry && followed) forward({ type: 'connections' }); });
     return entry;
   };
   const snapshot = async ({ runtime, user }: HyperBotsActive, room: string, fresh = false, windowSize?: number, fromMessageId?: string): Promise<HyperBotsSnapshot> => {
     const state = runtime.snapshot(room, windowSize, fromMessageId);
     const entry = connections(user, fresh && windowSize === undefined, windowSize !== undefined);
-    if (windowSize !== undefined && !entry.result) return { ...state, connections: { model: checking, jira: checking, outlook: checking } };
+    if (windowSize !== undefined && !entry.result) return { ...state, connections: { model: checking, jira: checking, outlook: checking, newsletter: checking } };
     return { ...state, connections: entry.result ?? await entry.value };
   };
   handle(B.Open, HyperBotsArgs.open, (args, active) => {
@@ -118,6 +119,15 @@ export function registerHyperBotsIpc(window: HyperWindowSource, deps: { hub: Pic
   handle(B.Decide, HyperBotsArgs.decide, (args, { runtime }) => runtime.decide(args.approvalId, args.approved, args.delivery));
   handle(B.SaveSettings, HyperBotsArgs.settings, (args, { runtime }) => runtime.saveSettings(args));
   handle(B.Models, null, () => deps.models());
+  handle(B.NewsletterConnection, null, (_, { user }) => deps.newsletter.status(user.key));
+  handle(B.SaveNewsletterConnection, HyperNewsletterConnectionInputSchema, async (input, { user, runtime }) => {
+    const state = await deps.newsletter.save(user.key, input);
+    if (followed === runtime) {
+      probe = null;
+      forward({ type: 'connections' });
+    }
+    return state;
+  });
   const forward = (event: HyperBotsEvent) => {
     registry.broadcast(B.Event, event);
   };

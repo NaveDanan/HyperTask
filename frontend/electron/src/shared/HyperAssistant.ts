@@ -12,6 +12,7 @@ export const HyperAssistantChannel = {
   DecideApproval: 'hyper-assistant:decide-approval',
   Execution: 'hyper-assistant:execution',
   ListBots: 'hyper-assistant:list-bots',
+  OpenGroup: 'hyper-assistant:open-group',
 } as const;
 
 export type HyperAssistantIntent = 'meeting' | 'email' | 'general';
@@ -68,6 +69,9 @@ export interface HyperVoiceCommandPlan {
   language: HyperAssistantLanguage;
   intent: HyperAssistantIntent;
   resolvedBot: HyperAssistantBotCandidate | null;
+  /** Present for group chat requests and tasks addressed to multiple bots. */
+  groupBotIds?: string[];
+  groupAction?: 'send';
   targetRoomId: string | null;
   availableBots: HyperAssistantBotCandidate[];
   people: HyperAssistantPersonSlot[];
@@ -102,15 +106,14 @@ export interface HyperAssistantConfirmedPerson {
   email: string;
 }
 
-export interface HyperAssistantDispatchInput {
-  botId: string;
+export type HyperAssistantDispatchInput = ({ botId: string; botIds?: never } | { botIds: string[]; botId?: never }) & {
   targetRoomId?: string | null;
   text: string;
   confirmedPeople: HyperAssistantConfirmedPerson[];
   enableMissingTools?: HyperBotsToolName[];
   clientMessageId?: string;
   model?: string | null;
-}
+};
 
 export interface HyperAssistantDispatchResult {
   ok: boolean;
@@ -143,4 +146,5 @@ export interface HyperAssistantApi {
   execution(input: { roomId: string; messageId: string; runId: string }): Promise<HyperAssistantExecution | null>;
   decideApproval(input: HyperAssistantDecideApprovalInput): Promise<{ ok: boolean; error?: string }>;
   listBots(): Promise<HyperAssistantBotCandidate[]>;
+  openGroup(input: { botIds: string[] }): Promise<{ roomId: string }>;
 }

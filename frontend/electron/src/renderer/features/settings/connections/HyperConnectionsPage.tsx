@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { ArrowLeft, ChevronRight, Globe, Mail, Mic, Plug, Server, ShieldCheck, Sparkles, SquareCheckBig } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Globe, Mail, Mic, Newspaper, Plug, Server, ShieldCheck, Sparkles, SquareCheckBig } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsGroup, SettingsPageHeader, SettingsSection } from '@/components/app/settings-layout';
 import { HyperEntraSettings } from '@/features/hyper-entra/HyperEntraSettings';
@@ -11,6 +11,7 @@ import { HyperJiraSettingsPage, useHyperJiraConnection } from '../jira/HyperJira
 import type { SettingsPageProps } from '../page-props';
 import { SettingsPage, settingsDialogActions, useSettingsDialogStore, type HyperConnectionPage } from '../settings-dialog-store';
 import { HyperOutlookSettings, useHyperOutlookConnection } from './HyperOutlookSettings';
+import { HyperNewsletterSettings } from './HyperNewsletterSettings';
 
 const HyperOpenBotApps = lazy(() => import('@/features/hyper-openbot/connections/HyperConnectionsPanel')
   .then(module => ({ default: module.HyperConnectionsPanel })));
@@ -18,7 +19,8 @@ const HyperConnectedBrowsers = lazy(() => import('@/features/hyper-openbot/compu
 
 const connections = {
   outlook: { title: 'Microsoft Outlook', icon: Mail, description: 'Calendar and mail from classic Outlook.' },
-  jira: { title: 'Jira', icon: SquareCheckBig, description: 'Sync a project and mirror issues to Hyper-Kanban.' },
+  jira: { title: 'Jira', icon: SquareCheckBig, description: 'Sync Jira to Hyper-Kanban and give Hyper Bot access to issues.' },
+  newsletter: { title: 'Newsletter', icon: Newspaper, description: 'Connect Hyper Bot to newsletters and Gantt projects.' },
   ai: { title: 'AI endpoint', icon: Sparkles, description: 'OpenAI-compatible API, credentials, and models.' },
   entra: { title: 'Microsoft Entra ID', icon: ShieldCheck, description: 'Set up company sign-in.' },
   openbot: { title: 'OpenBot apps', icon: Plug, description: 'Manage accounts and app access on the OpenBot service.' },
@@ -50,6 +52,7 @@ function ConnectionsOverview({ userId }: { userId: string }) {
     <SettingsSection><SettingsGroup>
       <ConnectionRow id="outlook" status={outlook.status?.available && account ? `${outlook.label} · ${account}` : outlook.label} />
       <ConnectionRow id="jira" status={jira.config?.projectKey ? `${jira.label} · ${jira.config.projectKey}` : jira.label} />
+      <ConnectionRow id="newsletter" />
       <ConnectionRow id="openbot" />
       <ConnectionRow id="browsers" />
       <ConnectionRow id="ai" />
@@ -70,6 +73,7 @@ function ConnectionDetails({ id, props }: { id: HyperConnectionPage; props: Sett
   switch (id) {
     case 'outlook': return <HyperOutlookSettings />;
     case 'jira': return <HyperJiraSettingsPage userId={String(props.user.id)} />;
+    case 'newsletter': return <HyperNewsletterSettings />;
     case 'ai': return <AIPage key={props.workspace?.workspaceId ?? ''} {...props} />;
     case 'entra': return <HyperEntraSettings />;
     case 'openbot': return <OpenBotConnection title={connections.openbot.title}><HyperOpenBotApps embedded /></OpenBotConnection>;

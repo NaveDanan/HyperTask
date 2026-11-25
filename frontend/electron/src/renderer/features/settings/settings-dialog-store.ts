@@ -32,7 +32,7 @@ export type SettingsMenuPage = Exclude<SettingsPage, SettingsPage.jira | Setting
 export const isSettingsPage = (value: unknown): value is SettingsPage =>
   typeof value === 'string' && (Object.values(SettingsPage) as string[]).includes(value);
 
-const connections = ['outlook', 'jira', 'ai', 'entra', 'openbot', 'browsers', 'voice', 'server'] as const;
+const connections = ['outlook', 'jira', 'newsletter', 'ai', 'entra', 'openbot', 'browsers', 'voice', 'server'] as const;
 export type HyperConnectionPage = typeof connections[number];
 
 export function settingsDestination(value: string | void | null): { page: SettingsPage; connection: HyperConnectionPage | null } {

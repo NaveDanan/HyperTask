@@ -46,10 +46,10 @@ function jira(fetch: (...args: any[]) => Promise<Response>, access: HyperBotsJir
   return { spy, tool: hyperBotsJiraTool({ access: async () => access, fetch: spy as never, timeoutMs: 1000 }) };
 }
 
-it('jira_create_issue posts the exact request to the configured project only', async () => {
+it('jira_create_issue posts the exact request to the configured project by default', async () => {
   const { spy, tool } = jira(async () => json(201, { id: '1', key: 'OPS-7' }));
   expect(tool.access).toBe('write');
-  expect(() => tool.parse({ summary: 'x', projectKey: 'OTHER' })).toThrow(HyperBotsToolError);
+  expect(() => tool.parse({ summary: 'x', fields: { project: { key: 'OTHER' } } })).toThrow(HyperBotsToolError);
   for (const args of [{}, { summary: '' }, { summary: 'a\nb' }, { summary: 'x'.repeat(256) }, { summary: 'x', labels: Array(11).fill('a') }, { summary: 'x', labels: ['has space'] }, { summary: 'x', description: 'd'.repeat(20001) }]) {
     expect(() => tool.parse(args)).toThrow(HyperBotsToolError);
   }

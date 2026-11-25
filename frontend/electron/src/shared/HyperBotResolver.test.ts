@@ -3,6 +3,7 @@ import {
   extractBotMentions,
   extractExplicitBotMentions,
   extractSpokenBotTrigger,
+  extractVoiceBotMention,
   filterBotsByQuery,
   hyperBotDisplayHandle,
   hyperStripHebrewPrefixes,
@@ -181,4 +182,47 @@ it('prioritizes explicit IDs and shorter exact spoken bot names', () => {
   expect(extractBotMentions('Tell Abby to send email', [
     { id: 'abby', name: 'Abby' }, { id: 'abby-b', name: 'Abby B' },
   ])[0]).toMatchObject({ botId: 'abby', commandText: 'send email' });
+});
+
+describe('extractVoiceBotMention', () => {
+  const bots = [...BOTS, { id: 'dana', name: 'Dana' }];
+
+  it.each([
+    ['I needed to use dana and then with her check my emails', 'dana', 'exact', 'check my emails'],
+    ['I need you to use Dana, and then check my emails', 'dana', 'exact', 'check my emails'],
+    ['I’d like Danna to check my emails', 'dana', 'fuzzy', 'check my emails'],
+    ['I want Sales Bot to check Q4 numbers', 'sales-bot', 'exact', 'check Q4 numbers'],
+    ['אני צריך להשתמש במשה ואז איתו לבדוק את המיילים שלי', 'bot', 'exact', 'לבדוק את המיילים שלי'],
+    ['אני רוצה שמשה יסכם את המיילים שלי', 'bot', 'exact', 'יסכם את המיילים שלי'],
+    ['דנה תבדקי את המיילים שלי', 'dana', 'fuzzy', 'תבדקי את המיילים שלי'],
+    ['אני צריך לבדוק עם דנה מה יש במיילים שלי', 'dana', 'fuzzy', 'לבדוק מה יש במיילים שלי'],
+    ['תגיד לסקאוט לבדוק את המיילים שלי', 'scout', 'fuzzy', 'לבדוק את המיילים שלי'],
+    ['Ask Moshe to check my emails', 'bot', 'fuzzy', 'check my emails'],
+  ])('resolves the bot and task in %s', (text, botId, confidence, commandText) => {
+    expect(extractVoiceBotMention(text, bots)).toMatchObject({ botId, confidence, commandText });
+  });
+
+  it.each([
+    'Check my emails from Dana',
+    'I need Dana’s email address',
+    'I need to ask Dana Cohen to check her emails',
+    'I need data to check my emails',
+    'I do not want Dana to check my emails',
+    'שלח מייל לדנה כהן על הדוח',
+  ])('does not infer a bot target from %s', (text) => {
+    expect(extractVoiceBotMention(text, bots)).toBeNull();
+  });
+
+  it('gives an explicit bot mention precedence', () => {
+    expect(extractVoiceBotMention('I need Dana to check my emails, @scout', bots))
+      .toMatchObject({ botId: 'scout', source: 'at-mention' });
+  });
+
+  it('prefers the configured Hebrew spelling and only uses an unambiguous transliteration', () => {
+    const dina = { id: 'dina', name: 'Dina' };
+    const hebrewDana = { id: 'dana-he', name: 'דנה' };
+    expect(extractVoiceBotMention('תגידי לדנה לבדוק את המיילים שלי', [...bots, dina])).toBeNull();
+    expect(extractVoiceBotMention('תגידי לדנה לבדוק את המיילים שלי', [...bots, dina, hebrewDana]))
+      .toMatchObject({ botId: 'dana-he', handle: '@דנה', confidence: 'exact' });
+  });
 });

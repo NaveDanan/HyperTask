@@ -163,10 +163,52 @@ export function hyperBotDisplayHandle(bot: HyperBotLike): string {
   return '@' + bot.id;
 }
 
+const ROMAN_VOWELS = ['a', 'e', 'i', 'o', 'u'];
+const HEBREW_ROMAN_SPELLINGS: Record<string, readonly string[]> = {
+  א: ['', ...ROMAN_VOWELS], ב: ['b', 'v'], ג: ['g'], ד: ['d'], ה: ['h'],
+  ו: ['ou', 'oo', 'o', 'u', 'v', 'w'], ז: ['z'], ח: ['ch', 'kh', 'h'], ט: ['t'],
+  י: ['ee', 'i', 'y', 'e'], כ: ['ch', 'kh', 'k', 'c'], ל: ['l'], מ: ['m'],
+  נ: ['n'], ס: ['s'], ע: ['', ...ROMAN_VOWELS], פ: ['p', 'f'], צ: ['ts', 'tz'],
+  ק: ['k', 'c', 'q'], ר: ['r'], ש: ['sh', 's'], ת: ['t'],
+};
+const HEBREW_VOWEL_LETTERS = /[אהויע]/u;
+
+/** Tests common unpointed Hebrew spellings against a Latin name word by word. */
+function matchesHebrewRomanization(hebrew: string, latin: string): boolean {
+  if (!/^[א-ת]+(?: [א-ת]+)*$/u.test(hebrew) || !/^[a-z]+(?: [a-z]+)*$/u.test(latin)) return false;
+  const words = hebrew.split(' ');
+  const roman = latin.split(' ');
+  if (words.length !== roman.length) return false;
+  return words.every((word, index) => {
+    const target = roman[index]!;
+    if (word.length < 2 || word.length > 40 || target.length < 3 || target.length > 40) return false;
+    let positions = new Set([0]);
+    for (let position = 0; position < word.length; position++) {
+      const letter = word[position]!;
+      const next = word[position + 1];
+      const spellings = letter === 'ה' && !next ? ['h', 'a', 'e'] : HEBREW_ROMAN_SPELLINGS[letter]!;
+      const allowVowel = next && !HEBREW_VOWEL_LETTERS.test(letter) && !HEBREW_VOWEL_LETTERS.test(next);
+      const matched = new Set<number>();
+      for (const start of positions) {
+        for (const spelling of spellings) {
+          if (!target.startsWith(spelling, start)) continue;
+          const end = start + spelling.length;
+          matched.add(end);
+          if (allowVowel && ROMAN_VOWELS.includes(target[end] ?? '')) matched.add(end + 1);
+        }
+      }
+      if (!matched.size) return false;
+      positions = matched;
+    }
+    return positions.has(target.length);
+  });
+}
+
 /** Scores a candidate string against a single bot's id and name. Returns null if not a plausible match. */
 function scoreBotCandidate<T extends HyperBotLike>(
   rawCandidate: string,
   bot: T,
+  transliterate: boolean,
 ): HyperBotMatch<T> | null {
   const variants = hyperStripHebrewPrefixes(rawCandidate);
   if (!variants.length) return null;
@@ -210,6 +252,13 @@ function scoreBotCandidate<T extends HyperBotLike>(
       }
     }
 
+    if (transliterate && foldedTargets.some(target =>
+      HEBREW_CHAR.test(folded) ? matchesHebrewRomanization(folded, target) : matchesHebrewRomanization(target, folded),
+    )) {
+      consider('fuzzy', 0.91 - prefixPenalty);
+      continue;
+    }
+
     // 4. Bounded Levenshtein distance on single or multi-word tokens
     for (const target of targets) {
       if (Math.abs(norm.length - target.length) > 2) continue;
@@ -238,11 +287,12 @@ function scoreBotCandidate<T extends HyperBotLike>(
 export function matchBotName<T extends HyperBotLike>(
   rawCandidate: string,
   bots: readonly T[],
+  transliterate = false,
 ): HyperBotMatch<T> | null {
   let best: HyperBotMatch<T> | null = null;
   let tied = false;
   for (const bot of bots) {
-    const match = scoreBotCandidate(rawCandidate, bot);
+    const match = scoreBotCandidate(rawCandidate, bot, transliterate);
     if (!match) continue;
     if (!best || match.score > best.score + 0.001) {
       best = match;
@@ -262,6 +312,10 @@ export function matchBotName<T extends HyperBotLike>(
   return best;
 }
 
+function matchVoiceBotName<T extends HyperBotLike>(name: string, bots: readonly T[]) {
+  return matchBotName(name, bots, true);
+}
+
 const PERSON_MAILTO_TOKEN = /^@\[(?:\\.|[^\]\\\r\n])*\]\(mailto:[^\s()]+\)/u;
 const MENTION_PREFIX_BOUNDARY = /[\s([{"'׳״,;:]/;
 
@@ -273,6 +327,7 @@ const MENTION_PREFIX_BOUNDARY = /[\s([{"'׳״,;:]/;
 export function extractExplicitBotMentions<T extends HyperBotLike>(
   text: string,
   bots: readonly T[],
+  matchName: typeof matchBotName = matchBotName,
 ): HyperBotMentionMatch<T>[] {
   if (!text || !bots.length) return [];
   const maxWords = Math.max(1, ...bots.map((b) => hyperNormalizeBotToken(b.name).split(' ').filter(Boolean).length));
@@ -304,7 +359,7 @@ export function extractExplicitBotMentions<T extends HyperBotLike>(
       const endOffset = tokens[count - 1]!.end;
       const candidate = spanText.slice(0, endOffset);
       const bot = byId.get(candidate.toLowerCase());
-      const match: HyperBotMatch<T> | null = bot ? { bot, confidence: 'exact', score: 1 } : matchBotName(candidate, bots);
+      const match: HyperBotMatch<T> | null = bot ? { bot, confidence: 'exact', score: 1 } : matchName(candidate, bots);
       if (match) {
         // Prefer exact multi-word match over partial fuzzy match
         if (!picked || match.score > picked.match.score || (match.score === picked.match.score && endOffset > picked.endOffset)) {
@@ -344,18 +399,40 @@ const HE_TRIGGER_PREFIX =
 const HE_VOCATIVE_PREFIX = /^(?:היי|הי|שלום)\s+/u;
 
 const TRIGGER_JOINER = /^(?:\s*[,:\-–—]\s*|\s+(?:to|that)\s+|\s+)/iu;
+const VOCATIVE_JOINER = /^\s*[,:\-–—]\s*(?=\S)/u;
+
+const EN_VOICE_REQUEST =
+  /^(?:please\s+)?(?:(?:i|we)\s+(?:need(?:ed)?|want(?:ed)?|would\s+like)|(?:i|we)['’]d\s+like)\s+(?:(?:you\s+)?to\s+(use|ask|tell|have|get)\s+)?(?:the\s+bot\s+|bot\s+)?/iu;
+const EN_VOICE_REQUEST_JOINER =
+  /^(?:\s*,?\s+(?:to\s+|(?:and\s+then|then)\s+(?:with\s+(?:her|him|them|it)\s+)?)|\s*:\s*)(?=\S)/iu;
+const EN_VOICE_USING = /^(?:please\s+)?using\s+(?:the\s+bot\s+|bot\s+)?/iu;
+const EN_VOICE_USING_JOINER = /^\s*[,:]\s*(?=\S)/u;
+const EN_VOICE_USE_AND = /^\s*,?\s+and\s+(?=\S)/iu;
+const HE_VOICE_REQUEST =
+  /^(?:אני\s+)?(?:צריך|צריכה|רוצה|רציתי|הייתי\s+(?:צריך|צריכה))\s+(?:להשתמש\s+(?=ב)|לבקש\s+(?=מ)|(?:להגיד|לומר)\s+(?=ל))/u;
+const HE_VOICE_REQUEST_JOINER =
+  /^(?:\s*,?\s+(?:כדי|ואז|ואחר\s+כך)\s+(?:(?:איתה|איתו|איתם|איתן)\s+)?|\s*:\s*)(?=\S)/u;
+const HE_VOICE_DESIRE = /(?:אני\s+)?(?:צריך|צריכה|רוצה|רציתי|הייתי\s+(?:צריך|צריכה))/u;
+const HE_VOICE_WANT = new RegExp('^' + HE_VOICE_DESIRE.source + '\\s+(?=ש)', 'u');
+const HE_VOICE_ACTION =
+  /[תי](?:בדו?ק|וודא|סקו?ר|סכ[מם]|קבע|שלח|כתו?ב|מצא|פתח|חפש|ענ[הו]?|ארגנ?|תא[מם])(?:[יוה])?(?=\s|$)/u;
+const HE_VOICE_ACTION_JOINER = new RegExp('^\\s*,?\\s*(?=' + HE_VOICE_ACTION.source + ')', 'u');
+// For indirect requests, accept exact or phonetic matches but skip edit-distance guesses such as "data" for Dana.
+const MIN_VOICE_REQUEST_SCORE = 0.89;
 
 function tryMatchLeadingBot<T extends HyperBotLike>(
   fullText: string,
   candidateStart: number,
   bots: readonly T[],
-  requirePunctuationAfterVocative: boolean,
+  requiredJoiner?: RegExp,
+  minimumScore = 0,
+  matchName: typeof matchBotName = matchBotName,
 ): HyperBotMentionMatch<T> | null {
   const rest = fullText.slice(candidateStart);
   if (!rest) return null;
   const maxWords = Math.max(1, ...bots.map((b) => hyperNormalizeBotToken(b.name).split(' ').filter(Boolean).length));
 
-  const tokens: Array<{ start: number; end: number; raw: string }> = [];
+  const tokens: Array<{ start: number; end: number }> = [];
   const tokenRe = /[A-Za-z0-9\u0590-\u05FF'׳"-]+/gu;
   let m: RegExpExecArray | null;
   while ((m = tokenRe.exec(rest)) !== null) {
@@ -364,36 +441,27 @@ function tryMatchLeadingBot<T extends HyperBotLike>(
       const gap = rest.slice(tokens[tokens.length - 1]!.end, m.index);
       if (/[^\s]/.test(gap)) break;
     }
-    tokens.push({ start: m.index, end: m.index + m[0].length, raw: m[0] });
+    tokens.push({ start: m.index, end: m.index + m[0].length });
     if (tokens.length >= maxWords) break;
   }
   if (!tokens.length || tokens[0]!.start > 0) return null;
 
-  let picked: { match: HyperBotMatch<T>; end: number } | undefined;
+  let picked: { match: HyperBotMatch<T>; end: number; commandStart: number } | undefined;
   for (let count = tokens.length; count >= 1; count--) {
     const end = tokens[count - 1]!.end;
-    const afterCandidate = rest.slice(end);
-    if (requirePunctuationAfterVocative && !/^\s*[,:\-–—]\s*\S/.test(afterCandidate)) continue;
-    const match = matchBotName(rest.slice(0, end), bots);
-    if (!match) continue;
+    const joiner = (requiredJoiner ?? TRIGGER_JOINER).exec(rest.slice(end));
+    if (requiredJoiner && !joiner) continue;
+    const match = matchName(rest.slice(0, end), bots);
+    if (!match || match.score < minimumScore) continue;
+    const candidate = { match, end, commandStart: end + (joiner?.[0].length ?? 0) };
     if (match.confidence === 'exact') {
-      picked = { match, end };
+      picked = candidate;
       break;
     }
-    if (!picked || match.score > picked.match.score) picked = { match, end };
+    if (!picked || match.score > picked.match.score) picked = candidate;
   }
   if (!picked) return null;
-  const { match, end: endInRest } = picked;
-  const afterCandidate = rest.slice(endInRest);
-
-  // Strip joiner ("to ", ", ", ": ", or whitespace) to isolate commandText
-  let commandText = afterCandidate;
-  const joiner = TRIGGER_JOINER.exec(afterCandidate);
-  if (joiner) {
-    commandText = afterCandidate.slice(joiner[0].length);
-  }
-  // In Hebrew, "תגיד למשה שיקבע פגישה" often leaves a leading "ש" on the verb; keep it readable & intact.
-  commandText = commandText.trim();
+  const { match, end: endInRest, commandStart } = picked;
 
   return {
     bot: match.bot,
@@ -404,7 +472,7 @@ function tryMatchLeadingBot<T extends HyperBotLike>(
     matchedText: fullText.slice(0, candidateStart + endInRest),
     start: 0,
     end: candidateStart + endInRest,
-    commandText,
+    commandText: rest.slice(commandStart).trim(),
   };
 }
 
@@ -417,6 +485,7 @@ function tryMatchLeadingBot<T extends HyperBotLike>(
 export function extractSpokenBotTrigger<T extends HyperBotLike>(
   text: string,
   bots: readonly T[],
+  matchName: typeof matchBotName = matchBotName,
 ): HyperBotMentionMatch<T> | null {
   if (!text || !bots.length) return null;
   const leadingWs = /^\s*/.exec(text)?.[0].length ?? 0;
@@ -427,7 +496,7 @@ export function extractSpokenBotTrigger<T extends HyperBotLike>(
   for (const re of [EN_TRIGGER_PREFIX, HE_TRIGGER_PREFIX]) {
     const prefix = re.exec(trimmed);
     if (prefix) {
-      const hit = tryMatchLeadingBot(text, leadingWs + prefix[0].length, bots, false);
+      const hit = tryMatchLeadingBot(text, leadingWs + prefix[0].length, bots, undefined, 0, matchName);
       if (hit) return hit;
     }
   }
@@ -436,16 +505,155 @@ export function extractSpokenBotTrigger<T extends HyperBotLike>(
   for (const re of [EN_VOCATIVE_PREFIX, HE_VOCATIVE_PREFIX]) {
     const prefix = re.exec(trimmed);
     if (prefix) {
-      const hit = tryMatchLeadingBot(text, leadingWs + prefix[0].length, bots, false);
+      const hit = tryMatchLeadingBot(text, leadingWs + prefix[0].length, bots, undefined, 0, matchName);
       if (hit) return hit;
     }
   }
 
   // 3. Direct punctuated vocative at start ("Abby, set a meeting...", "משה, תקבע פגישה...")
-  const direct = tryMatchLeadingBot(text, leadingWs, bots, true);
+  const direct = tryMatchLeadingBot(text, leadingWs, bots, VOCATIVE_JOINER, 0, matchName);
   if (direct) return direct;
 
   return null;
+}
+
+/** Resolves the voice assistant's target, including first-person delegation before the task. */
+export function extractVoiceBotMention<T extends HyperBotLike>(
+  text: string,
+  bots: readonly T[],
+): HyperBotMentionMatch<T> | null {
+  if (!text || !bots.length) return null;
+  const explicit = extractExplicitBotMentions(text, bots, matchVoiceBotName)[0];
+  if (explicit) return explicit;
+
+  const command = text.trimStart();
+  const leadingWhitespace = text.length - command.length;
+  const check = HE_VOICE_CHECK_WITH.exec(command);
+  if (check) {
+    const hit = matchVoiceBotName(check[2]!, bots);
+    if (hit && hit.score >= MIN_VOICE_REQUEST_SCORE) {
+      const end = text.length - check[3]!.length;
+      return {
+        bot: hit.bot,
+        botId: hit.bot.id,
+        handle: hyperBotDisplayHandle(hit.bot),
+        confidence: hit.confidence,
+        source: 'spoken-trigger',
+        matchedText: text.slice(0, end).trimEnd(),
+        start: 0,
+        end,
+        commandText: check[1] + ' ' + check[3],
+      };
+    }
+  }
+
+  for (const [request, joiner] of [
+    [EN_VOICE_REQUEST, EN_VOICE_REQUEST_JOINER],
+    [EN_VOICE_USING, EN_VOICE_USING_JOINER],
+    [HE_VOICE_REQUEST, HE_VOICE_REQUEST_JOINER],
+    [HE_VOICE_WANT, HE_VOICE_ACTION_JOINER],
+  ] as const) {
+    const prefix = request.exec(command);
+    if (!prefix) continue;
+    const start = leadingWhitespace + prefix[0].length;
+    const match = tryMatchLeadingBot(text, start, bots, joiner, MIN_VOICE_REQUEST_SCORE, matchVoiceBotName);
+    if (match) return match;
+    if (prefix[1]?.toLowerCase() === 'use') {
+      const joined = tryMatchLeadingBot(text, start, bots, EN_VOICE_USE_AND, MIN_VOICE_REQUEST_SCORE, matchVoiceBotName);
+      if (joined?.commandText && !tryMatchLeadingBot(joined.commandText, 0, bots, undefined, MIN_VOICE_REQUEST_SCORE, matchVoiceBotName)) {
+        return joined;
+      }
+    }
+  }
+
+  return extractSpokenBotTrigger(text, bots, matchVoiceBotName) ??
+    tryMatchLeadingBot(text, leadingWhitespace, bots, HE_VOICE_ACTION_JOINER, MIN_VOICE_REQUEST_SCORE, matchVoiceBotName);
+}
+
+const EN_VOICE_GROUP_MEMBERS =
+  /^((?:please\s+)?(?:make\s+sure|ensure)\s+(?:that\s+)?)(.+?)(\s+are\s+(?:both\s+)?in\s+(?:(?:this|the|a)\s+)?(?:same\s+)?(?:group\s+)?(?:chat|conversation)[.!?]*)$/iu;
+const EN_VOICE_OPEN_GROUP =
+  /^((?:please\s+)?(?:open|start|create)\s+(?:(?:the|a)\s+)?(?:group\s+)?(?:chat|conversation)\s+with\s+)(.+?)([.!?]*)$/iu;
+const EN_VOICE_CHECK_WITH =
+  /^(?:please\s+)?(?:(?:i|we)\s+(?:need(?:ed)?|want(?:ed)?)\s+(?:you\s+)?to\s+)?(verify|check|confirm|review|double-check)\s+with\s+(.+?)\s*,?\s+((?:that|whether|if)\s+\S[\s\S]*)$/iu;
+const EN_VOICE_DELEGATE_GROUP =
+  /^(?:please\s+)?(?:(?:i|we)\s+(?:need(?:ed)?|want(?:ed)?)\s+(?:you\s+)?to\s+|(?:can|could|would)\s+you\s+)?(?:ask|tell|use|get|have)\s+(.+?)\s+to\s+(\S[\s\S]*)$/iu;
+const EN_VOICE_USING_GROUP = /^(?:please\s+)?using\s+(.+?)[,:]\s*(\S[\s\S]*)$/iu;
+const HE_VOICE_OPEN_GROUP =
+  /^((?:בבקשה\s+)?(?:ת?פתח[יו]?|צור|צרי|תיצור|תיצרי|התחל|התחילי)\s+(?:שיח[הת]|צ['׳]?אט)(?:\s+(?:קבוצתי|קבוצתית))?\s+עם\s+)(.+?)([.!?]*)$/u;
+const HE_VOICE_GROUP_MEMBERS =
+  /^((?:בבקשה\s+)?(?:ודא|ודאי|תוודא|תוודאי)\s+ש)(.+?)(\s+(?:(?:שניהם|שתיהן|נמצאים|נמצאות)\s+)*ב(?:שיחה|צ['׳]?אט|אותה\s+שיחה)[.!?]*)$/u;
+const HE_VOICE_CHECK_WITH = new RegExp(
+  '^(?:בבקשה\\s+)?(?:' + HE_VOICE_DESIRE.source + '\\s+)?' +
+  '(לבדוק|לוודא|בדוק|בדקי|תבדוק|תבדקי|ודא|ודאי|תוודא|תוודאי)\\s+עם\\s+(.+?)\\s*,?\\s+((?:ש|(?:אם|מה|מתי|איזה|אילו|מי)\\s+)\\S[\\s\\S]*)$',
+  'u',
+);
+const HE_VOICE_WANT_GROUP = new RegExp(
+  '^' + HE_VOICE_DESIRE.source + '\\s+ש\\s*(.+?)\\s*,?\\s+(' + HE_VOICE_ACTION.source + '(?:\\s+\\S[\\s\\S]*)?)$',
+  'u',
+);
+const HE_VOICE_ADDRESS_GROUP = new RegExp(
+  HE_VOCATIVE_PREFIX.source + '(.+?)(?:\\s*[:,]\\s*|\\s+(?=' + HE_VOICE_ACTION.source + '))(\\S[\\s\\S]*)$',
+  'u',
+);
+const HE_VOICE_DELEGATE_TASK =
+  /^(.+?)\s+(?:כדי\s+)?((?:ל[א-ת]{2,}|ש[תי][א-ת]{2,})\s+\S[\s\S]*)$/u;
+
+function matchVoiceBotList(text: string, bots: readonly HyperBotLike[]) {
+  const parts = text.split(/(\s*,\s*(?:and\s+|ו\s*)?|\s+(?:and|&|ו)\s+|\s+ו(?=[\p{L}@]))/iu);
+  if (parts.length < 3) return null;
+  const wholeName = matchVoiceBotName(text, bots);
+  if (wholeName && wholeName.score >= MIN_VOICE_REQUEST_SCORE) return null;
+
+  const botIds = new Set<string>();
+  const unresolved: string[] = [];
+  const handles = parts.map((name, index) => {
+    if (index % 2) return name.endsWith('ו') ? name + ' ' : name;
+    const trimmed = name.trim();
+    const query = trimmed.replace(/^@/, '');
+    const idMatch = trimmed.startsWith('@') ? bots.find((bot) => bot.id === query.toLowerCase()) : undefined;
+    const nameMatch = idMatch ? null : matchVoiceBotName(query, bots);
+    const bot = idMatch ?? (nameMatch && nameMatch.score >= MIN_VOICE_REQUEST_SCORE ? nameMatch.bot : null);
+    if (!bot) {
+      unresolved.push(trimmed);
+      return name;
+    }
+    botIds.add(bot.id);
+    return hyperBotDisplayHandle(bot);
+  });
+  return { botIds: [...botIds], taggedNames: handles.join(''), unresolved };
+}
+
+/** Recognizes a request to open a conversation with a named list of bots. */
+export function extractVoiceBotConversation(text: string, bots: readonly HyperBotLike[]) {
+  const match = EN_VOICE_GROUP_MEMBERS.exec(text) ?? EN_VOICE_OPEN_GROUP.exec(text) ??
+    HE_VOICE_GROUP_MEMBERS.exec(text) ?? HE_VOICE_OPEN_GROUP.exec(text);
+  if (!match) return null;
+  const [, prefix, memberText, suffix] = match;
+  const members = matchVoiceBotList(memberText!, bots);
+  return members && { ...members, normalizedText: (prefix!.endsWith('ש') ? prefix + ' ' : prefix) + members.taggedNames + suffix };
+}
+
+/** Separates the addressed bots from the action they should perform together. */
+export function extractVoiceBotGroupTask(text: string, bots: readonly HyperBotLike[]) {
+  const explicit = extractExplicitBotMentions(text, bots, matchVoiceBotName);
+  if (explicit.length >= 2 && !text.slice(0, explicit[0]!.start).trim() &&
+      explicit.every((match, index) => index === 0 || /^[\s,]*(?:(?:and|ו)\s+)?$/iu.test(text.slice(explicit[index - 1]!.end, match.start)))) {
+    const commandText = text.slice(explicit.at(-1)!.end).replace(/^[\s,:-]+/, '').trim();
+    if (commandText) return { botIds: explicit.map(match => match.botId), unresolved: [], commandText };
+  }
+
+  const check = EN_VOICE_CHECK_WITH.exec(text) ?? HE_VOICE_CHECK_WITH.exec(text);
+  const hebrewPrefix = check ? null : HE_VOICE_REQUEST.exec(text) ?? HE_TRIGGER_PREFIX.exec(text);
+  const delegate = check ? null : EN_VOICE_DELEGATE_GROUP.exec(text) ?? EN_VOICE_USING_GROUP.exec(text);
+  const request = delegate ?? HE_VOICE_WANT_GROUP.exec(text) ?? HE_VOICE_ADDRESS_GROUP.exec(text) ??
+    (hebrewPrefix ? HE_VOICE_DELEGATE_TASK.exec(text.slice(hebrewPrefix[0].length)) : null);
+  if (!check && !request) return null;
+  const names = check?.[2] ?? request![1]!;
+  const members = matchVoiceBotList(names, bots);
+  if (!members?.botIds.length) return null;
+  const commandText = check ? check[1]!.toLowerCase() + ' ' + check[3] : request![2]!;
+  return { ...members, commandText };
 }
 
 /**

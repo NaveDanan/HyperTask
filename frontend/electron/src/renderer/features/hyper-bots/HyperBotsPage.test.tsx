@@ -38,16 +38,17 @@ const button = (tree: ReactNode, label: string) => all(tree, element => text(ele
 it('asks for sign-in without a user', () => {
   expect(renderToStaticMarkup(<HyperBotsPage userProfile={null} />)).toContain('Sign in to use Hyper-Bot.');
 });
-it('shows the room, connection chips with their problems, transcript, run status and composer hint', () => {
+it('shows the room, one closed Connections dropdown, transcript, run status and composer hint', () => {
   const html = render({ snapshot: snapshot({
     messages: [message(1, { text: 'Plan my day' }), message(2, { author: { kind: 'bot', botId: 'scout' }, model: 'gpt-y', text: 'Line one\nLine two', runId: id(60) })],
     runs: [run(60, { status: 'running' }), run(61, { botId: 'scribe', status: 'waiting_approval' }), run(62, { botId: 'scribe', status: 'failed', error: 'Jira returned 401.' })],
   }) });
   expect(html).toContain('<h1>Hyper-Bot</h1>');
   expect(html).toContain('Ops');
-  expect(html).toContain('gpt-x at https://host/v1');
-  expect(html).toContain('Open classic Outlook on this PC.');
-  expect(html).toContain('Set up Jira in the Jira tab.');
+  const footer = html.match(/<div class="sidebar__footer">(.*?)<\/div>/)?.[1];
+  expect(footer).toContain('Connections');
+  expect(footer).toContain('aria-expanded="false"');
+  expect(footer?.match(/<button\b/g)).toHaveLength(1);
   expect(html).toContain('aria-label="You"');
   expect(html).toContain('sender-label');
   expect(html).toContain('gpt-y');

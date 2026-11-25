@@ -23,6 +23,7 @@ beforeEach(() => {
   api = {
     open: vi.fn(async () => ok(snapshot())), snapshot: vi.fn(async () => ok(snapshot())), post: vi.fn(async () => posted),
     decide: vi.fn(async () => ok({})), saveSettings: vi.fn(async (settings: unknown) => ok(settings)), models: vi.fn(async () => ok(['gpt-x', 'gpt-y'])),
+    newsletterConnection: vi.fn(async () => ok(null)), saveNewsletterConnection: vi.fn(async () => ok(null)),
     onEvent: vi.fn(next => { listener = next; return off; }),
   };
 });

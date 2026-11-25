@@ -20,7 +20,10 @@ import { HyperNodTunnel } from './HyperNodTunnel';
 import { HyperBotsStore } from './HyperBotsStore';
 import { HyperBotsOpenAIEngine, hyperBotsReadEndpoint } from './HyperBotsEngine';
 import { HyperBotsRuntime } from './HyperBotsRuntime';
-import { HyperBotsTools, hyperBotsConnections, hyperBotsJiraTool, hyperBotsOutlookTools, hyperBotsReadJira } from './HyperBotsConnectors';
+import { HyperBotsTools, hyperBotsConnections, hyperBotsOutlookTools, hyperBotsReadJira } from './HyperBotsConnectors';
+import { hyperBotsJiraTools } from './HyperBotsJiraTools';
+import { hyperBotsNewsletterTools } from './HyperBotsNewsletterTools';
+import { HyperNewsletterConnection } from './HyperNewsletterConnection';
 import { registerHyperBotsIpc, registerHyperBotsUnavailable } from './HyperBotsIpc';
 import { registerHyperAssistantIpc } from './HyperAssistantIpc';
 import { registerHyperDesktopIpc } from './HyperDesktopIpc';
@@ -72,6 +75,7 @@ function supportDirectory(): string {
 
 const appRoot = path.resolve(__dirname, '../..');
 const prefs = new SharedPreferences(path.join(supportDirectory(), 'shared_preferences.json'));
+const jiraCredentials = new JiraCredentialFiles(supportDirectory);
 const core = new CoreProcess(coreBinaryPath(appRoot, app.isPackaged));
 const hyperOutlook = new HyperOutlookBridge();
 const hyperNodTunnel = new HyperNodTunnel();
@@ -267,12 +271,13 @@ async function openMainTarget(target?: HyperDesktopOpenMainTarget): Promise<void
 
 /**
  * HyperBots runs in main: one runtime for the HyperTask account the core says is signed in, with its own state file
- * under <support>/hyper_bots/users, the Settings → AI endpoint, classic Outlook and that account's Jira tab access.
+ * under <support>/hyper_bots/users and that account's configured connections.
  */
 function createHyperBots() {
   const endpoint = () => hyperBotsReadEndpoint(supportDirectory(), unprotect);
-  const jira = (user: HyperBotsUser) => hyperBotsReadJira(prefs, new JiraCredentialFiles(supportDirectory), user.userId);
+  const jira = (user: HyperBotsUser) => hyperBotsReadJira(prefs, jiraCredentials, user.userId);
   const netFetch = ((input, init) => net.fetch(input as string, init)) as typeof fetch;
+  const newsletter = new HyperNewsletterConnection(path.join(supportDirectory(), 'hyper_bots', 'newsletter'), netFetch);
   const engine = new HyperBotsOpenAIEngine({ endpoint, fetch: netFetch });
   const defaultModel = async () => { try { return (await endpoint()).defaultModel || null; } catch { return null; } };
   hyperBots = new HyperBotsHub({
@@ -281,13 +286,18 @@ function createHyperBots() {
     // Each runtime's Jira tool is bound to its own account; nothing global decides whose Jira receives a write.
     create: (user, stateFile) => new HyperBotsRuntime({
       store: new HyperBotsStore(stateFile), engine, defaultModel,
-      tools: new HyperBotsTools([...hyperBotsOutlookTools(hyperOutlook), hyperBotsJiraTool({ access: () => jira(user), fetch: netFetch })]),
+      tools: new HyperBotsTools([
+        ...hyperBotsOutlookTools(hyperOutlook),
+        ...hyperBotsJiraTools({ access: () => jira(user), fetch: netFetch }),
+        ...hyperBotsNewsletterTools({ access: () => newsletter.access(user.key), fetch: netFetch }),
+      ]),
     }),
   });
   return {
     hub: hyperBots,
+    newsletter,
     onOutlookPresenceChange: hyperOutlookPresence.onChange,
-    connections: (user: HyperBotsUser) => hyperBotsConnections({ endpoint, outlook: hyperOutlook, jira: () => jira(user) }),
+    connections: (user: HyperBotsUser) => hyperBotsConnections({ endpoint, outlook: hyperOutlook, jira: () => jira(user), newsletter: () => newsletter.status(user.key) }),
     models: async () => {
       try {
         const saved = JSON.parse(await fs.readFile(path.join(supportDirectory(), 'local_ai', 'openai-endpoint.json'), 'utf8'));
@@ -484,6 +494,7 @@ function registerIpc() {
   );
 
   registerSettingsIpc({
+    jiraCredentials,
     supportDirectory,
     documentsDirectory: () => app.getPath('documents'),
     getWindow: () => mainWindow,

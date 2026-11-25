@@ -333,7 +333,8 @@ export function useHyperVoiceAssistant() {
   }, [grant, cloudProvider, probeLocalSpeech]);
 
   const parseTranscript = useCallback(async (transcript: string, previous?: {
-    selectedBotId: string;
+    selectedBotId?: string;
+    groupBotIds?: string[];
     enableTools: boolean;
   }) => {
     const trimmed = transcript.trim();
@@ -351,14 +352,29 @@ export function useHyperVoiceAssistant() {
       if (!api) throw new Error('Hyper-Bot assistant service is not ready.');
       const parsed = await api.parseCommand({ text: trimmed });
       if (gen !== generationRef.current) return;
-      setPlan(parsed);
-      const reviewedText = parsed.cleanedCommand || parsed.rawText;
+      const fallback = !parsed.resolvedBot || parsed.resolvedBot.confidence === 'default';
+      const previousGroup = previous?.groupBotIds;
+      let nextPlan = parsed;
+      if (previousGroup && !parsed.groupBotIds && fallback) {
+        const groupAvailable = previousGroup.every(id => parsed.availableBots.some(bot => bot.id === id));
+        nextPlan = {
+          ...parsed,
+          groupBotIds: groupAvailable ? previousGroup : [],
+          groupAction: 'send',
+          resolvedBot: null,
+          targetRoomId: null,
+          missingTools: [],
+          warnings: groupAvailable ? parsed.warnings : [...parsed.warnings, 'A bot in this group is no longer configured.'],
+        };
+      }
+      setPlan(nextPlan);
+      const reviewedText = parsed.groupBotIds?.length === 0 ? parsed.rawText : parsed.cleanedCommand || parsed.rawText;
       setCommandText(reviewedText);
       setReviewedCommandText(reviewedText);
-      const keepBot = previous &&
-        (!parsed.resolvedBot || parsed.resolvedBot.confidence === 'default') &&
+      const keepBot = previous?.selectedBotId && fallback &&
         parsed.availableBots.some((bot) => bot.id === previous.selectedBotId);
-      const chosenBotId = keepBot ? previous.selectedBotId : parsed.resolvedBot?.id ?? parsed.availableBots[0]?.id ?? null;
+      const chosenBotId = nextPlan.groupBotIds ? null
+        : keepBot ? previous.selectedBotId! : parsed.resolvedBot?.id ?? parsed.availableBots[0]?.id ?? null;
       setSelectedBotId(chosenBotId);
       setPeopleSlots(parsed.people.map((slot) => ({ ...slot })));
       setEnableMissingTools(previous?.enableTools ?? true);
@@ -809,7 +825,7 @@ export function useHyperVoiceAssistant() {
   }, []);
 
   // Derived Step 1 state
-  const selectedBot: HyperAssistantBotCandidate | null =
+  const selectedBot: HyperAssistantBotCandidate | null = plan?.groupBotIds ? null :
     plan?.availableBots.find((b) => b.id === selectedBotId) ??
     plan?.resolvedBot ??
     plan?.availableBots[0] ??
@@ -878,15 +894,17 @@ export function useHyperVoiceAssistant() {
 
   const commandChanged = plan !== null && commandText.trim() !== reviewedCommandText;
   const confirmAndDispatch = useCallback(async () => {
-    if (!plan || !commandText.trim()) return;
+    if (phaseRef.current !== 'confirming' || !plan || !commandText.trim()) return;
     if (commandChanged) {
-      await parseTranscript(commandText, selectedBot ? {
-        selectedBotId: selectedBot.id,
+      await parseTranscript(commandText, {
+        selectedBotId: selectedBot?.id,
+        groupBotIds: plan.groupAction === 'send' && plan.groupBotIds?.length ? plan.groupBotIds : undefined,
         enableTools: enableMissingTools,
-      } : undefined);
+      });
       return;
     }
-    if (!selectedBot || unresolvedCount > 0) return;
+    const groupBotIds = plan.groupBotIds;
+    if (!plan.signedIn || unresolvedCount > 0 || (groupBotIds ? groupBotIds.length < 2 : !selectedBot)) return;
     const api = window.hypertask?.assistant;
     if (!api) {
       setErrorMessage('Hyper-Bot assistant service is unavailable.');
@@ -894,8 +912,31 @@ export function useHyperVoiceAssistant() {
       return;
     }
     const gen = ++generationRef.current;
+    phaseRef.current = 'executing';
     setPhase('executing');
     setErrorMessage(null);
+
+    const openRoom = async (roomId: string) => {
+      const desktop = window.hypertask?.desktop;
+      if (!desktop) throw new Error('Hyper-Bot window is unavailable.');
+      await desktop.openMain({ route: 'hyper-bots', roomId });
+      if (gen === generationRef.current) cancelAndHide();
+    };
+
+    if (groupBotIds && plan.groupAction !== 'send') {
+      try {
+        const { roomId } = await api.openGroup({ botIds: groupBotIds });
+        if (gen !== generationRef.current) return;
+        await openRoom(roomId);
+      } catch (error) {
+        if (gen !== generationRef.current) return;
+        setErrorMessage(normalizeError(error));
+        setPhase('error');
+      }
+      return;
+    }
+    const target = groupBotIds ? { botIds: groupBotIds } : selectedBot ? { botId: selectedBot.id } : null;
+    if (!target) return;
 
     const confirmedPeople: HyperAssistantConfirmedPerson[] = peopleSlots.flatMap((slot) =>
       slot.selected
@@ -913,8 +954,8 @@ export function useHyperVoiceAssistant() {
 
     try {
       const result = await api.dispatch({
-        botId: selectedBot.id,
-        targetRoomId: selectedBot.roomId ?? plan.targetRoomId,
+        ...target,
+        targetRoomId: selectedBot?.roomId ?? plan.targetRoomId,
         text: commandText.trim(),
         confirmedPeople,
         enableMissingTools: enableMissingTools && missingTools.length > 0 ? missingTools : undefined,
@@ -930,6 +971,11 @@ export function useHyperVoiceAssistant() {
         return;
       }
 
+      if (groupBotIds) {
+        await openRoom(result.roomId);
+        return;
+      }
+      if (!selectedBot) return;
       setExecution({
         roomId: result.roomId,
         runId: result.runId ?? null,
@@ -952,6 +998,7 @@ export function useHyperVoiceAssistant() {
       setPhase('error');
     }
   }, [
+    cancelAndHide,
     commandChanged,
     commandText,
     parseTranscript,

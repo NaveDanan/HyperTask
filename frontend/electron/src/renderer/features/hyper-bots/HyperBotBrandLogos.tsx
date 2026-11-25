@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { Newspaper } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { hyperBotToolProvider, type HyperBotToolProvider } from './HyperBotToolProvider';
 type HyperBrandLogoProps = { size?: number; className?: string };
@@ -33,7 +34,9 @@ export function HyperJiraLogo({ size = 14, className }: HyperBrandLogoProps) {
 }
 
 export function HyperBotProviderLogo({ provider, ...props }: HyperBrandLogoProps & { provider: HyperBotToolProvider | null }) {
-  return provider === 'outlook' ? <HyperOutlookLogo {...props} /> : provider === 'jira' ? <HyperJiraLogo {...props} /> : null;
+  if (provider === 'outlook') return <HyperOutlookLogo {...props} />;
+  if (provider === 'jira') return <HyperJiraLogo {...props} />;
+  return provider === 'newsletter' ? <Newspaper size={props.size ?? 14} className={cn('hb-brand-logo', props.className)} aria-hidden="true" focusable="false" /> : null;
 }
 export function HyperBotToolLogo({ tool, ...props }: HyperBrandLogoProps & { tool: string }) {
   return <HyperBotProviderLogo provider={hyperBotToolProvider(tool)} {...props} />;
