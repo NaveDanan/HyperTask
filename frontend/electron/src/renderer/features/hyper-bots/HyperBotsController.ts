@@ -9,6 +9,8 @@ function hyperBotsSettled(api: HyperBotsApi): HyperBotsApi {
   return {
     open: wrap(args => api.open(args)), snapshot: wrap(args => api.snapshot(args)), post: wrap(input => api.post(input)),
     decide: wrap(args => api.decide(args)), saveSettings: wrap(settings => api.saveSettings(settings)), models: wrap(() => api.models()),
+    newsletterConnection: wrap(() => api.newsletterConnection()),
+    saveNewsletterConnection: wrap(input => api.saveNewsletterConnection(input)),
     onEvent: listener => api.onEvent(listener),
   };
 }

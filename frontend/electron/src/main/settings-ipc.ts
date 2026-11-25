@@ -4,7 +4,7 @@ import { CompanyCertificateStore } from './certificates';
 import { installCustomTheme, listCustomThemes, readPluginDirectory, removeCustomTheme } from './custom-themes';
 import { protect } from './dpapi';
 import { loadGoogleFont } from './google-fonts';
-import { JiraCredentialFiles } from './jira-credentials';
+import type { JiraCredentialFiles } from './jira-credentials';
 import { listEndpointModels, testEndpoint, writeEndpointSettings } from './openai-endpoint';
 import { toIpcResult } from './settings-error';
 
@@ -13,6 +13,7 @@ export interface SettingsIpcDeps {
   supportDirectory: () => string;
   /** getApplicationDocumentsDirectory(): where `.hyper_plugin` themes live. */
   documentsDirectory: () => string;
+  jiraCredentials: JiraCredentialFiles;
   getWindow?: () => BrowserWindow | null;
 }
 
@@ -22,7 +23,7 @@ export function registerSettingsIpc(deps: SettingsIpcDeps): void {
 
   ipcMain.handle(C.DpapiProtect, (_, value: string) => toIpcResult(() => protect(value)));
 
-  const jira = new JiraCredentialFiles(deps.supportDirectory);
+  const jira = deps.jiraCredentials;
   ipcMain.handle(C.JiraReadCredentials, (_, accountId: string) => toIpcResult(() => jira.read(accountId)));
   ipcMain.handle(C.JiraWriteCredentials, (_, accountId: string, credentials: JiraCredentials) =>
     toIpcResult(() => jira.write(accountId, credentials)),

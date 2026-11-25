@@ -91,6 +91,8 @@ const api: HypertaskApi = {
     decide: args => ipcRenderer.invoke(B.Decide, args),
     saveSettings: settings => ipcRenderer.invoke(B.SaveSettings, settings),
     models: () => ipcRenderer.invoke(B.Models),
+    newsletterConnection: () => ipcRenderer.invoke(B.NewsletterConnection),
+    saveNewsletterConnection: input => ipcRenderer.invoke(B.SaveNewsletterConnection, input),
     onEvent: listener => on(B.Event, listener),
   },
   desktop: {

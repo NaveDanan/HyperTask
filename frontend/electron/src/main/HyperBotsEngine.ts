@@ -64,12 +64,16 @@ function hyperBotsSecretForms(secrets: Array<string | null | undefined>): string
 }
 
 /** The one way external error text reaches a message: every secret form is removed BEFORE clipping, so a cut never leaves a prefix. */
+export function hyperBotsRedactSecrets(text: string, secrets: Array<string | null | undefined>): string {
+  let t = text;
+  for (const form of hyperBotsSecretForms(secrets)) t = t.split(form).join('[redacted]');
+  return t;
+}
+
 export function hyperBotsSafeError(text: string, secrets: Array<string | null | undefined>, max = 500): string {
   // fetch echoes an invalid header value (e.g. a key with a newline) verbatim.
   if (/invalid header value|header value/i.test(text)) return 'the request headers were rejected (check the saved credentials)';
-  let t = text;
-  for (const form of hyperBotsSecretForms(secrets)) t = t.split(form).join('[redacted]');
-  return hyperBotsTrim(t, max);
+  return hyperBotsTrim(hyperBotsRedactSecrets(text, secrets), max);
 }
 
 const shapeError = (msg: string, status: number) => new HyperBotsEngineError(`The model endpoint returned an invalid completion: ${msg}`, status);

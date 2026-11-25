@@ -1,17 +1,22 @@
 // HyperBots: bots in rooms, inside HyperTask. Main owns the runtime, storage and connectors;
 // the renderer shows rooms, approvals and bot settings over IPC (window.hypertask.hyperBots).
 // Connections are the app's own: the OpenAI-compatible endpoint from Settings → AI, classic
-// Outlook through HyperOutlookBridge, and the Jira tab's saved settings and credentials.
+// Outlook through HyperOutlookBridge, Jira settings, and the Newsletter connection.
 
 export type HyperBotsAccess = 'read' | 'write';
 export type HyperBotsPolicy = 'ask' | 'allow';
 /** Read tools: each can be pre-allowed in Bot settings. */
 export type HyperBotsReadToolName = 'outlook_list_events' | 'outlook_get_event' | 'outlook_list_messages' | 'outlook_read_message' | 'outlook_search_people';
+const HYPER_BOTS_JIRA_TOOLS = ['jira_search_issues', 'jira_get_issue', 'jira_get_create_fields', 'jira_create_issue', 'jira_get_edit_fields', 'jira_update_issue', 'jira_list_transitions', 'jira_transition_issue'] as const;
+type HyperBotsNewsletterToolName = 'newsletter_list_articles' | 'newsletter_get_article' | 'newsletter_create_article' | 'newsletter_update_article'
+  | 'newsletter_list_gantts' | 'newsletter_get_gantt' | 'newsletter_create_gantt' | 'newsletter_update_gantt'
+  | 'newsletter_create_gantt_task' | 'newsletter_update_gantt_task';
 export type HyperBotsToolName = HyperBotsReadToolName
+  | typeof HYPER_BOTS_JIRA_TOOLS[number] | HyperBotsNewsletterToolName
   | 'outlook_create_event' | 'outlook_update_event' | 'outlook_forward_event' | 'outlook_respond_meeting'
-  | 'outlook_send_message' | 'outlook_reply_message' | 'outlook_forward_message' | 'jira_create_issue';
-export type HyperBotsToolGroup = 'outlook-calendar' | 'outlook-mail' | 'jira';
-export const HYPER_BOTS_TOOL_GROUPS: Record<HyperBotsToolGroup, string> = { 'outlook-calendar': 'Outlook calendar', 'outlook-mail': 'Outlook mail', jira: 'Jira' };
+  | 'outlook_send_message' | 'outlook_reply_message' | 'outlook_forward_message';
+export type HyperBotsToolGroup = 'outlook-calendar' | 'outlook-mail' | 'jira' | 'newsletter';
+export const HYPER_BOTS_TOOL_GROUPS: Record<HyperBotsToolGroup, string> = { 'outlook-calendar': 'Outlook calendar', 'outlook-mail': 'Outlook mail', jira: 'Jira', newsletter: 'Newsletter' };
 /** What an approved mail write does: send it now, or save it in Outlook Drafts for the owner to send. */
 export type HyperBotsDelivery = 'send' | 'draft';
 /** `delivery`: the owner picks Send or Save to Drafts when approving. Order is the order shown in Bot settings. */
@@ -28,7 +33,24 @@ export const HYPER_BOTS_TOOLS: Record<HyperBotsToolName, { access: HyperBotsAcce
   outlook_reply_message: { access: 'write', label: 'Reply to mail', group: 'outlook-mail', delivery: true },
   outlook_forward_message: { access: 'write', label: 'Forward mail', group: 'outlook-mail', delivery: true },
   outlook_respond_meeting: { access: 'write', label: 'Answer meeting invitations', group: 'outlook-mail', delivery: true },
+  jira_search_issues: { access: 'read', label: 'Search Jira issues', group: 'jira' },
+  jira_get_issue: { access: 'read', label: 'Read Jira issues', group: 'jira' },
+  jira_get_create_fields: { access: 'read', label: 'Read Jira issue creation fields', group: 'jira' },
   jira_create_issue: { access: 'write', label: 'Create Jira issues', group: 'jira' },
+  jira_get_edit_fields: { access: 'read', label: 'Read Jira issue editing fields', group: 'jira' },
+  jira_update_issue: { access: 'write', label: 'Edit Jira issues', group: 'jira' },
+  jira_list_transitions: { access: 'read', label: 'Read Jira status transitions', group: 'jira' },
+  jira_transition_issue: { access: 'write', label: 'Change Jira issue status', group: 'jira' },
+  newsletter_list_articles: { access: 'read', label: 'Search newsletters', group: 'newsletter' },
+  newsletter_get_article: { access: 'read', label: 'Read a newsletter', group: 'newsletter' },
+  newsletter_create_article: { access: 'write', label: 'Create newsletters', group: 'newsletter' },
+  newsletter_update_article: { access: 'write', label: 'Edit newsletters', group: 'newsletter' },
+  newsletter_list_gantts: { access: 'read', label: 'List Newsletter Gantt projects', group: 'newsletter' },
+  newsletter_get_gantt: { access: 'read', label: 'Read a Newsletter Gantt', group: 'newsletter' },
+  newsletter_create_gantt: { access: 'write', label: 'Create Newsletter Gantt projects', group: 'newsletter' },
+  newsletter_update_gantt: { access: 'write', label: 'Edit Newsletter Gantt projects', group: 'newsletter' },
+  newsletter_create_gantt_task: { access: 'write', label: 'Add Newsletter Gantt tasks', group: 'newsletter' },
+  newsletter_update_gantt_task: { access: 'write', label: 'Edit Newsletter Gantt tasks', group: 'newsletter' },
 };
 /** Pre-allowing reads is set per kind in Bot settings: calendar reads, mail reads, and people directory search. */
 export const HYPER_BOTS_READ_POLICIES: { label: string; allow: string; tools: HyperBotsReadToolName[] }[] = [
@@ -90,8 +112,8 @@ export const HYPER_BOTS_DEFAULT_SETTINGS: HyperBotsSettings = {
     { id: 'scout', name: 'Scout', avatar: { shape: 'sparkle', color: 'blue' }, mode: 'personal', model: '',
       tools: ['outlook_list_events', 'outlook_get_event', 'outlook_create_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people', 'outlook_send_message'],
       instructions: 'You are Scout. You read and manage the owner\'s Outlook calendar, mail, and employee directory, and summarize them clearly. When something needs a Jira ticket, hand it to @scribe with the exact details.' },
-    { id: 'scribe', name: 'Scribe', avatar: { shape: 'tablet', color: 'green' }, mode: 'personal', model: '', tools: ['jira_create_issue'],
-      instructions: 'You are Scribe. You file concise, actionable Jira issues when asked. Reply with the new issue key.' },
+    { id: 'scribe', name: 'Scribe', avatar: { shape: 'tablet', color: 'green' }, mode: 'personal', model: '', tools: [...HYPER_BOTS_JIRA_TOOLS],
+      instructions: 'You are Scribe. Find, create, and edit Jira issues when asked. Include the relevant issue keys in your reply.' },
   ],
   rooms: [{ id: 'ops', name: 'Ops', kind: 'group', botIds: ['scout', 'scribe'] }],
   policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'ask' },
@@ -142,7 +164,11 @@ export interface HyperBotsConnections {
   model: HyperBotsConnectionState & { defaultModel?: string };  // detail e.g. 'gpt-x at https://host/v1'
   outlook: HyperBotsConnectionState;
   jira: HyperBotsConnectionState & { projectKey?: string };
+  newsletter?: HyperBotsConnectionState;
 }
+
+export interface HyperNewsletterConnectionState { baseUrl: string; gantt: boolean }
+export interface HyperNewsletterConnectionInput { baseUrl: string; token: string }
 
 export interface HyperBotsSnapshot {
   settings: HyperBotsSettings;
@@ -177,6 +203,8 @@ export interface HyperBotsApi {
   saveSettings(settings: HyperBotsSettings): Promise<import('./api').IpcResult<HyperBotsSettings>>;
   /** Model IDs offered by the configured endpoint (/models); [] when discovery is unavailable. */
   models(): Promise<import('./api').IpcResult<string[]>>;
+  newsletterConnection(): Promise<import('./api').IpcResult<HyperNewsletterConnectionState | null>>;
+  saveNewsletterConnection(connection: HyperNewsletterConnectionInput | null): Promise<import('./api').IpcResult<HyperNewsletterConnectionState | null>>;
   onEvent(listener: (event: HyperBotsEvent) => void): () => void;
 }
 
@@ -187,5 +215,7 @@ export const HyperBotsChannel = {
   Decide: 'hyper-bots:decide',
   SaveSettings: 'hyper-bots:save-settings',
   Models: 'hyper-bots:models',
+  NewsletterConnection: 'hyper-bots:newsletter-connection',
+  SaveNewsletterConnection: 'hyper-bots:save-newsletter-connection',
   Event: 'hyper-bots:event',
 } as const;

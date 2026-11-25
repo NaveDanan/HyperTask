@@ -11,7 +11,7 @@ export function HyperBotStatusDot({ summary }: { summary?: HyperBotsRoomSummary 
   if (!summary || !summary.pendingApprovals && !summary.activeRun && !summary.unread) return null;
   return <span className={cn('status-dot', summary.pendingApprovals ? 'is-attention' : summary.activeRun ? 'is-working' : 'is-unread')} role="img" aria-label={summary.pendingApprovals ? summary.pendingApprovals + ' waiting for you' : summary.activeRun ? 'Working' : 'Unread activity'} />;
 }
-const connectionLabels = { model: 'Model', outlook: 'Outlook', jira: 'Jira' } satisfies Record<keyof HyperBotsConnections, string>;
+const connectionLabels = { model: 'Model', outlook: 'Outlook', jira: 'Jira', newsletter: 'Newsletter' } satisfies Record<keyof HyperBotsConnections, string>;
 const connectionKeys = Object.keys(connectionLabels) as (keyof HyperBotsConnections)[];
 const connectionStatuses = { ready: 'Connected', checking: 'Checking', problem: 'Needs setup' };
 

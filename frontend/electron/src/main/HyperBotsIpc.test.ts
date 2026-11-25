@@ -50,12 +50,29 @@ function setup(onOutlookPresenceChange?: (listener: () => void) => () => void) {
   });
   const contents = { mainFrame: {}, isDestroyed: vi.fn(() => false), send: vi.fn() };
   const owner = { webContents: contents, isDestroyed: () => false };
-  const deps = { hub, onOutlookPresenceChange, connections: vi.fn(async (_user: HyperBotsUser) => CONNECTIONS), models: vi.fn(async () => ['m', 'n']) };
+  const newsletter = { status: vi.fn(async (_key: string) => null), save: vi.fn(async (_key: string, _input: unknown) => null) };
+  const deps = { hub, newsletter, onOutlookPresenceChange, connections: vi.fn(async (_user: HyperBotsUser) => CONNECTIONS), models: vi.fn(async () => ['m', 'n']) };
   const unregister = registerHyperBotsIpc(() => owner as never, deps);
   const event = { sender: contents, senderFrame: contents.mainFrame };
   const call = (channel: string, args?: unknown, from: object = event) => ipc.handlers.get(channel)!(from, args);
   return { hub, runtimes, contents, deps, unregister, event, call, jiraFetch, as: (user: HyperBotsUser | null) => { who = user; } };
 }
+
+it('only accepts Newsletter setup from trusted windows and resolves the signed-in account in main', async () => {
+  const h = setup();
+  const input = { baseUrl: 'https://newsletter.example', token: 'nlpat_' + 'x'.repeat(48) };
+  try {
+    expect(await h.call(B.SaveNewsletterConnection, input, { ...h.event, senderFrame: {} })).toMatchObject({ ok: false });
+    expect(await h.call(B.SaveNewsletterConnection, { ...input, userKey: A.key })).toMatchObject({ ok: false, kind: 'format' });
+    expect(h.deps.newsletter.save).not.toHaveBeenCalled();
+    h.as(B2);
+    expect(await h.call(B.SaveNewsletterConnection, input)).toMatchObject({ ok: true });
+    expect(h.deps.newsletter.save).toHaveBeenCalledWith(B2.key, input);
+    expect(await h.call(B.NewsletterConnection)).toEqual({ ok: true, value: null });
+    expect(h.deps.newsletter.status).toHaveBeenCalledWith(B2.key);
+    expect(h.contents.send).toHaveBeenCalledWith(B.Event, { type: 'connections' });
+  } finally { h.unregister(); await h.hub.stop(); }
+});
 
 it('opens the recent conversation while an Outlook probe is still pending', async () => {
   const h = setup();

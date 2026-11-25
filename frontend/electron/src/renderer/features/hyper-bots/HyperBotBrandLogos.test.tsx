@@ -7,7 +7,7 @@ import { HyperBotToolsForm } from './HyperBotTools';
 import { HYPER_BOTS_DEFAULT_SETTINGS as settings } from '@shared/HyperBots';
 
 it('maps every catalog tool by its group, including Outlook calendar and mail', () => {
-  const expected = { 'outlook-calendar': 'outlook', 'outlook-mail': 'outlook', jira: 'jira' };
+  const expected = { 'outlook-calendar': 'outlook', 'outlook-mail': 'outlook', jira: 'jira', newsletter: 'newsletter' };
   for (const [name, tool] of Object.entries(HYPER_BOTS_TOOLS)) expect(hyperBotToolProvider(name)).toBe(expected[tool.group]);
 });
 it('does not guess a logo for unknown or prototype tool names', () => {
@@ -32,6 +32,6 @@ it('keeps repeated SVG instances decorative and all gradient references unique',
 });
 it('decorates every tools row without changing its switch label', () => {
   const html = renderToStaticMarkup(<HyperBotToolsForm settings={settings} bot={settings.bots[0]!} onChange={() => {}} />);
-  expect(html.match(/class="hb-brand-logo"/g)).toHaveLength(Object.keys(HYPER_BOTS_TOOLS).length);
+  expect(html.match(/\bhb-brand-logo\b/g)).toHaveLength(Object.keys(HYPER_BOTS_TOOLS).length);
   for (const tool of Object.values(HYPER_BOTS_TOOLS)) expect(html).toContain('aria-label="' + tool.label + '"');
 });

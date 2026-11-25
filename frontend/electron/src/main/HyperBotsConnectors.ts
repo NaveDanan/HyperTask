@@ -1,14 +1,14 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import type { HyperBotsConnections, HyperBotsConnectionState } from '@shared/HyperBots';
-import { hyperBotsSafeError, type HyperBotsEndpoint } from './HyperBotsEngine';
+import type { HyperBotsConnections, HyperBotsConnectionState, HyperNewsletterConnectionState } from '@shared/HyperBots';
+import { hyperBotsRedactSecrets, hyperBotsSafeError, type HyperBotsEndpoint } from './HyperBotsEngine';
 import { hyperBotsParseArgs as parseArgs, type HyperBotsBoundTool, type HyperBotsOutlook } from './HyperBotsOutlookTools';
+import { hyperBotsReadResponse } from './HyperBotsHttpTools';
 import { HyperBotsToolError, type HyperBotsBinding, type HyperBotsTool, type HyperBotsToolRegistry } from './HyperBotsRuntime';
 import { HyperOutlookUnavailable } from './HyperOutlookBridge';
 
 // The Outlook tools live in HyperBotsOutlookTools; these names stay importable from here.
 export { hyperBotsOutlookTool, hyperBotsOutlookTools, type HyperBotsBoundTool } from './HyperBotsOutlookTools';
-const MAX_BODY = 1024 * 1024;
 const JIRA_SETUP = 'Set up Jira in the Jira tab (URL, project and token).';
 const clip = (text: string, max: number) => text.length > max ? text.slice(0, max) + '…' : text;
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
@@ -17,7 +17,7 @@ export type HyperBotsJiraAccess = { userId: string; baseUrl: string; projectKey:
 /** Mirrors HyperJiraConfig.normalizeBaseUrl (renderer jira-config.ts). */
 function normalizeBaseUrl(url: string): string {
   const v = url.trim(); if (!v) return '';
-  try { const u = new URL(v.includes('://') ? v : 'https://' + v); return u.hostname ? u.protocol + '//' + u.host + u.pathname.replace(/\/+$/, '') : ''; } catch { return ''; }
+  try { const u = new URL(v.includes('://') ? v : 'https://' + v); return ['https:', 'http:'].includes(u.protocol) && !u.username && !u.password ? u.origin + u.pathname.replace(/\/+$/, '') : ''; } catch { return ''; }
 }
 /** The Jira tab's saved settings and credential for userId, with the same account id as jiraCredentialAccountId. */
 export async function hyperBotsReadJira(prefs: { get(key: string): Promise<unknown> }, credentials: { read(accountId: string): Promise<{ username: string; secret: string } | null> }, userId: string): Promise<HyperBotsJiraAccess> {
@@ -46,8 +46,12 @@ const JiraArgs = z.strictObject({
   description: z.string().max(20000).optional(),
   issueType: z.string().trim().min(1).max(50).default('Task'),
   labels: z.array(z.string().regex(/^\S{1,50}$/, 'Labels are 1..50 characters without spaces.')).max(10).optional(),
+  projectKey: z.string().trim().regex(/^[a-z][a-z0-9_]{0,49}$/i).toUpperCase().optional(),
+  fields: z.record(z.string(), z.unknown()).refine(fields => !Object.hasOwn(fields, 'project'), 'Set projectKey to select a project.').optional(),
 });
 type JiraArgs = z.output<typeof JiraArgs>;
+const jiraTarget = (access: HyperBotsJiraAccess, args: JiraArgs) =>
+  args.projectKey ? { ...access, projectKey: args.projectKey } : access;
 /** Jira's error fields, redacted as a whole before the 500-character clip. */
 function jiraErrorText(text: string, secrets: string[]): string {
   try {
@@ -58,24 +62,9 @@ function jiraErrorText(text: string, secrets: string[]): string {
   } catch {}
   return hyperBotsSafeError(text, secrets);
 }
-async function readCapped(response: Response): Promise<string> {
-  if (Number(response.headers.get('content-length') ?? '0') > MAX_BODY) { await response.body?.cancel().catch(() => {}); throw new Error('The Jira response was too large.'); }
-  if (!response.body) return '';
-  const reader = response.body.getReader(), chunks: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > MAX_BODY) { await reader.cancel().catch(() => {}); throw new Error('The Jira response was too large.'); }
-    chunks.push(value);
-  }
-  return Buffer.concat(chunks).toString('utf8');
-}
-
 const BOUND_TTL_MS = 5 * 60_000;
 /**
- * Creates an issue in the configured project only. Never retried: a lost response is a 'transport' (unknown) outcome.
+ * Creates one issue in the requested project, defaulting to the Jira connection's project. Never retried.
  * `access` belongs to one HyperTask user. bind() resolves it; run() receives the approved fingerprint and writes only
  * with an access whose binding matches it (the one bind() just resolved, else a fresh read that must still match), so
  * the approved destination is the one that receives the write.
@@ -86,9 +75,15 @@ export function hyperBotsJiraTool(deps: { access: () => Promise<HyperBotsJiraAcc
   const resolve = async () => {
     try { return await deps.access(); } catch (error) { throw new HyperBotsToolError('refused', hyperBotsSafeError(message(error), [])); }
   };
+  const binding = (access: HyperBotsJiraAccess, args: JiraArgs) => {
+    const target = jiraTarget(access, args);
+    const bound = hyperBotsJiraBinding(target);
+    if (target.projectKey === access.projectKey) return bound;
+    return { ...bound, fingerprint: createHash('sha256').update(hyperBotsJiraBinding(access).fingerprint + bound.fingerprint).digest('hex') };
+  };
   return {
     name: 'jira_create_issue', access: 'write',
-    description: 'Create an issue in the owner\'s configured Jira project. Requires owner approval.',
+    description: 'Create one Jira issue. The connection project is the default. Use fields for required Jira or custom fields such as parent, priority, or assignee.',
     parameters: {
       type: 'object', additionalProperties: false, required: ['summary'],
       properties: {
@@ -96,6 +91,8 @@ export function hyperBotsJiraTool(deps: { access: () => Promise<HyperBotsJiraAcc
         description: { type: 'string', maxLength: 20000 },
         issueType: { type: 'string', minLength: 1, maxLength: 50, description: 'Issue type name (default Task)' },
         labels: { type: 'array', maxItems: 10, items: { type: 'string', pattern: '^\\S{1,50}$' } },
+        projectKey: { type: 'string', description: 'Target Jira project key. Omit to use the configured project.' },
+        fields: { type: 'object', additionalProperties: true, description: 'Additional Jira fields in REST API format.' },
       },
     },
     parse: args => parseArgs(JiraArgs, args),
@@ -106,26 +103,26 @@ export function hyperBotsJiraTool(deps: { access: () => Promise<HyperBotsJiraAcc
       const now = Date.now();
       for (const [key, entry] of bound) if (now - entry.at > BOUND_TTL_MS) bound.delete(key);
       bound.set(JSON.stringify(args), { access, at: now });
-      return hyperBotsJiraBinding(access);
+      return binding(access, args as JiraArgs);
     },
     async run(args, signal, fingerprint) {
       const a = args as JiraArgs;
       // Taken synchronously, before any await: nothing can re-bind these arguments in between.
       const argsKey = JSON.stringify(args), entry = bound.get(argsKey);
       bound.delete(argsKey);
-      const fresh = entry && Date.now() - entry.at <= BOUND_TTL_MS && (!fingerprint || hyperBotsJiraBinding(entry.access).fingerprint === fingerprint);
+      const fresh = entry && Date.now() - entry.at <= BOUND_TTL_MS && (!fingerprint || binding(entry.access, a).fingerprint === fingerprint);
       const access = fresh ? entry.access : await resolve();
       // The write goes only to the destination the owner approved, whatever re-bound these arguments meanwhile.
-      if (fingerprint && hyperBotsJiraBinding(access).fingerprint !== fingerprint) throw new HyperBotsToolError('refused', 'The Jira destination changed after it was approved; nothing was sent.');
+      if (fingerprint && binding(access, a).fingerprint !== fingerprint) throw new HyperBotsToolError('refused', 'The Jira destination changed after it was approved; nothing was sent.');
       const secrets = [access.authorization];
-      const fields: Record<string, unknown> = { project: { key: access.projectKey }, summary: a.summary, issuetype: { name: a.issueType } };
+      const fields: Record<string, unknown> = { issuetype: { name: a.issueType }, ...a.fields, project: { key: jiraTarget(access, a).projectKey }, summary: a.summary };
       if (a.description !== undefined) fields.description = a.description;
       if (a.labels?.length) fields.labels = a.labels;
       let response: Response, text: string;
       if (signal.aborted) throw new HyperBotsToolError('refused', 'Stopped before the Jira request was sent.');
       try {
         response = await (deps.fetch ?? globalThis.fetch)(access.baseUrl + '/rest/api/2/issue', {
-          method: 'POST', redirect: 'manual', signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
+          method: 'POST', redirect: 'manual', credentials: 'omit', signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
           headers: { accept: 'application/json', 'content-type': 'application/json', authorization: access.authorization, 'X-Atlassian-Token': 'no-check', 'user-agent': 'HyperTask' },
           body: JSON.stringify({ fields }),
         });
@@ -133,7 +130,7 @@ export function hyperBotsJiraTool(deps: { access: () => Promise<HyperBotsJiraAcc
           await response.body?.cancel().catch(() => {});
           throw new HyperBotsToolError('refused', 'Jira redirected the request (an SSO or login redirect). Check the URL and token in the Jira tab.');
         }
-        text = await readCapped(response);
+        text = await hyperBotsReadResponse(response, 'Jira');
       } catch (error) {
         if (error instanceof HyperBotsToolError) throw error;
         throw new HyperBotsToolError('transport', `Jira request failed: ${hyperBotsSafeError(message(error), secrets)}`);
@@ -145,7 +142,9 @@ export function hyperBotsJiraTool(deps: { access: () => Promise<HyperBotsJiraAcc
       let key: unknown;
       try { key = JSON.parse(text)?.key; } catch {}
       // A 2xx without a readable key may still have created the issue, so it is never treated as a refusal.
-      if (typeof key !== 'string' || !key) throw new HyperBotsToolError('transport', 'Jira accepted the request but returned no issue key; check the project before retrying.');
+      if (typeof key !== 'string' || !/^[a-z][a-z0-9_]*-\d+$/i.test(key) || hyperBotsRedactSecrets(key, secrets) !== key) {
+        throw new HyperBotsToolError('transport', 'Jira accepted the request but returned no issue key; check the project before retrying.');
+      }
       return { key, url: access.baseUrl + '/browse/' + key };
     },
   };
@@ -172,12 +171,11 @@ const bounded = <T>(run: () => Promise<T>, ms: number) => new Promise<T>((resolv
 });
 /**
  * Independent, bounded checks of the app's own connections; never throws.
- * The Outlook check is the one approved exception to "approval before every connector call": it asks only whether
- * classic Outlook answers, reads no calendar item, and keeps no personal field (the bridge's name and address are dropped here).
+ * Outlook checks that the desktop app answers without reading calendar or mail. Jira and Newsletter read local setup.
  */
-export async function hyperBotsConnections(deps: { endpoint: () => Promise<HyperBotsEndpoint>; outlook: HyperBotsOutlook; jira: () => Promise<HyperBotsJiraAccess> }, timeoutMs = 10_000): Promise<HyperBotsConnections> {
+export async function hyperBotsConnections(deps: { endpoint: () => Promise<HyperBotsEndpoint>; outlook: HyperBotsOutlook; jira: () => Promise<HyperBotsJiraAccess>; newsletter?: () => Promise<HyperNewsletterConnectionState | null> }, timeoutMs = 10_000): Promise<HyperBotsConnections> {
   const failed = (problem: string): HyperBotsConnectionState => ({ ready: false, problem });
-  const [model, outlook, jira] = await Promise.all([
+  const [model, outlook, jira, newsletter] = await Promise.all([
     bounded(deps.endpoint, timeoutMs).then(
       (e): HyperBotsConnections['model'] => !e.baseUrl ? failed('Set up the AI endpoint in Settings → Connections → AI endpoint.')
         : !e.defaultModel ? failed(`Choose a default model in Settings → Connections → AI endpoint (endpoint ${e.baseUrl}).`)
@@ -189,6 +187,9 @@ export async function hyperBotsConnections(deps: { endpoint: () => Promise<Hyper
     bounded(deps.jira, timeoutMs).then(
       (a): HyperBotsConnections['jira'] => ({ ready: true, detail: `${a.projectKey} at ${a.baseUrl}`, projectKey: a.projectKey }),
       error => failed(message(error) === JIRA_SETUP ? JIRA_SETUP : `${JIRA_SETUP} ${message(error)}`)),
+    deps.newsletter && bounded(deps.newsletter, timeoutMs).then(
+      (a): HyperBotsConnectionState => a ? { ready: true, detail: a.baseUrl } : failed('Set up Newsletter in Settings → Connections → Newsletter.'),
+      () => failed('Open Settings → Connections → Newsletter and re-enter the URL and token.')),
   ]);
-  return { model, outlook, jira };
+  return { model, outlook, jira, ...(newsletter ? { newsletter } : {}) };
 }

@@ -36,7 +36,8 @@ export function hyperBotDescription(bot: HyperBotConfig) {
   if (bot.tools.includes('outlook_search_people')) parts.push('Searches your employee directory');
   if (bot.tools.some(name => HYPER_BOTS_TOOLS[name].group === 'outlook-calendar' && HYPER_BOTS_TOOLS[name].access === 'write')) parts.push('Manages Outlook meetings');
   if (bot.tools.some(name => HYPER_BOTS_TOOLS[name].group === 'outlook-mail' && HYPER_BOTS_TOOLS[name].access === 'write')) parts.push('Drafts and sends Outlook mail');
-  if (bot.tools.includes('jira_create_issue')) parts.push('Creates Jira issues');
+  if (bot.tools.some(name => HYPER_BOTS_TOOLS[name].group === 'jira')) parts.push('Works with Jira issues');
+  if (bot.tools.some(name => HYPER_BOTS_TOOLS[name].group === 'newsletter')) parts.push('Works with newsletters and Gantt projects');
   return parts.join(' · ');
 }
 export function hyperBotStoredRoom(userId: string): string | undefined { try { return localStorage.getItem('hypertask.hyper-bot.room.' + userId) || undefined; } catch { return undefined; } }
