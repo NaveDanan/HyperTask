@@ -18,6 +18,7 @@ The planned OpenBot integration is tracked in [epic #2](https://github.com/NaveD
   API and executor ownership: `src/renderer/features/hyper-database/README.md`.
 
 **Local tools**
+- Task Hub ([HyperTaskHub](hyper-task-hub/README.md)): Jira, HyperTask boards/Gantt, Newsletter Gantt, Outlook calendar and opt-in mail in one ranked list; Focus (do-this-first, ranked Next, today's plan around meetings), Board with Triage, Meetings, Matrix and Timeline, explainable scores with adjustable weights, meeting briefs; opt-in, confirmed status changes in Jira and Newsletter (Outlook stays read-only); encrypted local store. HyperHome shows the next action above Hyper-Kanban.
 - Jira dashboard (Server / Data Center): connection settings, sync with offline cache, stats, filters and search, create/edit with conflict handling, status transitions, database mirror. Settings, cache and DPAPI credential files are shared with the Flutter build.
 - Local template store: the 50 bundled templates, offline, imported as documents and databases with their media.
 

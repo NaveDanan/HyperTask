@@ -12,6 +12,7 @@ import { useHyperDatabase } from '@/features/hyper-database/useHyperDatabase';
 import { cn } from '@/lib/utils';
 import { KeyValueStorage } from '@/startup/kv';
 import { ensureHyperGeneralKanban } from './HyperGeneralKanban';
+import { HyperHomeFocusBar } from './HyperHomeFocusBar';
 
 type HyperHomeSource = { status: 'loading' } | { status: 'ready'; view: ViewPB } | { status: 'error'; error: string };
 const hyperHomeError = (error: unknown) => error instanceof Error ? error.message : String(error);
@@ -108,7 +109,10 @@ export function HyperHomePage() {
     event.currentTarget.releasePointerCapture(event.pointerId); setDragging(false); document.body.style.userSelect = ''; persist();
   };
 
-  return <div ref={containerRef} data-hyper-home className="flex h-full min-h-0 flex-col bg-background">
+  // The focus bar sits outside the measured split container so drag fractions stay relative to the two sections.
+  return <div data-hyper-home className="flex h-full min-h-0 flex-col bg-background">
+    <HyperHomeFocusBar />
+    <div ref={containerRef} className="flex min-h-0 flex-1 flex-col">
     <HyperHomeSection title="Hyper-Kanban" icon={<SquareKanban />} ensure={ensureHyperGeneralKanban} style={{ flex: `0 0 ${hyperHomeTopBasis(split)}` }} />
     <div
       role="separator" aria-orientation="horizontal" aria-label="Resize Hyper-Kanban and Hyper-Event" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(split * 100)} tabIndex={0}
@@ -124,5 +128,6 @@ export function HyperHomePage() {
       <div className={cn('h-px w-full bg-border transition-colors', dragging ? 'bg-ring' : 'group-hover:bg-ring/60 group-focus-visible:bg-ring')} />
     </div>
     <HyperHomeSection title="Hyper-Event" icon={<CalendarDays />} ensure={ensureHyperGeneralCalendar} />
+    </div>
   </div>;
 }

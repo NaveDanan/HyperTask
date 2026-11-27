@@ -116,6 +116,8 @@ export interface HyperOutlookAttendee { name: string; email: string; type: numbe
 export type { HyperOutlookPresenceState } from './HyperOutlookPresence';
 export interface HyperOutlookStatus { available: boolean; userName: string; email: string; reason?: string }
 export interface HyperOutlookEvent {
+  occurrenceHandle?: string;
+  hubMeetingId?: string;
   id: string; subject: string; start: string; end: string; allDay: boolean; location: string; body: string;
   organizer: string; isOrganizer: boolean; responseStatus: number; attendees: HyperOutlookAttendee[]; attendeeCount: number;
   busyStatus: number; isRecurring: boolean; recurrenceState: number; isCancelled: boolean; isPrivate: boolean; joinUrl: string | null; lastModified: string;
@@ -136,6 +138,10 @@ export interface HyperOutlookApi {
   presence(): Promise<IpcResult<import('./HyperOutlookPresence').HyperOutlookPresenceState>>;
   launch(): Promise<IpcResult<void>>;
   onPresence(listener: (state: import('./HyperOutlookPresence').HyperOutlookPresenceState) => void): () => void;
+  subscribeRange(id: string, range: HyperOutlookRange, refresh: boolean): Promise<IpcResult<HyperOutlookEvent[]>>;
+  unsubscribeRange(id: string): Promise<IpcResult<void>>;
+  onRange(listener: (update: { id: string; items: HyperOutlookEvent[]; error?: string }) => void): () => void;
+  resolveOccurrence(handle: string): Promise<IpcResult<HyperOutlookEvent>>;
   list(range: HyperOutlookRange): Promise<IpcResult<HyperOutlookEvent[]>>;
   create(args: HyperOutlookCreate): Promise<IpcResult<HyperOutlookEvent>>;
   update(args: HyperOutlookUpdate): Promise<IpcResult<HyperOutlookEvent>>;
@@ -158,6 +164,7 @@ export interface HyperNodApi {
 }
 
 export interface HypertaskApi {
+  taskHub: import('./HyperTaskHub').HyperTaskHubM5Api;
   auth: { devJwtSession(): Promise<string | null>; entraIdToken(config: import('./HyperEntra').HyperEntraConfig): Promise<IpcResult<import('./HyperEntra').HyperEntraToken>>; entraCancel(): Promise<void> };
   outlook: HyperOutlookApi;
   /** The Nod personal assistant on the VM. Main owns its token and transport. */
@@ -312,6 +319,8 @@ export const IpcChannel = {
   OutlookPresenceRead: 'hyper-outlook:presence-read',
   OutlookLaunch: 'hyper-outlook:launch',
   OutlookStatus: 'outlook:status',
+  OutlookSubscribeRange: 'outlook:subscribe-range', OutlookUnsubscribeRange: 'outlook:unsubscribe-range',
+  OutlookRangeChanged: 'outlook:range-changed', OutlookResolveOccurrence: 'outlook:resolve-occurrence',
   OutlookList: 'outlook:list',
   OutlookCreate: 'outlook:create',
   OutlookUpdate: 'outlook:update',

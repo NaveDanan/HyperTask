@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from 'react';
-import { ExternalLink, Trash2, Video } from 'lucide-react';
+import { ClipboardList, ExternalLink, Trash2, Video } from 'lucide-react';
 import type { HyperOutlookEvent, HyperOutlookEditFields, HyperOutlookFields } from '@shared/api';
 import { HyperOutlookColors, hyperOutlookCategoriesWith, hyperOutlookColorOf, type HyperOutlookColorId } from '@shared/HyperOutlookColor';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,8 @@ import { HyperCalendarDeleteDialog } from '@/features/hyper-database/views/calen
 import { hyperOutlookClient } from './hyper-outlook-client';
 import { hyperOutlookColorToken, hyperOutlookFields } from './HyperOutlookData';
 import type { HyperOutlookSendKind } from './HyperOutlookSendConfirm';
+import { useHyperHubBriefRequest } from '@/features/hyper-task-hub/brief/useHyperHubBriefRequest';
+import { hyperOpenTaskHub } from '@/features/hyper-task-hub/HyperTaskHubNavigation';
 interface HyperOutlookDialogProps {
   initial: HyperCalendarDraft; item?: HyperOutlookEvent; timeZone: string;
   onClose: () => void; onSaved: () => void; onItemChange?: (item: HyperOutlookEvent) => void; confirmSend: (count: number, kind: HyperOutlookSendKind) => Promise<boolean>; saveTo?: (draft: HyperCalendarDraft) => ReactNode;
@@ -107,7 +109,7 @@ export function HyperOutlookEventDialog({ initial, item, timeZone, onClose, onSa
           {Boolean(live?.attendeeCount) && <div className="text-xs text-muted-foreground"><p>{live!.attendeeCount} attendees</p><ul className="mt-1 max-h-24 overflow-y-auto">{live!.attendees.map((person, index) => <li key={index} className="truncate" title={person.email}>{person.name}{person.email ? ` · ${person.email}` : ''}</li>)}</ul></div>}
           {live?.isRecurring && <p className="text-xs text-muted-foreground">Changes apply to this occurrence. Open in Outlook to edit the series.</p>}
           {live?.isPrivate && <p className="text-xs text-muted-foreground">Private event. Open in Outlook to see or change its details.</p>}
-          {live && <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void open()}><ExternalLink className="size-4" />Open in Outlook</Button>{live.joinUrl && <Button type="button" variant="outline" size="sm" onClick={() => { void window.hypertask.shell.openExternal(live.joinUrl!).catch(error => showToast({ type: 'error', message: hyperCalendarError(error) })); }}><Video className="size-4" />Join</Button>}</div>}
+          {live && <div className="flex flex-wrap items-center gap-2"><Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void open()}><ExternalLink className="size-4" />Open in Outlook</Button>{live.joinUrl && <Button type="button" variant="outline" size="sm" onClick={() => { void window.hypertask.shell.openExternal(live.joinUrl!).catch(error => showToast({ type: 'error', message: hyperCalendarError(error) })); }}><Video className="size-4" />Join</Button>}{live.hubMeetingId && <Button type="button" variant="outline" size="sm" onClick={() => { useHyperHubBriefRequest.getState().open(live.hubMeetingId!); hyperOpenTaskHub(); onClose(); }}><ClipboardList className="size-4" />Prep brief</Button>}</div>}
           {invite && <Field orientation="horizontal"><FieldLabel htmlFor={`${id}-send`}>Send response</FieldLabel><Switch id={`${id}-send`} disabled={busy} checked={sendResponse} onCheckedChange={setSendResponse} /></Field>}
         </div>
         <DialogFooter className="mx-0 mb-0 shrink-0 rounded-none px-4 py-3">

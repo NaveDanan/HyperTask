@@ -1,0 +1,39 @@
+# Astra's M5 cross-review
+
+## Agreements
+
+I support Jira transitions and Newsletter leaf-task status changes under A1. A merged card can represent several remote records. The owner must choose one source record, see the configured connection and exact change, and approve one send. Both opt-ins start off. I accept Opus's optional toast after a Board move. Dismissing it leaves the local move intact. Opening it starts a preview.
+
+Sol's distinction between the write receipt and the observed status matters when an issue disappears from the open-work query. Persist the claim before sending. After a timeout or an interrupted claim, read the target by ID, including closed issues. Keep the last observed status visible, hold affected starts and prep decisions, and never replay the request. Seeing the requested status settles what the card shows. It takes evidence of our own successful change to offer Undo.
+
+## Objections
+
+**A-C1 (blocking).** Keep Opus's in-app chooser and replace its final confirm with a main-owned native dialog. The renderer can request approval using a short-lived token for the selected candidate. Main reserves it once, displays the bound target, connection, version and change as plain text, and defaults to Cancel. After affirmation, recheck the originating document, opt-in, credential, target and source version. Keep dispatch private to main. Test that invoking approval twice produces at most one dialog and that switching connections while it is open produces zero sends. Send Jira's transition ID alone. Route required Resolution and other required fields to Jira.
+
+**A-C2 (blocking).** Test A1 at the actual Hub document, including its embedded entry points. The current shared preload exposes `jira.readCredentials`, and the main handler returns the saved credential. A native prompt secures the new command while that older route remains reachable from the same document. Require a Hub context with no access to credential reads or alternate dispatch channels, enforced in main. Accept any implementation that proves that boundary. Migrating every existing Jira editor and bot workflow is outside M5. [Shared preload](../../../src/preload/index.ts#L247) and [credential handler](../../../src/main/settings-ipc.ts#L27).
+
+**A-C3 (blocking).** Adopt the Newsletter preconditions, permission wording and completion disclosure below. Remove the automatic Waiting-to-`delayed` mapping in both directions. A task can be late while its owner is actively working on it. Show the source label and let the owner explicitly choose Delayed in the Newsletter picker.
+
+**A-C4 (blocking).** Replace Hyper-Event's independent renderer poller with a subscription for the visible interval. Coalesce overlapping reads in main under the authorized Outlook store and generation. Test month navigation beyond the Hub's seven days, calendar use before Hub setup, presence changes and refresh after an editor save. Changing the calendar range must preserve the Hub's import horizon. Project private intervals as anonymous busy time and attach Prep only to verified eligible occurrences. [Current range reads and polling](../../../src/renderer/features/hyper-outlook/useHyperOutlookEvents.ts#L24).
+
+**A-C5 (non-blocking).** Use Opus's Waiting/blocked tray, preserving Sol's measured coordinates and blocker reason on each row. For remaining cards, either missing axis qualifies for Needs details. Show the known axis there. Keep manual quadrant placement reversible and separate from rank and Start eligibility. On Timeline, draw actual plan chunks or verified source intervals. Show lone start and due dates as markers and effort as a row value. Subtracting effort from a deadline invents a reservation. In Meetings, count eligible `none` and `planned` occurrences through the seventh local date, counting today. A reserved prep block still needs doing. Viewed changes neither membership nor count. [Existing readiness filter](../../../src/renderer/features/hyper-task-hub/state/HyperTaskHubSelectors.ts#L269).
+
+## Concessions
+
+I withdraw my proposed cross-client unique-create requirement for mirrors in M5. Preview the shared destination and copied title/link, recheck access, serialize by board and scoped origin in main, and create the row with its durable origin key. Reconcile an interrupted create by that key before another attempt. Open an existing match. Offer deletion only for a row this operation demonstrably created and whose revision still matches. Two disconnected clients can still create duplicates. A global uniqueness guarantee would require core support.
+
+I accept Sol's frozen ranking input for weight previews, separate due markers and split plan bars. I drop my requirement for a particular Hub window architecture and my blanket Newsletter editor fallback.
+
+## Newsletter decision
+
+At Newsletter commit `fc583e3`, the status route accepts `pending`, `in-progress`, `completed` and `delayed`. The server loads the current project and saves the Gantt in one transaction. This avoids replacing a sibling edit with the Hub's cached chart. The moderator's stronger field-preservation claim needs correction. The save path normalizes task fields, cleans references, runs dependency scheduling and recalculates parent status and progress. A parent's roll-up can even supersede a direct edit to its status. Offer the command for supported leaf tasks, disclose parent roll-ups where applicable, and send derived parent rows or unsupported chart versions to the editor. Test a nested chart with a concurrent sibling edit. See Newsletter's `pb_hooks/lib/api-manager.js` at lines 237–289, 382–419, 480–496, 1011–1024 and 1122–1170.
+
+I accept a fresh by-ID project read as the M5 concurrency guard. Bind the project/task IDs, project `updated`, task status and stored progress at preview. Under a per-connection target lock, re-read immediately before dispatch and require an exact match, including current assignment scope and leaf eligibility. On drift, show the new values and require a new preview. Send only `{ status }` to the task status route. Another writer can still change that task between GET and PATCH. Jira has the same read/send gap, although its workflow can reject a stale transition. Newsletter has no expected-revision check to reject one.
+
+Show the host, configured connection, project/task, revision and both value changes in the preview and native prompt. For a leaf at 60%, say “In progress → Completed. Progress 60% → 100%. Undo restores In progress and leaves progress at 100%.” Read back the result and bind any inverse to the verified after-version, status and progress. Undo needs its own confirmation. The transactional project progress endpoint can set task status and percentage together, but A1 authorizes status edits only. See `docs/gantt-api.md` lines 80–90 and `pb_hooks/lib/api-manager.js` lines 1230–1256.
+
+The authoring status check returns a Gantt boolean. A successful project GET establishes visibility. Neither reveals the token's write flag. Label the first attempt “Newsletter checks write permission when you confirm.” The approved PATCH is the permission check. The server checks token expiry, scope, the owner's current manager role, route allowlist and write access. The transaction checks project access for an admin or general manager, creator, or listed user. On 401/403 show “You don't have permission”, clear permission hints and recheck read access separately. Never probe with a dummy write, retry under another identity or treat a prior success as authority. See `pb_hooks/lib/access-tokens.js` lines 69–120 and its `authoringStatus` export, and `pb_hooks/lib/api-manager.js` lines 551–559, 1003–1008 and 1310–1312.
+
+## Open questions for the product owner
+
+None for M5. The completion preview and the label “Undo status change” make the retained 100% progress explicit before either operation.

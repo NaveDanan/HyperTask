@@ -1,10 +1,13 @@
 import { registerHyperEntraIpc } from './HyperEntraIpc';
 import { HyperDevJwtBootstrap } from './HyperDevJwtBootstrap';
+import { HyperOutlookCalendarCache } from './HyperOutlookCalendarCache';
 import { HyperOutlookBridge } from './HyperOutlookBridge';
 import { HyperOutlookPresence } from './HyperOutlookPresence';
 import { HyperOutlookWindows } from './HyperOutlookPresenceWindows';
 import { registerHyperOutlookPresenceIpc } from './HyperOutlookPresenceIpc';
 import { registerHyperOutlookIpc } from './HyperOutlookIpc';
+import { hyperHubSummaryTransport } from './hyper-task-hub/HyperHubSummaryTransport';
+import { HyperHubJiraCredentials, HyperHubNewsletterConnection, registerHyperTaskHubIpc } from './hyper-task-hub/HyperTaskHubIpc';
 import { hyperClassifyBrowserReturn } from './HyperBrowserReturn';
 import { HyperBrowserReturnQueue } from './HyperBrowserReturnQueue';
 import type { HyperOpenBotService } from './HyperOpenBotService';
@@ -23,7 +26,7 @@ import { HyperBotsRuntime } from './HyperBotsRuntime';
 import { HyperBotsTools, hyperBotsConnections, hyperBotsOutlookTools, hyperBotsReadJira } from './HyperBotsConnectors';
 import { hyperBotsJiraTools } from './HyperBotsJiraTools';
 import { hyperBotsNewsletterTools } from './HyperBotsNewsletterTools';
-import { HyperNewsletterConnection } from './HyperNewsletterConnection';
+import type { HyperNewsletterConnection } from './HyperNewsletterConnection';
 import { HyperBotsProjectTasks } from './HyperBotsProjectTasks';
 import { hyperCoreWithGeneralKanban } from './HyperGeneralKanbanCore';
 import { hyperBotsProjectTools } from './HyperBotsProjectTools';
@@ -37,7 +40,6 @@ import { HyperTrustedWindows } from './HyperTrustedWindows';
 import { HyperVoiceOverlayWindow } from './HyperVoiceOverlayWindow';
 import { registerHyperVoiceIpc, type HyperVoiceMain } from './hyper-voice/HyperVoiceIpc';
 import { HYPER_BOTS_SIGN_IN, HyperBotsHub, hyperBotsReadIdentity, type HyperBotsUser } from './HyperBotsHub';
-import { JiraCredentialFiles } from './jira-credentials';
 import { unprotect } from './dpapi';
 import { listEndpointModels } from './openai-endpoint';
 import fs from 'node:fs/promises';
@@ -81,7 +83,7 @@ function supportDirectory(): string {
 
 const appRoot = path.resolve(__dirname, '../..');
 const prefs = new SharedPreferences(path.join(supportDirectory(), 'shared_preferences.json'));
-const jiraCredentials = new JiraCredentialFiles(supportDirectory);
+const jiraCredentials = new HyperHubJiraCredentials(supportDirectory);
 const core = new CoreProcess(coreBinaryPath(appRoot, app.isPackaged));
 const requestCore = hyperCoreWithGeneralKanban(core.request.bind(core));
 const hyperOutlook = new HyperOutlookBridge();
@@ -280,11 +282,10 @@ async function openMainTarget(target?: HyperDesktopOpenMainTarget): Promise<void
  * HyperBots runs in main: one runtime for the HyperTask account the core says is signed in, with its own state file
  * under <support>/hyper_bots/users and that account's configured connections.
  */
-function createHyperBots() {
+function createHyperBots(newsletter: HyperNewsletterConnection) {
   const endpoint = () => hyperBotsReadEndpoint(supportDirectory(), unprotect);
   const jira = (user: HyperBotsUser) => hyperBotsReadJira(prefs, jiraCredentials, user.userId);
   const netFetch = ((input, init) => net.fetch(input as string, init)) as typeof fetch;
-  const newsletter = new HyperNewsletterConnection(path.join(supportDirectory(), 'hyper_bots', 'newsletter'), netFetch);
   const engine = new HyperBotsOpenAIEngine({ endpoint, fetch: netFetch });
   const defaultModel = async () => { try { return (await endpoint()).defaultModel || null; } catch { return null; } };
   hyperBots = new HyperBotsHub({
@@ -316,7 +317,22 @@ function createHyperBots() {
 }
 
 function registerIpc() {
-  registerHyperOutlookIpc(hyperOutlook, trustedWindows);
+  const newsletter = new HyperHubNewsletterConnection(path.join(supportDirectory(), 'hyper_bots', 'newsletter'), (input, init) => net.fetch(String(input), init));
+  const calendar = new HyperOutlookCalendarCache(hyperOutlook);
+  const taskHub = registerHyperTaskHubIpc({ calendar, window: () => mainWindow, directory: supportDirectory(), prefs, credentials: jiraCredentials,
+    summaryConfigured: () => hyperBotsReadEndpoint(supportDirectory(), unprotect).then(() => true, () => false),
+    summary: hyperHubSummaryTransport(() => hyperBotsReadEndpoint(supportDirectory(), unprotect), (url, init) => net.fetch(String(url), init)),
+    newsletter, outlook: hyperOutlook, outlookAvailable: () => hyperOutlookPresence.current().connected,
+    active: () => !!mainWindow?.isVisible() && !mainWindow.isMinimized(),
+    request: async (event, payload) => { await startCore(); return requestCore(event, payload); } });
+  app.on('browser-window-focus', () => taskHub.wakeOutlook());
+  hyperOutlookPresence.onChange(state => { if (state.connected) taskHub.outlookRecovered(); else calendar.reset(); });
+  core.on('notification', taskHub.notify);
+  jiraCredentials.changed = taskHub.connectionChanged;
+  newsletter.changed = taskHub.newsletterChanged;
+  core.on('exit', taskHub.invalidate);
+  calendar.meetings = taskHub.meetingIds;
+  registerHyperOutlookIpc(hyperOutlook, trustedWindows, calendar);
   registerHyperOutlookPresenceIpc(hyperOutlookPresence, trustedWindows);
   registerHyperEntraIpc(() => mainWindow);
   const openBotSessions = createHyperOpenBotSession(app.getPath('userData'), async () => { await startCore(); return hyperReadCoreIdentity((event, payload) => core.request(event, payload)); });
@@ -329,7 +345,7 @@ function registerIpc() {
   openBotService = createHyperOpenBotService(app.getPath('userData'), openBotSessions, openBotBridge.disconnect);
   registerHyperOpenBotServiceIpc(() => mainWindow, openBotService);
   // HyperBots state that cannot be opened must not stop the app from starting: the hub reports it per account from current().
-  try { registerHyperBotsIpc(trustedWindows, createHyperBots()); } catch (error) {
+  try { registerHyperBotsIpc(trustedWindows, createHyperBots(newsletter)); } catch (error) {
     hyperBots = null;
     console.error('[hyper-bots] unavailable', error);
     registerHyperBotsUnavailable(error instanceof Error ? error.message : String(error));
@@ -374,7 +390,8 @@ function registerIpc() {
     const nodTransition = nodSessions.beginNativeTransition();
     await startCore();
     await transition.cleared;
-    const result = await core.init(config);
+    const finishHubTransition = taskHub.begin('CoreInit');
+    const result = await core.init(config).finally(finishHubTransition);
     openBotSessions.completeNativeTransition(transition.version, result === 0);
     nodSessions.completeNativeTransition(nodTransition, result === 0);
     if (hyperDevJwt.enabled) hyperDevJwt.coreReady(result === 0 && config.authenticator_type === 2 ? config.hypertask_cloud_config.base_url : null);
@@ -382,10 +399,11 @@ function registerIpc() {
     return result;
   });
   ipcMain.handle(C.CoreRequest, async (_, event: string, payload: Uint8Array) => {
+    const finishHubTransition = taskHub.begin(event);
     const reply = await hyperNodNativeCoreRequest(nodSessions, event, () => hyperNativeCoreRequest(openBotSessions, event, async () => {
       await startCore();
       return requestCore(event, payload);
-    }));
+    })).finally(finishHubTransition);
     if (['SignOut', 'DeleteAccount', 'SignUp', 'OauthSignIn', 'SignInWithEmailPassword', 'PasscodeSignIn', 'MagicLinkSignIn', 'InitUser', 'OpenAnonUser'].includes(event)) reconcileBots();
     return reply;
   });
@@ -458,9 +476,9 @@ function registerIpc() {
   ipcMain.handle(C.ClipboardReadText, () => clipboard.readText());
 
   ipcMain.handle(C.PrefsGetAll, () => prefs.getAll());
-  ipcMain.handle(C.PrefsSet, (_, key: string, value: unknown) => prefs.set(key, value));
+  ipcMain.handle(C.PrefsSet, async (_, key: string, value: unknown) => { await prefs.set(key, value); taskHub.preferenceChanged(key); });
   ipcMain.handle(C.PrefsSetDouble, (_, key: string, value: number) => prefs.setDouble(key, value));
-  ipcMain.handle(C.PrefsRemove, (_, key: string) => prefs.remove(key));
+  ipcMain.handle(C.PrefsRemove, async (_, key: string) => { await prefs.remove(key); taskHub.preferenceChanged(key); });
 
   registerHyperOpenBotFileIpc(app.getPath('userData'));
 

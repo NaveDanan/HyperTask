@@ -21,6 +21,7 @@ export function useHyperOutlookEvents(viewId: string, enabled: boolean, timeZone
   useEffect(() => {
     if (!enabled) return;
     const version = ++request.current;
+    let stop: (() => void) | undefined;
     store.setState({ refreshing: true });
     void (async () => {
       const status = await hyperOutlookClient.status();
@@ -28,21 +29,22 @@ export function useHyperOutlookEvents(viewId: string, enabled: boolean, timeZone
       store.setState({ status });
       if (!status.available) { store.setState({ error: status.reason ?? 'Outlook unavailable', items: [] }); return; }
       if (shown && range) {
-        const items = await hyperOutlookClient.list({ start: range.range.start.toISOString(), end: range.range.end.toISOString() });
-        if (request.current !== version) return;
-        store.setState({ items, lastSyncedAt: new Date() });
+        stop = hyperOutlookClient.subscribe({ start: range.range.start.toISOString(), end: range.range.end.toISOString() },
+          items => { if (request.current === version) store.setState({ items, lastSyncedAt: new Date(), refreshing: false, error: null, status }); },
+          error => { if (request.current === version) store.setState({ items: [], error: hyperCalendarError(error), refreshing: false,
+            status: { available: false, userName: '', email: '', reason: hyperCalendarError(error) } }); }, revision > 0);
       }
-      if (request.current === version) store.setState({ error: null });
+      if (request.current === version && !stop) store.setState({ error: null });
     })().catch(error => { if (request.current === version) store.setState({ error: hyperCalendarError(error), status: { available: false, userName: '', email: '', reason: hyperCalendarError(error) } }); })
-      .finally(() => { if (request.current === version) store.setState({ refreshing: false }); });
-    return () => { if (request.current === version) request.current++; };
+      .finally(() => { if (request.current === version && !stop) store.setState({ refreshing: false }); });
+    return () => { stop?.(); if (request.current === version) request.current++; };
   }, [enabled, range, shown, revision, store]);
   useEffect(() => {
     if (!enabled) return;
     const tick = () => { if (document.visibilityState === 'visible' && visible() && !store.getState().refreshing) refresh(); };
-    const timer = setInterval(tick, 60000);
+
     window.addEventListener('focus', tick); document.addEventListener('visibilitychange', tick);
-    return () => { clearInterval(timer); window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick); };
+    return () => { window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick); };
   }, [enabled, refresh, visible, store]);
   useEffect(() => {
     if (!enabled) return;

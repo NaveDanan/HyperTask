@@ -128,3 +128,18 @@ it('retains the unknown outcome of an in-progress write when presence detects Ou
   const unknown = expect(write).rejects.toBeInstanceOf(HyperOutlookLost); bridge.setRunning(false); await unknown;
   expect(mock.spawn).toHaveBeenCalledOnce(); expect(requests(host)).toHaveLength(1);
 });
+
+it('rechecks Hub access before a queued open reaches Outlook and continues with the next request', async () => {
+  const host = child(); mock.spawn.mockReturnValue(host);
+  const busy = bridge.request('status', undefined);
+  const controller = new AbortController();
+  const open = bridge.request('mail.open', { storeId: 'AA', entryId: 'BB', folder: 'inbox' }, () => controller.signal.throwIfAborted());
+  const refused = expect(open).rejects.toThrow();
+  const next = bridge.request('status', undefined);
+  controller.abort();
+  const reply = (id: string) => host.stdout.write(JSON.stringify({ id, ok: true, value: status }) + '\n');
+  reply(requests(host)[0].id);
+  await busy; await refused;
+  expect(requests(host).map(r => r.op)).toEqual(['status', 'status']);
+  reply(requests(host)[1].id); await next;
+});

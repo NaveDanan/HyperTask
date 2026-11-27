@@ -84,7 +84,7 @@ await send('Emulation.setDeviceMetricsOverride', { width: plan.width ?? 1280, he
 if (plan.colorScheme) await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: plan.colorScheme }] });
 await send('Page.navigate', { url });
 
-// Real input events: { "click": [x, y] }, { "move": [x, y] }, { "clickText": "Label" } (centre of
+// Real input events: { "click": [x, y] }, { "clickSelector": "css" }, { "move": [x, y] }, { "clickText": "Label" } (centre of
 // the smallest visible element whose text matches), { "key": "Escape", "modifiers": 2 } (CDP
 // modifier bits: 1 Alt, 2 Ctrl, 4 Meta, 8 Shift).
 const mouse = async (type, x, y) =>
@@ -115,6 +115,12 @@ for (const step of plan.steps) {
   }
   if (step.move) await mouse('mouseMoved', step.move[0], step.move[1]);
   if (step.click) await click(step.click);
+  // { "clickSelector": "css" }: scroll the first match into view and click its centre with real input.
+  if (step.clickSelector) {
+    const found = await send('Runtime.evaluate', { expression: `(() => { const el = document.querySelector(${JSON.stringify(step.clickSelector)}); if (!el) return null; el.scrollIntoView({ block: 'center', inline: 'center' }); const r = el.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`, returnByValue: true });
+    const at = found.result?.result?.value;
+    if (at) await click(at); else console.log(`clickSelector: "${step.clickSelector}" not found`);
+  }
   if (step.clickText) {
     const found = await send('Runtime.evaluate', { expression: findText(step.clickText), returnByValue: true });
     const point = found.result?.result?.value;
