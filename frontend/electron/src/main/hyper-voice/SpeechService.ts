@@ -495,8 +495,8 @@ const make = Effect.gen(function* () {
     const models = yield* Effect.forEach(
       SPEECH_MODELS,
       (definition) =>
-        Effect.all([store.isReady(definition), store.linkedFrom(definition)]).pipe(
-          Effect.map(([ready, linkedFrom]): EnvironmentSpeechModel => {
+        Effect.all([store.isReady(definition), store.isBundled(definition), store.linkedFrom(definition)]).pipe(
+          Effect.map(([ready, bundled, linkedFrom]): EnvironmentSpeechModel => {
             const operation = downloading?.modelId === definition.id ? downloading : undefined;
             return {
               id: definition.id,
@@ -520,7 +520,7 @@ const make = Effect.gen(function* () {
                   ? "installed"
                   : "downloadable",
               ...(operation ? { downloaded: operation.downloaded } : {}),
-              ...(ready && linkedFrom ? { linkedFrom } : {}),
+              ...(bundled ? { bundled } : ready && linkedFrom ? { linkedFrom } : {}),
             };
           }),
         ),
@@ -931,6 +931,7 @@ const make = Effect.gen(function* () {
             Effect.gen(function* () {
               const definition = getSpeechModel(modelId);
               if (!definition) return yield* new SpeechModelNotFoundError({ modelId });
+              if (yield* store.isBundled(definition)) return undefined;
               yield* attempt("model removal", async () => {
                 await loading?.catch(() => undefined);
                 if (loadedModelId === modelId) await disposeModel();
@@ -938,7 +939,7 @@ const make = Effect.gen(function* () {
               yield* store
                 .remove(definition)
                 .pipe(Effect.mapError((cause) => speechError("model removal", cause)));
-              if (selectedModel(settings).id !== modelId) return undefined;
+              if (selectedModel(settings).id !== modelId || (yield* store.isBundled(definition))) return undefined;
               const candidates = yield* Effect.forEach(
                 SPEECH_MODELS.filter((candidate) => candidate.id !== modelId),
                 (candidate) =>

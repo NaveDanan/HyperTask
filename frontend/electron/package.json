@@ -1,7 +1,7 @@
 {
   "name": "hypertask",
   "productName": "HyperTask",
-  "version": "0.11.4",
+  "version": "0.11.6",
   "private": true,
   "author": "NaveDanan",
   "description": "HyperTask desktop workspace, developed by NaveDanan",
@@ -23,6 +23,7 @@
     "harness:view": "node scripts/web-harness/hyper-views.mjs shot",
     "harness:smoke": "vitest run --config scripts/web-harness/live.config.ts",
     "build:desktop": "npm run build && electron-builder --dir",
+    "build:release:windows": "node scripts/HyperStageReleaseModels.mjs && npm run build:core -- --release && npm run build && electron-builder --config electron-builder.windows-release.yml --win --x64 --publish never",
     "dev:jwt": "node scripts/HyperDevJwtLogin.mjs"
   },
   "dependencies": {

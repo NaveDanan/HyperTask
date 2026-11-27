@@ -1,33 +1,8 @@
-appId: io.hypertask.hypertask
-productName: HyperTask
-asar: true
-# All native broker/runtime DLLs stay beside their Node addons after packaging.
-asarUnpack:
-  - node_modules/@azure/msal-node-runtime/**
-  - node_modules/@azure/msal-node-extensions/bin/**
-  - node_modules/keytar/**
-  # Voice input: the speech worker is a plain Node process (ELECTRON_RUN_AS_NODE) that requires transcribe-cpp, its
-  # native libraries (loaded by koffi outside the ASAR-aware filesystem) and koffi itself from real files.
-  - node_modules/transcribe-cpp/**
-  - node_modules/@transcribe-cpp/**
-  - node_modules/koffi/**
-files:
-  - out/**
-  - resources/assets/**
-  - resources/hypertask.ico
-  - package.json
+extends: ./electron-builder.shared.yml
 extraResources:
-  - from: ../../LICENSE
-    to: LICENSE
   - from: ../rust-lib/target/x86_64-pc-windows-msvc/debug/hypertask_core.exe
     to: hypertask_core.exe
-npmRebuild: false
 directories:
   output: .cache/hyper-people/desktop-build
 win:
   target: dir
-  icon: resources/hypertask.ico
-  signExecutable: false
-mac:
-  extendInfo:
-    NSMicrophoneUsageDescription: HyperTask uses your microphone to capture voice commands for Hyper-Bot.

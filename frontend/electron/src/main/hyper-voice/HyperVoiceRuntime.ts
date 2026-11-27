@@ -1,6 +1,7 @@
 // HyperTask's voice runtime: the layers t3code's server wires for speech (apps/server/src/server.ts), built for the
 // Electron main process. Free of Electron imports so it can also run in a plain Node smoke test.
 import * as NodePath from 'node:path';
+import { existsSync } from 'node:fs';
 import * as NodeFileSystem from '@effect/platform-node/NodeFileSystem';
 import * as NodePathLayer from '@effect/platform-node/NodePath';
 import * as SecureRandom from 'effect/crypto/SecureRandom';
@@ -8,6 +9,8 @@ import * as Layer from 'effect/Layer';
 import * as ManagedRuntime from 'effect/ManagedRuntime';
 import { FetchHttpClient } from 'effect/http';
 import * as CloudSpeech from './CloudSpeech';
+import bundledModels from './HyperBundledSpeechModels.json';
+import { getSpeechModel } from './model';
 import * as SpeechPostProcessing from './postProcessing';
 import * as SpeechModelStore from './SpeechModelStore';
 import * as SpeechService from './SpeechService';
@@ -16,6 +19,7 @@ import * as VoiceSettings from './VoiceSettings';
 export interface HyperVoiceRuntimeOptions {
   /** `<userData>/hyper-voice`: settings.json and models/ live here. */
   directory: string;
+  bundledModelsDirectory?: string | undefined;
   /** Network access for model downloads and cloud speech (Electron's net.fetch in the app). */
   fetch: typeof globalThis.fetch;
   /** Transcript cleanup through the Settings → AI endpoint. */
@@ -29,8 +33,15 @@ export function hyperVoiceLayer(options: HyperVoiceRuntimeOptions) {
     SecureRandom.layerWebCrypto,
     FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, options.fetch))),
   );
-  const settings = VoiceSettings.layer(NodePath.join(options.directory, 'settings.json'));
-  const store = SpeechModelStore.layer(NodePath.join(options.directory, 'models')).pipe(Layer.provide(platform));
+  const bundledWhisper = getSpeechModel(bundledModels.whisperId);
+  const hasBundledWhisper = options.bundledModelsDirectory && bundledWhisper &&
+    existsSync(NodePath.join(options.bundledModelsDirectory, bundledWhisper.filename));
+  const settings = VoiceSettings.layer(
+    NodePath.join(options.directory, 'settings.json'),
+    hasBundledWhisper ? bundledWhisper.id : undefined,
+  );
+  const store = SpeechModelStore.layer(NodePath.join(options.directory, 'models'), options.bundledModelsDirectory)
+    .pipe(Layer.provide(platform));
   const speech = SpeechService.layer.pipe(Layer.provide(Layer.mergeAll(store, settings)));
   const cloud = CloudSpeech.layer.pipe(Layer.provide(Layer.mergeAll(settings, platform)));
   const cleanup = SpeechPostProcessing.layer.pipe(

@@ -218,6 +218,7 @@ export const EnvironmentSpeechModel = Schema.Struct({
   downloaded: Schema.optionalKey(Schema.Finite),
   /** The file outside HyperTask's model folder this model is used from. */
   linkedFrom: Schema.optionalKey(Schema.String),
+  bundled: Schema.optionalKey(Schema.Boolean),
 });
 export type EnvironmentSpeechModel = typeof EnvironmentSpeechModel.Type;
 

@@ -22,6 +22,12 @@ npm run typecheck
 
 The core build generates Rust and protobuf types; run it before `npm run gen`. The core binary is expected under `../rust-lib/target/<platform>/debug`.
 
+## Windows release
+
+On a Windows x64 build machine with the prerequisites above, run `npm install` and `npm run build:release:windows` from this directory. The build downloads and verifies the pinned voice models, builds the release Rust core and writes a setup EXE and a portable ZIP under `dist/windows`.
+
+The installer places the models under `resources/models`. To use the portable build, extract the entire ZIP and open `HyperTask.exe` in the extracted folder. A fresh profile selects the bundled multilingual Whisper Large v3 Turbo model for local voice input. Existing profiles can select **Whisper Large v3 Turbo** in **Settings → Voice**.
+
 ## Existing data
 
 The application retains the existing Windows support directory and preference keys to read existing workspaces. Avoid running two applications against the same local data directory simultaneously. For isolated development, set `HYPERTASK_SUPPORT_DIR` to a scratch directory; `HYPERTASK_CORE_BINARY` selects a different core executable.

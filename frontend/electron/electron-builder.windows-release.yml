@@ -1,0 +1,24 @@
+extends: ./electron-builder.shared.yml
+artifactName: ${productName}-${version}-windows-${arch}.${ext}
+directories:
+  output: dist/windows
+extraResources:
+  - from: src/shared/hyper-voice/NOTICE.md
+    to: THIRD-PARTY-VOICE-NOTICE.md
+  - from: ../rust-lib/target/x86_64-pc-windows-msvc/release/hypertask_core.exe
+    to: hypertask_core.exe
+  - from: .cache/windows-release-models
+    to: models
+    filter:
+      - whisper-large-v3-turbo-Q8_0.gguf
+      - silero-vad-v6.2-F32.gguf
+  - from: resources/model-licenses
+    to: models/licenses
+win:
+  target:
+    - nsis
+    - zip
+nsis:
+  artifactName: ${productName}-${version}-windows-${arch}-setup.${ext}
+  installerIcon: resources/hypertask.ico
+  runAfterFinish: false

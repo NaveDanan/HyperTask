@@ -338,7 +338,7 @@ function ModelCard(props: ModelCardProps) {
               <T>Use model</T>
             </Button>
           )}
-          {model.state === "installed" ? (
+          {model.state === "installed" && !model.bundled ? (
             <Button
               size="icon-sm"
               variant="outline"

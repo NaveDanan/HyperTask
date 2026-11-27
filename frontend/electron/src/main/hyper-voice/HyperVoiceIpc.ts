@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { dialog, ipcMain, net, type BrowserWindow, type IpcMainEvent, type IpcMainInvokeEvent, type WebContents } from 'electron';
+import { app, dialog, ipcMain, net, type BrowserWindow, type IpcMainEvent, type IpcMainInvokeEvent, type WebContents } from 'electron';
 import * as Cause from 'effect/Cause';
 import * as Effect from 'effect/Effect';
 import * as Exit from 'effect/Exit';
@@ -29,6 +29,7 @@ import { listEndpointModels } from '../openai-endpoint';
 import { SettingsError, toIpcResult } from '../settings-error';
 import { hyperTrustedWindowAdapter, type HyperTrustedWindowRegistry } from '../HyperTrustedWindows';
 import * as CloudSpeech from './CloudSpeech';
+import bundledModels from './HyperBundledSpeechModels.json';
 import { createHyperVoiceRuntime } from './HyperVoiceRuntime';
 import * as SpeechPostProcessing from './postProcessing';
 import * as SpeechService from './SpeechService';
@@ -138,6 +139,7 @@ export function registerHyperVoiceIpc(options: {
   let readSettings: () => Promise<VoiceSettings.VoiceSettings> = async () => { throw new Error('Voice is starting.'); };
   const runtime = createHyperVoiceRuntime({
     directory: path.join(options.userData, 'hyper-voice'),
+    bundledModelsDirectory: app.isPackaged ? path.join(process.resourcesPath, bundledModels.directory) : undefined,
     fetch: netFetch,
     cleanup: {
       complete: async (prompt, signal) => {

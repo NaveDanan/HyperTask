@@ -1,15 +1,22 @@
+import { createHash } from 'node:crypto';
 import * as NodeFs from 'node:fs/promises';
 import * as NodeOs from 'node:os';
 import * as NodePath from 'node:path';
+import * as NodeFileSystem from '@effect/platform-node/NodeFileSystem';
+import * as NodePathLayer from '@effect/platform-node/NodePath';
+import * as SecureRandom from 'effect/crypto/SecureRandom';
 import * as Effect from 'effect/Effect';
 import * as Layer from 'effect/Layer';
+import { FetchHttpClient } from 'effect/http';
 import { describe, expect, it, vi } from 'vitest';
 import { CloudSpeechError, DEFAULT_SPEECH_POST_PROCESSING_PROMPT } from '@shared/hyper-voice/speech';
+import bundledModels from './HyperBundledSpeechModels.json';
 
 vi.mock('electron', () => ({ dialog: {}, ipcMain: {}, net: {} }));
 const { hyperVoiceFailure } = await import('./HyperVoiceIpc');
 const SpeechPostProcessing = await import('./postProcessing');
 const SpeechService = await import('./SpeechService');
+const SpeechModelStore = await import('./SpeechModelStore');
 const VoiceSettings = await import('./VoiceSettings');
 
 const request = (transcript: string) => ({
@@ -80,6 +87,63 @@ describe('voice settings file', () => {
       await NodeFs.rm(directory, { recursive: true, force: true });
     }
   });
+
+  it('defaults to bundled Whisper and preserves a saved model choice', async () => {
+    const directory = await NodeFs.mkdtemp(NodePath.join(NodeOs.tmpdir(), 'hyper-voice-bundled-'));
+    const file = NodePath.join(directory, 'settings.json');
+    const whisperId = bundledModels.whisperId;
+    const savedId = 'handy-computer/whisper-large-v3-gguf';
+    const read = () => Effect.runPromise(
+      Effect.gen(function* () {
+        return yield* (yield* VoiceSettings.VoiceSettingsService).getSettings;
+      }).pipe(Effect.provide(VoiceSettings.layer(file, whisperId))),
+    );
+    try {
+      expect((await read()).speechModelId).toBe(whisperId);
+      await NodeFs.writeFile(file, JSON.stringify({ speechModelId: savedId }));
+      expect((await read()).speechModelId).toBe(savedId);
+    } finally {
+      await NodeFs.rm(directory, { recursive: true, force: true });
+    }
+  });
+});
+
+it('verifies packaged models in place and uses them without fetching', async () => {
+  const directory = await NodeFs.mkdtemp(NodePath.join(NodeOs.tmpdir(), 'hyper-bundled-models-'));
+  const bundled = NodePath.join(directory, 'models');
+  const file = NodePath.join(bundled, 'sample.gguf');
+  const contents = 'model contents';
+  const model = {
+    id: 'test/model',
+    revision: 'test',
+    filename: 'sample.gguf',
+    size: contents.length,
+    sha256: createHash('sha256').update(contents).digest('hex'),
+  };
+  const fetch = vi.fn(async () => { throw new Error('Offline'); });
+  const platform = Layer.mergeAll(
+    NodeFileSystem.layer,
+    NodePathLayer.layer,
+    SecureRandom.layerWebCrypto,
+    FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetch))),
+  );
+  const storeLayer = SpeechModelStore.layer(NodePath.join(directory, 'profile'), bundled).pipe(Layer.provide(platform));
+  try {
+    await NodeFs.mkdir(bundled);
+    await NodeFs.writeFile(file, contents);
+    await Effect.runPromise(Effect.gen(function* () {
+      const store = yield* SpeechModelStore.SpeechModelStore;
+      expect(yield* store.isBundled(model)).toBe(true);
+      expect(yield* store.isReady(model)).toBe(true);
+      expect(yield* store.download(model)).toBe(file);
+      expect(yield* store.installedPath({ ...model, sha256: '0'.repeat(64) })).toBeUndefined();
+    }).pipe(Effect.provide(storeLayer)));
+    expect(await NodeFs.readdir(directory)).toEqual(['models']);
+    expect(await NodeFs.readdir(bundled)).toEqual(['sample.gguf']);
+    expect(fetch).not.toHaveBeenCalled();
+  } finally {
+    await NodeFs.rm(directory, { recursive: true, force: true });
+  }
 });
 
 describe('voice failures', () => {
