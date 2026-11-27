@@ -169,6 +169,7 @@ it.each([false, true])('moves a timed single-date milestone without an end (drag
   state.cells.a.schedule = { ...dateCell(start, null, true), isRange: false };
   const proposed = drag ? day(1) : addDays(start, 1);
   const writes = hyperGanttDateWrites(config(state), state.cells.a, proposed, proposed, drag);
-  expect(writes[0].value).toMatchObject({ timestamp: hyperGanttSeconds(addDays(start, 1)), endTimestamp: hyperGanttSeconds(addDays(start, 1)), includeTime: true, isRange: false });
+  expect(writes[0].value).toMatchObject({ timestamp: hyperGanttSeconds(addDays(start, 1)), includeTime: true, isRange: false });
+  expect(writes[0].value).not.toHaveProperty('endTimestamp');
   expect(hyperGanttWrittenTiming(writes)).toMatchObject({ start: addDays(start, 1), end: addDays(start, 1), allDay: false });
 });

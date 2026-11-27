@@ -4,16 +4,16 @@ import { HYPER_BOTS_TOOLS, type HyperBotsApproval, type HyperBotsApprovalStatus,
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { HyperBotToolLogo } from './HyperBotBrandLogos';
-const botName = (settings: HyperBotsSettings, id: string) => settings.bots.find(bot => bot.id === id)?.name ?? id;
+const botName = (settings: HyperBotsSettings | null | undefined, id: string) => settings?.bots.find(bot => bot.id === id)?.name ?? id;
 const STATUS_LABEL: Record<HyperBotsApprovalStatus, string> = { pending: 'waiting', approved: 'approved', executing: 'running', done: 'done', denied: 'denied', failed: 'failed', unknown: 'unknown', skipped: 'skipped — the bot no longer has this tool' };
-export function HyperBotsApprovalCard({ approval, botName, busy, onDecide }: { approval: HyperBotsApproval; botName: string; busy: boolean; onDecide: (id: string, approved: boolean, delivery?: HyperBotsDelivery) => void }) {
+type Decide = (id: string, approved: boolean, delivery?: HyperBotsDelivery) => void;
+function HyperBotApprovalDetails({ approval, name }: { approval: HyperBotsApproval; name: string }) {
   const tool = HYPER_BOTS_TOOLS[approval.tool as keyof typeof HYPER_BOTS_TOOLS];
   const write = approval.access === 'write';
   const rows = approval.card ?? [];
-  const spinner = busy && <LoaderCircle className="animate-spin motion-reduce:animate-none" />;
-  return <section aria-label={`${botName} needs your approval`} className={cn('card approval-card space-y-2 rounded-lg border bg-card p-3 text-sm', write ? 'border-warning/50' : 'border-border')}>
+  return <div className="space-y-2">
     <div className="flex flex-wrap items-center gap-2">
-      <span className="font-medium">{botName}</span>
+      <span className="font-medium">{name}</span>
       <span className="hb-tool-name text-muted-foreground"><HyperBotToolLogo tool={approval.tool} />{tool?.label ?? approval.tool}</span>
       <span className={cn('ml-auto rounded px-1.5 py-0.5 text-xs font-medium', write ? 'border border-warning/50 bg-warning-surface text-warning-foreground' : 'bg-secondary text-secondary-foreground')}>{write ? 'Write' : 'Read'}</span>
     </div>
@@ -24,6 +24,14 @@ export function HyperBotsApprovalCard({ approval, botName, busy, onDecide }: { a
       <summary className="cursor-pointer text-muted-foreground">Details</summary>
       <pre className="mt-1 max-h-60 overflow-auto rounded-md bg-muted p-2 font-mono break-words whitespace-pre-wrap">{JSON.stringify(approval.args, null, 2)}</pre>
     </details>
+  </div>;
+}
+
+export function HyperBotsApprovalCard({ approval, botName, busy, onDecide }: { approval: HyperBotsApproval; botName: string; busy: boolean; onDecide: Decide }) {
+  const tool = HYPER_BOTS_TOOLS[approval.tool as keyof typeof HYPER_BOTS_TOOLS];
+  const spinner = busy && <LoaderCircle className="animate-spin motion-reduce:animate-none" />;
+  return <section aria-label={`${botName} needs your approval`} className={cn('card approval-card space-y-2 rounded-lg border bg-card p-3 text-sm', approval.access === 'write' ? 'border-warning/50' : 'border-border')}>
+    <HyperBotApprovalDetails approval={approval} name={botName} />
     <div className="flex flex-wrap justify-end gap-2">
       <Button variant="ghost" size="sm" disabled={busy} onClick={() => onDecide(approval.id, false)}>Deny</Button>
       {tool?.delivery
@@ -32,6 +40,38 @@ export function HyperBotsApprovalCard({ approval, botName, busy, onDecide }: { a
           <Button size="sm" disabled={busy} onClick={() => onDecide(approval.id, true, 'send')}>{spinner}Send</Button>
         </>
         : <Button size="sm" disabled={busy} onClick={() => onDecide(approval.id, true)}>{spinner}Approve</Button>}
+    </div>
+  </section>;
+}
+
+export function hyperBotApprovalGroups(approvals: HyperBotsApproval[]): HyperBotsApproval[][] {
+  const groups = new Map<string, HyperBotsApproval[]>();
+  for (const approval of approvals) {
+    if (approval.status !== 'pending') continue;
+    const key = approval.turnId ?? approval.id;
+    const group = groups.get(key);
+    if (group) group.push(approval); else groups.set(key, [approval]);
+  }
+  return [...groups.values()];
+}
+
+export function HyperBotTurnApproval({ approvals, settings, deciding, onDecide }: {
+  approvals: HyperBotsApproval[]; settings?: HyperBotsSettings | null; deciding: readonly string[]; onDecide: Decide;
+}) {
+  const first = approvals[0];
+  if (!first) return null;
+  const busy = approvals.some(row => deciding.includes(row.id));
+  if (!first.turnId) return <HyperBotsApprovalCard approval={first} botName={botName(settings, first.botId)} busy={busy} onDecide={onDecide} />;
+  return <section aria-label="Approve Hyper-Bot turn" className="card approval-card space-y-2 rounded-lg border border-border bg-card p-3 text-sm">
+    <div className="space-y-1">
+      <h3 className="font-medium">Allow tools for this turn?</h3>
+      <p className="text-xs text-muted-foreground">Your choice covers these actions and any follow-up actions for this request. Approving can send mail.</p>
+    </div>
+    {approvals.map(row => <div key={row.id} id={'hyper-bot-request-' + row.id} tabIndex={-1} className="rounded-md border border-border p-2"><HyperBotApprovalDetails approval={row} name={botName(settings, row.botId)} /></div>)}
+    <div className="flex flex-wrap justify-end gap-2">
+      <Button variant="ghost" size="sm" disabled={busy} onClick={() => onDecide(first.id, false)}>Decline turn</Button>
+      <Button variant="secondary" size="sm" disabled={busy} onClick={() => onDecide(first.id, true, 'draft')}>Approve, draft mail</Button>
+      <Button size="sm" disabled={busy} onClick={() => onDecide(first.id, true, 'send')}>{busy && <LoaderCircle className="animate-spin motion-reduce:animate-none" />}Approve turn</Button>
     </div>
   </section>;
 }
@@ -44,18 +84,17 @@ function HyperBotsCardRows({ rows }: { rows: HyperBotsCardRow[] }) {
     </div>)}
   </dl>;
 }
-const outcome = (approval: HyperBotsApproval) => approval.status === 'done' && approval.delivery ? approval.delivery === 'draft' ? 'saved to Drafts' : 'sent' : STATUS_LABEL[approval.status];
+const outcome = (approval: HyperBotsApproval) => approval.status === 'done' && approval.delivery ? approval.delivery === 'draft' ? 'saved to Drafts' : 'sent' : approval.status === 'skipped' && approval.error ? 'skipped' : STATUS_LABEL[approval.status];
 
 export function HyperBotTurnTools({ approvals, settings, deciding, onDecide }: {
   approvals: HyperBotsApproval[]; settings: HyperBotsSettings; deciding: string[];
   onDecide: (id: string, approved: boolean, delivery?: HyperBotsDelivery) => void;
 }) {
-  return <ol className="hb-turn-tools" aria-label="Tools used in this turn">{approvals.map(approval => {
+  return <ol className="hb-turn-tools" aria-label="Tools used in this turn">{hyperBotApprovalGroups(approvals).map(group => <li key={group[0]!.id} id={group[0]!.turnId ? undefined : 'hyper-bot-request-' + group[0]!.id} tabIndex={-1}>
+    <p className="hb-tool-waiting">Waiting for you</p>
+    <HyperBotTurnApproval approvals={group} settings={settings} deciding={deciding} onDecide={onDecide} />
+  </li>)}{approvals.filter(approval => approval.status !== 'pending').map(approval => {
     const name = botName(settings, approval.botId);
-    if (approval.status === 'pending') return <li key={approval.id} id={'hyper-bot-request-' + approval.id} tabIndex={-1}>
-      <p className="hb-tool-waiting">Waiting for you</p>
-      <HyperBotsApprovalCard approval={approval} botName={name} busy={deciding.includes(approval.id)} onDecide={onDecide} />
-    </li>;
     const tool = HYPER_BOTS_TOOLS[approval.tool as keyof typeof HYPER_BOTS_TOOLS];
     const Status = approval.status === 'done' ? Check : approval.status === 'failed' || approval.status === 'unknown' ? CircleAlert :
       approval.status === 'skipped' || approval.status === 'denied' ? CircleSlash : LoaderCircle;

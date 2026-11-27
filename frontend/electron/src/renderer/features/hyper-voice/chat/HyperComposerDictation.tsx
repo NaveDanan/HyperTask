@@ -38,7 +38,11 @@ export function useHyperComposerDictation(input: {
   /** Names the draft in the indicator shown while its composer is off screen. */
   readonly label: string;
   readonly text: string;
-  readonly textareaRef: RefObject<HTMLTextAreaElement | null>;
+  readonly textareaRef?: RefObject<HTMLTextAreaElement | null>;
+  readonly editorRef?: RefObject<{
+    readDraft: () => { text: string; selection: Selection };
+    focusAt: (start: number, end?: number) => void;
+  } | null>;
   readonly formRef: RefObject<HTMLFormElement | null>;
   readonly onTextChange: (text: string) => void;
   /** Sends `text`; called once dictation committed when Send was pressed while it ran. */
@@ -61,7 +65,9 @@ export function useHyperComposerDictation(input: {
     presented,
     persistentDraft: input.persistentDraft,
     readDraft: () => {
-      const field = latest.current.textareaRef.current;
+      const editor = latest.current.editorRef?.current;
+      if (editor) return editor.readDraft();
+      const field = latest.current.textareaRef?.current;
       const text = field?.value ?? latest.current.text;
       const cursor = field?.selectionStart ?? text.length;
       return { text, selection: { start: cursor, end: field?.selectionEnd ?? cursor } };
@@ -69,7 +75,9 @@ export function useHyperComposerDictation(input: {
     commitDraft: (text: string, selection: Selection) => {
       latest.current.onTextChange(text);
       window.requestAnimationFrame(() => {
-        const field = latest.current.textareaRef.current;
+        const editor = latest.current.editorRef?.current;
+        if (editor) { editor.focusAt(selection.start, selection.end); return; }
+        const field = latest.current.textareaRef?.current;
         if (!field) return;
         field.focus({ preventScroll: true });
         field.setSelectionRange(selection.start, selection.end);

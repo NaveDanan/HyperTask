@@ -1,10 +1,11 @@
 import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it, vi } from 'vitest';
-import { HYPER_BOTS_DEFAULT_SETTINGS, hyperBotsWithDirectRooms, type HyperBotsSnapshot } from '@shared/HyperBots';
+import { HYPER_BOTS_DEFAULT_SETTINGS, HYPER_BOTS_TOOLS, hyperBotsWithDirectRooms, type HyperBotsSnapshot } from '@shared/HyperBots';
 import { HyperBotsOutbox } from './HyperBotsController';
 import { HyperBotsView, type HyperBotActions } from './HyperBotScreen';
 import { HyperBotCreateDialog } from './HyperBotCreateDialog';
+import { HyperBotConnectionPicker } from './HyperBotConnectionPicker';
 import { HyperBotGroupDialog } from './HyperBotGroupDialog';
 import { HyperBotSettingsDialog } from './HyperBotSettingsDialog';
 import { HyperBotEngine } from './HyperBotEngine';
@@ -25,16 +26,26 @@ it('renders direct chats with native details, tool-derived empty text, exact com
   expect(html).toContain('Reads your Outlook calendar and mail'); expect(html).toContain('aria-label="Message Scout"');
   expect(html).toContain('Set up the AI endpoint in Settings → Connections → AI endpoint to chat.');
   expect(html).toContain('HyperTask AI endpoint'); expect(html).toContain('Endpoint default (model-a)');
-  expect(html).toContain('Endpoint disabled.'); expect(html).toContain('Choose a Jira project.');
+  expect(html).toContain('Endpoint disabled.');
   expect(html).toContain('>Tools</button>'); expect(html).toContain('>Activity</button>');
   expect(html).not.toContain('Mention @'); expect(html).not.toMatch(/microphone|voice chat|>Share</i);
+});
+it('starts each Activity section closed and shows only connected services in its Connections section', () => {
+  const activity = render().match(/<div class="details__sections details__activity">([\s\S]*?)<\/aside>/)?.[1];
+  expect(activity).toBeDefined();
+  expect(activity!.match(/<details class="details__fold">/g)).toHaveLength(5);
+  expect(activity).not.toMatch(/<details[^>]*\bopen\b/);
+  expect(activity).toContain('Classic Outlook is available');
+  expect(activity).not.toContain('Choose a Jira project.');
+  expect(activity).toContain('Dedicated skills &amp; tools');
+  expect(activity).toContain('Open Memory &amp; Soul');
 });
 it('group chats show members and mention guidance, with no Tools tab', () => {
   const html = render('ops'); expect(html).toContain('Members'); expect(html).toContain('Remove Scout');
   expect(html).toContain('Mention @scout or @scribe'); expect(html).not.toContain('>Tools</button>');
 });
 it('ports the dialog structure, all 13 shapes, 11 swatches, two types, and scoped portal roots', () => {
-  const html = renderToStaticMarkup(<HyperBotCreateDialog settings={settings} onSave={actions.saveSettings} onSelect={actions.select} onClose={vi.fn()} onGroup={vi.fn()} />);
+  const html = renderToStaticMarkup(<HyperBotCreateDialog settings={settings} connections={snapshot.connections} onSave={actions.saveSettings} onSelect={actions.select} onClose={vi.fn()} onGroup={vi.fn()} />);
   expect(html).toContain('data-hyper-bot'); expect(html).toContain('role="dialog"'); expect(html).toContain('aria-modal="true"');
   expect(html).toContain('Create New Bot'); expect(html).toContain('Give your Bot a name');
   expect(html).toContain('maxLength="40"'); expect(html).toContain('width:96px');
@@ -42,6 +53,13 @@ it('ports the dialog structure, all 13 shapes, 11 swatches, two types, and scope
   expect(html.match(/class="shape-grid__row"/g)).toHaveLength(3);
   expect(html.match(/class="swatches__row"/g)).toHaveLength(2);
   expect(html).toContain('New group chat instead'); expect(html).toContain('Personal assistant'); expect(html).toContain('Teammate');
+  expect(html).toMatch(/<details\s+class="hb-connection-picker[^>]*><summary/);
+  expect(html).toContain('aria-checked="false" aria-label="Enable Outlook"');
+  expect(html).not.toContain('Enable Jira');
+  const onChange = vi.fn();
+  const picker = HyperBotConnectionPicker({ connections: snapshot.connections, tools: [], onChange });
+  all(picker, element => element.props.label === 'Enable Outlook')[0]!.props.onChange(true);
+  expect(onChange).toHaveBeenCalledWith(Object.keys(HYPER_BOTS_TOOLS).filter(name => name.startsWith('outlook_')));
   const group = renderToStaticMarkup(<HyperBotGroupDialog settings={settings} onSave={actions.saveSettings} onSelect={actions.select} onClose={vi.fn()} />);
   expect(group).toContain('Choose at least 2 bots'); expect(group.match(/role="checkbox"/g)).toHaveLength(2);
   expect(group).toMatch(/<button[^>]*disabled=""[^>]*>Create group</);
@@ -50,7 +68,13 @@ it('bot settings retain instruction limits and errors; the last bot cannot be de
   const single = { ...settings, bots: [settings.bots[0]!] };
   const html = renderToStaticMarkup(<HyperBotSettingsDialog settings={single} bot={single.bots[0]} room={settings.rooms[1]!} onSave={actions.saveSettings} onClose={vi.fn()} error="Could not save." />);
   expect(html).toContain('maxLength="4000"'); expect(html).toContain('Could not save.'); expect(html).toContain('Keep at least one bot.');
+  expect(html).toContain('Skills');
+  expect(html).toContain('Memory &amp; Soul');
   expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Delete bot</);
+  const personalization = renderToStaticMarkup(<HyperBotSettingsDialog settings={single} bot={single.bots[0]} room={settings.rooms[1]!}
+    initialSection="personalization" onSave={actions.saveSettings} onClose={vi.fn()} />);
+  expect(personalization).toContain('aria-label="Memory &amp; Soul for Scout"');
+  expect(personalization).not.toContain('aria-label="Bot name"');
   const engine = renderToStaticMarkup(<HyperBotEngine bot={settings.bots[0]!} settings={settings} connection={snapshot.connections.model} models={[]} saving={false} onSave={actions.saveSettings} error="Model save failed." />);
   expect(engine).toContain('Undo'); expect(engine).toContain('Model save failed.');
 });

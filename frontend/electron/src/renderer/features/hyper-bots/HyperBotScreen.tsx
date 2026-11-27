@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { LoaderCircle, RefreshCw } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useHyperChromePanel } from '../home/HyperChromePanel';
-import type { HyperBotsDelivery, HyperBotsSettings } from '@shared/HyperBots';
+import type { HyperBotsApi, HyperBotsDelivery, HyperBotsSettings } from '@shared/HyperBots';
 import { Button } from '@/components/ui/button';
 import { HyperBotsController, hyperBotsOutbox, type HyperBotsOutbox, type HyperBotsViewState } from './HyperBotsController';
 import { HyperBotSidebar } from './HyperBotSidebar';
@@ -18,6 +18,7 @@ export interface HyperBotActions {
   loadEarlier?(): void;
   select(roomId: string): void;
   send(text: string, model: string | null): Promise<boolean>;
+  act?: HyperBotsApi['act'];
   decide(approvalId: string, approved: boolean, delivery?: HyperBotsDelivery): void;
   saveSettings(settings: HyperBotsSettings): Promise<boolean>;
 }
@@ -49,13 +50,13 @@ export function HyperBotScreen({ userId }: { userId: string }) {
     window.addEventListener('hyper-bots:select-room', onSelectRoom);
     return () => window.removeEventListener('hyper-bots:select-room', onSelectRoom);
   }, [controller, userId]);
-  return <HyperBotsView state={state} outbox={controller.outbox} actions={{ reload: () => void controller.reload(), loadEarlier: () => void controller.loadEarlier(), select: id => void controller.select(id), send: (text, model) => controller.send(text, model), decide: (id, approved, delivery) => void controller.decide(id, approved, delivery), saveSettings: settings => controller.saveSettings(settings) }} />;
+  return <HyperBotsView state={state} outbox={controller.outbox} actions={{ reload: () => void controller.reload(), loadEarlier: () => void controller.loadEarlier(), select: id => void controller.select(id), send: (text, model) => controller.send(text, model), act: controller.act, decide: (id, approved, delivery) => void controller.decide(id, approved, delivery), saveSettings: settings => controller.saveSettings(settings) }} />;
 }
 export function HyperBotsView({ state, outbox, actions }: { state: HyperBotsViewState; outbox: HyperBotsOutbox; actions: HyperBotActions }) {
   const root = useRef<HTMLDivElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(() => sessionDetailsOpen ?? (typeof window === 'undefined' || window.innerWidth >= 1100));
   const chromePanel = useHyperChromePanel(330, !!state.snapshot);
-  const [modal, setModal] = useState<'create' | 'group' | 'settings' | null>(null);
+  const [modal, setModal] = useState<'create' | 'group' | 'settings' | 'personalization' | null>(null);
   useEffect(() => {
     if (!root.current || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(entries => { if (sessionDetailsOpen === undefined) setDetailsOpen((entries[0]?.contentRect.width ?? 0) >= 1100); });
@@ -72,9 +73,15 @@ export function HyperBotsView({ state, outbox, actions }: { state: HyperBotsView
   return <div data-hyper-bot className="hyper-bot-screen app" ref={root}>
     {chromePanel ? createPortal(<div data-hyper-bot className="hb-chrome-panel">{sidebar}</div>, chromePanel) : sidebar}
     <HyperBotChat key={snapshot.roomId} state={readyState} outbox={outbox} actions={actions} bot={bot} name={name} members={members} detailsOpen={detailsOpen} onDetails={() => toggleDetails(!detailsOpen)} onSettings={() => setModal('settings')} onGroup={() => setModal('group')} />
-    {detailsOpen && <><button type="button" className="details-scrim" aria-label="Dismiss details" onClick={() => toggleDetails(false)} /><HyperBotDetails key={snapshot.roomId} state={readyState} actions={actions} bot={bot} name={name} members={members} onClose={() => toggleDetails(false)} onSettings={() => setModal('settings')} /></>}
-    {modal === 'create' && <HyperBotCreateDialog settings={settings} onSave={actions.saveSettings} onSelect={actions.select} onClose={() => setModal(null)} onGroup={() => setModal('group')} error={state.settingsError} />}
+    {detailsOpen && <>
+      <button type="button" className="details-scrim" aria-label="Dismiss details" onClick={() => toggleDetails(false)} />
+      <HyperBotDetails key={snapshot.roomId} state={readyState} actions={actions} bot={bot} name={name} members={members}
+        onClose={() => toggleDetails(false)} onSettings={() => setModal('settings')} onPersonalization={() => setModal('personalization')} />
+    </>}
+    {modal === 'create' && <HyperBotCreateDialog settings={settings} connections={snapshot.connections} models={state.models} onSave={actions.saveSettings} onSelect={actions.select} onClose={() => setModal(null)} onGroup={() => setModal('group')} error={state.settingsError} />}
     {modal === 'group' && <HyperBotGroupDialog settings={settings} onSave={actions.saveSettings} onSelect={actions.select} onClose={() => setModal(null)} error={state.settingsError} />}
-    {modal === 'settings' && room && <HyperBotSettingsDialog key={room.id} settings={settings} bot={bot} room={room} onSave={actions.saveSettings} onClose={() => setModal(null)} error={state.settingsError} />}
+    {(modal === 'settings' || modal === 'personalization') && room && <HyperBotSettingsDialog
+      key={room.id + ':' + modal} settings={settings} bot={bot} room={room} connections={snapshot.connections}
+      initialSection={modal} onSave={actions.saveSettings} onClose={() => setModal(null)} error={state.settingsError} />}
   </div>;
 }

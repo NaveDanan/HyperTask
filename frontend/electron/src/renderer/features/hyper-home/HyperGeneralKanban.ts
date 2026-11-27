@@ -1,11 +1,11 @@
 import { ViewLayoutPB, type ViewPB } from '@shared/protobuf/hyper-folder/view_pb';
 import { ViewBackendService } from '@/features/view/view-service';
-import { mergeViewExtra, viewExtra } from '@/features/view/view-ext';
+import { hyperIsGeneralKanban } from '@shared/HyperTaskView';
 import { sidebarSpace } from '@/features/sidebar/stores/space-store';
 import { KeyValueStorage } from '@/startup/kv';
 import type { HyperResult } from '@/backend/dispatch';
 /** The workspace board shown on HyperHome, marked in its view extra like the General calendar. */
-export const hyperIsGeneralKanban = (view: Pick<ViewPB, 'oneOfExtra'>) => viewExtra(view)?.hyper_general_kanban === true;
+export { hyperIsGeneralKanban };
 const hyperKanbanPending = new Map<string, Promise<ViewPB>>();
 function hyperKanbanUnwrap<T>(result: HyperResult<T>): T { if (!result.ok) throw new Error(result.error.msg); return result.value; }
 export function ensureHyperGeneralKanban(workspaceId: string): Promise<ViewPB> {
@@ -19,8 +19,10 @@ export function ensureHyperGeneralKanban(workspaceId: string): Promise<ViewPB> {
     if (!view) {
       const space = sidebarSpace.store.getState().currentSpace;
       if (!sidebarSpace.store.getState().isInitialized || sidebarSpace.actions.workspaceId !== workspaceId) throw new Error('The board workspace is not ready.');
-      view = hyperKanbanUnwrap(await ViewBackendService.createView({ layoutType: ViewLayoutPB.Board, name: 'Hyper-Kanban', parentViewId: space?.id ?? workspaceId, openAfterCreate: false }));
-      view = hyperKanbanUnwrap(await ViewBackendService.updateView({ viewId: view.id, extra: mergeViewExtra(view, { hyper_general_kanban: true }) }));
+      view = hyperKanbanUnwrap(await ViewBackendService.createView({
+        layoutType: ViewLayoutPB.Board, name: 'Hyper-Kanban', parentViewId: space?.id ?? workspaceId,
+        openAfterCreate: false, extra: JSON.stringify({ hyper_general_kanban: true }),
+      }));
     }
     await KeyValueStorage.set(key, view.id);
     return view;

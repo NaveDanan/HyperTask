@@ -1,7 +1,10 @@
 import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
-import { HYPER_BOT_AVATAR_SHAPES, HYPER_BOT_AVATAR_COLORS, HYPER_BOTS_TOOLS, HYPER_BOTS_READ_POLICIES, HyperBotsChannel as B, type HyperBotsConnections, type HyperBotsEvent, type HyperBotsSnapshot, type HyperBotsToolName } from '@shared/HyperBots';
-import { HyperBotsRuntimeError, type HyperBotsRuntime } from './HyperBotsRuntime';
+import { HyperBotA2uiInteractionSchema } from '@shared/HyperBotA2ui';
+import { HyperBotAssetUpdate } from '@shared/HyperBotSkills';
+import { HyperBotPersonalizationTarget, HyperBotPersonalizationUpdate } from '@shared/HyperBotPersonalization';
+import { HYPER_BOT_AVATAR_SHAPES, HYPER_BOT_AVATAR_COLORS, HYPER_BOTS_TOOLS, HYPER_BOTS_PERMISSION_LEVELS, HYPER_BOTS_READ_POLICIES, HyperBotsChannel as B, hyperBotsPermissions, hyperBotSetPermissionLevel, type HyperBotsConnections, type HyperBotsEvent, type HyperBotsSnapshot, type HyperBotsToolName } from '@shared/HyperBots';
+import { HyperBotPermissionFields, HyperBotsRuntimeError, type HyperBotsRuntime } from './HyperBotsRuntime';
 import type { HyperBotsActive, HyperBotsHub, HyperBotsUser } from './HyperBotsHub';
 import { SettingsError, toIpcResult } from './settings-error';
 import { hyperTrustedWindowAdapter, type HyperWindowSource } from './HyperTrustedWindows';
@@ -18,10 +21,14 @@ export const HyperBotsArgs = {
   open: z.strictObject({ roomId: roomId.optional(), limit }),
   snapshot: z.strictObject({ roomId, limit, fromMessageId: uuid.optional() }),
   post: z.strictObject({ roomId, clientMessageId: uuid, text: z.string().min(1).max(20000).refine(text => text.trim().length > 0, 'Write a message first.'), model: z.string().min(1).max(200).nullable().optional() }),
+  act: HyperBotA2uiInteractionSchema.extend({ roomId, clientMessageId: uuid }),
   decide: z.strictObject({ approvalId: uuid, approved: z.boolean(), delivery: z.enum(['send', 'draft']).optional() }),
   settings: z.strictObject({
     version: z.literal(1),
-    bots: z.array(z.strictObject({ id: slug, name: z.string().trim().min(1).max(40), instructions: z.string().max(4000), model: z.string().max(200), tools: z.array(z.enum(toolNames)).max(toolNames.length), avatar: z.strictObject({ shape: z.enum(HYPER_BOT_AVATAR_SHAPES), color: z.enum(HYPER_BOT_AVATAR_COLORS) }).optional(), mode: z.enum(['personal', 'teammate']).optional() })).min(1).max(8),
+    permissionLevel: z.enum(HYPER_BOTS_PERMISSION_LEVELS).optional(),
+    projectToolsVersion: z.literal(1).optional(),
+    outlookRemovalVersion: z.literal(1).optional(),
+    bots: z.array(z.strictObject({ id: slug, name: z.string().trim().min(1).max(40), instructions: z.string().max(4000), model: z.string().max(200), tools: z.array(z.enum(toolNames)).max(toolNames.length), avatar: z.strictObject({ shape: z.enum(HYPER_BOT_AVATAR_SHAPES), color: z.enum(HYPER_BOT_AVATAR_COLORS) }).optional(), mode: z.enum(['personal', 'teammate']).optional(), ...HyperBotPermissionFields })).min(1).max(8),
     rooms: z.array(z.strictObject({ id: slug, name: z.string().trim().min(1).max(40), botIds: z.array(slug).max(8), kind: z.enum(['direct', 'group']).optional() })).min(1).max(24),
     // Only read tools take a policy; one left out is 'ask'.
     policy: z.strictObject(Object.fromEntries(readTools.map(name => [name, z.enum(['ask', 'allow']).optional()]))),
@@ -53,7 +60,8 @@ export function hyperBotsFailure(error: unknown): SettingsError {
 }
 
 const CONNECTIONS_TTL_MS = 15_000;
-const CHANNELS = [B.Open, B.Snapshot, B.Post, B.Decide, B.SaveSettings, B.Models, B.NewsletterConnection, B.SaveNewsletterConnection];
+const CHANNELS = [B.Open, B.Snapshot, B.Post, B.Act, B.Decide, B.SaveSettings, B.Permissions, B.Skills, B.SaveSkill,
+  B.Personalization, B.SavePersonalization, B.Models, B.NewsletterConnection, B.SaveNewsletterConnection];
 
 /** When HyperBots could not start (e.g. its state file is unreadable), every call answers with why; the app keeps running. */
 export function registerHyperBotsUnavailable(problem: string): () => void {
@@ -116,9 +124,31 @@ export function registerHyperBotsIpc(window: HyperWindowSource, deps: { hub: Pic
   });
   handle(B.Snapshot, HyperBotsArgs.snapshot, (args, active) => snapshot(active, args.roomId, false, args.limit, args.fromMessageId));
   handle(B.Post, HyperBotsArgs.post, (args, { runtime }) => runtime.post(args));
+  handle(B.Act, HyperBotsArgs.act, (args, { runtime }) => runtime.act(args));
   handle(B.Decide, HyperBotsArgs.decide, (args, { runtime }) => runtime.decide(args.approvalId, args.approved, args.delivery));
   handle(B.SaveSettings, HyperBotsArgs.settings, (args, { runtime }) => runtime.saveSettings(args));
+  const levelSchema = z.enum(HYPER_BOTS_PERMISSION_LEVELS);
+  handle(B.Permissions, z.union([levelSchema, z.strictObject({ botId: slug, level: levelSchema.optional() })]).optional(), (input, { runtime }) => {
+    const current = runtime.settings();
+    if (typeof input === 'object') {
+      const bot = current.bots.find(row => row.id === input.botId);
+      if (!bot) throw new HyperBotsRuntimeError('not_found', 'That bot no longer exists.');
+      if (input.level === undefined) return hyperBotsPermissions(current, bot);
+      const next = hyperBotSetPermissionLevel(bot, input.level);
+      return hyperBotsPermissions(runtime.saveSettings({ ...current, bots: current.bots.map(row => row.id === bot.id ? next : row) }), next);
+    }
+    if (input === undefined) return hyperBotsPermissions(current);
+    return hyperBotsPermissions(runtime.saveSettings({
+      ...current,
+      permissionLevel: input,
+      bots: current.bots.map(bot => bot.permissionLevel === undefined ? { ...bot, toolPolicies: undefined } : bot),
+    }));
+  });
   handle(B.Models, null, () => deps.models());
+  handle(B.Skills, null, (_, { runtime }) => runtime.skills());
+  handle(B.SaveSkill, HyperBotAssetUpdate, (input, { runtime }) => runtime.saveSkill(input));
+  handle(B.Personalization, HyperBotPersonalizationTarget, ({ botId }, { runtime }) => runtime.personalization(botId));
+  handle(B.SavePersonalization, HyperBotPersonalizationUpdate, (input, { runtime }) => runtime.savePersonalization(input));
   handle(B.NewsletterConnection, null, (_, { user }) => deps.newsletter.status(user.key));
   handle(B.SaveNewsletterConnection, HyperNewsletterConnectionInputSchema, async (input, { user, runtime }) => {
     const state = await deps.newsletter.save(user.key, input);

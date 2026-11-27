@@ -256,6 +256,16 @@ function Hyper-MailResolve([string]$id) {
   return $item
 }
 function Hyper-Folder([string]$name) { switch ($name) { 'inbox' { return $ns.GetDefaultFolder(6) } 'sent' { return $ns.GetDefaultFolder(5) } 'drafts' { return $ns.GetDefaultFolder(16) } default { throw 'Unknown mail folder.' } } }
+function Hyper-MailDeleteFolder($item) {
+  $parent = $item.Parent
+  $folder = [string]$parent.EntryID
+  if ([string]$parent.StoreID -ne [string]$ns.DefaultStore.StoreID -or $folder -eq [string]($ns.GetDefaultFolder(3).EntryID)) {
+    throw 'Only mail in the default mailbox outside Deleted Items can be moved to Deleted Items.'
+  }
+  $allowed = @('inbox', 'sent', 'drafts' | ForEach-Object { [string](Hyper-Folder $_).EntryID })
+  if ($folder -notin $allowed) { throw 'Only mail directly in Inbox, Sent Items, or Drafts can be deleted.' }
+  return $folder
+}
 # The account whose store is the default one sends by default; its address is what the owner approves.
 function Hyper-Account {
   $store = [string]$ns.DefaultStore.StoreID; $first = $null
@@ -629,8 +639,13 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
         if ($content -and $item.Recipients.Count -gt 0) { $item.Send() }
         $value = Hyper-Map $item
       }
-      'delete' {
+      { $_ -in @('delete', 'event.delete') } {
         $item = Hyper-Resolve $a.id; Hyper-Own $item; Hyper-CheckSend $item $a
+        if ($request.op -eq 'event.delete') {
+          if ((Hyper-Utc $item.LastModificationTime) -ne [string]$a.expect) { throw 'The event changed after approval.' }
+          if ($a.send -ne ([int]$item.MeetingStatus -eq 1)) { throw 'The event type changed after approval.' }
+          Hyper-SameSender $item ([string]$a.account)
+        }
         Hyper-Commit
         if ($item.Recipients.Count -gt 0) { $item.MeetingStatus = 5; $item.Send() }
         $item.Delete()
@@ -673,6 +688,19 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
         $account = Hyper-Account
         if ($null -eq $account) { throw 'Outlook has no mail account.' }
         $value = @{ address = [string]$account.SmtpAddress; name = [string]$account.DisplayName }
+      }
+      'mail.deleteTarget' {
+        $item = Hyper-MailResolve $a.id
+        $folder = Hyper-MailDeleteFolder $item
+        $summary = Hyper-MailSummary $item
+        $value = @{ subject = $summary.subject; from = $summary.from; folder = $folder; lastModified = (Hyper-Utc $item.LastModificationTime) }
+      }
+      'mail.delete' {
+        $item = Hyper-MailResolve $a.id
+        if ([string](Hyper-Account).SmtpAddress -ne [string]$a.account -or (Hyper-MailDeleteFolder $item) -ne [string]$a.folder -or (Hyper-Utc $item.LastModificationTime) -ne [string]$a.expect) {
+          throw 'The mailbox or message changed after approval.'
+        }
+        Hyper-Commit; $item.Delete()
       }
       'mail.list' {
         $folder = Hyper-Folder ([string]$a.folder)

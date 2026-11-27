@@ -7,9 +7,9 @@ import { HyperOutlookLost, type HyperOutlookBridge } from './HyperOutlookBridge'
 import type { HyperOutlookArgs, HyperOutlookOp, HyperOutlookValues } from './HyperOutlookSchema';
 
 // HyperBots' Outlook tools: the owner's classic Outlook through HyperOutlookBridge (calendar, mail, invitations).
-// Reads may be pre-allowed in Bot settings; every write waits for the owner. A write's card shows the sending
+// The runtime applies the selected permission level. A write's card shows the sending
 // account, the recipients (those outside the owner's domain flagged) and the exact text, and its fingerprint pins the
-// account and the item it acts on, so a change before the call sends it back to the owner.
+// account and the item it acts on, so an intervening change stops the call.
 
 export type HyperBotsOutlook = Pick<HyperOutlookBridge, 'request'> & Partial<Pick<HyperOutlookBridge, 'cachedPerson'>>;
 /** These tools always bind: `destination` is shown to the owner, `fingerprint` must still match right before the call. */
@@ -115,14 +115,18 @@ function writeTool<A, X>(spec: {
   summarize(a: A): string; prepare(a: A): Promise<Prepared<X>>; perform(a: A, p: Prepared<X>, delivery: HyperBotsDelivery): Promise<unknown>;
 }): HyperBotsBoundTool {
   return {
-    name: spec.name, access: 'write', description: spec.description, parameters: spec.parameters,
+    name: spec.name, access: 'write', description: spec.description,
+    parameters: spec.delivery ? { ...spec.parameters, properties: { ...spec.parameters.properties as object,
+      draftOnly: { type: 'boolean', description: 'Set true when the owner requests a draft without sending.' },
+    } } : spec.parameters,
     parse: args => hyperBotsParseArgs(spec.schema, args),
     summarize: args => spec.summarize(args as A),
     ...(spec.targets ? { targets: (args: unknown) => spec.targets!(args as A) } : {}),
     async bind(args, signal) {
       signal.throwIfAborted();
       const p = await spec.prepare(args as A);
-      return { destination: p.destination, fingerprint: p.fingerprint, card: p.card };
+      const draft = spec.delivery && (args as { draftOnly?: boolean }).draftOnly;
+      return { destination: p.destination, fingerprint: p.fingerprint, card: draft ? [...p.card, row('Delivery', 'Save to Drafts')] : p.card };
     },
     async run(args, signal, approved, options) {
       signal.throwIfAborted();
@@ -209,12 +213,13 @@ const MailListArgs = z.strictObject({
   from: z.string().trim().max(100).default(''), subject: z.string().trim().max(100).default(''), max: z.number().int().min(1).max(50).default(10),
 });
 const ReadArgs = z.strictObject({ id: messageId, maxChars: z.number().int().min(500).max(20000).default(8000) });
-const SendArgs = z.strictObject({ to: recipients.min(1), cc: recipients.default([]), subject: line(255), body: z.string().trim().min(1).max(20000) })
+const draftOnly = z.boolean().optional();
+const SendArgs = z.strictObject({ to: recipients.min(1), cc: recipients.default([]), subject: line(255), body: z.string().trim().min(1).max(20000), draftOnly })
   .refine(a => a.to.length + a.cc.length <= 20, 'At most 20 recipients.');
-const ReplyArgs = z.strictObject({ id: messageId, body: z.string().trim().min(1).max(20000), replyAll: z.boolean().default(false) });
-const ForwardArgs = z.strictObject({ id: messageId, to: recipients.min(1), cc: recipients.default([]), body: z.string().max(20000).default('') })
+const ReplyArgs = z.strictObject({ id: messageId, body: z.string().trim().min(1).max(20000), replyAll: z.boolean().default(false), draftOnly });
+const ForwardArgs = z.strictObject({ id: messageId, to: recipients.min(1), cc: recipients.default([]), body: z.string().max(20000).default(''), draftOnly })
   .refine(a => a.to.length + a.cc.length <= 20, 'At most 20 recipients.');
-const RespondArgs = z.strictObject({ id: eventId, response: z.enum(['accept', 'tentative', 'decline']), comment: z.string().max(8192).default(''), proposedStart: instant.optional(), proposedEnd: instant.optional() })
+const RespondArgs = z.strictObject({ id: eventId, response: z.enum(['accept', 'tentative', 'decline']), comment: z.string().max(8192).default(''), proposedStart: instant.optional(), proposedEnd: instant.optional(), draftOnly })
   .refine(a => !a.proposedStart === !a.proposedEnd, 'Give both proposedStart and proposedEnd, or neither.')
   .refine(a => !a.proposedStart || a.response !== 'accept', 'A new time can be proposed only with "tentative" or "decline", as in Outlook.')
   .refine(a => !a.proposedStart || Date.parse(a.proposedEnd!) > Date.parse(a.proposedStart), '"proposedEnd" must be after "proposedStart".');
@@ -243,6 +248,31 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
   const peopleResolver = new HyperPeopleResolver(bridge);
   const header = (id: string) => outlook(bridge, 'mail.read', { id, maxChars: 0 });
   const event = (id: string) => outlook(bridge, 'event.get', { id });
+  const removeEvent = (cancel: boolean) => writeTool({
+    name: cancel ? 'outlook_cancel_event' : 'outlook_delete_event', schema: GetArgs,
+    targets: a => [a.id],
+    description: cancel
+      ? 'Cancel one Outlook meeting organized by the owner and notify its attendees. Use an id from outlook_list_events. For appointments without attendees, use outlook_delete_event.'
+      : 'Delete one appointment without attendees from the owner’s Outlook calendar. Use an id from outlook_list_events. To cancel a meeting with attendees, use outlook_cancel_event.',
+    parameters: { type: 'object', additionalProperties: false, required: ['id'], properties: { id: { type: 'string', description: 'Event id from outlook_list_events' } } },
+    summarize: () => cancel ? 'Cancel an Outlook meeting and notify attendees' : 'Delete an Outlook appointment',
+    async prepare(a) {
+      const [from, e] = await Promise.all([account(bridge), event(a.id)]);
+      if (!e.isOrganizer || e.isCancelled || e.recurrenceState === 1) {
+        throw new HyperBotsToolError('refused', 'Choose an active appointment or meeting occurrence the owner organizes.');
+      }
+      if (cancel !== (e.attendeeCount > 0)) {
+        throw new HyperBotsToolError('refused', cancel ? 'Delete an appointment without attendees with outlook_delete_event.' : 'Use outlook_cancel_event to notify the attendees.');
+      }
+      const card = [meetingRow(e.subject, span(e.start, e.end, e.allDay))];
+      if (cancel) card.push(...recipientRows(recipientsOf(e, from.address), [], from.address, 'Cancellation goes to'));
+      return { destination: `Outlook calendar as ${from.address} on this PC`, fingerprint: fingerprint(['event-delete', identity(from), e.id, e.lastModified, cancel]), card, account: from, extra: e.lastModified };
+    },
+    async perform(a, p) {
+      await outlook(bridge, 'event.delete', { id: a.id, send: cancel, account: p.account.address, expect: p.extra });
+      return { id: a.id, deleted: true, cancellationSent: cancel };
+    },
+  });
   /** An answerable invitation, from a calendar event id or an invitation message id. */
   async function invitation(id: string): Promise<{ subject: string; when: string; organizer: string; key: unknown[]; expect: string }> {
     if (!id.includes('|')) {
@@ -270,9 +300,10 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
       summarize: () => 'Read one Outlook event in full',
       read: async a => eventOut(await event(a.id), true),
     }),
+    removeEvent(false), removeEvent(true),
     writeTool({
       name: 'outlook_create_event', schema: CreateArgs,
-      description: 'Create an event in the owner\'s Outlook calendar. With attendees it is a meeting and Outlook sends the invitations. onlineMeeting adds a Teams or Skype for Business meeting link through the Outlook add-in (Skype only where Outlook has the Skype Meeting button). Requires owner approval.',
+      description: 'Create an event in the owner\'s Outlook calendar. With attendees it is a meeting and Outlook sends the invitations. onlineMeeting adds a Teams or Skype for Business meeting link through the Outlook add-in (Skype only where Outlook has the Skype Meeting button).',
       parameters: {
         type: 'object', additionalProperties: false, required: ['subject', 'start', 'end'],
         properties: {
@@ -309,7 +340,7 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
     writeTool({
       name: 'outlook_update_event', schema: UpdateArgs,
       targets: a => [a.id],
-      description: 'Edit a meeting or appointment the owner organizes: title, time, location or description. Give only the fields that change (the description replaces the whole text and loses its formatting, so leave it out unless it must change). Outlook sends the update to its attendees. Requires owner approval.',
+      description: 'Edit a meeting or appointment the owner organizes: title, time, location or description. Give only the fields that change (the description replaces the whole text and loses its formatting, so leave it out unless it must change). Outlook sends the update to its attendees.',
       parameters: {
         type: 'object', additionalProperties: false, required: ['id'],
         properties: {
@@ -357,7 +388,7 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
     writeTool({
       name: 'outlook_forward_event', schema: ForwardEventArgs,
       targets: a => [a.id],
-      description: 'Forward a meeting to more people. If the owner organizes it, they are added as attendees and the update goes to everyone; otherwise the original invitation is forwarded (comment is used only then). Requires owner approval.',
+      description: 'Forward a meeting to more people. If the owner organizes it, they are added as attendees and the update goes to everyone; otherwise the original invitation is forwarded (comment is used only then).',
       parameters: {
         type: 'object', additionalProperties: false, required: ['id', 'to'],
         properties: {
@@ -422,6 +453,22 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
         };
       },
     }),
+    writeTool({
+      name: 'outlook_delete_message', schema: z.strictObject({ id: messageId }), targets: a => [a.id],
+      description: 'Move one Outlook message from the owner’s Inbox, Sent Items or Drafts to Deleted Items. Use an id returned by outlook_list_messages.',
+      parameters: { type: 'object', additionalProperties: false, required: ['id'], properties: { id: { type: 'string', description: 'Message id from outlook_list_messages' } } },
+      summarize: () => 'Move an Outlook message to Deleted Items',
+      async prepare(a) {
+        const [from, m] = await Promise.all([account(bridge), outlook(bridge, 'mail.deleteTarget', { id: a.id })]);
+        return { destination: `Deleted Items in Outlook as ${from.address} on this PC`,
+          fingerprint: fingerprint(['mail-delete', identity(from), a.id, m.folder, m.lastModified]),
+          card: [row('Subject', m.subject || '(no subject)'), row('Sender', person(m.from))], account: from, extra: m };
+      },
+      async perform(a, p) {
+        await outlook(bridge, 'mail.delete', { id: a.id, folder: p.extra.folder, account: p.account.address, expect: p.extra.lastModified });
+        return { id: a.id, movedTo: 'Deleted Items' };
+      },
+    }),
     readTool({
       name: 'outlook_search_people', binding: DIRECTORY, schema: PeopleSearchArgs,
       description: 'Search the company employee directory (Active Directory) and classic Outlook contacts/GAL by name or email (supports English and Hebrew) to find verified email addresses before scheduling meetings or sending emails.',
@@ -448,7 +495,7 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
     }),
     writeTool({
       name: 'outlook_send_message', schema: SendArgs, delivery: true,
-      description: 'Write a new plain-text email from the owner\'s Outlook account. The owner approves it and chooses Send or Save to Drafts. Email addresses only; no attachments.',
+      description: 'Write a new plain-text email from the owner\'s Outlook account. Use draftOnly for drafts. Email addresses only; no attachments.',
       parameters: {
         type: 'object', additionalProperties: false, required: ['to', 'subject', 'body'],
         properties: {
@@ -473,7 +520,7 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
     writeTool({
       name: 'outlook_reply_message', schema: ReplyArgs, delivery: true,
       targets: a => [a.id],
-      description: 'Reply (or reply all) to an Outlook message. Your plain text goes above the quoted original. The owner approves it and chooses Send or Save to Drafts.',
+      description: 'Reply (or reply all) to an Outlook message. Your plain text goes above the quoted original.',
       parameters: {
         type: 'object', additionalProperties: false, required: ['id', 'body'],
         properties: { id: { type: 'string', description: 'Message id from outlook_list_messages' }, body: { type: 'string', maxLength: 20000, description: 'Plain-text reply' }, replyAll: { type: 'boolean', description: 'Reply to everyone (default false)' } },
@@ -496,7 +543,7 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
     writeTool({
       name: 'outlook_forward_message', schema: ForwardArgs, delivery: true,
       targets: a => [a.id],
-      description: 'Forward an Outlook message (with its attachments) to new recipients, with an optional note above it. Forwarding an invitation forwards the meeting. The owner approves it and chooses Send or Save to Drafts.',
+      description: 'Forward an Outlook message (with its attachments) to new recipients, with an optional note above it. Forwarding an invitation forwards the meeting.',
       parameters: {
         type: 'object', additionalProperties: false, required: ['id', 'to'],
         properties: {
@@ -524,7 +571,7 @@ export function hyperBotsOutlookTools(bridge: HyperBotsOutlook): HyperBotsBoundT
     writeTool({
       name: 'outlook_respond_meeting', schema: RespondArgs, delivery: true,
       targets: a => [a.id],
-      description: 'Answer a meeting invitation: accept, tentative or decline, with an optional comment. With tentative or decline you may propose a new time (proposedStart and proposedEnd). Takes an invitation message id (outlook_list_messages) or a calendar event id (outlook_list_events). The owner approves it and chooses Send or Save to Drafts.',
+      description: 'Answer a meeting invitation: accept, tentative or decline, with an optional comment. With tentative or decline you may propose a new time (proposedStart and proposedEnd). Takes an invitation message id (outlook_list_messages) or a calendar event id (outlook_list_events).',
       parameters: {
         type: 'object', additionalProperties: false, required: ['id', 'response'],
         properties: {

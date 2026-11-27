@@ -1,13 +1,14 @@
 // Ported from bot-hq (web/src/components/Transcript.tsx), Copyright (c) 2026 Nick Vasilescu, MIT License. See features/hyper-bots/NOTICE.md.
 import { Fragment, memo, useEffect, useLayoutEffect, useRef } from 'react';
 import { LoaderCircle } from 'lucide-react';
-import type { HyperBotConfig, HyperBotsDelivery, HyperBotsMessage, HyperBotsRunSummary, HyperBotsSnapshot } from '@shared/HyperBots';
+import type { HyperBotConfig, HyperBotsApi, HyperBotsDelivery, HyperBotsMessage, HyperBotsRunSummary, HyperBotsSnapshot } from '@shared/HyperBots';
 import { cn } from '@/lib/utils';
 import { HyperMarkdown } from '@/features/hyper-openbot/transcript/HyperMarkdown';
 import { HyperBotAvatarFor, HyperBotMembersAvatar } from './HyperBotAvatar';
 import { HyperBotTurnTools } from './HyperBotApproval';
 import { HyperBotRichText } from './HyperBotMentionPopover';
 import { hyperBotDescription } from './HyperBotSettings';
+import { HyperBotA2ui } from './HyperBotA2ui';
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
 const dateFormat = new Intl.DateTimeFormat();
 const clock = (iso: string) => { const date = new Date(iso); return isNaN(date.getTime()) ? '' : timeFormat.format(date); };
@@ -38,8 +39,9 @@ export function hyperBotFailuresByGroup(groups: HyperBotMessageGroup[], runs: Hy
   }
   return placed;
 }
-export function HyperBotTranscript({ snapshot, bot, name, members, deciding, onDecide, loadEarlier, loadingEarlier }: { snapshot: HyperBotsSnapshot; bot?: HyperBotConfig; name: string; members: HyperBotConfig[]; deciding: string[]; onDecide: (id: string, approved: boolean, delivery?: HyperBotsDelivery) => void; loadEarlier?: () => void; loadingEarlier?: boolean }) {
+export function HyperBotTranscript({ snapshot, bot, name, members, deciding, onDecide, onAction, loadEarlier, loadingEarlier }: { snapshot: HyperBotsSnapshot; bot?: HyperBotConfig; name: string; members: HyperBotConfig[]; deciding: string[]; onDecide: (id: string, approved: boolean, delivery?: HyperBotsDelivery) => void; onAction?: HyperBotsApi['act']; loadEarlier?: () => void; loadingEarlier?: boolean }) {
   const end = useRef<HTMLDivElement>(null), scroll = useRef<HTMLDivElement>(null), nearBottom = useRef(true);
+  const column = useRef<HTMLDivElement>(null);
   const pending = snapshot.approvals.filter(row => row.status === 'pending');
   const anchor = useRef<{ id: string; top: number } | null>(null);
   const earlier = () => {
@@ -58,6 +60,14 @@ export function HyperBotTranscript({ snapshot, bot, name, members, deciding, onD
   const last = snapshot.messages.at(-1)?.id, waiting = pending.map(row => row.id).join();
   useEffect(() => { nearBottom.current = true; end.current?.scrollIntoView?.({ block: 'end' }); }, [snapshot.roomId]);
   useEffect(() => { if (nearBottom.current) end.current?.scrollIntoView?.({ block: 'end' }); }, [last, waiting]);
+  useEffect(() => {
+    if (!column.current || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      if (nearBottom.current) end.current?.scrollIntoView({ block: 'end' });
+    });
+    observer.observe(column.current);
+    return () => observer.disconnect();
+  }, []);
   const botName = (id: string) => snapshot.settings.bots.find(row => row.id === id)?.name ?? id;
   const groups = hyperBotMessageGroups(snapshot.messages), failures = hyperBotFailuresByGroup(groups, snapshot.runs);
   const visible = new Set(snapshot.messages.map(message => message.id));
@@ -65,7 +75,7 @@ export function HyperBotTranscript({ snapshot, bot, name, members, deciding, onD
   const anchors = new Map(snapshot.runs.map(run => [run.id, visible.has(run.triggerMessageId) ? run.triggerMessageId : replies.get(run.id)]));
   const byMessage = new Map<string | undefined, typeof snapshot.approvals>();
   for (const approval of snapshot.approvals) {
-    const key = anchors.get(approval.runId);
+    const key = approval.turnId ? (visible.has(approval.turnId) ? approval.turnId : undefined) : anchors.get(approval.runId);
     const list = byMessage.get(key);
     if (list) list.push(approval); else byMessage.set(key, [approval]);
   }
@@ -75,17 +85,18 @@ export function HyperBotTranscript({ snapshot, bot, name, members, deciding, onD
   };
   // Only the latest failures announce themselves; earlier ones are history.
   const failure = (run: HyperBotsRunSummary, latest: boolean) => <p key={run.id} role={latest ? 'alert' : undefined} className="notice is-error">{botName(run.botId)} could not finish{run.error ? ': ' + run.error : '.'}</p>;
-  return <div className="transcript-wrap"><div className="transcript" ref={scroll} role="log" aria-label={name + ' conversation'} onScroll={() => { const element = scroll.current; if (element) nearBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 100; }}><div className="transcript__col">
+  return <div className="transcript-wrap"><div className="transcript" ref={scroll} role="log" aria-label={name + ' conversation'} onScroll={() => { const element = scroll.current; if (element) nearBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 100; }}><div className="transcript__col" ref={column}>
     {snapshot.hasEarlier && <button className="hb-history-link" type="button" onClick={earlier} disabled={loadingEarlier}>{loadingEarlier ? 'Loading…' : 'Load earlier messages'}</button>}
     {!snapshot.messages.length && <div className="empty-chat">{bot ? <HyperBotAvatarFor bot={bot} size={64} /> : <HyperBotMembersAvatar bots={members} size={64} />}<h2 className="empty-chat__title">{name}</h2><p className="empty-chat__sub">{bot ? hyperBotDescription(bot) : 'A shared conversation with ' + members.map(member => member.name).join(', ') + '.'}</p></div>}
     {groups.map(group => { const first = group.messages[0]!, user = first.author.kind === 'user', sender = first.author.kind === 'bot' ? snapshot.settings.bots.find(row => row.id === author(first)) : undefined;
       return <div className="transcript-group" key={group.key}>{group.divider && <div className="divider">{group.date}</div>}<div className={cn('group', user ? 'is-right' : 'is-left')}>
         {!bot && !user && sender && <div className="sender-label"><HyperBotAvatarFor bot={sender} size={16} /><span>{sender.name}</span></div>}
-        {group.messages.map((message, index) => <Fragment key={message.id}><article data-message-id={message.id} className={cn('bubble-wrap', user ? 'is-right' : 'is-left')} aria-label={user ? 'You' : botName(message.author.kind === 'bot' ? message.author.botId : '')} tabIndex={0}>
+        {group.messages.map((message, index) => <Fragment key={message.id}><article data-message-id={message.id} className={cn('bubble-wrap', user ? 'is-right' : 'is-left', !user && message.a2ui && 'has-a2ui')} aria-label={user ? 'You' : botName(message.author.kind === 'bot' ? message.author.botId : '')} tabIndex={0}>
           <div className={cn('bubble', user ? 'is-user' : 'is-agent', group.messages.length > 1 && (index === 0 ? 'is-first' : index === group.messages.length - 1 ? 'is-last' : 'is-mid'))}>
-            {message.model && <span className="bubble__model">{message.model}</span>}
-            {user ? <p className="bubble__plain [unicode-bidi:plaintext] text-start"><HyperBotRichText text={message.text} bots={snapshot.settings.bots} /></p> : <MessageMarkdown content={message.text} className="md [&_li]:[unicode-bidi:plaintext] [&_p]:[unicode-bidi:plaintext] [&_li]:text-start [&_p]:text-start" />}
+            {message.model && !message.interaction && <span className="bubble__model">{message.model}</span>}
+            {user ? <p className="bubble__plain [unicode-bidi:plaintext] text-start">{message.interaction ? message.text : <HyperBotRichText text={message.text} bots={snapshot.settings.bots} />}</p> : <MessageMarkdown content={message.text} className="md [&_li]:[unicode-bidi:plaintext] [&_p]:[unicode-bidi:plaintext] [&_li]:text-start [&_p]:text-start" />}
           </div><time dateTime={message.createdAt} className="bubble__time">{clock(message.createdAt)}</time>
+          {!user && message.a2ui && <HyperBotA2ui roomId={message.roomId} messageId={message.id} messages={message.a2ui} onAction={onAction} />}
         </article>{toolsAt(message.id)}</Fragment>)}
       </div>{failures.get(group.key)?.map(run => failure(run, false))}</div>;
     })}

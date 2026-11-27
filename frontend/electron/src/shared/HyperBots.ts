@@ -1,3 +1,5 @@
+import type { HyperBotAssetUpdate, HyperBotSkillLibrary } from './HyperBotSkills';
+
 // HyperBots: bots in rooms, inside HyperTask. Main owns the runtime, storage and connectors;
 // the renderer shows rooms, approvals and bot settings over IPC (window.hypertask.hyperBots).
 // Connections are the app's own: the OpenAI-compatible endpoint from Settings → AI, classic
@@ -5,18 +7,38 @@
 
 export type HyperBotsAccess = 'read' | 'write';
 export type HyperBotsPolicy = 'ask' | 'allow';
+export const HYPER_BOTS_PERMISSION_LEVELS = ['supervised', 'elevated', 'full'] as const;
+export type HyperBotsPermissionLevel = typeof HYPER_BOTS_PERMISSION_LEVELS[number];
+export interface HyperBotsPermissions { level: HyperBotsPermissionLevel; legacyReadOverrides: boolean }
 /** Read tools: each can be pre-allowed in Bot settings. */
 export type HyperBotsReadToolName = 'outlook_list_events' | 'outlook_get_event' | 'outlook_list_messages' | 'outlook_read_message' | 'outlook_search_people';
+export const HYPER_BOTS_PROJECT_TOOLS = ['hypertask_list_task_views', 'hypertask_search_tasks', 'hypertask_find_people', 'hypertask_create_task', 'hypertask_update_task'] as const;
 const HYPER_BOTS_JIRA_TOOLS = ['jira_search_issues', 'jira_get_issue', 'jira_get_create_fields', 'jira_create_issue', 'jira_get_edit_fields', 'jira_update_issue', 'jira_list_transitions', 'jira_transition_issue'] as const;
 type HyperBotsNewsletterToolName = 'newsletter_list_articles' | 'newsletter_get_article' | 'newsletter_create_article' | 'newsletter_update_article'
   | 'newsletter_list_gantts' | 'newsletter_get_gantt' | 'newsletter_create_gantt' | 'newsletter_update_gantt'
   | 'newsletter_create_gantt_task' | 'newsletter_update_gantt_task';
+const OUTLOOK_CALENDAR_REMOVAL = ['outlook_delete_event', 'outlook_cancel_event'] as const;
+export type HyperBotsProjectToolName = typeof HYPER_BOTS_PROJECT_TOOLS[number];
 export type HyperBotsToolName = HyperBotsReadToolName
+  | HyperBotsProjectToolName
   | typeof HYPER_BOTS_JIRA_TOOLS[number] | HyperBotsNewsletterToolName
   | 'outlook_create_event' | 'outlook_update_event' | 'outlook_forward_event' | 'outlook_respond_meeting'
+  | 'outlook_delete_event' | 'outlook_cancel_event' | 'outlook_delete_message'
   | 'outlook_send_message' | 'outlook_reply_message' | 'outlook_forward_message';
-export type HyperBotsToolGroup = 'outlook-calendar' | 'outlook-mail' | 'jira' | 'newsletter';
-export const HYPER_BOTS_TOOL_GROUPS: Record<HyperBotsToolGroup, string> = { 'outlook-calendar': 'Outlook calendar', 'outlook-mail': 'Outlook mail', jira: 'Jira', newsletter: 'Newsletter' };
+export const HYPER_BOTS_PERSONAL_TOOLS = [
+  'outlook_list_events', 'outlook_get_event', 'outlook_create_event', ...OUTLOOK_CALENDAR_REMOVAL,
+  'outlook_list_messages', 'outlook_read_message', 'outlook_search_people', 'outlook_send_message', 'outlook_delete_message',
+  ...HYPER_BOTS_PROJECT_TOOLS,
+] as const satisfies readonly HyperBotsToolName[];
+export type HyperBotsToolGroup = 'outlook-calendar' | 'outlook-mail' | 'jira' | 'hypertask-projects' | 'newsletter';
+export const HYPER_BOTS_TOOL_GROUPS: Record<HyperBotsToolGroup, string> = { 'outlook-calendar': 'Outlook calendar', 'outlook-mail': 'Outlook mail', jira: 'Jira', 'hypertask-projects': 'HyperTask projects', newsletter: 'Newsletter' };
+export const HYPER_BOTS_TOOL_CONNECTIONS = {
+  outlook: { label: 'Outlook', groups: ['outlook-calendar', 'outlook-mail'] },
+  jira: { label: 'Jira', groups: ['jira'] },
+  newsletter: { label: 'Newsletter', groups: ['newsletter'] },
+  projects: { label: 'HyperTask projects', groups: ['hypertask-projects'] },
+} satisfies Record<string, { label: string; groups: HyperBotsToolGroup[] }>;
+export type HyperBotsToolConnection = keyof typeof HYPER_BOTS_TOOL_CONNECTIONS;
 /** What an approved mail write does: send it now, or save it in Outlook Drafts for the owner to send. */
 export type HyperBotsDelivery = 'send' | 'draft';
 /** `delivery`: the owner picks Send or Save to Drafts when approving. Order is the order shown in Bot settings. */
@@ -26,12 +48,15 @@ export const HYPER_BOTS_TOOLS: Record<HyperBotsToolName, { access: HyperBotsAcce
   outlook_create_event: { access: 'write', label: 'Create events and meetings', group: 'outlook-calendar' },
   outlook_update_event: { access: 'write', label: 'Edit meetings', group: 'outlook-calendar' },
   outlook_forward_event: { access: 'write', label: 'Forward meetings', group: 'outlook-calendar' },
+  outlook_delete_event: { access: 'write', label: 'Delete appointments', group: 'outlook-calendar' },
+  outlook_cancel_event: { access: 'write', label: 'Cancel meetings', group: 'outlook-calendar' },
   outlook_list_messages: { access: 'read', label: 'List Outlook mail', group: 'outlook-mail' },
   outlook_read_message: { access: 'read', label: 'Read Outlook mail', group: 'outlook-mail' },
   outlook_search_people: { access: 'read', label: 'Search Outlook and employee directory', group: 'outlook-mail' },
   outlook_send_message: { access: 'write', label: 'Send mail', group: 'outlook-mail', delivery: true },
   outlook_reply_message: { access: 'write', label: 'Reply to mail', group: 'outlook-mail', delivery: true },
   outlook_forward_message: { access: 'write', label: 'Forward mail', group: 'outlook-mail', delivery: true },
+  outlook_delete_message: { access: 'write', label: 'Delete mail', group: 'outlook-mail' },
   outlook_respond_meeting: { access: 'write', label: 'Answer meeting invitations', group: 'outlook-mail', delivery: true },
   jira_search_issues: { access: 'read', label: 'Search Jira issues', group: 'jira' },
   jira_get_issue: { access: 'read', label: 'Read Jira issues', group: 'jira' },
@@ -41,6 +66,11 @@ export const HYPER_BOTS_TOOLS: Record<HyperBotsToolName, { access: HyperBotsAcce
   jira_update_issue: { access: 'write', label: 'Edit Jira issues', group: 'jira' },
   jira_list_transitions: { access: 'read', label: 'Read Jira status transitions', group: 'jira' },
   jira_transition_issue: { access: 'write', label: 'Change Jira issue status', group: 'jira' },
+  hypertask_list_task_views: { access: 'read', label: 'Find Kanban and Gantt views', group: 'hypertask-projects' },
+  hypertask_search_tasks: { access: 'read', label: 'Search HyperTask tasks', group: 'hypertask-projects' },
+  hypertask_find_people: { access: 'read', label: 'Find workspace coworkers', group: 'hypertask-projects' },
+  hypertask_create_task: { access: 'write', label: 'Create HyperTask tasks', group: 'hypertask-projects' },
+  hypertask_update_task: { access: 'write', label: 'Edit and assign HyperTask tasks', group: 'hypertask-projects' },
   newsletter_list_articles: { access: 'read', label: 'Search newsletters', group: 'newsletter' },
   newsletter_get_article: { access: 'read', label: 'Read a newsletter', group: 'newsletter' },
   newsletter_create_article: { access: 'write', label: 'Create newsletters', group: 'newsletter' },
@@ -52,6 +82,10 @@ export const HYPER_BOTS_TOOLS: Record<HyperBotsToolName, { access: HyperBotsAcce
   newsletter_create_gantt_task: { access: 'write', label: 'Add Newsletter Gantt tasks', group: 'newsletter' },
   newsletter_update_gantt_task: { access: 'write', label: 'Edit Newsletter Gantt tasks', group: 'newsletter' },
 };
+export function hyperBotsMailDelivery(tool: string, args: unknown, choice: HyperBotsDelivery): HyperBotsDelivery | null {
+  if (!HYPER_BOTS_TOOLS[tool as HyperBotsToolName]?.delivery) return null;
+  return (args as { draftOnly?: unknown } | null)?.draftOnly === true ? 'draft' : choice;
+}
 /** Pre-allowing reads is set per kind in Bot settings: calendar reads, mail reads, and people directory search. */
 export const HYPER_BOTS_READ_POLICIES: { label: string; allow: string; tools: HyperBotsReadToolName[] }[] = [
   { label: 'Outlook calendar reads', allow: 'Allow calendar reads without asking', tools: ['outlook_list_events', 'outlook_get_event'] },
@@ -75,13 +109,39 @@ export interface HyperBotConfig {
   instructions: string; // 0..4000, system prompt
   model: string;        // '' = the endpoint's default model from Settings → AI
   tools: HyperBotsToolName[];
+  permissionLevel?: HyperBotsPermissionLevel;
+  toolPolicies?: Partial<Record<HyperBotsToolName, HyperBotsPolicy>>;
 }
 export interface HyperBotsRoom { id: string; name: string; botIds: string[]; kind?: 'direct' | 'group' }
 export interface HyperBotsSettings {
   version: 1;
+  projectToolsVersion?: 1;
+  outlookRemovalVersion?: 1;
   bots: HyperBotConfig[];      // 1..8
   rooms: HyperBotsRoom[];      // 1..24 (8 direct rooms plus up to 16 groups)
-  policy: Partial<Record<HyperBotsReadToolName, HyperBotsPolicy>>; // a read tool left out asks; writes always ask
+  permissionLevel?: HyperBotsPermissionLevel;
+  /** Legacy read overrides, honored until the owner selects a permission level. */
+  policy: Partial<Record<HyperBotsReadToolName, HyperBotsPolicy>>;
+}
+
+const elevatedTools = new Set<HyperBotsToolName>(['outlook_list_events', 'outlook_get_event', 'outlook_list_messages', 'outlook_read_message']);
+
+export function hyperBotsPermissions(settings: HyperBotsSettings, bot?: HyperBotConfig): HyperBotsPermissions {
+  const level = bot?.permissionLevel ?? settings.permissionLevel;
+  return { level: level ?? 'supervised', legacyReadOverrides: level === undefined && Object.values(settings.policy).includes('allow') };
+}
+
+export function hyperBotsToolPolicy(settings: HyperBotsSettings, bot: HyperBotConfig, tool: HyperBotsToolName): HyperBotsPolicy {
+  const override = bot.toolPolicies?.[tool];
+  if (override) return override;
+  const level = bot.permissionLevel ?? settings.permissionLevel;
+  if (level === 'full' || (level === 'elevated' && elevatedTools.has(tool))) return 'allow';
+  if (level === undefined && settings.policy[tool as HyperBotsReadToolName] === 'allow') return 'allow';
+  return 'ask';
+}
+
+export function hyperBotSetPermissionLevel(bot: HyperBotConfig, level: HyperBotsPermissionLevel): HyperBotConfig {
+  return { ...bot, permissionLevel: level, toolPolicies: undefined };
 }
 
 export function hyperBotFindGroup(rooms: readonly HyperBotsRoom[], botIds: readonly string[]) {
@@ -107,17 +167,40 @@ export function hyperBotCreateGroup(settings: HyperBotsSettings, name: string, p
 
 export const HYPER_BOTS_DEFAULT_SETTINGS: HyperBotsSettings = {
   version: 1,
+  projectToolsVersion: 1,
+  outlookRemovalVersion: 1,
+  permissionLevel: 'supervised',
   bots: [
-    // Personal assistant defaults include directory search plus calendar/mail create & send (writes always require approval).
+    // The personal assistant defaults include Outlook and HyperTask project tools.
     { id: 'scout', name: 'Scout', avatar: { shape: 'sparkle', color: 'blue' }, mode: 'personal', model: '',
-      tools: ['outlook_list_events', 'outlook_get_event', 'outlook_create_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people', 'outlook_send_message'],
-      instructions: 'You are Scout. You read and manage the owner\'s Outlook calendar, mail, and employee directory, and summarize them clearly. When something needs a Jira ticket, hand it to @scribe with the exact details.' },
+      tools: [...HYPER_BOTS_PERSONAL_TOOLS],
+      instructions: 'You are Scout. Manage the owner\'s HyperTask tasks and assignments, Outlook calendar and mail, and employee directory. Summarize your work clearly. When something needs a Jira ticket, hand it to @scribe with the exact details.' },
     { id: 'scribe', name: 'Scribe', avatar: { shape: 'tablet', color: 'green' }, mode: 'personal', model: '', tools: [...HYPER_BOTS_JIRA_TOOLS],
       instructions: 'You are Scribe. Find, create, and edit Jira issues when asked. Include the relevant issue keys in your reply.' },
   ],
   rooms: [{ id: 'ops', name: 'Ops', kind: 'group', botIds: ['scout', 'scribe'] }],
   policy: { outlook_list_events: 'ask', outlook_get_event: 'ask', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'ask' },
 };
+
+/** Add the new capabilities once to the existing default assistant. Later tool choices are retained. */
+export function hyperBotsWithProjectTools(settings: HyperBotsSettings): HyperBotsSettings {
+  if (settings.projectToolsVersion === 1) return settings;
+  return { ...settings, projectToolsVersion: 1, bots: settings.bots.map(bot => bot.id === 'scout'
+    ? { ...bot, tools: [...new Set([...bot.tools, ...HYPER_BOTS_PROJECT_TOOLS])] }
+    : bot) };
+}
+
+/** Upgrade Scout when the matching Outlook integration was already enabled. */
+export function hyperBotsWithOutlookRemoval(settings: HyperBotsSettings): HyperBotsSettings {
+  if (settings.outlookRemovalVersion === 1) return settings;
+  return { ...settings, outlookRemovalVersion: 1, bots: settings.bots.map(bot => {
+    if (bot.id !== 'scout') return bot;
+    const tools = new Set(bot.tools);
+    if (tools.has('outlook_list_events') && tools.has('outlook_create_event')) OUTLOOK_CALENDAR_REMOVAL.forEach(tool => tools.add(tool));
+    if (tools.has('outlook_list_messages') && tools.has('outlook_send_message')) tools.add('outlook_delete_message');
+    return { ...bot, tools: [...tools] };
+  }) };
+}
 
 /** Add direct rooms without mutating settings. Legacy rooms remain group conversations. */
 export function hyperBotsWithDirectRooms(settings: HyperBotsSettings): HyperBotsSettings {
@@ -138,6 +221,8 @@ export type HyperBotsAuthor = { kind: 'user' } | { kind: 'bot'; botId: string };
 export interface HyperBotsMessage {
   id: string; roomId: string; clientMessageId: string; author: HyperBotsAuthor; text: string;
   model: string | null; runId: string | null; hop: number; createdAt: string;
+  a2ui?: import('./HyperBotA2ui').HyperBotA2uiMessage[];
+  interaction?: import('./HyperBotA2ui').HyperBotA2uiInteraction;
 }
 export type HyperBotsRunStatus = 'queued' | 'running' | 'waiting_approval' | 'done' | 'failed';
 export interface HyperBotsRunSummary {
@@ -148,8 +233,10 @@ export interface HyperBotsRunSummary {
 export type HyperBotsApprovalStatus = 'pending' | 'approved' | 'denied' | 'executing' | 'done' | 'failed' | 'unknown' | 'skipped';
 export interface HyperBotsApproval {
   id: string; runId: string; roomId: string; botId: string; toolCallId: string; tool: string; access: HyperBotsAccess;
+  /** Original owner message, shared by every bot and hand-off in this turn. */
+  turnId?: string;
   args: unknown; summary: string;
-  /** Where the call goes, captured when it was proposed (e.g. 'Jira project OPS at https://jira.example as nave'). A change before execution sends it back for approval. */
+  /** Where the call goes, captured when it was proposed (e.g. 'Jira project OPS at https://jira.example as nave'). */
   destination: string | null;
   /** What the owner approves, line by line (sender, recipients, the text, the message acted on); null for tools without one. */
   card: HyperBotsCardRow[] | null;
@@ -190,6 +277,8 @@ export type HyperBotsEvent =
   | { type: 'run'; roomId: string; runId: string; status: HyperBotsRunStatus }
   | { type: 'approval'; roomId: string; approvalId: string; status: HyperBotsApprovalStatus }
   | { type: 'settings' }
+  | { type: 'skills' }
+  | { type: 'personalization'; botId: string }
   | { type: 'connections' };
 
 /** Renderer API. Every call is refused unless it comes from the main window's top frame. */
@@ -198,9 +287,15 @@ export interface HyperBotsApi {
   open(args: { roomId?: string; limit?: number }): Promise<import('./api').IpcResult<HyperBotsSnapshot>>;
   snapshot(args: { roomId: string; limit?: number; fromMessageId?: string }): Promise<import('./api').IpcResult<HyperBotsSnapshot>>;
   post(input: HyperBotsPostInput): Promise<import('./api').IpcResult<HyperBotsPosted>>;
-  /** `delivery` is required to approve a mail write (HYPER_BOTS_TOOLS[tool].delivery) and refused for any other tool. */
+  act(input: import('./HyperBotA2ui').HyperBotA2uiInteraction & { roomId: string; clientMessageId: string }): Promise<import('./api').IpcResult<HyperBotsPosted>>;
+  /** Decides once for the whole turn. Delivery applies to mail writes in the turn. */
   decide(args: { approvalId: string; approved: boolean; delivery?: HyperBotsDelivery }): Promise<import('./api').IpcResult<HyperBotsApproval>>;
   saveSettings(settings: HyperBotsSettings): Promise<import('./api').IpcResult<HyperBotsSettings>>;
+  permissions(input?: HyperBotsPermissionLevel | { botId: string; level?: HyperBotsPermissionLevel }): Promise<import('./api').IpcResult<HyperBotsPermissions>>;
+  skills(): Promise<import('./api').IpcResult<HyperBotSkillLibrary>>;
+  saveSkill(input: HyperBotAssetUpdate): Promise<import('./api').IpcResult<HyperBotSkillLibrary>>;
+  personalization(input: { botId: string }): Promise<import('./api').IpcResult<import('./HyperBotPersonalization').HyperBotPersonalizationView>>;
+  savePersonalization(input: import('./HyperBotPersonalization').HyperBotPersonalizationUpdate): Promise<import('./api').IpcResult<import('./HyperBotPersonalization').HyperBotPersonalizationView>>;
   /** Model IDs offered by the configured endpoint (/models); [] when discovery is unavailable. */
   models(): Promise<import('./api').IpcResult<string[]>>;
   newsletterConnection(): Promise<import('./api').IpcResult<HyperNewsletterConnectionState | null>>;
@@ -212,8 +307,14 @@ export const HyperBotsChannel = {
   Open: 'hyper-bots:open',
   Snapshot: 'hyper-bots:snapshot',
   Post: 'hyper-bots:post',
+  Act: 'hyper-bots:act',
   Decide: 'hyper-bots:decide',
   SaveSettings: 'hyper-bots:save-settings',
+  Permissions: 'hyper-bots:permissions',
+  Skills: 'hyper-bots:skills',
+  SaveSkill: 'hyper-bots:save-skill',
+  Personalization: 'hyper-bots:personalization',
+  SavePersonalization: 'hyper-bots:save-personalization',
   Models: 'hyper-bots:models',
   NewsletterConnection: 'hyper-bots:newsletter-connection',
   SaveNewsletterConnection: 'hyper-bots:save-newsletter-connection',

@@ -1,4 +1,5 @@
 import { Fragment, useMemo, type ReactNode } from 'react';
+import { Sparkles, Terminal } from 'lucide-react';
 import type { HyperPerson } from '@shared/api';
 import type { HyperBotConfig } from '@shared/HyperBots';
 import {
@@ -23,6 +24,9 @@ export interface HyperBotMentionQueryRange {
 export type HyperBotMentionOption =
   | { readonly kind: 'bot'; readonly bot: HyperBotMentionBot; readonly handle: string }
   | { readonly kind: 'person'; readonly person: HyperPerson };
+
+export type HyperBotPromptOption = HyperBotMentionOption
+  | { kind: 'skill' | 'command'; token: string; label: string; description: string };
 
 /**
  * Detects an active `@...` token immediately before the caret in the Hyper-Bot composer.
@@ -86,12 +90,13 @@ export function buildHyperBotMentionOptions(
 export interface HyperBotMentionPopoverProps {
   readonly id: string;
   readonly query: string;
-  readonly options: readonly HyperBotMentionOption[];
+  readonly options: readonly HyperBotPromptOption[];
+  readonly kind?: 'path' | 'skill' | 'slash-command';
   readonly peopleLoading: boolean;
   readonly peopleError: string | null;
   readonly activeIndex: number;
   readonly onActiveChange: (index: number) => void;
-  readonly onSelect: (option: HyperBotMentionOption) => void;
+  readonly onSelect: (option: HyperBotPromptOption) => void;
 }
 
 /**
@@ -102,6 +107,7 @@ export function HyperBotMentionPopover({
   id,
   query,
   options,
+  kind = 'path',
   peopleLoading,
   peopleError,
   activeIndex,
@@ -113,19 +119,52 @@ export function HyperBotMentionPopover({
     (o): o is Extract<HyperBotMentionOption, { kind: 'person' }> => o.kind === 'person',
   );
   const showPeopleSection = query.trim().length >= 2 || personOptions.length > 0;
+  const pathMenu = kind === 'path';
+  const suggestions = options.filter(row => 'token' in row);
+  const suggestion = (item: (typeof suggestions)[number]) => {
+    const idx = options.indexOf(item);
+    const selected = idx === activeIndex;
+    const Icon = item.kind === 'skill' ? Sparkles : Terminal;
+    return <div key={item.token}
+      id={id + '-' + idx} role="option" aria-selected={selected}
+      className={cn('hb-mention-item', selected && 'is-active')}
+      onMouseMove={() => onActiveChange(idx)} onClick={() => onSelect(item)}>
+      <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <div className="hb-mention-item__text">
+        <span dir="auto" className="hb-mention-item__name">{item.label}</span>
+        <span dir="auto" className="hb-mention-item__sub">{item.description}</span>
+      </div>
+    </div>;
+  };
+
+  const menuRef = (element: HTMLDivElement | null) => {
+    if (!element || activeIndex < 0) return;
+    const row = element.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!row) return;
+    const menu = element.getBoundingClientRect();
+    const rect = row.getBoundingClientRect();
+    if (rect.top < menu.top) element.scrollTop += rect.top - menu.top;
+    if (rect.bottom > menu.bottom) element.scrollTop += rect.bottom - menu.bottom;
+  };
 
   return (
     <div
       id={id}
+      ref={menuRef}
       role="listbox"
-      aria-label="Mention bots or people"
+      aria-label={kind === 'skill' ? 'Skills' : kind === 'slash-command' ? 'Commands' : 'Mention bots or people'}
       className="hb-mention-popover"
       onMouseDown={(event) => event.preventDefault()}
     >
+      {suggestions.length > 0 && <div className="hb-mention-section">
+        {suggestions.map(suggestion)}
+      </div>}
+      {!pathMenu && !suggestions.length && <p role="status" className="hb-mention-empty">{kind === 'skill' ? 'No matching skills.' : 'No matching commands.'}</p>}
       {botOptions.length > 0 && (
         <div className="hb-mention-section">
           <div className="hb-mention-section__label">Bots</div>
-          {botOptions.map((item, idx) => {
+          {botOptions.map((item) => {
+            const idx = options.indexOf(item);
             const avatar = hyperBotAvatarOf(item.bot);
             const selected = idx === activeIndex;
             return (
@@ -153,12 +192,12 @@ export function HyperBotMentionPopover({
         </div>
       )}
 
-      {showPeopleSection && (
+      {pathMenu && showPeopleSection && (
         <div className="hb-mention-section">
           <div className="hb-mention-section__label">People (Outlook)</div>
           {personOptions.length > 0 ? (
-            personOptions.map((item, personIdx) => {
-              const globalIdx = botOptions.length + personIdx;
+            personOptions.map((item) => {
+              const globalIdx = options.indexOf(item);
               const selected = globalIdx === activeIndex;
               return (
                 <div
@@ -194,7 +233,7 @@ export function HyperBotMentionPopover({
         </div>
       )}
 
-      {!botOptions.length && !showPeopleSection && (
+      {pathMenu && !botOptions.length && !showPeopleSection && (
         <p role="status" className="hb-mention-empty">
           Type at least 2 characters after @ to search people in Outlook.
         </p>

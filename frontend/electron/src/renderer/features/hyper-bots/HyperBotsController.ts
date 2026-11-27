@@ -8,7 +8,11 @@ function hyperBotsSettled(api: HyperBotsApi): HyperBotsApi {
   };
   return {
     open: wrap(args => api.open(args)), snapshot: wrap(args => api.snapshot(args)), post: wrap(input => api.post(input)),
+    act: wrap(input => api.act(input)),
     decide: wrap(args => api.decide(args)), saveSettings: wrap(settings => api.saveSettings(settings)), models: wrap(() => api.models()),
+    permissions: wrap(level => api.permissions(level)),
+    skills: wrap(() => api.skills()), saveSkill: wrap(input => api.saveSkill(input)),
+    personalization: wrap(input => api.personalization(input)), savePersonalization: wrap(input => api.savePersonalization(input)),
     newsletterConnection: wrap(() => api.newsletterConnection()),
     saveNewsletterConnection: wrap(input => api.saveNewsletterConnection(input)),
     onEvent: listener => api.onEvent(listener),
@@ -26,7 +30,7 @@ export const hyperBotsPreviewText = (text: string) => text.replace(/```[\s\S]*?`
 export function hyperBotsRoomSummary(snapshot: HyperBotsSnapshot, unread = false): HyperBotsRoomSummary {
   const last = snapshot.messages.at(-1);
   return { preview: last ? hyperBotsPreviewText(last.text) : '',
-    pendingApprovals: snapshot.approvals.filter(row => row.status === 'pending').length,
+    pendingApprovals: new Set(snapshot.approvals.filter(row => row.status === 'pending').map(row => row.turnId ?? row.id)).size,
     activeRun: snapshot.runs.some(row => row.status === 'queued' || row.status === 'running'), unread };
 }
 export interface HyperBotsViewState {
@@ -199,6 +203,7 @@ export class HyperBotsController {
   }
   private receive(event: HyperBotsEvent) {
     if (this.disposed) return;
+    if (event.type === 'skills' || event.type === 'personalization') return;
     const snapshot = this.state.snapshot;
     if (this.state.phase !== 'ready' || !snapshot) { this.missed = true; return; }
     if (event.type === 'connections') { void this.refresh(); return; }
@@ -262,6 +267,14 @@ export class HyperBotsController {
     void this.refresh();
     return accepted;
   }
+  readonly act: HyperBotsApi['act'] = async input => {
+    if (this.state.phase !== 'ready' || this.state.snapshot?.roomId !== input.roomId) {
+      return { ok: false, kind: 'state', message: 'Open the room to use this interactive reply.' };
+    }
+    const result = await this.api.act(input);
+    if (this.state.snapshot?.roomId === input.roomId) void this.refresh();
+    return result;
+  };
   /** `delivery`: Send or Save to Drafts, given only when approving a mail write. */
   async decide(approvalId: string, approved: boolean, delivery?: HyperBotsDelivery): Promise<boolean> {
     if (this.state.deciding.includes(approvalId)) return false;

@@ -11,6 +11,7 @@ import { HyperBotsHub, type HyperBotsUser } from './HyperBotsHub';
 import { HyperBotsTools, hyperBotsJiraTool, hyperBotsReadJira } from './HyperBotsConnectors';
 import type { HyperBotsEngine } from './HyperBotsEngine';
 import { registerHyperBotsIpc, registerHyperBotsUnavailable } from './HyperBotsIpc';
+import { HyperTrustedWindows } from './HyperTrustedWindows';
 
 const MESSAGE = '33333333-3333-4333-8333-333333333333';
 const CONNECTIONS: HyperBotsConnections = { model: { ready: true, detail: 'm at x', defaultModel: 'm' }, outlook: { ready: false, problem: 'Classic Outlook' }, jira: { ready: false, problem: 'Jira tab' } };
@@ -50,12 +51,14 @@ function setup(onOutlookPresenceChange?: (listener: () => void) => () => void) {
   });
   const contents = { mainFrame: {}, isDestroyed: vi.fn(() => false), send: vi.fn() };
   const owner = { webContents: contents, isDestroyed: () => false };
+  const trustedWindows = new HyperTrustedWindows();
+  trustedWindows.add(owner as never);
   const newsletter = { status: vi.fn(async (_key: string) => null), save: vi.fn(async (_key: string, _input: unknown) => null) };
   const deps = { hub, newsletter, onOutlookPresenceChange, connections: vi.fn(async (_user: HyperBotsUser) => CONNECTIONS), models: vi.fn(async () => ['m', 'n']) };
-  const unregister = registerHyperBotsIpc(() => owner as never, deps);
+  const unregister = registerHyperBotsIpc(trustedWindows, deps);
   const event = { sender: contents, senderFrame: contents.mainFrame };
   const call = (channel: string, args?: unknown, from: object = event) => ipc.handlers.get(channel)!(from, args);
-  return { hub, runtimes, contents, deps, unregister, event, call, jiraFetch, as: (user: HyperBotsUser | null) => { who = user; } };
+  return { hub, runtimes, contents, deps, unregister, event, call, jiraFetch, trustedWindows, as: (user: HyperBotsUser | null) => { who = user; } };
 }
 
 it('only accepts Newsletter setup from trusted windows and resolves the signed-in account in main', async () => {
@@ -71,6 +74,27 @@ it('only accepts Newsletter setup from trusted windows and resolves the signed-i
     expect(await h.call(B.NewsletterConnection)).toEqual({ ok: true, value: null });
     expect(h.deps.newsletter.status).toHaveBeenCalledWith(B2.key);
     expect(h.contents.send).toHaveBeenCalledWith(B.Event, { type: 'connections' });
+  } finally { h.unregister(); await h.hub.stop(); }
+});
+
+it('shares per-account permission settings between trusted chat and voice windows and persists them', async () => {
+  const h = setup();
+  const voice = { mainFrame: {}, isDestroyed: () => false, send: vi.fn() };
+  h.trustedWindows.add({ webContents: voice } as never);
+  const voiceSender = { sender: voice, senderFrame: voice.mainFrame };
+  try {
+    expect(await h.call(B.Permissions)).toEqual({ ok: true, value: { level: 'supervised', legacyReadOverrides: false } });
+    expect(await h.call(B.Permissions, 'unsafe', voiceSender)).toMatchObject({ ok: false, kind: 'format' });
+    expect(await h.call(B.Permissions, 'full', voiceSender)).toEqual({ ok: true, value: { level: 'full', legacyReadOverrides: false } });
+    expect(await h.call(B.Permissions)).toMatchObject({ value: { level: 'full' } });
+    expect(await h.call(B.Permissions, { botId: 'scout', level: 'elevated' })).toMatchObject({ value: { level: 'elevated' } });
+    expect(await h.call(B.Permissions, { botId: 'scribe' })).toMatchObject({ value: { level: 'full' } });
+    expect(h.contents.send).toHaveBeenCalledWith(B.Event, { type: 'settings' });
+    h.as(B2);
+    expect(await h.call(B.Permissions, undefined, voiceSender)).toMatchObject({ value: { level: 'supervised' } });
+    h.as(A);
+    expect(await h.call(B.Permissions)).toMatchObject({ value: { level: 'full' } });
+    expect(await h.call(B.Permissions, { botId: 'scout' })).toMatchObject({ value: { level: 'elevated' } });
   } finally { h.unregister(); await h.hub.stop(); }
 });
 
@@ -108,11 +132,30 @@ it('refuses untrusted senders and frames before any runtime work', async () => {
   const h = setup();
   const refused = { ok: false, kind: 'state', message: 'Untrusted HyperBots caller refused.' };
   for (const from of [{ sender: h.contents, senderFrame: {} }, { sender: { mainFrame: {} }, senderFrame: {} }]) {
-    for (const channel of [B.Open, B.Snapshot, B.Post, B.Decide, B.SaveSettings, B.Models]) expect(await h.call(channel, { roomId: 'ops' }, from)).toEqual(refused);
+    for (const channel of [B.Open, B.Snapshot, B.Post, B.Decide, B.SaveSettings, B.Permissions, B.Skills, B.SaveSkill,
+      B.Personalization, B.SavePersonalization, B.Models]) expect(await h.call(channel, { roomId: 'ops' }, from)).toEqual(refused);
   }
   expect(h.deps.models).not.toHaveBeenCalled();
   expect(h.runtimes).toHaveLength(0);
   await h.hub.stop();
+});
+
+it('keeps personalization within the main-verified account and rejects caller-supplied identities', async () => {
+  const h = setup();
+  const args = { botId: 'scout' };
+  const preference = { kind: 'soul', field: 'format', value: 'Use short bullet points.' };
+  try {
+    expect(await h.call(B.Personalization, { ...args, account: B2.key })).toMatchObject({ ok: false, kind: 'format' });
+    expect(await h.call(B.SavePersonalization, { ...args, userId: B2.userId, revision: 0, change: { type: 'save', draft: preference } }))
+      .toMatchObject({ ok: false, kind: 'format' });
+    expect(await h.call(B.SavePersonalization, { ...args, revision: 0, change: { type: 'save', draft: preference } }))
+      .toMatchObject({ ok: true, value: { entries: [{ draft: preference }] } });
+    expect(h.contents.send).toHaveBeenCalledWith(B.Event, { type: 'personalization', botId: 'scout' });
+    h.as(B2);
+    expect(await h.call(B.Personalization, args)).toEqual({ ok: true, value: { revision: 0, mode: 'off', entries: [], suggestions: [] } });
+    h.as(A);
+    expect(await h.call(B.Personalization, args)).toMatchObject({ ok: true, value: { entries: [{ draft: preference }] } });
+  } finally { h.unregister(); await h.hub.stop(); }
 });
 
 it('validates every argument strictly and passes only parsed input', async () => {
@@ -125,10 +168,12 @@ it('validates every argument strictly and passes only parsed input', async () =>
   for (const args of [{ userId: '2' }, { roomId: 'ops', userId: '2' }, { roomId: 'Ops!' }]) expect(await h.call(B.Open, args)).toMatchObject({ ok: false, kind: 'format' });
   for (const args of [{ approvalId: 'x', approved: true }, { approvalId: MESSAGE, approved: 'yes' }, { approvalId: MESSAGE, approved: true, delivery: 'later' }]) expect(await h.call(B.Decide, args)).toMatchObject({ ok: false, kind: 'format' });
   expect(await h.call(B.SaveSettings, { ...HYPER_BOTS_DEFAULT_SETTINGS, version: 2 })).toMatchObject({ ok: false, kind: 'format' });
+  expect(await h.call(B.SaveSkill, { id: MESSAGE, revision: 1, delete: true, userId: '2' })).toMatchObject({ ok: false, kind: 'format' });
   expect(h.runtimes).toHaveLength(0);
   const posted = await h.call(B.Post, { ...base, text: 'Hi @nobody', model: 'gpt-y' });
   expect(posted).toMatchObject({ ok: true, value: { created: true, message: { text: 'Hi @nobody', model: 'gpt-y' } } });
   expect(await h.call(B.Models)).toEqual({ ok: true, value: ['m', 'n'] });
+  expect(await h.call(B.Skills)).toMatchObject({ ok: true, value: { assets: [], bots: [{ id: 'scout' }, { id: 'scribe' }] } });
   expect(await h.call(B.SaveSettings, HYPER_BOTS_DEFAULT_SETTINGS)).toEqual({ ok: true, value: hyperBotsWithDirectRooms(HYPER_BOTS_DEFAULT_SETTINGS) });
   await h.hub.stop();
 });

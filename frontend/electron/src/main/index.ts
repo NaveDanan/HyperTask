@@ -24,6 +24,9 @@ import { HyperBotsTools, hyperBotsConnections, hyperBotsOutlookTools, hyperBotsR
 import { hyperBotsJiraTools } from './HyperBotsJiraTools';
 import { hyperBotsNewsletterTools } from './HyperBotsNewsletterTools';
 import { HyperNewsletterConnection } from './HyperNewsletterConnection';
+import { HyperBotsProjectTasks } from './HyperBotsProjectTasks';
+import { hyperCoreWithGeneralKanban } from './HyperGeneralKanbanCore';
+import { hyperBotsProjectTools } from './HyperBotsProjectTools';
 import { registerHyperBotsIpc, registerHyperBotsUnavailable } from './HyperBotsIpc';
 import { registerHyperAssistantIpc } from './HyperAssistantIpc';
 import { registerHyperDesktopIpc } from './HyperDesktopIpc';
@@ -59,6 +62,9 @@ import { registerSettingsIpc } from './settings-ipc';
 const DEEP_LINK_SCHEME = 'hypertask-flutter';
 const TRUSTED_WEB_PERMISSIONS = new Set(['media', 'audioCapture', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'notifications']);
 
+// Match electron-builder's appId so Windows associates the taskbar window with HyperTask.exe.
+if (process.platform === 'win32' && app.isPackaged) app.setAppUserModelId('io.hypertask.hypertask');
+
 // Allow WebAudio/AudioWorklet capture to resume immediately when triggered via global hotkey IPC.
 app.commandLine?.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
@@ -77,6 +83,7 @@ const appRoot = path.resolve(__dirname, '../..');
 const prefs = new SharedPreferences(path.join(supportDirectory(), 'shared_preferences.json'));
 const jiraCredentials = new JiraCredentialFiles(supportDirectory);
 const core = new CoreProcess(coreBinaryPath(appRoot, app.isPackaged));
+const requestCore = hyperCoreWithGeneralKanban(core.request.bind(core));
 const hyperOutlook = new HyperOutlookBridge();
 const hyperNodTunnel = new HyperNodTunnel();
 const hyperDevJwt = new HyperDevJwtBootstrap({ packaged: app.isPackaged, rendererUrl: process.env.ELECTRON_RENDERER_URL, enabled: process.env.HYPER_DEV_JWT_ENABLED, sessionFile: process.env.HYPER_DEV_JWT_SESSION_FILE });
@@ -283,13 +290,14 @@ function createHyperBots() {
   hyperBots = new HyperBotsHub({
     directory: path.join(supportDirectory(), 'hyper_bots', 'users'),
     identity: async () => { await startCore(); return hyperBotsReadIdentity((event, payload) => core.request(event, payload)); },
-    // Each runtime's Jira tool is bound to its own account; nothing global decides whose Jira receives a write.
+    // Jira and native task tools are bound to the account that owns the bot runtime.
     create: (user, stateFile) => new HyperBotsRuntime({
       store: new HyperBotsStore(stateFile), engine, defaultModel,
       tools: new HyperBotsTools([
         ...hyperBotsOutlookTools(hyperOutlook),
         ...hyperBotsJiraTools({ access: () => jira(user), fetch: netFetch }),
         ...hyperBotsNewsletterTools({ access: () => newsletter.access(user.key), fetch: netFetch }),
+        ...hyperBotsProjectTools(new HyperBotsProjectTasks(requestCore, user.key)),
       ]),
     }),
   });
@@ -376,7 +384,7 @@ function registerIpc() {
   ipcMain.handle(C.CoreRequest, async (_, event: string, payload: Uint8Array) => {
     const reply = await hyperNodNativeCoreRequest(nodSessions, event, () => hyperNativeCoreRequest(openBotSessions, event, async () => {
       await startCore();
-      return core.request(event, payload);
+      return requestCore(event, payload);
     }));
     if (['SignOut', 'DeleteAccount', 'SignUp', 'OauthSignIn', 'SignInWithEmailPassword', 'PasscodeSignIn', 'MagicLinkSignIn', 'InitUser', 'OpenAnonUser'].includes(event)) reconcileBots();
     return reply;

@@ -21,8 +21,11 @@ const deferred = () => { let settle: (value: IpcResult<unknown>) => void = () =>
 beforeEach(() => {
   ids = 0; outbox = new HyperBotsOutbox(); off = vi.fn();
   api = {
-    open: vi.fn(async () => ok(snapshot())), snapshot: vi.fn(async () => ok(snapshot())), post: vi.fn(async () => posted),
+    open: vi.fn(async () => ok(snapshot())), snapshot: vi.fn(async () => ok(snapshot())), post: vi.fn(async () => posted), act: vi.fn(async () => posted),
     decide: vi.fn(async () => ok({})), saveSettings: vi.fn(async (settings: unknown) => ok(settings)), models: vi.fn(async () => ok(['gpt-x', 'gpt-y'])),
+    permissions: vi.fn(async () => ok({ level: 'supervised', legacyReadOverrides: false })),
+    skills: vi.fn(async () => ok({ assets: [], bots: [] })), saveSkill: vi.fn(async () => ok({ assets: [], bots: [] })),
+    personalization: vi.fn(), savePersonalization: vi.fn(),
     newsletterConnection: vi.fn(async () => ok(null)), saveNewsletterConnection: vi.fn(async () => ok(null)),
     onEvent: vi.fn(next => { listener = next; return off; }),
   };

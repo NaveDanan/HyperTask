@@ -51,22 +51,21 @@ function world(o: { script: (t: Turn) => HyperBotsAssistantMessage; settings?: P
 }
 const both = (policy: 'ask' | 'allow'): Partial<HyperBotsSettings> => ({
   bots: [{ id: 'scout', name: 'Scout', instructions: 'You are Scout.', model: '', tools: ['outlook_list_events', 'jira_create_issue'] as HyperBotsToolName[] }],
-  rooms: [{ id: 'ops', name: 'Ops', botIds: ['scout'] }], policy: { outlook_list_events: policy } });
+  rooms: [{ id: 'ops', name: 'Ops', botIds: ['scout'] }], permissionLevel: policy === 'allow' ? 'elevated' : 'supervised' });
 const post = (rt: HyperBotsRuntime, text: string, clientMessageId = randomUUID()) => rt.post({ roomId: 'ops', clientMessageId, text });
 
 describe('audit re-check', () => {
-  test('#1 revoking the read policy before the write is approved: the policy-approved Outlook read waits for the owner again', async () => {
+  test('#1 downgrading permissions adds the previously auto-approved read to the waiting turn', async () => {
     const w = world({ settings: both('allow'), script: (t) => t.n === 1 ? calls(['outlook_list_events', READ_ARGS], ['jira_create_issue', { summary: 'S' }]) : say('done') });
     await post(w.runtime, 'read and file');
     await w.runtime.idle();
     const [read, write] = w.store.listApprovals({});
     expect([read!.status, read!.decidedBy, write!.status]).toEqual(['approved', 'policy', 'pending']);
-    w.runtime.saveSettings({ ...w.runtime.settings(), policy: { outlook_list_events: 'ask' } });
-    w.runtime.decide(write!.id, true);
+    w.runtime.saveSettings({ ...w.runtime.settings(), permissionLevel: 'supervised' });
     await w.runtime.idle();
     expect([w.outlookCalls.length, w.jira.posts.length]).toEqual([0, 0]);
     expect(w.store.getApproval(read!.id)).toMatchObject({ status: 'pending', decidedBy: null });
-    w.runtime.decide(read!.id, true);
+    w.runtime.decide(write!.id, true);
     await w.runtime.idle();
     expect([w.outlookCalls, w.jira.posts.length]).toEqual([['list'], 1]);
   });
@@ -102,8 +101,8 @@ describe('audit re-check', () => {
     await expect(post(again.runtime, 'other text', done)).rejects.toMatchObject({ code: 'conflict' });
   });
 
-  test('#4 the Jira project changed while the write waited: no POST to the new project until the owner approves that destination', async () => {
-    const w = world({ script: (t) => t.n === 1 ? calls(['jira_create_issue', { summary: 'S' }]) : say(lastTool(t)) });
+  test('#4 a Jira destination change stops the write until the owner starts a new turn', async () => {
+    const w = world({ script: (t) => t.n % 2 ? calls(['jira_create_issue', { summary: 'S' }]) : say(lastTool(t)) });
     await post(w.runtime, '@scribe file it');
     await w.runtime.idle();
     const ap = w.runtime.snapshot('ops').approvals[0]!;
@@ -112,8 +111,12 @@ describe('audit re-check', () => {
     w.runtime.decide(ap.id, true);
     await w.runtime.idle();
     expect(w.jira.posts).toHaveLength(0);
-    expect(w.runtime.snapshot('ops').approvals[0]).toMatchObject({ status: 'pending', decidedBy: null, destination: 'Jira project SEC at https://jira.example.test as token' });
-    w.runtime.decide(ap.id, true);
+    expect(w.runtime.snapshot('ops').approvals[0]).toMatchObject({ status: 'skipped', decidedBy: 'owner', destination: ap.destination });
+    await post(w.runtime, '@scribe file it in SEC');
+    await w.runtime.idle();
+    const next = w.runtime.snapshot('ops').approvals.find(a => a.status === 'pending')!;
+    expect(next.destination).toBe('Jira project SEC at https://jira.example.test as token');
+    w.runtime.decide(next.id, true);
     await w.runtime.idle();
     expect(w.jira.posts.map((p) => [p.body.fields.project.key, p.authorization])).toEqual([['SEC', 'Bearer pat-SEC-0123456789']]);
   });

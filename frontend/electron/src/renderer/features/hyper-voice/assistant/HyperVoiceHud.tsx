@@ -33,7 +33,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { HyperBotAvatar, hyperBotAvatarOf } from '@/features/hyper-bots/HyperBotAvatar';
-import { HyperBotsApprovalCard } from '@/features/hyper-bots/HyperBotApproval';
+import { HyperBotTurnApproval, hyperBotApprovalGroups } from '@/features/hyper-bots/HyperBotApproval';
+import { HyperBotPermissions } from '@/features/hyper-bots/HyperBotPermissions';
 import { HyperBotRichText } from '@/features/hyper-bots/HyperBotMentionPopover';
 import { HyperMarkdown } from '@/features/hyper-openbot/transcript/HyperMarkdown';
 import { hyperApplyConfirmedPeople } from '@shared/HyperAssistantPeople';
@@ -655,6 +656,10 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
             )}
           </div>}
 
+          {(selectedBot || plan.groupAction === 'send') && <HyperBotPermissions
+            key={plan.groupAction === 'send' ? 'group' : selectedBot?.id}
+            botId={plan.groupAction === 'send' ? undefined : selectedBot?.id}
+          />}
           {missingTools.length > 0 && selectedBot && (
             <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-amber-500/35 bg-amber-500/10 p-2.5 text-xs">
               <input
@@ -666,7 +671,7 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
               <span className="leading-snug text-foreground">
                 {t(
                   'hyperVoiceAssistant.enableMissingTools',
-                  'Enable Outlook tool(s) ({tools}) for {bot} and run. Every email or invite still asks for your approval.',
+                  'Enable Outlook tools ({tools}) for {bot} and run.',
                   {
                     namedArgs: {
                       bot: selectedBot.handle,
@@ -736,7 +741,7 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
             )}
             <span dir="auto" className="truncate text-xs font-semibold text-foreground">
               {waitingApproval
-                ? t('hyperVoiceAssistant.waitingApproval', '{bot} needs your approval before sending', {
+                ? t('hyperVoiceAssistant.waitingApproval', '{bot} needs your approval to continue', {
                     namedArgs: { bot: execution.botName },
                   })
                 : isDone
@@ -761,18 +766,10 @@ export function HyperVoiceHud(props: HyperVoiceHudProps) {
             </p>
           )}
 
-          {execution.pendingApprovals.map((approval) => (
-            <HyperBotsApprovalCard
-              key={approval.id}
-              approval={approval}
-              botName={
-                execution.botSettings?.bots.find((b) => b.id === approval.botId)?.name ??
-                execution.botName
-              }
-              busy={props.decidingIds.includes(approval.id)}
-              onDecide={props.onDecideApproval}
-            />
-          ))}
+          {hyperBotApprovalGroups(execution.pendingApprovals).map(group => <HyperBotTurnApproval
+            key={group[0]!.id} approvals={group} settings={execution.botSettings}
+            deciding={props.decidingIds} onDecide={props.onDecideApproval}
+          />)}
 
           {execution.decidedApprovals.length > 0 && (
             <div className="space-y-1">

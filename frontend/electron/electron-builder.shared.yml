@@ -21,7 +21,8 @@ extraResources:
     to: LICENSE
 npmRebuild: false
 win:
-  signAndEditExecutable: false
+  icon: resources/hypertask.ico
+  signExecutable: false
 mac:
   extendInfo:
     NSMicrophoneUsageDescription: HyperTask uses your microphone to capture voice commands for Hyper-Bot.
