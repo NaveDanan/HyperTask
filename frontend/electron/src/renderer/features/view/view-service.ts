@@ -34,6 +34,7 @@ export interface CreateViewOptions {
   index?: number;
   section?: ViewSectionPB;
   viewId?: string;
+  extra?: string;
 }
 
 export const ViewBackendService = {
@@ -48,6 +49,7 @@ export const ViewBackendService = {
     index,
     section,
     viewId,
+    extra,
   }: CreateViewOptions): Promise<HyperResult<ViewPB>> {
     const result = await FolderEventCreateView({
       parentViewId,
@@ -59,10 +61,11 @@ export const ViewBackendService = {
       ...(index !== undefined ? { oneOfIndex: { case: 'index', value: index } } : null),
       ...(section !== undefined ? { oneOfSection: { case: 'section', value: section } } : null),
       ...(viewId !== undefined ? { oneOfViewId: { case: 'viewId', value: viewId } } : null),
+      ...(extra !== undefined ? { oneOfExtra: { case: 'extra', value: extra } } : null),
     });
     if (!result.ok || hyperLayout !== 'gantt') return result;
-    const extra = mergeViewExtra(result.value, { hyper_layout: 'gantt' });
-    const updated = await ViewBackendService.updateView({ viewId: result.value.id, extra });
+    const ganttExtra = mergeViewExtra(result.value, { hyper_layout: 'gantt' });
+    const updated = await ViewBackendService.updateView({ viewId: result.value.id, extra: ganttExtra });
     if (!updated.ok) return updated;
     if (openAfterCreate) {
       const opened = await FolderEventSetLatestView({ value: result.value.id });

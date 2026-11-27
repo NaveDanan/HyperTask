@@ -34,12 +34,15 @@ export const HyperOutlookArgs = {
   open: z.strictObject({ id }),
   // The ops below are for HyperBots in main only: HyperOutlookIpc gives them no renderer channel.
   'event.get': z.strictObject({ id }),
+  'event.delete': z.strictObject({ id, send: z.boolean(), account: email, expect: instant }),
   'event.forward': z.strictObject({ id, to: recipients.min(1), comment: z.string().max(8192), account: email, expect: instant }),
   'mail.account': z.undefined(),
   // Filters are dates and booleans only; from/subject are matched in PowerShell, never put into an Outlook filter string.
   'mail.list': z.strictObject({ folder: z.enum(['inbox', 'sent', 'drafts']), unreadOnly: z.boolean(), since: instant.nullable(), from: z.string().max(200), subject: z.string().max(200), max: z.number().int().min(1).max(50) }),
   // maxChars 0 reads the header only (sender, recipients, reply-to): what an approval card shows.
   'mail.read': z.strictObject({ id: entry, maxChars: z.number().int().min(0).max(20000) }),
+  'mail.deleteTarget': z.strictObject({ id: entry }),
+  'mail.delete': z.strictObject({ id: entry, folder: entry, account: email, expect: instant }),
   'mail.send': z.strictObject({ to: recipients.min(1), cc: recipients, subject: z.string().trim().min(1).max(255).refine(value => !/[\r\n]/.test(value), 'The subject must be one line.'), body: z.string().max(20000), delivery, account: email }).refine(fewRecipients, 'At most 20 recipients.'),
   // The exact recipients Outlook's Reply / Reply All gives (Reply-To included): an unsaved reply, discarded at once.
   'mail.recipients': z.strictObject({ id: entry, replyAll: z.boolean() }),
@@ -78,10 +81,13 @@ export const HyperOutlookValues = {
   list: z.array(HyperOutlookEventSchema).max(2000), create: HyperOutlookEventSchema, update: HyperOutlookEventSchema,
   delete: z.null(), respond: z.null(), open: z.null(),
   'event.get': HyperOutlookEventSchema,
+  'event.delete': z.null(),
   'event.forward': z.strictObject({ mode: z.enum(['organizer', 'invitation']), to: z.array(z.string().max(1024)).max(200) }),
   'mail.account': z.strictObject({ address: z.string().max(320), name: z.string().max(1024) }),
   'mail.list': z.array(HyperOutlookMailSummarySchema).max(50),
   'mail.read': HyperOutlookMailSchema,
+  'mail.deleteTarget': z.strictObject({ subject: z.string().max(4096), from: Address, folder: entry, lastModified: instant }),
+  'mail.delete': z.null(),
   'mail.recipients': z.strictObject({ to: z.array(z.string().max(1024)).max(50), cc: z.array(z.string().max(1024)).max(50) }),
   'mail.send': Delivered, 'mail.reply': Delivered, 'mail.forward': Delivered,
   'meeting.respond': z.strictObject({ delivery, response: z.enum(['accept', 'tentative', 'decline']), subject: z.string().max(4096) }),

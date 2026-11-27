@@ -1,33 +1,25 @@
 // Ported from t3code (apps/web/src/components/settings/SettingsFontPreviews.tsx), Copyright (c) 2026 T3 Tools Inc., MIT License. See NOTICE.md in this folder.
-// HyperTask has no composer editor, diff renderer or Ghostty surface, so the previews are static text
-// in the same fonts. The terminal preview is a read-only xterm, as the app's terminal is.
 
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal, type ITheme } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { TERMINAL_THEME } from '@/features/hyper-openbot/computer-browser/HyperTerminalTheme';
 import { cn } from '@/lib/utils';
 import { useBrightness } from '@/theme/appearance-store';
-import { usePromptFontStyle } from './font-families';
+import { HyperPromptEditor } from '@/features/hyper-bots/prompt/HyperPromptEditor';
 
+const PROMPT_PREVIEW_SKILLS = new Map([['frontend-design', { label: 'frontend-design', description: 'Design and style interfaces.' }]]);
 const PROMPT_PREVIEW_TEXT =
-  'Use $frontend-design to fix the flaky test in surface.test.ts and align the header with ' +
-  'SettingsPanels.tsx before shipping.';
+  'Use $frontend-design to fix the flaky test in ' +
+  '[surface.test.ts](apps/web/src/terminal/ghostty/surface.test.ts) and align the header with ' +
+  '[SettingsPanels.tsx](apps/web/src/components/settings/SettingsPanels.tsx) before shipping.';
 
 export function PromptFontPreview() {
-  const style = usePromptFontStyle();
+  const [prompt, setPrompt] = useState(PROMPT_PREVIEW_TEXT);
   return (
     <div className="mt-1 mb-2 rounded-lg border border-border bg-background px-3 py-2">
-      <div
-        role="textbox"
-        aria-readonly="true"
-        aria-label="Prompt font preview"
-        className="break-words whitespace-pre-wrap text-foreground"
-        style={style}
-      >
-        {PROMPT_PREVIEW_TEXT}
-      </div>
+      <HyperPromptEditor aria-label="Prompt font preview" value={prompt} skills={PROMPT_PREVIEW_SKILLS} onChange={setPrompt} />
     </div>
   );
 }

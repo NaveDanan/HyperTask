@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
 import { UserEventGetUserProfile } from '@/backend/events';
-import { Archive, Bell, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Mic, Monitor, Palette, Plug, ShieldCheck, UserRound, Users, X } from 'lucide-react';
+import { Archive, Bell, BookOpen, CreditCard, Database, Flag, Gem, Globe, Keyboard, LayoutDashboard, Mic, Monitor, Palette, Plug, ShieldCheck, UserRound, Users, X } from 'lucide-react';
 import { NavItem } from '@/components/app/nav';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +13,7 @@ import { AccountPage } from './account/AccountPage';
 import { passwordActions } from './account/password-store';
 import { VoiceSettingsPanel } from '@/features/hyper-voice/settings/VoiceSettingsPanel';
 import { HyperConnectionsPage } from './connections/HyperConnectionsPage';
+import { HyperBotSkills } from '@/features/hyper-bots/HyperBotSkills';
 import { CertificatesPage } from './certificates/CertificatesPage';
 import { ManageDataPage } from './manage-data/ManageDataPage';
 import { TrashPage } from '@/features/plugins/trash/TrashPage';
@@ -54,6 +55,7 @@ const MENU: Record<SettingsMenuPage, { label: (tr: (key: string) => string) => s
   [SettingsPage.archived]: { label: () => 'Archived', icon: () => <Archive className="size-4" /> },
   [SettingsPage.notifications]: { label: (tr) => tr('settings.menu.notifications'), icon: () => <Bell className="size-4" /> },
   [SettingsPage.connections]: { label: () => 'Connections', icon: () => <Plug className="size-4" /> },
+  [SettingsPage.skills]: { label: () => 'Skills', icon: () => <BookOpen className="size-4" /> },
   // [CUSTOM] hard-coded English labels.
   [SettingsPage.companyCertificates]: { label: () => 'Certificates', icon: () => <ShieldCheck className="size-4" /> },
   [SettingsPage.shortcuts]: { label: (tr) => tr('settings.shortcutsPage.menuLabel'), icon: () => <Keyboard className="size-4" /> },
@@ -107,6 +109,8 @@ function SettingsView({ page, props }: { page: SettingsPage; props: SettingsPage
       return <NotificationsPage {...props} />;
     case SettingsPage.connections:
       return <HyperConnectionsPage key={String(props.user.id)} {...props} />;
+    case SettingsPage.skills:
+      return <HyperBotSkills key={String(props.user.id)} />;
     case SettingsPage.companyCertificates:
       return <CertificatesPage {...props} />;
     case SettingsPage.shortcuts:
@@ -166,7 +170,7 @@ function SettingsDialog({ close }: { close: () => void }) {
     <div className="flex overflow-hidden rounded-xl bg-background text-foreground shadow-2xl ring-1 ring-foreground/10"
       style={{ width: dialogWidth, height: Math.min(height * 0.7, height - 48) }}>
       <SettingsMenu pages={pages} current={page} />
-      {page === SettingsPage.appearance || page === SettingsPage.desktop || page === SettingsPage.voice || page === SettingsPage.connections ? (
+      {page === SettingsPage.appearance || page === SettingsPage.desktop || page === SettingsPage.voice || page === SettingsPage.connections || page === SettingsPage.skills ? (
         <div className="flex h-full min-w-0 flex-1 flex-col">
           <SettingsBreadcrumbBar root={tr('settings.title')} section={MENU[page].label(tr)} onClose={close} />
           <ScrollArea key={page} className="min-h-0 flex-1">

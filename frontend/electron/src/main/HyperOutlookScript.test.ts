@@ -71,3 +71,53 @@ it.skipIf(process.platform !== 'win32')('keeps exact Outlook address-list matche
     rmSync(folder, { recursive: true, force: true });
   }
 }, 10000);
+
+it.skipIf(process.platform !== 'win32')('PowerShell cancels a meeting, deletes a personal event, and refuses permanent or stale mail removal', () => {
+  const folder = mkdtempSync(join(tmpdir(), 'HyperTask-Outlook-delete-'));
+  try {
+    const script = join(folder, 'fixture.ps1');
+    const mocks = String.raw`
+$fixtureFolder = @{ 3 = 'DD'; 6 = 'AA'; 5 = 'BB'; 16 = 'CC' }
+function Connect-Hyper {}
+function Hyper-Account { return @{ SmtpAddress = 'owner@example.com' } }
+function Hyper-SameSender($item, [string]$address) { if ($address -ne 'owner@example.com') { throw 'Wrong sender' } }
+function Hyper-MockItem($id, $meeting, $folder) {
+  $item = [pscustomobject]@{
+    Id = $id; MeetingStatus = $meeting; RecurrenceState = 0; Recipients = $(if ($meeting -eq 1) { @('test@example.com') } else { @() });
+    Parent = @{ EntryID = $folder; StoreID = 'primary' }; LastModificationTime = [datetime]::SpecifyKind([datetime]'1970-01-01', [DateTimeKind]::Utc)
+  }
+  $item | Add-Member ScriptMethod Send { [Console]::Error.WriteLine(('send:' + $this.Id + ':' + $this.MeetingStatus)) }
+  $item | Add-Member ScriptMethod Delete { [Console]::Error.WriteLine(('delete:' + $this.Id)) }
+  return $item
+}
+$ns = [pscustomobject]@{ DefaultStore = @{ StoreID = 'primary' } }
+$ns | Add-Member ScriptMethod GetDefaultFolder { param($key) return @{ EntryID = $fixtureFolder[$key] } }
+function Hyper-Resolve($id) { return Hyper-MockItem $id $(if ($id -eq 'A1') { 1 } else { 0 }) '00' }
+function Hyper-MailResolve($id) { return Hyper-MockItem $id 0 $(if ($id -eq 'D4') { 'DD' } else { 'AA' }) }
+function Hyper-MailSummary($item) { return @{ subject = 'Test message'; from = @{ name = 'Tester'; email = 'test@example.com' } } }
+`;
+    const epoch = '1970-01-01T00:00:00.0000000Z';
+    const auth = { account: 'owner@example.com', expect: epoch };
+    const request = (op: string, args: unknown) => JSON.stringify({ id: op, op, args });
+    const input = [
+      request('event.delete', { id: 'A1', send: true, ...auth }),
+      request('event.delete', { id: 'B2', send: false, ...auth }),
+      request('mail.deleteTarget', { id: 'C3' }),
+      request('mail.delete', { id: 'C3', folder: 'AA', ...auth }),
+      request('mail.delete', { id: 'D4', folder: 'DD', ...auth }),
+      request('mail.delete', { id: 'C3', folder: 'BB', ...auth }),
+    ].join('\n') + '\n';
+    writeFileSync(script, '\uFEFF' + HyperOutlookScript.replace('\nwhile ($null -ne ($line', '\n' + mocks + '\nwhile ($null -ne ($line'), 'utf8');
+    const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script], {
+      encoding: 'utf8', input, timeout: 8000, windowsHide: true,
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr || result.stdout).toBe(0);
+    const replies = result.stdout.trim().split(/\r?\n/).map(line => JSON.parse(line));
+    expect(replies.map(reply => reply.ok)).toEqual([true, true, true, true, false, false]);
+    expect(replies[2].value).toMatchObject({ folder: 'AA', lastModified: epoch });
+    expect(result.stderr.trim().split(/\r?\n/)).toEqual(['send:A1:5', 'delete:A1', 'delete:B2', 'delete:C3']);
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+}, 10000);

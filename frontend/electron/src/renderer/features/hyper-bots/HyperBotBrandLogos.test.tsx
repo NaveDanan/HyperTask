@@ -7,7 +7,7 @@ import { HyperBotToolsForm } from './HyperBotTools';
 import { HYPER_BOTS_DEFAULT_SETTINGS as settings } from '@shared/HyperBots';
 
 it('maps every catalog tool by its group, including Outlook calendar and mail', () => {
-  const expected = { 'outlook-calendar': 'outlook', 'outlook-mail': 'outlook', jira: 'jira', newsletter: 'newsletter' };
+  const expected = { 'outlook-calendar': 'outlook', 'outlook-mail': 'outlook', jira: 'jira', 'hypertask-projects': 'hypertask', newsletter: 'newsletter' };
   for (const [name, tool] of Object.entries(HYPER_BOTS_TOOLS)) expect(hyperBotToolProvider(name)).toBe(expected[tool.group]);
 });
 it('does not guess a logo for unknown or prototype tool names', () => {
@@ -30,8 +30,9 @@ it('keeps repeated SVG instances decorative and all gradient references unique',
   expect(html).toContain('width="16" height="16"');
   expect(html).toContain('hb-brand-logo custom-logo');
 });
-it('decorates every tools row without changing its switch label', () => {
-  const html = renderToStaticMarkup(<HyperBotToolsForm settings={settings} bot={settings.bots[0]!} onChange={() => {}} />);
-  expect(html.match(/\bhb-brand-logo\b/g)).toHaveLength(Object.keys(HYPER_BOTS_TOOLS).length);
-  for (const tool of Object.values(HYPER_BOTS_TOOLS)) expect(html).toContain('aria-label="' + tool.label + '"');
+it('decorates each available tool row and labels its approval switch', () => {
+  const bot = settings.bots[0]!;
+  const html = renderToStaticMarkup(<HyperBotToolsForm settings={settings} bot={bot} onChange={() => {}} />);
+  expect(html.match(/\bhb-brand-logo\b/g)).toHaveLength(bot.tools.length);
+  for (const name of bot.tools) expect(html).toContain('aria-label="Ask before: ' + HYPER_BOTS_TOOLS[name].label + '"');
 });

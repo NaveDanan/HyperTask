@@ -1,10 +1,22 @@
 import { expect, it, vi } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fromBinary } from '@bufbuild/protobuf';
+import { addDays } from 'date-fns';
 import { CoreProcess } from '../../src/main/core/process';
+import { HyperBotsTools } from '../../src/main/HyperBotsConnectors';
+import { hyperBotsReadIdentity } from '../../src/main/HyperBotsHub';
+import { HyperBotsProjectTasks } from '../../src/main/HyperBotsProjectTasks';
+import { hyperBotsProjectTools } from '../../src/main/HyperBotsProjectTools';
+import { HyperBotsRuntime } from '../../src/main/HyperBotsRuntime';
+import { HyperBotsStore } from '../../src/main/HyperBotsStore';
+import { hyperCoreWithGeneralKanban } from '../../src/main/HyperGeneralKanbanCore';
+import type { HyperBotsProjectToolName } from '@shared/HyperBots';
+import { hyperTaskViewKind } from '@shared/HyperTaskView';
 import { UserEventSignUp, UserEventInitUser } from '@/backend/events/hyper-user';
-import { FolderEventCreateView, FolderEventGetCurrentWorkspaceSetting, FolderEventGetView, FolderEventUpdateView } from '@/backend/events/hyper-folder';
+import { FolderEventCreateView, FolderEventGetAllViews, FolderEventGetCurrentWorkspaceSetting, FolderEventGetView, FolderEventUpdateView } from '@/backend/events/hyper-folder';
 import { AuthTypePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import { unwrap } from '@/backend/dispatch';
 import { FieldType } from '@shared/protobuf/hyper-database2/field_entities_pb';
@@ -16,6 +28,167 @@ import { ViewBackendService } from '@/features/view/view-service';
 import { ViewLayoutPB, ViewSectionPB, type ViewPB } from '@shared/protobuf/hyper-folder/view_pb';
 import { createSpaceStore } from '@/features/sidebar/stores/space-store';
 import { createViewBloc } from '@/features/sidebar/stores/view-bloc';
+import { hyperGanttMap, hyperGanttReadConfig } from '@/features/hyper-database/views/gantt/HyperGanttMapping';
+
+it('uses bot tools to persist tasks in General Kanban, project Kanban, and linked and standalone Gantt', async () => {
+  const support = await fs.mkdtemp(path.join(os.tmpdir(), 'hyper-bot-gantt-'));
+  const binary = process.env.HYPERTASK_CORE_BINARY ?? path.resolve(process.cwd(), '../rust-lib/target/debug/hypertask_core');
+  const core = new CoreProcess(binary);
+  const request = hyperCoreWithGeneralKanban(core.request.bind(core));
+  const controllers: HyperDatabaseController[] = [];
+  let runtime: HyperBotsRuntime | undefined;
+  vi.stubGlobal('window', { hypertask: { core: { request } } });
+  const backend = { ...hyperDatabaseBackend, subscribe: (listener: Parameters<typeof hyperDatabaseBackend.subscribe>[0]) => {
+    const handle = (bytes: Uint8Array) => listener(fromBinary(SubscribeObjectSchema, bytes));
+    core.on('notification', handle);
+    return () => core.off('notification', handle);
+  } };
+  const open = async (view: ViewPB) => {
+    const controller = new HyperDatabaseController(view.id, backend);
+    controllers.push(controller);
+    await controller.open();
+    expect(controller.state.status).toBe('ready');
+    return controller;
+  };
+
+  try {
+    await core.start(() => {});
+    const data = path.join(support, 'data');
+    expect(await core.init({
+      root: support, app_version: '0.11.4', custom_app_path: data, origin_app_path: data, device_id: 'hyper-bot-gantt',
+      platform: process.platform === 'win32' ? 'windows' : process.platform, authenticator_type: 0,
+      hypertask_cloud_config: { base_url: '', ws_base_url: '', gotrue_url: '', base_web_domain: '', enable_sync_trace: false }, envs: {},
+    })).toBe(0);
+    unwrap(await UserEventSignUp({ email: 'gantt@hypertask.test', name: 'Gantt test owner', password: 'Local!@123456', authType: AuthTypePB.Local, deviceId: 'hyper-bot-gantt' }));
+    const { workspaceId } = unwrap(await FolderEventGetCurrentWorkspaceSetting());
+    const identity = await hyperBotsReadIdentity(request);
+    expect(identity).not.toBeNull();
+    const tools = hyperBotsProjectTools(new HyperBotsProjectTasks(request, identity!.key));
+    const signal = new AbortController().signal;
+    async function call(name: HyperBotsProjectToolName, input: unknown) {
+      const tool = tools.find(candidate => candidate.name === name)!;
+      const args = tool.parse(input);
+      const context = await tool.bind!(args, signal);
+      try {
+        return await tool.run(args, signal, context.fingerprint) as {
+          viewId: string;
+          task: { rowId: string };
+          tasks: { rowId: string }[];
+        };
+      } catch (error) {
+        throw new Error(`${name} for ${context.destination}: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+      }
+    }
+    const assignees = [{ name: 'Maya Levy', email: 'maya@hypertask.test' }];
+    const openHomeBoard = () => ViewBackendService.createView({
+      parentViewId: workspaceId, name: 'Hyper-Kanban', layoutType: ViewLayoutPB.Board, extra: '{"hyper_general_kanban":true}',
+    }).then(unwrap);
+    const [general, homeBoard, secondHomeBoard] = await Promise.all([
+      call('hypertask_create_task', { title: 'Check release notes', assignees, status: 'To Do' }),
+      openHomeBoard(),
+      openHomeBoard(),
+    ]);
+    expect(general.task).toMatchObject({ title: 'Check release notes', assignees });
+    expect(general.viewId).toBe(homeBoard.id);
+    expect(secondHomeBoard.id).toBe(homeBoard.id);
+    expect(unwrap(await FolderEventGetAllViews()).items.filter(view => hyperTaskViewKind(view) === 'general')).toHaveLength(1);
+    expect(hyperTaskViewKind(unwrap(await FolderEventGetView({ value: general.viewId })))).toBe('general');
+    await expect(call('hypertask_update_task', { rowId: general.task.rowId, status: 'Doing', description: 'Proofread the draft' }))
+      .resolves.toMatchObject({ task: { description: 'Proofread the draft' } });
+    await expect(call('hypertask_search_tasks', { query: 'release notes' }))
+      .resolves.toMatchObject({ viewId: general.viewId, tasks: [{ rowId: general.task.rowId, assignees, description: 'Proofread the draft', status: expect.stringMatching(/doing|in progress/i) }] });
+
+    const board = await open(unwrap(await FolderEventCreateView({ parentViewId: workspaceId, name: 'Release board', layout: ViewLayoutPB.Board })));
+    const gantt = await open(await board.addView('gantt', 'Release timeline'));
+    expect(gantt.state.databaseId).toBe(board.state.databaseId);
+    const view = gantt.state.view!;
+    const start = await gantt.createField('Kickoff', FieldType.DateTime);
+    const end = await gantt.createField('Handoff', FieldType.DateTime);
+    await gantt.updateViewExtra({ hyper_gantt: { start_field_id: start.id, end_field_id: end.id, scale: 'week' } });
+    const target = { view: 'gantt', viewId: gantt.viewId };
+    await expect(call('hypertask_list_task_views', { query: 'Release' })).resolves.toMatchObject({
+      views: expect.arrayContaining([{ viewId: gantt.viewId, view: 'gantt', name: 'Release timeline', path: expect.stringContaining('Release timeline') }]),
+    });
+    await expect(call('hypertask_create_task', { ...target, title: 'Invalid schedule', startDate: '2026-03-09', endDate: '2026-03-05' })).rejects.toThrow('End date');
+    const project = await call('hypertask_create_task', { view: 'board', viewId: board.viewId, title: 'Publish release', status: 'Doing', assignees });
+    const id = project.task.rowId;
+    expect(project.task).toMatchObject({ title: 'Publish release', status: expect.stringMatching(/doing|in progress/i), assignees });
+    await expect(call('hypertask_update_task', { ...target, rowId: id, startDate: '2026-03-02', endDate: '2026-03-05', status: 'Done' }))
+      .resolves.toMatchObject({ task: { rowId: id, status: 'Done', startDate: '2026-03-02', endDate: '2026-03-05' } });
+    const title = gantt.state.fields.find(field => field.isPrimary)!.id;
+    const reopened = await open(view);
+    await reopened.loadRows([id], [title, start.id, end.id]);
+    const mapped = hyperGanttMap(reopened.state, hyperGanttReadConfig(reopened.state.view!, reopened.state));
+    expect(mapped.tasks.get(id)?.event).toMatchObject({
+      title: 'Publish release', start: new Date(2026, 2, 2), end: addDays(new Date(2026, 2, 5), 1), allDay: true,
+    });
+    await board.refresh();
+    await board.loadRows([id], [title]);
+    expect(board.state.cells[id]?.[title]?.display).toBe('Publish release');
+
+    await expect(call('hypertask_update_task', { ...target, rowId: id, endDate: '2026-03-06' }))
+      .resolves.toMatchObject({ task: { startDate: '2026-03-02', endDate: '2026-03-06' } });
+    await expect(call('hypertask_update_task', { ...target, rowId: id, clearSchedule: true }))
+      .resolves.toMatchObject({ task: { startDate: null, endDate: null } });
+
+    const onlyGantt = await open(unwrap(await ViewBackendService.createView({
+      parentViewId: workspaceId, name: 'Blank timeline', layoutType: ViewLayoutPB.Grid, hyperLayout: 'gantt', openAfterCreate: false,
+    })));
+    expect(onlyGantt.state.fields.some(field => field.type === FieldType.DateTime)).toBe(false);
+    const blank = { view: 'gantt', viewId: onlyGantt.viewId };
+    const unscheduled = await call('hypertask_create_task', { ...blank, title: 'Review release plan' });
+    expect(unscheduled.task).toMatchObject({ title: 'Review release plan', startDate: null, endDate: null });
+    const blankReopened = await open(onlyGantt.state.view!);
+    const blankConfig = hyperGanttReadConfig(blankReopened.state.view!, blankReopened.state);
+    expect(blankConfig.start_field_id).toBeTruthy();
+    expect(blankReopened.state.rowIds).toContain(unscheduled.task.rowId);
+    const milestone = await call('hypertask_create_task', { ...blank, title: 'Release milestone', startDate: '2026-03-08', status: 'Doing', assignees });
+    expect(milestone.task).toMatchObject({ startDate: '2026-03-08', endDate: '2026-03-08', status: 'Doing', assignees });
+    await expect(call('hypertask_update_task', { ...blank, rowId: milestone.task.rowId, startDate: '2026-03-11', status: 'Done' }))
+      .resolves.toMatchObject({ task: { startDate: '2026-03-11', endDate: '2026-03-11', status: 'Done' } });
+
+    // Drive a full chat turn with a deterministic model and the same real tools and core.
+    const store = new HyperBotsStore(path.join(support, 'hyper-bots.json'));
+    const propose = (name: HyperBotsProjectToolName, args: unknown) => ({
+      finishReason: 'tool_calls',
+      message: { role: 'assistant' as const, content: null, tool_calls: [{ id: name, type: 'function' as const, function: { name, arguments: JSON.stringify(args) } }] },
+    });
+    runtime = new HyperBotsRuntime({
+      store, tools: new HyperBotsTools(tools), defaultModel: async () => 'test-model',
+      engine: { async complete({ messages }) {
+        const last = messages.at(-1);
+        if (last?.role !== 'tool') return propose('hypertask_create_task', { ...target, title: 'QA review', status: 'To Do' });
+        const result = JSON.parse(last.content);
+        if (result.source === 'hypertask_create_task') {
+          return propose('hypertask_update_task', { ...target, rowId: result.untrusted_data.task.rowId, status: 'Doing', startDate: '2026-03-12', endDate: '2026-03-14' });
+        }
+        return { finishReason: 'stop', message: { role: 'assistant', content: 'QA review scheduled.' } };
+      } },
+    });
+    await runtime.post({ roomId: 'dm-scout', clientMessageId: randomUUID(), text: 'Create a QA review task on the Release timeline, start it, and schedule it for March 12 to 14.' });
+    await runtime.idle();
+    const pending = store.listApprovals({ status: ['pending'] });
+    expect(pending).toHaveLength(1);
+    await expect(call('hypertask_search_tasks', { ...target, query: 'QA review' })).resolves.toMatchObject({ tasks: [] });
+    runtime.decide(pending[0].id, true);
+    await runtime.idle();
+    expect(store.listApprovals().map(item => [item.tool, item.status])).toEqual([
+      ['hypertask_create_task', 'done'], ['hypertask_update_task', 'done'],
+    ]);
+    await expect(call('hypertask_search_tasks', { ...target, query: 'QA review' })).resolves.toMatchObject({
+      tasks: [{ title: 'QA review', status: 'Doing', startDate: '2026-03-12', endDate: '2026-03-14' }],
+    });
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error(JSON.stringify(error), { cause: error });
+  } finally {
+    await runtime?.stop();
+    for (const controller of controllers) controller.dispose();
+    await core.stop();
+    vi.unstubAllGlobals();
+    await fs.rm(support, { recursive: true, force: true, maxRetries: 4 });
+  }
+});
 
 it('creates page-menu and linked database views on a fresh core and drives four seeded samples', async () => {
   const repo = path.resolve(process.cwd(), '../..');

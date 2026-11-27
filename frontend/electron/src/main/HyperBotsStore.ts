@@ -5,6 +5,11 @@ import { z } from 'zod';
 import type {
   HyperBotsAccess, HyperBotsApproval, HyperBotsApprovalStatus, HyperBotsCardRow, HyperBotsDelivery, HyperBotsMessage, HyperBotsRunStatus, HyperBotsRunSummary, HyperBotsSettings,
 } from '@shared/HyperBots';
+import { hyperBotsMailDelivery } from '@shared/HyperBots';
+import { HyperBotA2uiInteractionSchema, HyperBotA2uiMessages } from '@shared/HyperBotA2ui';
+import { HyperBotAsset, HyperBotAssetKind } from '@shared/HyperBotSkills';
+import { HyperBotPersonalizationState, HyperBotPersonalizationTarget } from '@shared/HyperBotPersonalization';
+import { hyperBotEmptyProfile } from './HyperBotPersonalization';
 
 // Durable HyperBots state in one JSON file. Every mutation rewrites it atomically (tmp, fsync, rename);
 // a failed write rolls the in-memory state back, so memory never claims what disk does not hold.
@@ -16,11 +21,11 @@ export type HyperBotsChatMessage =
   | { role: 'assistant'; content: string | null; tool_calls?: HyperBotsToolCall[] }
   | { role: 'tool'; tool_call_id: string; content: string };
 export type HyperBotsToolSpec = { type: 'function'; function: { name: string; description: string; parameters: Record<string, unknown> } };
-export type HyperBotsRun = HyperBotsRunSummary & { transcript: HyperBotsChatMessage[] };
+export type HyperBotsRun = HyperBotsRunSummary & { transcript: HyperBotsChatMessage[]; authoring?: HyperBotAssetKind; assetSaved?: boolean; personalizationRevision?: number };
 /** The approval as stored: `fingerprint` binds the call to its destination and never leaves main. */
-export type HyperBotsApprovalRecord = HyperBotsApproval & { fingerprint: string | null };
+export type HyperBotsApprovalRecord = HyperBotsApproval & { fingerprint: string | null; customToolId?: string };
 /** One planned run of a message: the bot and the model captured when the message was stored. */
-export type HyperBotsPlanEntry = { botId: string; model: string };
+export type HyperBotsPlanEntry = { botId: string; model: string; authoring?: HyperBotAssetKind };
 export type HyperBotsRecall = { message: HyperBotsMessage; sameText: boolean; live: boolean; plan: HyperBotsPlanEntry[] | null };
 export type HyperBotsStored = HyperBotsRecall & { created: boolean; runs: HyperBotsRun[]; added: HyperBotsRun[] };
 
@@ -43,22 +48,30 @@ const ChatMessage = z.discriminatedUnion('role', [
   z.object({ role: z.literal('assistant'), content: z.string().nullable(), tool_calls: z.array(ToolCall).optional() }),
   z.object({ role: z.literal('tool'), tool_call_id: z.string(), content: z.string() }),
 ]);
-const PlanEntry = z.object({ botId: z.string(), model: z.string() });
+const PlanEntry = z.object({ botId: z.string(), model: z.string(), authoring: HyperBotAssetKind.optional() });
+const TurnDecision = z.strictObject({ approved: z.boolean(), delivery: z.enum(['send', 'draft']) });
+type TurnDecision = z.infer<typeof TurnDecision>;
 const MessageRow = z.object({
   id: z.string().min(1), roomId: z.string(), clientMessageId: z.string(),
   author: z.discriminatedUnion('kind', [z.object({ kind: z.literal('user') }), z.object({ kind: z.literal('bot'), botId: z.string() })]),
   text: z.string(), model: z.string().nullable(), runId: z.string().nullable(), hop: Count, createdAt: Iso, seq: Count,
   plan: z.array(PlanEntry).nullable().default(null),
+  turnDecision: TurnDecision.optional(),
+  a2ui: HyperBotA2uiMessages.optional().catch(undefined),
+  interaction: HyperBotA2uiInteractionSchema.optional().catch(undefined),
 });
 const RunRow = z.object({
   id: z.string().min(1), roomId: z.string(), botId: z.string(), triggerMessageId: z.string(), model: z.string(),
   status: z.enum(['queued', 'running', 'waiting_approval', 'done', 'failed']), steps: Count, error: z.string().nullable(),
   createdAt: Iso, updatedAt: Iso, transcript: z.array(ChatMessage),
+  authoring: HyperBotAssetKind.optional(), assetSaved: z.boolean().optional(), personalizationRevision: Count.optional(),
 });
 const CardRow = z.strictObject({ label: z.string().max(80), value: z.string().max(20000), tone: z.literal('warning').optional(), long: z.boolean().optional() });
 const ApprovalRow = z.object({
   id: z.string().min(1), runId: z.string(), roomId: z.string(), botId: z.string(), toolCallId: z.string(), tool: z.string(),
   access: z.enum(['read', 'write']), args: z.unknown(), summary: z.string(),
+  turnId: z.string().min(1).optional(),
+  customToolId: z.uuid().optional(),
   destination: z.string().nullable().default(null), fingerprint: z.string().nullable().default(null),
   // Files from before cards and Send/Save to Drafts load with neither.
   card: z.array(CardRow).max(40).nullable().default(null), delivery: z.enum(['send', 'draft']).nullable().default(null),
@@ -70,19 +83,22 @@ const Shape = z.object({
   version: z.literal(1), seq: Count, messages: z.array(MessageRow), runs: z.array(z.unknown()), approvals: z.array(z.unknown()),
   tombstones: z.record(z.string(), Tombstone).default({}),
   settings: z.record(z.string(), z.unknown()).nullable(),
+  assets: z.array(HyperBotAsset).default([]),
+  personalization: z.record(z.string(), z.unknown()).default({}).catch({}),
 });
 
-type Stored = HyperBotsMessage & { seq: number; plan: HyperBotsPlanEntry[] | null };
+type Stored = HyperBotsMessage & { seq: number; plan: HyperBotsPlanEntry[] | null; turnDecision?: TurnDecision };
 type Tomb = z.infer<typeof Tombstone>;
 type State = {
   version: 1; seq: number; messages: Stored[]; runs: HyperBotsRun[]; approvals: HyperBotsApprovalRecord[];
-  tombstones: Record<string, Tomb>; settings: HyperBotsSettings | null;
+  tombstones: Record<string, Tomb>; settings: HyperBotsSettings | null; assets: HyperBotAsset[];
+  personalization: Record<string, HyperBotPersonalizationState>;
 };
-const empty = (): State => ({ version: 1, seq: 0, messages: [], runs: [], approvals: [], tombstones: {}, settings: null });
+const empty = (): State => ({ version: 1, seq: 0, messages: [], runs: [], approvals: [], tombstones: {}, settings: null, assets: [], personalization: {} });
 const now = () => new Date().toISOString();
 const copy = <T>(value: T): T => structuredClone(value);
 const finished = (s: HyperBotsRunStatus) => s === 'done' || s === 'failed';
-const strip = ({ seq: _seq, plan: _plan, ...m }: Stored): HyperBotsMessage => copy(m);
+const strip = ({ seq: _seq, plan: _plan, turnDecision: _decision, ...m }: Stored): HyperBotsMessage => copy(m);
 const hash = (text: string) => createHash('sha256').update(text, 'utf8').digest('base64url').slice(0, 22); // 132 bits: plenty to tell two texts apart
 const key = (roomId: string, clientMessageId: string) => `${roomId}/${clientMessageId}`;
 const own = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k);
@@ -148,7 +164,13 @@ export function hyperBotsParseState(value: unknown): { state: State; repaired: b
     if (m.author.kind === 'user' && !own(tombstones, k)) tombstones[k] = { id: m.id, hash: hash(m.text), model: m.model, createdAt: m.createdAt };
   }
   const settings = shape.data.settings as HyperBotsSettings | null;
-  return { state: { version: 1, seq: shape.data.seq, messages, runs, approvals, tombstones, settings }, repaired };
+  const personalization: State['personalization'] = {};
+  for (const [botId, row] of Object.entries(shape.data.personalization)) {
+    const parsed = HyperBotPersonalizationState.safeParse(row);
+    if (parsed.success && HyperBotPersonalizationTarget.shape.botId.safeParse(botId).success) personalization[botId] = parsed.data;
+    else repaired = true;
+  }
+  return { state: { version: 1, seq: shape.data.seq, messages, runs, approvals, tombstones, settings, assets: shape.data.assets, personalization }, repaired };
 }
 
 export class HyperBotsStore {
@@ -211,7 +233,44 @@ export class HyperBotsStore {
   }
 
   settings(): HyperBotsSettings | null { return this.state.settings ? copy(this.state.settings) : null; }
-  saveSettings(s: HyperBotsSettings): void { this.mutate((st) => { st.settings = copy(s); }); }
+  saveSettings(s: HyperBotsSettings): void {
+    this.mutate(st => {
+      st.settings = copy(s);
+      const botIds = new Set(s.bots.map(bot => bot.id));
+      for (const id of Object.keys(st.personalization)) {
+        if (!botIds.has(id)) delete st.personalization[id];
+      }
+      for (const asset of st.assets) {
+        if (asset.scope.kind !== 'dedicated') continue;
+        const assigned = asset.scope.botIds.filter(id => botIds.has(id));
+        if (assigned.length === asset.scope.botIds.length) continue;
+        asset.scope.botIds = assigned;
+        asset.revision++;
+      }
+    });
+  }
+
+  personalization(botId: string): HyperBotPersonalizationState {
+    return own(this.state.personalization, botId) ? copy(this.state.personalization[botId]!) : hyperBotEmptyProfile();
+  }
+
+  savePersonalization(botId: string, profile: HyperBotPersonalizationState): void {
+    this.mutate(st => { st.personalization[botId] = copy(profile); });
+  }
+
+  assets(): HyperBotAsset[] { return copy(this.state.assets); }
+
+  saveAssets(assets: HyperBotAsset[], authoredRunId?: string): void {
+    this.mutate(st => {
+      st.assets = copy(assets);
+      if (authoredRunId) st.runs.find(run => run.id === authoredRunId)!.assetSaved = true;
+    });
+  }
+
+  lastOwnerMessage(roomId: string): HyperBotsMessage | undefined {
+    const row = this.state.messages.findLast(message => message.roomId === roomId && message.author.kind === 'user');
+    return row && strip(row);
+  }
 
   addMessage(input: Omit<HyperBotsMessage, 'id' | 'createdAt'>): { message: HyperBotsMessage; created: boolean; sameText: boolean } {
     const { message, created, sameText } = this.addMessageWithRuns(input, null);
@@ -247,6 +306,7 @@ export class HyperBotsStore {
       const m: Stored = {
         id: randomUUID(), roomId: input.roomId, clientMessageId: input.clientMessageId, author: copy(input.author), text: input.text,
         model: input.model ?? null, runId: input.runId ?? null, hop: input.hop, createdAt: now(), seq: ++st.seq, plan: plan ? copy(plan) : null,
+        ...(input.a2ui && { a2ui: copy(input.a2ui) }), ...(input.interaction && { interaction: copy(input.interaction) }),
       };
       st.messages.push(m);
       if (m.author.kind === 'user') this.tombstone(st, m);
@@ -262,6 +322,7 @@ export class HyperBotsStore {
     const run: HyperBotsRun = {
       id: randomUUID(), roomId: trigger.roomId, botId: p.botId, triggerMessageId: trigger.id, model: p.model,
       status: 'queued', steps: 0, error: null, createdAt: t, updatedAt: t, transcript: copy(seed(trigger, p.botId)),
+      ...(p.authoring && { authoring: p.authoring }),
     };
     st.runs.push(run);
     return run;
@@ -352,10 +413,10 @@ export class HyperBotsStore {
     const replies = new Set(messages.map(message => message.runId));
     const runs = this.state.runs.filter(run => run.roomId === roomId &&
       (!finished(run.status) || visible.has(run.triggerMessageId) || replies.has(run.id)))
-      .map(({ transcript: _transcript, ...run }) => run);
+      .map(({ transcript: _transcript, authoring: _authoring, assetSaved: _assetSaved, ...run }) => run);
     const runIds = new Set(runs.map(run => run.id));
     const approvals = this.state.approvals.filter(row => row.roomId === roomId && (row.status === 'pending' || runIds.has(row.runId)))
-      .map(({ fingerprint: _fingerprint, ...approval }) => copy({ ...approval, result: null,
+      .map(({ fingerprint: _fingerprint, customToolId: _customToolId, ...approval }) => copy({ ...approval, result: null,
         ...(approval.status !== 'pending' && { card: null, args: null }) }));
     return { roomId, messages, hasEarlier: start > 0, runs, approvals };
   }
@@ -369,7 +430,7 @@ export class HyperBotsStore {
     for (let index = before - 1; index >= 0; index--) {
       const message = messages[index]!;
       if (message.roomId !== trigger.roomId) continue;
-      const author = message.author.kind === 'user' ? 'Owner' : `Bot @${message.author.botId}`;
+      const author = message.author.kind === 'user' ? (message.interaction ? 'Owner interaction' : 'Owner') : `Bot @${message.author.botId}`;
       const line = `[${author}]: ${message.text}`;
       if (line.length + 1 > remaining) break;
       history.push(line);
@@ -387,9 +448,14 @@ export class HyperBotsStore {
       const room = summaries.get(run.roomId);
       if (room && (run.status === 'running' || run.status === 'queued')) room.activeRun = true;
     }
+    const pending = new Set<string>();
     for (const approval of this.state.approvals) {
       const room = summaries.get(approval.roomId);
-      if (room && approval.status === 'pending') room.pendingApprovals++;
+      const key = approval.turnId ?? approval.id;
+      if (room && approval.status === 'pending' && !pending.has(key)) {
+        pending.add(key);
+        room.pendingApprovals++;
+      }
     }
     return Object.fromEntries(summaries);
   }
@@ -418,7 +484,7 @@ export class HyperBotsStore {
   runsForMessage(messageId: string): HyperBotsRun[] { return this.state.runs.filter((r) => r.triggerMessageId === messageId).map(copy); }
 
   /** The model is fixed at creation and cannot be patched. */
-  updateRun(id: string, patch: Partial<Pick<HyperBotsRun, 'status' | 'transcript' | 'steps' | 'error'>>): HyperBotsRun {
+  updateRun(id: string, patch: Partial<Pick<HyperBotsRun, 'status' | 'transcript' | 'steps' | 'error' | 'personalizationRevision'>>): HyperBotsRun {
     if (!this.state.runs.some((r) => r.id === id)) throw new Error(`Run not found: ${id}`);
     if (patch.steps !== undefined && !isCount(patch.steps)) throw new Error(`Invalid step count: ${patch.steps}`);
     return this.mutate((st) => {
@@ -427,6 +493,7 @@ export class HyperBotsStore {
       if (patch.transcript !== undefined) run.transcript = copy(patch.transcript);
       if (patch.steps !== undefined) run.steps = patch.steps;
       if (patch.error !== undefined) run.error = patch.error;
+      if ('personalizationRevision' in patch) run.personalizationRevision = patch.personalizationRevision;
       run.updatedAt = now();
       const out = copy(run);
       if (patch.status !== undefined && finished(patch.status)) {
@@ -439,7 +506,8 @@ export class HyperBotsStore {
 
   createApproval(input: {
     runId: string; roomId: string; botId: string; toolCallId: string; tool: string; access: HyperBotsAccess; args: unknown;
-    summary: string; status: 'pending' | 'approved'; decidedBy: 'policy' | null; destination?: string | null; fingerprint?: string | null; card?: HyperBotsCardRow[] | null;
+    turnId?: string; customToolId?: string; summary: string; status: 'pending' | 'approved' | 'denied'; decidedBy: 'policy' | 'owner' | null;
+    destination?: string | null; fingerprint?: string | null; card?: HyperBotsCardRow[] | null; delivery?: HyperBotsDelivery | null;
   }): { approval: HyperBotsApprovalRecord; created: boolean } {
     const prior = this.findApproval(input.runId, input.toolCallId);
     if (prior) return { approval: prior, created: false };
@@ -448,7 +516,9 @@ export class HyperBotsStore {
       const approval: HyperBotsApprovalRecord = {
         id: randomUUID(), runId: input.runId, roomId: input.roomId, botId: input.botId, toolCallId: input.toolCallId, tool: input.tool,
         access: input.access, args: JSON.parse(JSON.stringify(input.args ?? null)), summary: input.summary,
-        destination: input.destination ?? null, fingerprint: input.fingerprint ?? null, card: input.card ? copy(input.card) : null, delivery: null, status: input.status,
+        ...(input.turnId && { turnId: input.turnId }),
+        ...(input.customToolId && { customToolId: input.customToolId }),
+        destination: input.destination ?? null, fingerprint: input.fingerprint ?? null, card: input.card ? copy(input.card) : null, delivery: input.delivery ?? null, status: input.status,
         decidedBy: input.decidedBy, result: null, error: null, createdAt: t, updatedAt: t,
       };
       st.approvals.push(approval);
@@ -469,6 +539,31 @@ export class HyperBotsStore {
   listApprovals(filter: { status?: HyperBotsApprovalStatus[]; runId?: string; roomId?: string } = {}): HyperBotsApprovalRecord[] {
     return this.state.approvals.filter((a) => (!filter.status || filter.status.includes(a.status))
       && (filter.runId === undefined || a.runId === filter.runId) && (filter.roomId === undefined || a.roomId === filter.roomId)).map(copy);
+  }
+
+  turnDecision(turnId: string): TurnDecision | undefined {
+    const decision = this.state.messages.find(m => m.id === turnId && m.author.kind === 'user')?.turnDecision;
+    return decision && copy(decision);
+  }
+
+  /** Claim the turn and update every waiting call together in the same persisted write. */
+  decideTurn(turnId: string, decision: TurnDecision): HyperBotsApprovalRecord[] {
+    const turn = this.state.messages.find(m => m.id === turnId && m.author.kind === 'user');
+    if (!turn || turn.turnDecision) return [];
+    return this.mutate(st => {
+      st.messages.find(m => m.id === turnId)!.turnDecision = decision;
+      const updated: HyperBotsApprovalRecord[] = [];
+      for (const approval of st.approvals) {
+        if (approval.turnId !== turnId || approval.roomId !== turn.roomId) continue;
+        if (approval.status !== 'pending' && (approval.status !== 'approved' || decision.approved)) continue;
+        approval.status = decision.approved ? 'approved' : 'denied';
+        approval.decidedBy = 'owner';
+        approval.delivery = decision.approved ? hyperBotsMailDelivery(approval.tool, approval.args, decision.delivery) : null;
+        approval.updatedAt = now();
+        updated.push(copy(approval));
+      }
+      return updated;
+    });
   }
 
   /** Compare-and-set: moves the approval to `to` only if its status is one of `from`; null otherwise. */

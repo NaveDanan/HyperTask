@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, test } from 'vitest';
-import { HYPER_BOTS_DEFAULT_SETTINGS, hyperBotsWithDirectRooms, type HyperBotsEvent, type HyperBotsSettings, type HyperBotsToolName } from '@shared/HyperBots';
+import { describe, expect, test, vi } from 'vitest';
+import type { HyperBotPersonalizationUpdate } from '@shared/HyperBotPersonalization';
+import { HYPER_BOTS_DEFAULT_SETTINGS, hyperBotSetPermissionLevel, hyperBotsWithDirectRooms, type HyperBotsEvent, type HyperBotsSettings, type HyperBotsToolName } from '@shared/HyperBots';
 import type { HyperBotsAssistantMessage, HyperBotsEngine } from './HyperBotsEngine';
 import { HYPER_BOTS_NO_TOOL, hyperBotsClock, hyperBotsShownIds, HyperBotsRuntime, HyperBotsRuntimeError, HyperBotsToolError, type HyperBotsTool, type HyperBotsToolRegistry } from './HyperBotsRuntime';
 import { HYPER_BOTS_DAMAGED_RUN, HyperBotsStore, type HyperBotsChatMessage, type HyperBotsToolSpec } from './HyperBotsStore';
+import { HYPER_BOT_READ_SKILL, HYPER_BOT_SAVE_ASSET, hyperBotCustomToolName } from './HyperBotSkillTools';
 
 type Reply = HyperBotsAssistantMessage | Error;
 type Call = { model: string; messages: HyperBotsChatMessage[]; tools: HyperBotsToolSpec[] };
@@ -43,6 +45,8 @@ const fakeRegistry = (tools: HyperBotsTool[]): HyperBotsToolRegistry => ({
 function testSettings(over: Partial<HyperBotsSettings> = {}): HyperBotsSettings {
   return {
     version: 1,
+    projectToolsVersion: 1,
+    outlookRemovalVersion: 1,
     bots: [
       { id: 'scout', name: 'Scout', instructions: 'You read mail.', model: 'm-scout', tools: ['outlook_list_events'] },
       { id: 'scribe', name: 'Scribe', instructions: 'You file issues.', model: 'm-scribe', tools: ['jira_create_issue'] },
@@ -64,18 +68,374 @@ function setup(script: (c: Call, n: number) => Reply, o: Options = {}) {
   const store = o.store ?? new HyperBotsStore(null);
   const ev = fakeTool('outlook_list_events', 'read');
   const jira = fakeTool('jira_create_issue', 'write');
+  const task = fakeTool('hypertask_create_task', 'write');
   const engine = fakeEngine(script);
   const runtime = new HyperBotsRuntime({
-    store, engine, tools: fakeRegistry([ev, jira]), defaultModel: o.defaultModel ?? (async () => 'm-default'),
+    store, engine, tools: fakeRegistry([ev, jira, task]), defaultModel: o.defaultModel ?? (async () => 'm-default'),
     now: () => new Date('2026-01-02T03:04:05Z'), maxSteps: o.maxSteps, maxHops: o.maxHops,
   });
   if (o.settings || !store.settings()) runtime.saveSettings(testSettings(o.settings));
   const events: HyperBotsEvent[] = [];
   runtime.events.on('event', (e) => events.push(e));
-  return { store, engine, runtime, events, ev, jira };
+  return { store, engine, runtime, events, ev, jira, task };
 }
 
+describe('Memory & Soul', () => {
+  const change = (runtime: HyperBotsRuntime, update: HyperBotPersonalizationUpdate['change'], botId = 'scribe') =>
+    runtime.savePersonalization({ botId, revision: runtime.personalization(botId).revision, change: update });
+  const post = (runtime: HyperBotsRuntime, text: string, roomId = 'dm-scribe') =>
+    runtime.post({ roomId, clientMessageId: randomUUID(), text });
+  const extract = (input: Call) => input.messages[0]?.content?.startsWith('Extract durable preferences');
+  const taskMemory = { kind: 'memory', category: 'tasks', topic: 'Task descriptions', value: 'Include a verifiable acceptance checklist.' } as const;
+  const soul = { kind: 'soul', field: 'detail', value: 'Lead with a concise summary.' } as const;
+
+  test('grounds suggestions in a new owner turn and uses approved preferences to write a task', async () => {
+    const settings = testSettings();
+    settings.bots[0]!.tools.push('hypertask_create_task');
+    const owner = 'For task descriptions I always want an acceptance checklist. I prefer your replies to lead with a concise summary.';
+    const t = setup(input => {
+      if (extract(input)) return say(JSON.stringify({ suggestions: [
+        { draft: taskMemory, quote: 'For task descriptions I always want an acceptance checklist.', signal: 'stated' },
+        { draft: soul, quote: 'I prefer your replies to lead with a concise summary.', signal: 'stated' },
+        { draft: { kind: 'soul', field: 'tone', value: 'Rude' }, quote: 'Fabricated owner statement', signal: 'stated' },
+      ] }));
+      const prompt = input.messages[1]?.content ?? '';
+      if (!prompt.includes('[Owner]: צור משימה') || toolMsgs(input).length) return say('Ready.');
+      const description = prompt.includes(taskMemory.value) ? 'Acceptance checklist' : 'Unpersonalized';
+      return tools(call('task', 'hypertask_create_task', { title: 'Review report', description }));
+    }, { settings });
+    expect(t.runtime.personalization('scout')).toEqual({ revision: 0, mode: 'off', entries: [], suggestions: [] });
+    change(t.runtime, { type: 'mode', mode: 'learn' }, 'scout');
+    const id = randomUUID();
+    const input = { roomId: 'dm-scout', clientMessageId: id, text: owner, model: 'fixture-model' };
+    const posted = await t.runtime.post(input);
+    await t.runtime.post(input);
+    await t.runtime.idle();
+    const learning = t.engine.calls.filter(extract);
+    expect(learning).toHaveLength(1);
+    expect(learning[0]).toMatchObject({ model: 'fixture-model', tools: [] });
+    expect(JSON.parse(learning[0]!.messages[1]!.content!)).toEqual({ ownerMessage: owner, knownTopics: [] });
+    const learned = t.runtime.personalization('scout');
+    expect(learned.entries).toEqual([]);
+    expect(learned.suggestions).toHaveLength(2);
+    expect(learned.suggestions.every(s => s.source.messageId === posted.message.id)).toBe(true);
+    await post(t.runtime, 'Tell me something new.', 'dm-scout');
+    await t.runtime.idle();
+    expect(t.engine.calls.filter(input => !extract(input)).at(-1)!.messages[1]!.content).not.toContain('Saved personalization');
+
+    for (const suggestion of learned.suggestions) change(t.runtime, { type: 'accept', id: suggestion.id }, 'scout');
+    change(t.runtime, { type: 'mode', mode: 'manual' }, 'scout');
+    const task = await post(t.runtime, 'צור משימה לסקירת הדוח', 'dm-scout');
+    await t.runtime.idle();
+    const approval = t.store.listApprovals({ runId: task.runs[0]!.id })[0]!;
+    const prompt = t.engine.calls.at(-1)!.messages[1]!.content;
+    expect(prompt).toContain(soul.value);
+    expect(prompt).toContain(taskMemory.value);
+    expect(approval).toMatchObject({ status: 'pending', args: { description: 'Acceptance checklist' } });
+    expect(t.task.runs).toBe(0);
+    expect(JSON.stringify(t.store.getRun(task.runs[0]!.id)?.transcript)).not.toContain('Saved personalization');
+    t.runtime.decide(approval.id, true);
+    await t.runtime.idle();
+    expect(t.task.runs).toBe(1);
+  });
+
+  test('persists the current preference only and keeps recall out of unrelated, group and other-bot requests', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hyper-bot-preferences-'));
+    const file = join(dir, 'state.json');
+    try {
+      const first = setup(() => say('OK.'), { store: new HyperBotsStore(file) });
+      change(first.runtime, { type: 'mode', mode: 'manual' });
+      const saved = change(first.runtime, { type: 'save', draft: taskMemory }).entries[0]!;
+      const latest = 'Put acceptance criteria in one sentence.';
+      change(first.runtime, { type: 'save', draft: { ...taskMemory, topic: ' TASK DESCRIPTIONS ', value: latest } });
+      expect(first.runtime.personalization('scribe').entries).toMatchObject([{ id: saved.id, draft: { value: latest } }]);
+      expect(readFileSync(file, 'utf8')).not.toContain(taskMemory.value);
+      const resumed = setup(() => say('OK.'), { store: new HyperBotsStore(file) });
+      await post(resumed.runtime, 'Create a ticket for the update.');
+      await resumed.runtime.idle();
+      expect(resumed.engine.calls[0]!.messages[1]!.content).toContain(latest);
+      for (const [text, room] of [['What is the capital of Spain?', 'dm-scribe'], ['Draft a Jira ticket.', 'ops'], ['Draft a Jira ticket.', 'dm-scout']]) {
+        await post(resumed.runtime, text!, room);
+        await resumed.runtime.idle();
+      }
+      expect(resumed.engine.calls.slice(1).every(input => !input.messages[1]?.content?.includes(latest))).toBe(true);
+      change(resumed.runtime, { type: 'remove', id: saved.id });
+      const reloaded = setup(() => say('OK.'), { store: new HyperBotsStore(file) });
+      await post(reloaded.runtime, 'Draft another Jira ticket.');
+      await reloaded.runtime.idle();
+      expect(reloaded.engine.calls[0]!.messages[1]!.content).not.toContain(latest);
+      expect(readFileSync(file, 'utf8')).not.toContain(latest);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  test('changing personalization invalidates a waiting approval before a connector runs', async () => {
+    const t = setup(() => tools(call('task', 'jira_create_issue', { summary: 'Review the report' })));
+    change(t.runtime, { type: 'mode', mode: 'manual' });
+    change(t.runtime, { type: 'save', draft: taskMemory });
+    const request = await post(t.runtime, 'Create a Jira ticket.');
+    await t.runtime.idle();
+    const id = request.runs[0]!.id;
+    const approval = t.store.listApprovals({ runId: id })[0]!;
+    expect(approval.status).toBe('pending');
+    change(t.runtime, { type: 'mode', mode: 'learn' });
+    await t.runtime.idle();
+    expect(t.store.getApproval(approval.id)?.status).toBe('pending');
+    change(t.runtime, { type: 'clear' });
+    expect(() => t.runtime.savePersonalization({ botId: 'scribe', revision: 2, change: { type: 'mode', mode: 'learn' } })).toThrow('Personalization changed');
+    // An approval clicked before the renderer sees the update still cannot execute.
+    t.runtime.decide(approval.id, true);
+    await t.runtime.idle();
+    expect(t.runtime.personalization('scribe')).toMatchObject({ mode: 'off', entries: [], suggestions: [] });
+    expect(t.store.getApproval(approval.id)?.status).toBe('skipped');
+    expect(t.store.getRun(id)).toMatchObject({ status: 'failed', error: expect.stringContaining('Memory & Soul changed') });
+    expect(t.jira.runs).toBe(0);
+  });
+
+  test('skips learning for group, private, pasted and credential-bearing messages', async () => {
+    const t = setup(() => say('OK.'));
+    change(t.runtime, { type: 'mode', mode: 'learn' });
+    await post(t.runtime, 'I prefer short answers.', 'ops');
+    for (const text of [
+      "Don't remember this. I prefer short answers.",
+      'Subject: Style guide\nOur group prefers short answers.',
+      'My API key is test-secret and I prefer short answers.',
+    ]) await post(t.runtime, text);
+    await t.runtime.idle();
+    expect(t.engine.calls.filter(extract)).toEqual([]);
+  });
+
+  test('discards a late suggestion after clearing personalization without delaying the reply', async () => {
+    const owner = 'I prefer concise replies for all requests.';
+    const store = new HyperBotsStore(null);
+    let finish!: (value: { message: HyperBotsAssistantMessage; finishReason: string }) => void;
+    const learning = new Promise<{ message: HyperBotsAssistantMessage; finishReason: string }>(resolve => { finish = resolve; });
+    const complete = vi.fn<HyperBotsEngine['complete']>(async input => extract(input)
+      ? learning : { message: { role: 'assistant', content: 'Replied.' }, finishReason: 'stop' });
+    const runtime = new HyperBotsRuntime({ store, engine: { complete }, tools: fakeRegistry([]), defaultModel: async () => 'fixture' });
+    change(runtime, { type: 'mode', mode: 'learn' });
+    const request = await post(runtime, owner);
+    try {
+      await vi.waitFor(() => {
+        expect(complete.mock.calls.some(([input]) => extract(input))).toBe(true);
+        expect(store.getRun(request.runs[0]!.id)?.status).toBe('done');
+      });
+      change(runtime, { type: 'clear' });
+      change(runtime, { type: 'mode', mode: 'learn' });
+    } finally {
+      finish({ message: { role: 'assistant', content: JSON.stringify({ suggestions: [{ draft: soul, quote: owner, signal: 'stated' }] }) }, finishReason: 'stop' });
+      await runtime.idle();
+    }
+    expect(runtime.personalization('scribe').suggestions).toEqual([]);
+  });
+});
+
 describe('runtime', () => {
+  test('a bot can require approval for a tool at Full access and switching level resets the override', async () => {
+    const settings = testSettings({ permissionLevel: 'full' });
+    settings.bots[0]!.permissionLevel = 'full';
+    settings.bots[0]!.toolPolicies = { outlook_list_events: 'ask' };
+    const t = setup((_input, n) => n === 1 ? tools(call('events', 'outlook_list_events')) : say('Done.'), { settings });
+    const posted = await t.runtime.post({ roomId: 'dm-scout', clientMessageId: randomUUID(), text: 'Read my events' });
+    await t.runtime.idle();
+    expect(t.engine.calls[0]!.tools.map(spec => spec.function.name)).toEqual(['outlook_list_events']);
+    expect(t.store.listApprovals({ runId: posted.runs[0]!.id })).toMatchObject([{ status: 'pending' }]);
+    expect(t.ev.runs).toBe(0);
+
+    const current = t.runtime.settings();
+    t.runtime.saveSettings({ ...current, bots: [hyperBotSetPermissionLevel(current.bots[0]!, 'elevated'), current.bots[1]!] });
+    await t.runtime.idle();
+    expect(t.store.listApprovals({ runId: posted.runs[0]!.id })).toMatchObject([{ status: 'done', decidedBy: 'policy' }]);
+    expect(t.ev.runs).toBe(1);
+    expect(t.runtime.settings().permissionLevel).toBe('full');
+  });
+
+  test('creates a dedicated skill through a chat follow-up and preserves editable assignments across restart', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'hyper-bot-skills-'));
+    const file = join(dir, 'bots.json');
+    const draft = { name: 'Meeting brief', description: 'Prepare a meeting brief.', instructions: '# Meeting brief\nSummarize the agenda.' };
+    try {
+      const t = setup((_, n) => n === 1 ? say('What should the skill do?') :
+        n === 2 ? tools(call('save', HYPER_BOT_SAVE_ASSET, draft)) : say('Saved Meeting brief.'), { store: new HyperBotsStore(file) });
+      const post = (text: string) => t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text });
+      const started = await post('@Scout /create-skill');
+      await t.runtime.idle();
+      expect(started.runs.map(run => run.botId)).toEqual(['scout']);
+      expect(t.engine.calls[0]!.tools.map(spec => spec.function.name)).toEqual([HYPER_BOT_SAVE_ASSET]);
+      expect(t.engine.calls[0]!.messages[0]!.content).toContain('Active skill: create-skill');
+      await post('Prepare a brief from the agenda.');
+      await t.runtime.idle();
+      const saved = t.runtime.skills().assets[0]!;
+      expect(saved).toMatchObject({ ...draft, scope: { kind: 'dedicated', botIds: ['scout'] } });
+      await t.runtime.stop();
+
+      const reopened = setup((input) => {
+        if (toolMsgs(input).length) return say('Agenda summarized.');
+        return tools(call('read', HYPER_BOT_READ_SKILL, { id: saved.id }));
+      }, { store: new HyperBotsStore(file) });
+      expect(reopened.runtime.skills().assets).toEqual([saved]);
+      await reopened.runtime.post({ roomId: 'dm-scribe', clientMessageId: randomUUID(), text: 'Prepare my meeting brief' });
+      await reopened.runtime.idle();
+      expect(reopened.engine.calls[0]!.tools.map(spec => spec.function.name)).not.toContain(HYPER_BOT_READ_SKILL);
+      expect(reopened.engine.calls[0]!.messages[0]!.content).not.toContain(draft.name);
+      expect(toolMsgs(reopened.engine.calls[1]!)[0]).toContain('not available');
+
+      const edit = { id: saved.id, revision: saved.revision, scope: { kind: 'global' }, draft: { ...draft, kind: 'skill' } };
+      expect(reopened.runtime.saveSkill(edit).assets[0]).toMatchObject({ scope: { kind: 'global' }, revision: 2 });
+      expect(() => reopened.runtime.saveSkill(edit)).toThrow('This entry changed');
+      await reopened.runtime.post({ roomId: 'dm-scribe', clientMessageId: randomUUID(), text: 'Prepare my meeting brief now' });
+      await reopened.runtime.idle();
+      expect(reopened.engine.calls[2]!.messages[0]!.content).toContain(draft.name);
+      expect(toolMsgs(reopened.engine.calls[3]!)[0]).toContain('Summarize the agenda');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  test('chat-created tools use the connector approval and stop when the bot loses its assignment', async () => {
+    const draft = { name: 'File a bug', description: 'File a Jira bug.', instructions: 'Put the observed behavior in the summary.', connectorTool: 'jira_create_issue' };
+    const t = setup((input, n) => {
+      if (n === 1) return tools(call('save', HYPER_BOT_SAVE_ASSET, draft));
+      const alias = input.tools.find(spec => spec.function.name.startsWith('custom_'));
+      if (alias && !toolMsgs(input).length) return tools(call('file', alias.function.name, { summary: 'Unexpected behavior' }));
+      return say('Done.');
+    });
+    const post = (text: string) => t.runtime.post({ roomId: 'dm-scribe', clientMessageId: randomUUID(), text });
+    await post('Create a new tool for filing a Jira bug.');
+    await t.runtime.idle();
+    const saved = t.runtime.skills().assets[0]!;
+    expect(saved).toMatchObject({ ...draft, kind: 'tool' });
+    const tried = await post('File a bug.');
+    await t.runtime.idle();
+    expect(t.engine.calls[2]!.tools.map(spec => spec.function.name)).toContain(hyperBotCustomToolName(saved.id));
+    expect(t.store.listApprovals({ runId: tried.runs[0]!.id })).toMatchObject([{ tool: draft.connectorTool, status: 'pending' }]);
+    const edit = { id: saved.id, revision: saved.revision, scope: { kind: 'dedicated', botIds: [] }, draft: { ...draft, kind: 'tool' } };
+    t.runtime.saveSkill(edit);
+    await t.runtime.idle();
+    expect(t.store.listApprovals({ runId: tried.runs[0]!.id })).toMatchObject([{ status: 'skipped' }]);
+    expect(t.jira.runs).toBe(0);
+
+    t.runtime.saveSkill({ ...edit, revision: 2, scope: { kind: 'dedicated', botIds: ['scribe'] } });
+    const retried = await post('File a bug.');
+    await t.runtime.idle();
+    t.runtime.decide(t.store.listApprovals({ runId: retried.runs[0]!.id })[0]!.id, true);
+    await t.runtime.idle();
+    expect(t.jira.runs).toBe(1);
+  });
+
+  test('keeps a generated form in chat history and routes its submitted values to the source bot', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'hyper-bot-a2ui-'));
+    const file = join(directory, 'bots.json');
+    const form = [
+      'Pick a focus.', '<a2ui>', 'surface("planner")', '$/focus = "Release"',
+      'root = Card(form)', 'form = Column([focus, submit])', 'focus = TextField(label="Focus area", value=$/focus)',
+      'label = Text("Build my plan")', 'submit = Button(child=label, action=Event("build_plan", {focus: $/focus}))', '</a2ui>',
+    ].join('\n');
+    try {
+      const first = setup(() => say(form), { store: new HyperBotsStore(file), settings: { permissionLevel: 'full' } });
+      await first.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@scribe Show a planning form' });
+      await first.runtime.idle();
+      expect(first.engine.calls[0]?.messages[0]?.content).toContain('A2UI Express DSL Output Contract');
+      await first.runtime.stop();
+
+      const reopened = setup((_call, n) => n === 1 ? tools(call('write', 'jira_create_issue')) : say('Planning for QA.'), { store: new HyperBotsStore(file) });
+      const panel = reopened.runtime.snapshot('ops').messages.at(-1)!;
+      expect(panel.text).toBe('Pick a focus.');
+      expect(panel.a2ui?.[0]).toMatchObject({ version: '1.0', createSurface: { surfaceId: 'planner' } });
+      const request = { roomId: 'ops', messageId: panel.id, clientMessageId: randomUUID(),
+        action: { name: 'build_plan', surfaceId: 'planner', sourceComponentId: 'submit', context: { focus: 'QA' } } };
+      await rejectsWith(reopened.runtime.act({ ...request, roomId: 'dm-scribe' }), 'not_found');
+      await rejectsWith(reopened.runtime.act({ ...request, action: { ...request.action, sourceComponentId: 'focus' } }), 'invalid');
+      const posted = await reopened.runtime.act(request);
+      expect(posted.runs.map(run => run.botId)).toEqual(['scribe']);
+      expect(posted.message.text).toBe('Selected “Build my plan”');
+      expect(await reopened.runtime.act(request)).toMatchObject({ created: false });
+      await rejectsWith(reopened.runtime.act({ ...request, action: { ...request.action, context: { focus: 'Different' } } }), 'conflict');
+      await reopened.runtime.idle();
+      expect(reopened.engine.calls[0]?.messages.at(-1)?.content).toContain('"focus":"QA"');
+      expect(reopened.engine.calls[0]?.tools).toEqual([]);
+      expect(toolMsgs(reopened.engine.calls[1]!)).toEqual([expect.stringContaining('type a new request')]);
+      expect(reopened.jira.runs).toBe(0);
+      expect(reopened.runtime.snapshot('ops').messages.at(-1)?.text).toBe('Planning for QA.');
+      await reopened.runtime.stop();
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  test('keeps Markdown when the model returns an invalid A2UI block', async () => {
+    const { runtime } = setup(() => say('Plain **answer**.\n<a2ui>\nsurface("bad")\nroot = Image("https://example.invalid/image")\n</a2ui>'));
+    await runtime.post({ roomId: 'dm-scout', clientMessageId: randomUUID(), text: 'Show a panel' });
+    await runtime.idle();
+    const reply = runtime.snapshot('dm-scout').messages.at(-1);
+    expect(reply?.text).toBe('Plain **answer**.');
+    expect(reply?.a2ui).toBeUndefined();
+  });
+
+  test('one approval covers later model steps in this turn and asks again on the next turn', async () => {
+    const t = setup(c => {
+      const count = toolMsgs(c).length;
+      return count < 3 ? tools(call(`read-${count}`, 'outlook_list_events')) : say('Calendar reviewed');
+    });
+    const post = () => t.runtime.post({ roomId: 'dm-scout', clientMessageId: randomUUID(), text: 'Review my calendar in three passes' });
+    const first = await post();
+    await t.runtime.idle();
+    const [approval] = t.store.listApprovals({ status: ['pending'] });
+    t.runtime.decide(approval.id, true);
+    await t.runtime.idle();
+    expect(t.store.getRun(first.runs[0].id)?.status).toBe('done');
+    expect(t.store.listApprovals({ status: ['pending'] })).toEqual([]);
+    expect(t.ev.runs).toBe(3);
+    await post();
+    await t.runtime.idle();
+    expect(t.store.listApprovals({ status: ['pending'] })).toHaveLength(1);
+  });
+
+  test.each(['supervised', 'elevated', 'full'] as const)('%s applies to Outlook reads, directory and destructive writes', async permissionLevel => {
+    const store = new HyperBotsStore(null);
+    const readEvent = fakeTool('outlook_list_events', 'read');
+    const readMail = fakeTool('outlook_read_message', 'read');
+    const directory = fakeTool('outlook_search_people', 'read');
+    const cancel = fakeTool('outlook_cancel_event', 'write');
+    const remove = fakeTool('outlook_delete_message', 'write');
+    const toolset = [readEvent, readMail, directory, cancel, remove];
+    const engine = fakeEngine((_c, n) => {
+      if (n === 1) return tools(call('events', readEvent.name), call('mail', readMail.name));
+      if (n === 2) return tools(call('person', directory.name), call('cancel', cancel.name), call('delete', remove.name));
+      return say('Finished');
+    });
+    const runtime = new HyperBotsRuntime({ store, engine, tools: fakeRegistry(toolset), defaultModel: async () => 'm' });
+    const settings = testSettings({ permissionLevel });
+    settings.bots[0]!.tools = toolset.map(tool => tool.name);
+    runtime.saveSettings(settings);
+    const posted = await runtime.post({ roomId: 'dm-scout', clientMessageId: randomUUID(), text: 'Read mail and calendar, then take the requested actions' });
+    await runtime.idle();
+    const first = runtime.assistantExecution('dm-scout', posted.message.id, posted.runs[0]!.id)!;
+    expect(first.approvals.filter(a => a.status === 'pending').map(a => a.tool)).toEqual(
+      permissionLevel === 'supervised' ? [readEvent.name, readMail.name] : permissionLevel === 'elevated' ? [directory.name, cancel.name, remove.name] : [],
+    );
+    expect(runtime.snapshot('dm-scout', 20).roomSummaries?.['dm-scout'].pendingApprovals).toBe(permissionLevel === 'full' ? 0 : 1);
+    const waiting = first.approvals.find(a => a.status === 'pending');
+    if (waiting) runtime.decide(waiting.id, permissionLevel === 'supervised');
+    await runtime.idle();
+    expect(toolset.map(tool => tool.runs)).toEqual(permissionLevel === 'elevated' ? [1, 1, 0, 0, 0] : [1, 1, 1, 1, 1]);
+    const end = runtime.assistantExecution('dm-scout', posted.message.id, posted.runs[0]!.id)!;
+    expect(end.runs[0]?.status).toBe('done');
+    expect(end.approvals.filter(a => a.status === 'pending')).toHaveLength(0);
+  });
+
+  test('a voice group sees all initial runs and declining once closes the whole turn', async () => {
+    const t = setup(c => {
+      const name = c.model === 'm-scout' ? 'outlook_list_events' : 'jira_create_issue';
+      return toolMsgs(c).length ? say('No tools ran') : tools(call(name, name));
+    });
+    const posted = await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: 'Check calendar and file an issue' });
+    await t.runtime.idle();
+    const get = () => t.runtime.assistantExecution('ops', posted.message.id, posted.runs[0]!.id)!;
+    expect(get().approvals).toHaveLength(2);
+    expect(get().approvals.every(a => a.turnId === posted.message.id)).toBe(true);
+    t.runtime.decide(get().approvals[0]!.id, false);
+    await t.runtime.idle();
+    expect(get().approvals.map(a => a.status)).toEqual(['denied', 'denied']);
+    expect(get().runs.map(r => r.status)).toEqual(['done', 'done']);
+    expect([t.ev.runs, t.jira.runs]).toEqual([0, 0]);
+  });
+
   test('plain reply: targets mention, posts once, model per message', async () => {
     const t = setup(() => say('Hello owner'));
     const r = await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@scout hi', model: 'custom-1' });
@@ -290,7 +650,7 @@ describe('runtime', () => {
     expect(directory.runs).toBe(1);
 
     const settings = runtime.settings();
-    runtime.saveSettings({ ...settings, policy: { ...settings.policy, outlook_search_people: 'allow' } });
+    runtime.saveSettings({ ...settings, permissionLevel: undefined, policy: { ...settings.policy, outlook_search_people: 'allow' } });
     expect(store.settings()?.policy.outlook_search_people).toBe('allow');
     const second = await post();
     await runtime.idle();
@@ -518,7 +878,7 @@ describe('review regressions', () => {
     await t.runtime.idle();
     const [a, b] = t.store.listApprovals({});
     t.runtime.decide(a.id, true);
-    t.runtime.decide(b.id, true);
+    expect(() => t.runtime.decide(b.id, true)).toThrow(expect.objectContaining({ code: 'not_pending' }));
     const schedule = (t.runtime as unknown as { schedule(id: string): void }).schedule.bind(t.runtime);
     schedule(a.runId); schedule(a.runId);
     await new Promise((r) => setTimeout(r, 5));
@@ -598,7 +958,7 @@ describe('audit regressions', () => {
     return store.updateRun(run.id, { status: 'running', steps: 1 });
   };
 
-  test('#1 revoking the read policy before the write is approved sends the policy-approved read back to the owner', async () => {
+  test('#1 revoking the read policy adds it to the turn approval', async () => {
     const t = setup((c, n) => (n === 1 ? tools(call('r', 'outlook_list_events'), call('w', 'jira_create_issue', { summary: 'S' })) : say(toolMsgs(c).join('|'))),
       { settings: { ...both, policy: { outlook_list_events: 'allow' } } });
     const r = await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: 'go' });
@@ -607,11 +967,9 @@ describe('audit regressions', () => {
     expect([read.status, read.decidedBy]).toEqual(['approved', 'policy']);
     t.runtime.saveSettings(testSettings({ ...both, policy: { outlook_list_events: 'ask' } }));
     expect([t.store.getApproval(read.id)!.status, t.store.getApproval(read.id)!.decidedBy]).toEqual(['pending', null]);
-    t.runtime.decide(write.id, true);
-    await t.runtime.idle();
     expect([t.ev.runs, t.jira.runs], 'nothing runs while the read waits for the owner').toEqual([0, 0]);
     expect(t.store.getRun(r.runs[0].id)!.status).toBe('waiting_approval');
-    t.runtime.decide(read.id, true);
+    t.runtime.decide(write.id, true);
     await t.runtime.idle();
     expect([t.ev.runs, t.jira.runs]).toEqual([1, 1]);
     expect(t.store.getApproval(read.id)!.decidedBy).toBe('owner');
@@ -682,8 +1040,8 @@ describe('audit regressions', () => {
     expect(t.store.listMessages('ops').at(-1)!.text).toMatch(/not available to this bot/);
   });
 
-  test('#4 the destination is bound at proposal, shown without its fingerprint, and a changed destination needs a fresh approval', async () => {
-    const t = setup((c, n) => (n === 1 ? tools(call('w', 'jira_create_issue', { summary: 'S' })) : say(toolMsgs(c).at(-1)!)));
+  test('#4 changing the bound destination skips the call and blocks model retries in the same turn', async () => {
+    const t = setup((c, n) => (n < 3 ? tools(call(`w-${n}`, 'jira_create_issue', { summary: 'S' })) : say(toolMsgs(c).at(-1)!)));
     let where = { destination: 'Jira project OPS at https://a.example as nave', fingerprint: 'fp-a' };
     const binds: unknown[] = [];
     t.jira.bind = async (args) => { binds.push(args); return where; };
@@ -697,14 +1055,11 @@ describe('audit regressions', () => {
     expect('fingerprint' in t.runtime.decide(ap.id, true)).toBe(false);
     await t.runtime.idle();
     expect(t.jira.runs, 'never sent to a destination the owner did not approve').toBe(0);
-    const back = t.store.getApproval(ap.id)!;
-    expect([back.status, back.decidedBy, back.destination, back.fingerprint]).toEqual(['pending', null, where.destination, 'fp-b']);
-    expect(t.store.getRun(r.runs[0].id)!.status).toBe('waiting_approval');
-    t.runtime.decide(ap.id, true);
-    await t.runtime.idle();
-    expect(t.jira.runs).toBe(1);
-    expect(t.store.getApproval(ap.id)!.status).toBe('done');
-    expect(binds).toEqual([{ summary: 'S' }, { summary: 'S' }, { summary: 'S' }]);
+    const skipped = t.store.getApproval(ap.id)!;
+    expect([skipped.status, skipped.decidedBy, skipped.destination, skipped.fingerprint]).toEqual(['skipped', 'owner', ap.destination, 'fp-a']);
+    expect(t.store.getRun(r.runs[0].id)!.status).toBe('done');
+    expect(t.store.listApprovals()).toHaveLength(1);
+    expect(binds).toEqual([{ summary: 'S' }, { summary: 'S' }]);
   });
 
   test('#4 a destination that cannot be bound: no approval at proposal; a failed call (not run) at execution', async () => {
@@ -870,7 +1225,7 @@ test('the bot is told the owner\'s local clock and zone, so "tomorrow" is a loca
 });
 
 describe('mail writes', () => {
-  test('approval needs Send or Save to Drafts, the choice reaches the tool, and a changed sender asks again with a fresh card', async () => {
+  test('a turn draft choice reaches Outlook and a changed sender skips the write', async () => {
     const store = new HyperBotsStore(null);
     let sender = 'a@corp.example';
     const seen: unknown[] = [];
@@ -881,7 +1236,7 @@ describe('mail writes', () => {
       async run(_a, _s, _f, options) { seen.push(options?.delivery); return { ok: true }; },
     };
     let n = 0;
-    const engine = fakeEngine(() => (++n === 1 ? tools(call('c1', 'outlook_send_message', { to: 'lee' })) : say('done')));
+    const engine = fakeEngine(() => (++n % 2 ? tools(call('c1', 'outlook_send_message', { to: 'lee' })) : say('done')));
     const runtime = new HyperBotsRuntime({ store, engine, tools: fakeRegistry([mail]), defaultModel: async () => 'm' });
     runtime.saveSettings(testSettings({ bots: [{ id: 'scout', name: 'Scout', instructions: '', model: '', tools: ['outlook_send_message'] }], rooms: [{ id: 'ops', name: 'Ops', botIds: ['scout'] }] }));
     await runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@scout email lee' });
@@ -889,29 +1244,28 @@ describe('mail writes', () => {
     const [a] = store.listApprovals({ status: ['pending'] });
     expect(a.card).toEqual([{ label: 'From', value: 'a@corp.example' }]);
     expect(runtime.snapshot('ops').approvals[0]).toMatchObject({ card: [{ label: 'From', value: 'a@corp.example' }], delivery: null });
-    expect(() => runtime.decide(a.id, true)).toThrow(/Send or Save to Drafts/);
     expect(() => runtime.decide(a.id, false, 'send')).toThrow(HyperBotsRuntimeError);
     sender = 'b@corp.example';
     expect(runtime.decide(a.id, true, 'draft')).toMatchObject({ status: 'approved', delivery: 'draft' });
     await runtime.idle();
-    // The sender changed between approval and the call: back to the owner with the new card and no delivery.
-    const back = store.getApproval(a.id)!;
-    expect([back.status, back.delivery, back.card]).toEqual(['pending', null, [{ label: 'From', value: 'b@corp.example' }]]);
+    expect(store.getApproval(a.id)).toMatchObject({ status: 'skipped', card: [{ label: 'From', value: 'a@corp.example' }] });
     expect(seen).toEqual([]);
-    runtime.decide(a.id, true, 'send');
+    await runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@scout draft an email to Lee' });
     await runtime.idle();
-    expect(seen).toEqual(['send']);
-    expect(store.getApproval(a.id)).toMatchObject({ status: 'done', delivery: 'send' });
+    const [next] = store.listApprovals({ status: ['pending'] });
+    runtime.decide(next.id, true, 'draft');
+    await runtime.idle();
+    expect(seen).toEqual(['draft']);
+    expect(store.getApproval(next.id)).toMatchObject({ status: 'done', delivery: 'draft' });
   });
 
-  test('other approvals refuse a delivery; stored approvals from older files load without card or delivery', async () => {
+  test('accepts a turn mail delivery choice when the first action is a Jira write', async () => {
     let n = 0;
     const t = setup(() => (++n === 1 ? tools(call('c1', 'jira_create_issue', { summary: 'x' })) : say('ok')));
     await t.runtime.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@scribe file it' });
     await t.runtime.idle();
     const [a] = t.store.listApprovals({ status: ['pending'] });
-    expect(() => t.runtime.decide(a.id, true, 'send')).toThrow(HyperBotsRuntimeError);
-    expect(t.runtime.decide(a.id, true)).toMatchObject({ status: 'approved', delivery: null, card: null });
+    expect(t.runtime.decide(a.id, true, 'draft')).toMatchObject({ status: 'approved', delivery: null, card: null });
   });
 
   test('an older calendar-read policy also covers reading one event in full and defaults directory search to ask', () => {

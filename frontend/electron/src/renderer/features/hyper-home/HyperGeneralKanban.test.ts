@@ -14,9 +14,12 @@ let views: ViewPB[];
 beforeEach(() => {
   vi.clearAllMocks(); for (const key of Object.keys(kvStore)) delete kvStore[key]; views = [];
   vi.mocked(events.FolderEventGetAllViews).mockImplementation(async () => ({ ok: true, value: { items: views } }) as never);
-  vi.mocked(events.FolderEventCreateView).mockImplementation(async args => { const created = view('created'); views.push(created); expect(args).toMatchObject({ parentViewId: 'space', name: 'Hyper-Kanban', layout: ViewLayoutPB.Board, setAsCurrent: false }); return { ok: true, value: created }; });
-  vi.mocked(events.FolderEventUpdateView).mockImplementation(async args => { const item = views.find(view => view.id === args.viewId)!; if (args.oneOfExtra?.case === 'extra') item.oneOfExtra = args.oneOfExtra; return { ok: true, value: undefined }; });
-  vi.mocked(events.FolderEventGetView).mockImplementation(async args => ({ ok: true, value: views.find(view => view.id === args.value)! }));
+  vi.mocked(events.FolderEventCreateView).mockImplementation(async args => {
+    expect(args).toMatchObject({ parentViewId: 'space', name: 'Hyper-Kanban', layout: ViewLayoutPB.Board, setAsCurrent: false, oneOfExtra: { case: 'extra', value: '{"hyper_general_kanban":true}' } });
+    const created = view('created', true);
+    views.push(created);
+    return { ok: true, value: created };
+  });
 });
 it('creates one marked board without opening it, preserving other extra', async () => {
   const [a, b] = await Promise.all([ensureHyperGeneralKanban('workspace'), ensureHyperGeneralKanban('workspace')]);

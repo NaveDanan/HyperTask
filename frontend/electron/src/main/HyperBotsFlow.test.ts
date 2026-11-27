@@ -83,7 +83,7 @@ function world(opts: { hangJira?: boolean } = {}) {
 
 const who = (m: { author: { kind: string; botId?: string } }) => m.author.kind === 'user' ? 'owner' : m.author.botId;
 
-test('owner-approved Outlook read, hand_off, owner-approved Jira write: once each, destination shown, model fixed per message, no re-run after restart', async () => {
+test('one turn approval covers an Outlook read and Jira hand-off, with no re-run after restart', async () => {
   const w = world();
   const hub = w.hub();
   const { runtime: rt } = await hub.current();
@@ -118,14 +118,10 @@ test('owner-approved Outlook read, hand_off, owner-approved Jira write: once eac
   expect(scoutReply.text).toContain('Design review');
   expect(scoutReply.model).toBe('model-A');
 
-  // Scribe, started by hand_off with its own model, sees a bot request (not the owner's); the Jira write waits.
+  // Scribe sees a bot request and uses the same owner turn approval.
   expect(w.modelCalls.find((c) => c.bot === 'scribe')!.last.content).toContain('Request from @scout (a bot, not the owner):');
-  const write = snap.approvals.find((a) => a.status === 'pending')!;
-  expect(write).toMatchObject({ botId: 'scribe', tool: 'jira_create_issue', access: 'write', destination: JIRA_DESTINATION });
-  expect(w.jiraPosts).toHaveLength(0);
-
-  rt.decide(write.id, true);
-  await rt.idle();
+  const write = snap.approvals.find(a => a.tool === 'jira_create_issue')!;
+  expect(write).toMatchObject({ botId: 'scribe', access: 'write', destination: JIRA_DESTINATION, turnId: read.turnId, status: 'done', decidedBy: 'owner' });
   expect(w.jiraPosts).toHaveLength(1);
   expect(w.jiraPosts[0]).toMatchObject({ url: 'https://jira.example.test/rest/api/2/issue', authorization: 'Bearer pat-secret' });
   expect(w.jiraPosts[0]!.body.fields).toMatchObject({ project: { key: 'OPS' }, summary: 'Prepare design review notes', issuetype: { name: 'Task' } });
@@ -182,7 +178,7 @@ test('a Jira write cut off by shutdown is unknown and never re-sent after restar
   const w = world({ hangJira: true });
   const hub = w.hub();
   const { runtime: rt } = await hub.current();
-  rt.saveSettings({ ...rt.settings(), policy: { outlook_list_events: 'allow' } });
+  rt.saveSettings({ ...rt.settings(), permissionLevel: 'elevated' });
   await rt.post({ roomId: 'ops', clientMessageId: randomUUID(), text: '@scout what is on my calendar tomorrow? Hand ticket work to scribe.', model: 'model-A' });
   await rt.idle();
   // A read pre-approved by policy is recorded as such; the write still waits for the owner.

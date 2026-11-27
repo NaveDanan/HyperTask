@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
-import { HYPER_BOTS_DEFAULT_SETTINGS, hyperBotsWithDirectRooms } from '@shared/HyperBots';
-import { hyperBotCreate, hyperBotCreateGroup, hyperBotDelete, hyperBotUniqueId, hyperBotUpdate, hyperBotDescription } from './HyperBotSettings';
+import { HYPER_BOTS_DEFAULT_SETTINGS, HYPER_BOTS_TOOLS, hyperBotsWithDirectRooms } from '@shared/HyperBots';
+import { hyperBotConnectionTools, hyperBotCreate, hyperBotCreateGroup, hyperBotDelete, hyperBotUniqueId, hyperBotUpdate, hyperBotDescription } from './HyperBotSettings';
 import { hyperBotAvatarOf } from './HyperBotAvatar';
 import { hyperBotsPreviewText } from './HyperBotsController';
 const settings = () => hyperBotsWithDirectRooms(structuredClone(HYPER_BOTS_DEFAULT_SETTINGS));
@@ -10,14 +10,15 @@ it('slugs new bot names, uses bot for non-Latin names, and suffixes within 24 ch
   expect(hyperBotUniqueId('A'.repeat(40), ['a'.repeat(24)])).toBe('a'.repeat(22) + '-2');
   expect(hyperBotUniqueId('Scout', ['scout', 'scout-2'])).toBe('scout-3');
 });
-it('creates direct rooms, type-specific instructions and personal/teammate default tools; caps bots at eight', () => {
+it('creates direct rooms with type-specific instructions and connections off by default; caps bots at eight', () => {
   const personal = hyperBotCreate(settings(), { name: 'Inbox', mode: 'personal', avatar: { shape: 'heart', color: 'orange' } });
-  expect(personal.bot.instructions).toBe("You are Inbox, the owner's personal assistant in HyperTask. Be concise and ask before acting.");
-  expect(personal.bot.tools).toEqual(['outlook_list_events', 'outlook_get_event', 'outlook_create_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people', 'outlook_send_message']);
+  expect(personal.bot.instructions).toBe("You are Inbox, the owner's personal assistant in HyperTask. Use your enabled tools when asked and summarize the results.");
+  expect(personal.bot).toMatchObject({ tools: [], permissionLevel: 'supervised' });
   expect(personal.settings.rooms.at(-1)).toMatchObject({ kind: 'direct', botIds: [personal.bot.id] });
-  const teammate = hyperBotCreate(settings(), { name: 'Ops', mode: 'teammate' });
+  const teammate = hyperBotCreate(settings(), { name: 'Ops', mode: 'teammate', permissionLevel: 'elevated', tools: hyperBotConnectionTools('outlook') });
   expect(teammate.bot.instructions).toBe('You are Ops, a teammate bot in HyperTask. Work with the other bots and hand off when another bot fits better.');
-  expect(teammate.bot.tools).toEqual(['outlook_list_events', 'outlook_get_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people']);
+  expect(teammate.bot.permissionLevel).toBe('elevated');
+  expect(teammate.bot.tools).toEqual(Object.keys(HYPER_BOTS_TOOLS).filter(name => name.startsWith('outlook_')));
   let full = settings(); for (let i = 0; i < 6; i++) full = hyperBotCreate(full, { name: 'Bot ' + i }).settings;
   expect(() => hyperBotCreate(full, { name: 'Ninth' })).toThrow('8 bots');
 });
@@ -39,9 +40,9 @@ it('requires at least two distinct existing bots when creating groups and makes 
 it('renames the direct room with its bot and derives descriptions from configured tools', () => {
   const input = settings(), bot = { ...input.bots[0]!, name: 'Reader' };
   expect(hyperBotUpdate(input, bot).rooms.find(room => room.id === 'dm-scout')?.name).toBe('Reader');
-  expect(hyperBotDescription(bot)).toBe('Reads your Outlook calendar and mail · Searches your employee directory · Manages Outlook meetings · Drafts and sends Outlook mail');
+  expect(hyperBotDescription(bot)).toBe('Reads your Outlook calendar and mail · Searches your employee directory · Manages Outlook meetings · Drafts and sends Outlook mail · Works with HyperTask Kanban and Gantt');
   expect(hyperBotDescription({ ...bot, tools: ['outlook_list_events', 'outlook_list_messages'] })).toBe('Reads your Outlook calendar and mail');
-  expect(hyperBotDescription({ ...bot, tools: [] })).toBe('No tools yet. Pick them in Tools.');
+  expect(hyperBotDescription({ ...bot, tools: [] })).toBe('Enable a connection in Bot settings to add tools.');
 });
 it('gives a new bot a fresh direct room, so a reused name never inherits a deleted bot history', () => {
   const first = hyperBotCreate(settings(), { name: 'Inbox' });

@@ -39,10 +39,43 @@ const failsWith = async (run: Promise<unknown>, kind: string, pattern?: RegExp) 
 
 it('offers every Outlook tool once, reads as reads and writes as writes', () => {
   const { tools } = setup();
-  expect(Object.keys(tools).sort()).toEqual(['outlook_create_event', 'outlook_forward_event', 'outlook_forward_message', 'outlook_get_event', 'outlook_list_events',
+  expect(Object.keys(tools).sort()).toEqual(['outlook_cancel_event', 'outlook_create_event', 'outlook_delete_event', 'outlook_delete_message', 'outlook_forward_event', 'outlook_forward_message', 'outlook_get_event', 'outlook_list_events',
     'outlook_list_messages', 'outlook_read_message', 'outlook_reply_message', 'outlook_respond_meeting', 'outlook_search_people', 'outlook_send_message', 'outlook_update_event']);
   for (const name of ['outlook_list_events', 'outlook_get_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people']) expect(tools[name]!.access).toBe('read');
-  expect(Object.values(tools).filter(tool => tool.access === 'write')).toHaveLength(7);
+  expect(Object.values(tools).filter(tool => tool.access === 'write')).toHaveLength(10);
+});
+
+it('cancels an organized meeting or deletes a personal appointment with the approved item version', async () => {
+  let count = 1, organizer = true;
+  const h = setup({ 'event.get': () => event({ attendeeCount: count, attendees: count ? event().attendees : [], isOrganizer: organizer }), 'event.delete': () => null });
+  const cancel = h.tool('outlook_cancel_event'), remove = h.tool('outlook_delete_event');
+  const args = cancel.parse({ id: 'CD34' });
+  await failsWith(remove.bind(args, signal), 'refused', /outlook_cancel_event/);
+  const approved = await cancel.bind(args, signal);
+  expect(approved.card).toContainEqual({ label: 'Cancellation goes to', value: 'lee@corp.example' });
+  await expect(cancel.run(args, signal, approved.fingerprint)).resolves.toMatchObject({ cancellationSent: true });
+  expect(h.request).toHaveBeenCalledWith('event.delete', { id: 'CD34', send: true, account: account.address, expect: event().lastModified });
+  count = 0;
+  await failsWith(cancel.run(args, signal, approved.fingerprint), 'refused');
+  const personal = await remove.bind(args, signal);
+  await expect(remove.run(args, signal, personal.fingerprint)).resolves.toMatchObject({ cancellationSent: false });
+  expect(h.request).toHaveBeenCalledWith('event.delete', { id: 'CD34', send: false, account: account.address, expect: event().lastModified });
+  organizer = false;
+  await failsWith(remove.bind(args, signal), 'refused', /owner organizes/);
+});
+
+it('moves a mail message to Deleted Items only from the bound mailbox folder and version', async () => {
+  const mailTarget = { subject: 'Budget', from: mail().from, folder: 'A1', lastModified: mail().received };
+  const h = setup({ 'mail.deleteTarget': () => mailTarget, 'mail.delete': () => null });
+  const remove = h.tool('outlook_delete_message');
+  const args = remove.parse({ id: ID });
+  const approved = await remove.bind(args, signal);
+  expect(approved.destination).toContain('Deleted Items');
+  mailTarget.folder = 'B2';
+  await failsWith(remove.run(args, signal, approved.fingerprint), 'refused', /changed/);
+  expect(h.request.mock.calls.every(([op]) => op !== 'mail.delete')).toBe(true);
+  await expect(remove.run(args, signal, (await remove.bind(args, signal)).fingerprint)).resolves.toMatchObject({ movedTo: 'Deleted Items' });
+  expect(h.request).toHaveBeenCalledWith('mail.delete', { id: ID, folder: 'B2', account: account.address, expect: mailTarget.lastModified });
 });
 
 it('flags only addresses outside the sender domain; subdomains are inside', () => {

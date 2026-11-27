@@ -4,41 +4,40 @@ The **Hyper-Bot** tab runs bots and group conversations inside HyperTask. Two bo
 
 | Bot | Tools by default | Access |
 | --- | --- | --- |
-| `@scout` | Outlook calendar and mail reads (`outlook_list_events`, `outlook_get_event`, `outlook_list_messages`, `outlook_read_message`) | Read |
+| `@scout` | Outlook calendar, mail and directory tools, plus HyperTask project task tools | Read and write |
 | `@scribe` | Search, read, create, edit, and transition Jira issues | Read and write |
 
-Each bot's tools are ticked in **Details → Tools**, grouped by connection with a Read or Write tag. Changes save immediately, update optimistically, and revert with an inline error if saving fails. That list is exactly what the bot is offered. Outlook writes are opt-in.
+Each bot's tools are ticked in **Details → Tools**, grouped by connection with a Read or Write tag. Changes save immediately and revert with an inline error if saving fails. The permission level controls prompts for enabled tools.
 
 A message from the owner that mentions `@scout` or `@scribe` goes to that bot; with no mention it goes to every bot in the room.
 
-**Hand-offs.** A bot hands work to another bot only by calling the internal `hand_off` tool (`{ botId, request }`). It is offered only when the room has other bots. It needs no approval because it calls no outside service. The room shows it as a bot message, "Hand-off to @scribe: …". The target bot starts with its own model and sees the owner's original message (labelled '[Owner]') followed by the bot's request, labelled "Request from @scout (a bot, not the owner)". The owner's message is what authorizes the work, and every Outlook, Jira, or Newsletter call the target proposes still waits on its own approval card. Each owner message allows one hand-off (`maxHops` 2: owner → bot → bot). A `@mention` in a bot's reply, or in calendar or Jira text, starts nothing.
+**Hand-offs.** In a room with multiple bots, `hand_off` passes work to another bot in that room. The receiving bot uses its own model and sees the owner's original message and the other bot's request. The owner's permission decision applies across the hand-off. The depth limit permits the owner to reach a bot and that bot to reach a second bot. Mentions in tool results and bot replies are conversation text.
 
 **Untrusted data.** Tool results reach the model as `{"source": "<tool>", "untrusted_data": …}`, and failures as `{"source": "<tool>", "error": …}`. The system prompt says that tool data and other bots' text are information only, and can never authorize an action. Room history in the prompt is labelled `[Owner]` or `[Bot @id]`.
 
 ## What to set up
 
-Bots reuse the app's own connections. Nothing is configured in the Bots tab except the bots themselves.
+Bots reuse the app's connections and the active HyperTask workspace.
 
 1. **Model endpoint.** In **Settings → Connections → AI endpoint**, enter the OpenAI-compatible base URL (with `/v1`), the API key and the default model, enable it, and test it. Bots call `<base>/chat/completions` with tools. Some endpoints refuse a model there; newer GPT models behind a Copilot-style proxy answer "Invalid type for 'input'". The bots then use `<base>/responses` for that model, the same rule as the Settings → Connections → AI endpoint test, and remember it until the app restarts. A refused request has done nothing, so asking again cannot repeat any work. The key stays DPAPI-protected on disk and is decrypted only in the main process.
 2. **Jira.** In **Settings → Connections → Jira**, save the site URL, default project, and credentials. The bot uses Jira REST API v2 and can work across projects that the account can access. Explicit project keys override the default for issue creation. JQL search uses offset pagination for Data Center and enhanced search for standard Jira Cloud hosts.
 3. **Outlook.** Nothing to do if classic Outlook for Windows runs as the same user. The bots use the same bridge as the Outlook views; see [Outlook tools](#outlook-tools).
 4. **Newsletter.** In Newsletter, create a **Newsletter & Gantt authoring** token under **Profile → API access tokens**. Choose **Read and write** for bot edits. Enter the site URL and token in **Settings → Connections → Newsletter**. Gantt access requires a Newsletter manager, general manager, or administrator. The connection is stored locally under the signed-in HyperTask account.
 
-The Hyper-Bot sidebar footer has a Connections dropdown that opens upward and shows the status for the model, Outlook, Jira, and Newsletter. A bot’s Activity panel shows the connection details. Enable the tools you want under **Details → Tools**. Existing bots retain their saved tool selections.
+The Hyper-Bot sidebar footer shows connection status for the model, Outlook, Jira, and Newsletter. A bot’s Activity panel shows the connection details. Enable a service under **Bot settings → Connections** to give the bot all of that service’s tools. Existing bots retain their saved tool selections.
 
-**The one approved exception to rule 1.** The Outlook status check asks the bridge whether classic Outlook answers (`status`). It reads no calendar item. The bridge's reply also carries the profile name and address. Main drops them, so the dropdown shows only "Classic Outlook is available", and a failure reason is clipped to 300 characters.
+The Outlook chip checks whether classic Outlook answers the bridge and shows the connection status.
 
-## The three rules
+## Permissions and requests
 
-1. **Approval before every connector call.**
-   - **The card.** A request card ("Waiting for you") shows the bot, the tool, Read or Write, a summary, the exact arguments, and **To:** the destination. The destination is "Outlook calendar on this PC" for a calendar read. For a Jira write it is "Jira project OPS at https://jira.example as nave", or "as token" for a personal access token. Tool calls to Outlook, Jira, and Newsletter wait until the request is approved.
-   - **Policy.** Calendar reads, mail reads and directory searches ask for approval by default. You can pre-approve each type of read in **Details → Tools → Read policies**, which applies to all bots. The bot's model receives the results of approved reads. Every write always asks.
-   - **Checked again just before the call.**
-     - The destination is resolved again. If it changed (another project, server, Jira user or HyperTask account), the request goes back to *pending* with the new destination, and the owner must approve it again. A rotated token for the same destination is not a change.
-     - If the destination cannot be resolved, the request is *failed* and nothing is sent.
-     - A read approved by policy goes back to the owner when the policy is no longer **allow**. Saving settings does this at once.
-     - If the bot no longer has the tool, or the bot was removed, the request is *skipped* ("the bot no longer has this tool") and the run continues without the call. Saving settings skips such pending and approved requests at once.
-   - **Unknown outcomes.** If the app stops while a call is running, the call is marked *unknown* and never re-run. A Jira call that times out, loses its connection or gets a 5xx is also *unknown*, so it is never retried into a duplicate issue.
+1. **One decision per turn.** Pick a bot’s level below its direct chat or in **Details → Tools**. The level applies to that bot in chat and voice. The level in a group chat is the default for bots without their own level.
+   - **Supervised** is the default and asks once before using tools.
+   - **Elevated** automatically allows Outlook email and calendar reads. Other actions ask once.
+   - **Full access** automatically allows enabled tools, including email deletion, appointment deletion and meeting cancellation.
+   - Use the approval switches in **Details → Tools** to override the level for individual tools. Changing the level resets those switches to the new defaults.
+   - The approval card lists the actions requested so far and their destinations. The decision covers follow-up actions in the same turn. **Approve, draft mail** saves eligible outgoing mail in Drafts.
+   - The runtime checks the destination again before execution. A changed destination skips the affected action and requires a new turn. Disabling a tool skips its pending actions.
+   - When a call's outcome is unknown, the runtime records that state and leaves the owner to reconcile it before retrying.
 2. **No message is sent twice.**
    - Each message carries an ID. A retry, or reopening the tab, re-sends the same ID and creates nothing new. A request can be approved only once.
    - The renderer keeps an outbox per signed-in user. A message keeps its ID until the app confirms it, even if the page closed and reopened meanwhile. Two unconfirmed messages keep separate IDs.
@@ -48,9 +47,25 @@ The Hyper-Bot sidebar footer has a Connections dropdown that opens upward and sh
    - A message and its whole run plan (each bot and its model) are stored in one write. A retry creates only the planned runs that are missing.
 3. **Model fixed per message.** Pick a model in the message box, or leave it on **Bot default**. The model is recorded when the message is sent and used for every step of that answer, even if settings change. A bot reached by hand-off uses its own model. A bot's model can be set in **Details → Activity → Engine**; the default is the endpoint's model.
 
+## Skills
+
+Use **Settings → Skills** to edit Global skills or assign Dedicated skills to specific bots. **Bot settings → Skills** shows the entries available to that bot. Send `/create-skill` or `Create New Skill` to write a skill in chat. Send `/create-tool` to save a named version of an enabled connector tool with its own instructions. New entries are assigned to the bot that creates them and can be made Global in the Skills editor.
+
+## Memory & Soul
+
+Open a bot's direct chat and choose **Bot settings → Memory & Soul**. Memory stores recurring goals, likes, dislikes and working preferences. Soul adapts the bot's tone, level of detail, response format and language. The bot takes these as defaults. A current request can override a default for that turn.
+
+- **Off** pauses personalization and preserves the saved profile. This is the starting setting for every bot.
+- **Use saved preferences** applies Soul and relevant memories in direct conversations, including confirmed voice requests in those conversations. For example, save a Tasks memory under `Task descriptions` with `Include acceptance criteria` to guide new task descriptions. The owner reviews or authorizes connector actions through the bot's existing permission settings.
+- **Use and suggest updates** also sends eligible new owner messages to the selected model in a short background request. **Review** shows each proposal and the supporting quote. Review and save a proposal to add or replace the matching topic or Soul setting. You can edit it before saving or dismiss it.
+
+Each account and bot has its own profile. It contains personal preferences that apply across workspaces. Group conversations, hand-offs, interactive card selections and skill authoring do not supply learning input or receive the profile. Learning runs without tools and skips oversized, credential-like and clearly private messages. The configured model endpoint receives selected context during personalized turns, and receives only the eligible owner message and saved topic labels during extraction.
+
+Edit or forget individual entries, or choose **Clear personalization** to remove the profile and suggestions and switch it off. Past messages remain in room history and can still inform that conversation. Previous requests to the model provider follow its retention policy. A preference change cancels pending tool proposals that used the previous profile. HyperTask stores active preferences in the existing account file and assembles context at call time, including after a restart. See the [research note](HYPER_BOT_PERSONALIZATION_RESEARCH.md) for the design and benchmarks.
+
 ## Conversation history and tool activity
 
-Hyper-Bot opens the selected room at its newest 16 messages. **Load earlier messages** adds 40 more and keeps the current reading position. The first room response includes compact previews and activity counts for the sidebar. Outlook, Jira, Newsletter, and model connection checks finish separately. Each tool card appears under the message that started its run and shows the bot, action, destination and current outcome. Pending writes keep their approval controls.
+Hyper-Bot opens the selected room at its newest 16 messages. **Load earlier messages** adds 40 more and keeps the current reading position. The first room response includes compact previews and activity counts for the sidebar. Outlook, Jira and model connection checks finish separately. Pending tool actions share one approval card under the owner message. Tool outcomes appear in the transcript and recent activity.
 
 The model receives the most recent complete, author-labelled room messages that fit within 32,000 characters, followed by the current request. Earlier messages remain available for reading within the existing 2,000-message retention limit. Active work can pin messages past that limit. Each run still has its own eight-step limit.
 
@@ -85,22 +100,25 @@ On 2026-11-20 a local fixture with 2,000 messages, 1,000 completed runs and 1,00
 | `outlook_create_event` | Write | A new event; with attendees, Outlook sends the invitations. `onlineMeeting: "teams"` or `"skype"` adds an online meeting (below). |
 | `outlook_update_event` | Write | Title, time, location or description of an event the owner organizes; the update goes to its attendees. |
 | `outlook_forward_event` | Write | Organizer: adds people and sends the update to everyone. Attendee: forwards the original invitation (found in the Inbox or Deleted Items). |
+| `outlook_delete_event` | Write | Deletes an appointment without attendees. |
+| `outlook_cancel_event` | Write | Cancels a meeting the owner organized and notifies attendees. |
 | `outlook_list_messages` | Read | Inbox, Sent Items or Drafts, newest first, with sender, subject, time, a 300-character preview and an `id`. |
 | `outlook_read_message` | Read | One message as plain text (8,000 characters by default, 20,000 at most), recipients, attachment names and sizes, and meeting details for an invitation. |
 | `outlook_send_message` | Write, Send or Draft | A new plain-text email to up to 20 addresses (To and Cc). No attachments. |
 | `outlook_reply_message` | Write, Send or Draft | Reply or reply all; the text goes above the quoted original. |
 | `outlook_forward_message` | Write, Send or Draft | Forward with a note; the attachments go along. Forwarding an invitation forwards the meeting. |
+| `outlook_delete_message` | Write | Moves a message from the default mailbox's Inbox, Sent Items or Drafts to Deleted Items. |
 | `outlook_respond_meeting` | Write, Send or Draft | Accept, tentative or decline, with a comment, from an invitation message or a calendar event. With tentative or decline it can propose a new time. |
 
 - **The card.** Outlook writes show the lines the owner approves: **From** (the default sending account), **To** and **Cc**, recipients outside the sender's domain flagged in amber, the subject and the full text (each line in its own direction), and for a reply, forward or answer the message or meeting it acts on. A line that mixes English with a title or name stays left to right, and the title keeps its own direction, so a Hebrew meeting title neither flips the line nor moves its punctuation. A reply lists the recipients Outlook's own Reply or Reply All gives, Reply-To included. That preview is an unsaved reply, discarded at once.
-- **Send or Save to Drafts.** Mail writes (send, reply, forward, answer an invitation) have **Send** and **Save to Drafts** buttons instead of Approve. A draft lands in Outlook Drafts for the owner to send from Outlook.
+- **Send or save to Drafts.** **Approve turn** allows sending mail. **Approve, draft mail** saves eligible outgoing messages and invitation replies for the owner to review in Outlook.
 - **Pinned to what was approved.** The fingerprint covers:
   - the sending account;
   - the item acted on, and its content: a hash of a message's subject, sender name and address, plain and HTML text, and each attachment's name, size, type and creation and change times, or an event's or invitation's last-modified time;
   - a reply's exact recipients;
   - an edit's changes.
 
-  A change before the call sends the request back to the owner. The script checks the same values again just before it writes. If Outlook cannot read every part of a message (its text or an attachment's details), a bot cannot reply to it or forward it. Outlook values are read so that a failed read raises an error: plain PowerShell property access would turn a failed read into an empty value. It sends only from the approved account; an existing meeting must already send from it. It refuses a reply whose recipients changed.
+  A changed destination or item stops the affected call. The script checks bound values again before it writes. Replies and forwards require readable message content and attachments. An existing meeting must already send from the approved account. Outlook refuses a reply whose recipients changed.
 - **Calendar cards show everyone.** An edit or an organizer's forward lists every attendee who gets the update, and flags outsiders. A private meeting, or one with more attendees than Outlook lists (200), is refused; change it in Outlook.
 - **Card preparation reads only what the bot was shown.** A write that acts on an item names it, and the runtime prepares a card only when that id came back from an Outlook tool earlier in the same run, through an approved read or an approved write. Otherwise the bot is told to find the item first, and nothing is read. Preparing the card then reads the sending account and that item's header. A header read returns no message text; a content hash is computed in PowerShell and only the hash leaves it.
 - **Never twice.** From the first Save, Send or Delete on, any failure is reported as *unknown*, as is a timeout or a lost Outlook host. Such a call is never retried: check Sent Items or Drafts first. Errors before that point, including a failed final check, are *failed*, and nothing was sent. The bridge sends one request at a time, and a request's timeout starts only when it is sent, so a quick request waiting behind an online-meeting create cannot time it out.
@@ -111,6 +129,12 @@ On 2026-11-20 a local fixture with 2,000 messages, 1,000 completed runs and 1,00
 - **Online meetings.** The Teams and Skype for Business add-ins have no API. `create` opens the new item's window, presses the add-in's **Teams Meeting** or **Skype Meeting** ribbon button with UI Automation. Outlook gives that window's own handle (IOleWindow), so no other window can receive the press; if the window cannot be identified, nothing is pressed. It then waits up to 20 seconds for the join link. The window shows for about two seconds. Without the button, or without a link, the item is discarded and nothing is saved or sent.
 - **Model requests.** On `/responses`, tools are sent with `strict: false`. A strict model fills every optional field, for example an unchanged description or a "since" of 1970.
 
+## HyperTask project tools
+
+Scout can find workspace views, search task rows, create and edit tasks, set status, and tag coworkers. Choose **General Kanban** for Home tasks, or name the project board or Gantt view. Project views that share a database display the same task rows. The Home board has its own database.
+
+The bot uses the workspace member list to resolve names and the task's People property to store tags. In a Gantt view it can set or clear start and end dates. Calendar dates use the PC's time zone, and the end date is inclusive.
+
 ## Limits
 
 - Bots state is per HyperTask account. Accounts that share a Windows profile cannot see each other's bots, but the state files are protected only by that Windows profile.
@@ -119,11 +143,9 @@ On 2026-11-20 a local fixture with 2,000 messages, 1,000 completed runs and 1,00
 - There are up to 8 bots and 16 group chats, with up to 24 rooms in settings (8 direct rooms plus 16 groups).
 - Skype for Business works only on PCs whose Outlook has the **Skype Meeting** button. The owner's PC has only Teams, so the Skype path has been checked only for its refusal there.
 - Proposing a new time sends what Outlook sends: the subject "New Time Proposed: …" and the counter-proposal properties, checked against counter-proposals sent from Outlook itself. The time is also written in the text. Accept, tentative, decline and propose were checked for real on 2026-11-17 with invitations from another mailbox. Saving an answer to Drafts has not been checked for real yet.
-- Answering leaves the invitation in the Inbox, unread. Outlook's own buttons move it to Deleted Items; bots do not move or delete mail.
-- Not offered: deleting or cancelling events, moving, deleting or marking mail, opening attachments, BCC, and HTML authoring.
+- Answering a meeting invitation leaves it unread in the Inbox.
 - Replies arrive whole, not streamed. They are shown as Markdown (no images or HTML), and each line takes its own direction, so Hebrew titles read right to left.
 - Bots are told the PC's local time and time zone. "Tomorrow" means the local date, and times are shown in local time; Outlook itself returns UTC.
-- Voice is not included.
 - UI code and CSS were ported from bot-hq (MIT, Copyright (c) 2026 Nick Vasilescu): Sidebar, ChatView, Transcript, Composer, DetailsPanel, EngineSettings, MembersCard, modal/picker components, avatar shapes and palette, and shell/chat/details/cards/modals/base styles. See [NOTICE.md](../src/renderer/features/hyper-bots/NOTICE.md) for the full MIT license and the separate Grok Bot artwork notice; that artwork is not covered by the MIT grant.
 
 ## Tests
@@ -140,15 +162,15 @@ npx vitest run src/main/HyperBots src/renderer/features/hyper-bots src/shared
 
 The columns follow bot-hq's UI, restyled with HyperTask theme tokens. Entering the active Hyper-Bot tab temporarily collapses the main sidebar to its 56px rail. Leaving or closing the tab restores the previous state unless the user toggled it while in Hyper-Bot; only user changes persist. The generic plugin flag is prefersCollapsedMenu. At window widths of at least 900px with the main sidebar collapsed, the active primary page portals its 330px list into HyperChromePanel in the app chrome. A tab-owned width claim shifts HomeStack using the sidebar's existing transition and releases on tab switch/unmount. Otherwise the list stays inside the content card (212px below a 701px page width). The panel and dialogs retain data-hyper-bot.
 
-The list has a bold title without header controls. Its first bot is pinned, other bots show a last-message preview or their type, and group rows stack their members' avatars. The Group chats row always includes a New group chat plus button, even without groups. The Connections dropdown opens above its button at the bottom. Sidebar foreground/accent tokens keep rows consistent with the main sidebar in light, dark and custom themes. Working, needs-you and unread dots update from room events and compact room summaries. Opening a room clears its unread dot.
+The list has a bold title without header controls. Its first bot is pinned, other bots show a last-message preview or their type, and group rows stack their members' avatars. The Group chats row always includes a New group chat plus button, even without groups. Connection chips stay at the bottom and wrap on narrow layouts or larger text scales. Sidebar foreground/accent tokens keep rows consistent with the main sidebar in light, dark and custom themes. Working, needs-you and unread dots update from room events and compact room summaries. Opening a room clears its unread dot.
 
-Hand-drawn inline Outlook and classic Jira SVG marks identify every tool row, approval header, recent decision (including those in the transcript), and connection rows in the dropdown and details. They are decorative, preserve all labels, and use per-instance React useId gradient IDs. The current create/settings dialogs contain no tool picker; any shared HyperBotToolsForm gets the marks. Trademark attribution is in NOTICE.md.
+Hand-drawn inline Outlook and classic Jira SVG marks identify every tool row, approval header, recent decision (including those in the transcript), and Outlook/Jira connection chips in the list and details. They are decorative, preserve all labels, and use per-instance React useId gradient IDs. The current create/settings dialogs contain no tool picker; any shared HyperBotToolsForm gets the marks. Trademark attribution is in NOTICE.md.
 
 A bot opens its direct room. The floating chat pill offers details, settings and a new group chat. User bubbles use the bot's color; bot replies use HyperMarkdown and the theme message surface. Group replies show sender avatars/names. Date dividers, grouped bubble corners, hover times, run/failure lines and approval cards share the transcript. The composer grows with its draft, retains per-room drafts and retry IDs, and keeps the selected per-message model, including an unlisted model. Group conversations retain the @mention hint.
 
-The 320px details panel defaults open at page widths of at least 1100px and overlays the chat below that width; the page container query continues to measure the chat/details surface after the list moves into chrome. Its open/closed state lasts for the window session. A bot has Activity and Tools: Activity contains Connections, the endpoint/model Engine editor with Save/Undo, and recent decisions; Tools contains the per-bot catalog and global read policies. Groups show Members (add/remove, keeping at least one member) and recent decisions.
+The 320px details panel defaults open at page widths of at least 1100px and overlays the chat below that width. Its open or closed state lasts for the window session. Activity shows connected services, the Engine editor, the bot's dedicated skills and tools, a shortcut to Memory & Soul, and recent decisions. Each section starts collapsed. Tools contains the bot's permission level and the approval switches for its available tools. Groups show collapsed Members and Recent decisions sections.
 
-Create New Bot has the 13 silhouette shapes in 5/5/3 rows, 11 colors in 6/5 rows and Personal assistant / Teammate choices. A name is limited to 40 characters. New IDs are ASCII slugs capped at 24 characters, falling back to bot and adding unique -2/-3 suffixes. New bots have four Outlook read tools, with writes opt-in. A new bot's direct room gets a random four-character suffix (dm-<botId>-<hex>): messages stay stored under a deleted bot's room, so a later bot with the same name never inherits that history. Mode labels the bot and selects default instructions only. New group chat needs a name and at least two distinct existing bots. Bot settings edits identity/type/instructions (4000 characters) and offers confirmed deletion except for the last bot. Deletion removes the direct room and group memberships; empty groups are removed. Group settings renames or deletes the group. Dialogs close with Escape or a scrim click and restore focus. The last selected room is remembered per signed-in user in localStorage, with guarded storage access and a fallback to the first bot's direct room.
+Create New Bot has the 13 silhouette shapes in 5/5/3 rows, 11 colors in 6/5 rows and Personal assistant / Teammate choices. A name is limited to 40 characters. New IDs are ASCII slugs capped at 24 characters, falling back to bot and adding unique -2/-3 suffixes. New bots start with Supervised permissions and all connection switches off. A new bot's direct room gets a random four-character suffix (dm-<botId>-<hex>): messages stay stored under a deleted bot's room, so a later bot with the same name never inherits that history. Mode labels the bot and selects default instructions only. New group chat needs a name and at least two distinct existing bots. Bot settings edits identity/type/instructions (4000 characters), permissions, connections, and skills. Deleting a bot removes its direct room, group memberships, and dedicated skill assignments. Empty groups are removed. Group settings renames or deletes the group. Dialogs close with Escape or a scrim click and restore focus. The last selected room is remembered per signed-in user in localStorage, with guarded storage access and a fallback to the first bot's direct room.
 
 ## Additive settings contract
 
@@ -172,7 +194,7 @@ All paths below are in src/renderer/features/hyper-bots/.
 | HyperBotApproval.tsx | Existing approval semantics in the ported card shell and recent outcomes. |
 | HyperBotDetails.tsx | Activity/Tools and group details. |
 | HyperBotEngine.tsx | Provider detail, model select, Save/Undo and endpoint status. |
-| HyperBotTools.tsx | Ordered per-bot tools and optimistic saves; global read policy controls. |
+| HyperBotTools.tsx | Per-bot tool catalog, optimistic saves and account-wide permission control. |
 | HyperBotBrandLogos.tsx / HyperBotToolProvider.ts | Decorative integration marks and catalog-group provider lookup. |
 | HyperBotMembers.tsx | Group membership editor. |
 | HyperBotCreateDialog.tsx | Create a bot, save it and select its direct room. |

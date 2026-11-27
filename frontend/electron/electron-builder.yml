@@ -26,7 +26,8 @@ directories:
   output: .cache/hyper-people/desktop-build
 win:
   target: dir
-  signAndEditExecutable: false
+  icon: resources/hypertask.ico
+  signExecutable: false
 mac:
   extendInfo:
     NSMicrophoneUsageDescription: HyperTask uses your microphone to capture voice commands for Hyper-Bot.

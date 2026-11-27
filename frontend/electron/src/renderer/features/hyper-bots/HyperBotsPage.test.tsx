@@ -38,6 +38,17 @@ const button = (tree: ReactNode, label: string) => all(tree, element => text(ele
 it('asks for sign-in without a user', () => {
   expect(renderToStaticMarkup(<HyperBotsPage userProfile={null} />)).toContain('Sign in to use Hyper-Bot.');
 });
+it('places the permission level below the chat box in both direct and group rooms', () => {
+  const rooms = [
+    { id: 'direct', name: 'Scout', kind: 'direct' as const, botIds: ['scout'] },
+    { id: 'group', name: 'Ops', kind: 'group' as const, botIds: ['scout', 'scribe'] },
+  ];
+  for (const { id: roomId } of rooms) {
+    const html = render({ snapshot: snapshot({ roomId, settings: { ...HYPER_BOTS_DEFAULT_SETTINGS, rooms } }) });
+    expect(html).toMatch(/<form\b[^>]*class="composer-area"[\s\S]*?data-testid="composer-editor"[\s\S]*?class="composer__footer"[\s\S]*?aria-label="Hyper-Bot permissions: Supervised"[\s\S]*?<\/form>/);
+    expect(html.match(/aria-label="Hyper-Bot permissions: Supervised"/g)).toHaveLength(1);
+  }
+});
 it('shows the room, one closed Connections dropdown, transcript, run status and composer hint', () => {
   const html = render({ snapshot: snapshot({
     messages: [message(1, { text: 'Plan my day' }), message(2, { author: { kind: 'bot', botId: 'scout' }, model: 'gpt-y', text: 'Line one\nLine two', runId: id(60) })],
@@ -58,7 +69,8 @@ it('shows the room, one closed Connections dropdown, transcript, run status and 
   expect(html).toContain('Scribe could not finish: Jira returned 401.');
   expect(html).toContain('Mention @scout or @scribe to pick a bot; no mention = all bots in the room.');
   expect(html).toContain('aria-label="Refresh"');
-  expect(html).toMatch(/<option value=""[^>]*>Bot default<\/option><option value="gpt-x">gpt-x<\/option><option value="gpt-y">gpt-y<\/option>/);
+  expect(html).toMatch(/<button(?=[^>]*role="combobox")(?=[^>]*aria-label="Model for this message")[^>]*>/);
+  expect(html).toMatch(/<span[^>]*data-slot="select-value"[^>]*>Bot default<\/span>/);
   expect(render({ snapshot: null, phase: 'unavailable', syncError: 'Refused.' })).toContain('Bots could not be opened. Refused.');
   expect(render({ error: 'The room did not answer.' })).toContain('The room did not answer.');
 });
@@ -110,9 +122,10 @@ it('audit #2: the composer reads the draft from the outbox, so a remount after s
   outbox.setDraft('ops', 'File OPS-1');
   outbox.setModel('gpt-y');
   const textarea = (html: string) => html.match(/<textarea[^>]*>([^<]*)<\/textarea>/)?.[1];
+  const selectedModel = (html: string) => html.match(/<span[^>]*data-slot="select-value"[^>]*>([^<]*)<\/span>/)?.[1];
   const before = render({}, outbox);
   expect(textarea(before)).toBe('File OPS-1');
-  expect(before).toMatch(/<option value="gpt-y" selected="">/);
+  expect(selectedModel(before)).toBe('gpt-y');
   // Bot settings opens (the composer unmounts) while the send is in flight, and the send lands meanwhile.
   const entry = outbox.begin('ops', 'File OPS-1', 'gpt-y', () => id(900));
   const box = <HyperBotsComposerBox outbox={outbox} roomId="ops" models={[]} sending={false} hint="" onSend={vi.fn()} />;
@@ -121,7 +134,7 @@ it('audit #2: the composer reads the draft from the outbox, so a remount after s
   // Settings closes: the composer that mounts again reads the store, not a stale copy.
   expect(textarea(render({}, outbox))).toBe('');
   expect(textarea(renderToStaticMarkup(box))).toBe('');
-  expect(render({}, outbox)).toMatch(/<option value="gpt-y" selected="">/);
+  expect(selectedModel(renderToStaticMarkup(box))).toBe('gpt-y');
 });
 it('composer sends the text with the selected model, or null for the bot default, on submit and Enter', () => {
   const onSend = vi.fn(), onModel = vi.fn();
@@ -129,8 +142,7 @@ it('composer sends the text with the selected model, or null for the bot default
   const form = HyperBotsComposer(props);
   form.props.onSubmit({ preventDefault() {} });
   expect(onSend).toHaveBeenLastCalledWith('File a ticket', 'gpt-y');
-  all(form, element => element.props.label === 'Model for this message')[0].props.onChange('gpt-x');
-  expect(onModel).toHaveBeenCalledWith('gpt-x');
+  expect(all(form, element => element.props.models === props.models)[0].props.onModel).toBe(onModel);
   const area = all(HyperBotsComposer({ ...props, model: '' }), element => element.props['aria-label'] === 'Message the bots')[0];
   const preventDefault = vi.fn();
   area.props.onKeyDown({ key: 'Enter', shiftKey: true, nativeEvent: {}, preventDefault });
@@ -142,23 +154,42 @@ it('composer sends the text with the selected model, or null for the bot default
   HyperBotsComposer({ ...props, text: '  ' }).props.onSubmit({ preventDefault() {} });
   expect(onSend).not.toHaveBeenCalled();
 });
-it('settings edit instructions/model, preserve catalog tool order and apply global read policies', () => {
+it('settings edit instructions and model, and update approval switches when permissions change', () => {
   const onChange = vi.fn(), bot = HYPER_BOTS_DEFAULT_SETTINGS.bots[0]!;
   const form = HyperBotToolsForm({ settings: HYPER_BOTS_DEFAULT_SETTINGS, bot, onChange });
   const html = renderToStaticMarkup(form);
-  expect(html).toContain('Ask me every time'); expect(html).toContain('Allow calendar reads without asking');
-  expect(html).toContain('Writes always ask you first'); expect(html).toContain('Applies to all bots');
+  expect(html).toContain('Supervised'); expect(html).toContain('Elevated'); expect(html).toContain('Full access');
+  expect(html).toContain('Turn on a switch to ask for approval');
   const instructions = HyperBotInstructions({ bot: HYPER_BOTS_DEFAULT_SETTINGS.bots[1]!, onChange });
   all(instructions, element => element.props['aria-label'] === 'Instructions of @scribe')[0].props.onChange({ target: { value: 'Be brief.' } });
   expect(onChange.mock.calls[0][0]).toMatchObject({ id: 'scribe', instructions: 'Be brief.' });
   const model = HyperBotModelSelect({ id: 'scout', model: '', models: ['gpt-y'], defaultModel: 'gpt-x', onChange });
   expect(renderToStaticMarkup(model)).toContain('Endpoint default (gpt-x)');
   model.props.onChange('gpt-y'); expect(onChange.mock.calls[1][0]).toBe('gpt-y');
-  all(form, element => element.props.type === 'radio')[1].props.onChange();
-  expect(onChange.mock.calls[2][0].policy).toEqual({ outlook_list_events: 'allow', outlook_get_event: 'allow', outlook_list_messages: 'ask', outlook_read_message: 'ask', outlook_search_people: 'ask' });
-  const tool = all(form, element => element.props.label === 'Edit meetings')[0];
-  tool.props.onChange(true);
-  expect(onChange.mock.calls[3][0].bots[0].tools).toEqual(['outlook_list_events', 'outlook_get_event', 'outlook_create_event', 'outlook_update_event', 'outlook_list_messages', 'outlook_read_message', 'outlook_search_people', 'outlook_send_message']);
+  const tool = all(form, element => element.props.label === 'Ask before: Read Outlook calendar')[0];
+  expect(tool.props.on).toBe(true);
+  tool.props.onChange(false);
+  const changed = onChange.mock.calls[2][0];
+  expect(changed.bots[0].tools).toEqual(bot.tools);
+  expect(changed.bots[0].toolPolicies).toEqual({ outlook_list_events: 'allow' });
+  const edited = HyperBotToolsForm({ settings: changed, bot: changed.bots[0], onChange });
+  all(edited, element => Boolean(element.props.selection))[0].props.selection.onChange('elevated');
+  const elevated = onChange.mock.calls[3][0];
+  expect(elevated.bots[0].toolPolicies).toBeUndefined();
+  const next = HyperBotToolsForm({ settings: elevated, bot: elevated.bots[0], onChange });
+  expect(all(next, element => element.props.label === 'Ask before: Read Outlook calendar')[0].props.on).toBe(false);
+  expect(all(next, element => element.props.label === 'Ask before: Create events and meetings')[0].props.on).toBe(true);
+});
+
+it('renders one decision for multiple requests within the same turn', () => {
+  const html = render({ snapshot: snapshot({ approvals: [
+    approval(5, { turnId: id(1), summary: 'Create project task' }),
+    approval(6, { turnId: id(1), summary: 'Assign project task' }),
+  ] }) });
+  expect(html).toContain('Create project task');
+  expect(html).toContain('Assign project task');
+  expect(html.match(/Approve turn<\/button>/g)).toHaveLength(1);
+  expect(html.match(/Decline turn<\/button>/g)).toHaveLength(1);
 });
 it('mail write card shows the approved lines and offers Send or Save to Drafts', () => {
   const onDecide = vi.fn();

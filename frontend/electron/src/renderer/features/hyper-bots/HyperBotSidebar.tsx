@@ -15,8 +15,16 @@ const connectionLabels = { model: 'Model', outlook: 'Outlook', jira: 'Jira', new
 const connectionKeys = Object.keys(connectionLabels) as (keyof HyperBotsConnections)[];
 const connectionStatuses = { ready: 'Connected', checking: 'Checking', problem: 'Needs setup' };
 
-function HyperBotConnectionList({ connections, compact }: { connections: HyperBotsConnections; compact: boolean }) {
-  return <ul className={compact ? undefined : 'panel-card connections'}>{connectionKeys.map(key => {
+function HyperBotConnectionList({ connections, compact, connectedOnly = false }: { connections: HyperBotsConnections; compact: boolean; connectedOnly?: boolean }) {
+  const keys = connectedOnly ? connectionKeys.filter(key => connections[key]?.ready) : connectionKeys;
+  if (!keys.length) {
+    const checking = connectionKeys.some(key => {
+      const state = connections[key];
+      return state && !state.ready && state.checking;
+    });
+    return <p className="panel-empty" role={checking ? 'status' : undefined}>{checking ? 'Checking connections…' : 'No connected services.'}</p>;
+  }
+  return <ul className={compact ? undefined : 'panel-card connections'}>{keys.map(key => {
     const state = connections[key];
     if (!state) return null;
     const status = state.ready ? 'ready' : state.checking ? 'checking' : 'problem';
@@ -34,8 +42,8 @@ function HyperBotConnectionList({ connections, compact }: { connections: HyperBo
   })}</ul>;
 }
 
-export function HyperBotConnections({ connections, compact = false }: { connections: HyperBotsConnections; compact?: boolean }) {
-  if (!compact) return <HyperBotConnectionList connections={connections} compact={false} />;
+export function HyperBotConnections({ connections, compact = false, connectedOnly = false }: { connections: HyperBotsConnections; compact?: boolean; connectedOnly?: boolean }) {
+  if (!compact) return <HyperBotConnectionList connections={connections} compact={false} connectedOnly={connectedOnly} />;
   return <Popover>
     <PopoverTrigger type="button" className="hb-connections-trigger">
       <Plug size={15} aria-hidden="true" />
@@ -44,7 +52,7 @@ export function HyperBotConnections({ connections, compact = false }: { connecti
     </PopoverTrigger>
     <PopoverContent side="top" align="start" sideOffset={6} aria-label="Hyper-Bot connections"
       className="hb-connections-popup max-h-(--available-height) w-60 max-w-(--available-width) overflow-y-auto overscroll-contain p-1 motion-reduce:transition-none">
-      <HyperBotConnectionList connections={connections} compact />
+      <HyperBotConnectionList connections={connections} compact connectedOnly={connectedOnly} />
     </PopoverContent>
   </Popover>;
 }

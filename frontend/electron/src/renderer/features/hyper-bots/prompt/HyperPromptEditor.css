@@ -1,0 +1,121 @@
+/* Prompt typography adapted from t3code (apps/web/src/index.css), Copyright (c) 2026 T3 Tools Inc.
+   MIT License. See LICENSE.t3code. */
+.hyper-prompt-field {
+  min-width: 0;
+  color: var(--foreground);
+  line-height: 1.625;
+}
+
+.hyper-prompt-editor, .hyper-prompt-field > textarea {
+  position: relative;
+  width: 100%;
+  max-height: 13rem;
+  min-height: 2lh;
+  overflow: auto;
+  outline: none;
+  overflow-wrap: anywhere;
+  text-align: start;
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+.hyper-prompt-field > textarea { resize: none; }
+.hyper-prompt-editor:is(:focus, :focus-visible),
+.hyper-prompt-field > textarea:is(:focus, :focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+.hyper-prompt-editor.ProseMirror {
+  font-variant-ligatures: normal;
+  font-feature-settings: normal;
+  word-spacing: 0.01px;
+}
+.hyper-prompt-editor p { margin: 0; }
+.hyper-prompt-editor:has(> p:only-child > br.ProseMirror-trailingBreak):not(:has(> p:only-child > :not(br)))::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  inset-inline-start: 0;
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+.hyper-prompt-editor :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: color-mix(in oklab, var(--muted-foreground) 12%, transparent);
+  border-radius: 0.3em;
+  padding: 0.05em 0.25em;
+}
+.hyper-prompt-editor h1 { font-size: 1.36em; }
+.hyper-prompt-editor h2 { font-size: 1.23em; }
+.hyper-prompt-editor h3 { font-size: 1.1em; }
+.hyper-prompt-editor :is(h1, h2, h3, h4, h5, h6) { font-weight: 600; }
+.hyper-prompt-editor ul { list-style: disc; }
+.hyper-prompt-editor ol { list-style: decimal; }
+.hyper-prompt-editor ol > li[data-marker]::marker { content: attr(data-marker) ' '; }
+.hyper-prompt-editor ol ol { list-style-type: lower-alpha; }
+.hyper-prompt-editor ol ol ol { list-style-type: lower-roman; }
+.hyper-prompt-editor ol ol > li[data-marker]::marker { content: normal; }
+.hyper-prompt-editor :is(ul, ol) { padding-inline-start: 1.5em; }
+.hyper-prompt-editor blockquote {
+  border-inline-start: 2px solid var(--border);
+  padding-inline-start: 0.75em;
+  color: var(--muted-foreground);
+}
+.hyper-prompt-editor hr { border-top: 1px solid var(--border); margin-block: 0.5em; }
+.hyper-prompt-editor ul[data-type="taskList"] { list-style: none; padding-inline-start: 0; }
+.hyper-prompt-editor li[data-checked] { display: flex; align-items: baseline; gap: 0.5em; }
+.hyper-prompt-editor li[data-checked] > div { flex: 1; min-width: 0; }
+.hyper-prompt-editor li[data-checked] input { accent-color: var(--primary); }
+.hyper-prompt-editor ul[data-type="taskList"] ul[data-type="taskList"] { padding-inline-start: 1.5em; }
+.hyper-prompt-editor .composer-rich-marker {
+  color: var(--muted-foreground);
+  opacity: 0.75;
+  font-weight: 400;
+  font-style: normal;
+  text-decoration: none;
+}
+.hyper-prompt-editor .composer-rich-marker-hidden { display: none; }
+
+.hyper-prompt-chip {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.2em;
+  border-radius: 0.2em;
+  color: var(--primary);
+  font-weight: 500;
+  line-height: normal;
+  vertical-align: baseline;
+}
+.hyper-prompt-chip > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hyper-prompt-chip svg { width: 1em; height: 1em; flex: none; }
+.hyper-prompt-chip--skill { color: var(--hyper-prompt-skill, #7650be); }
+.hyper-prompt-chip--command { color: var(--hyper-prompt-command, #087970); }
+[data-theme='dark'] .hyper-prompt-chip--skill { --hyper-prompt-skill: #c3a6ff; }
+[data-theme='dark'] .hyper-prompt-chip--command { --hyper-prompt-command: #5eead4; }
+.hyper-prompt-editor .ProseMirror-selectednode > .hyper-prompt-chip,
+.hyper-prompt-chip.ProseMirror-selectednode { outline: 1px solid currentColor; }
+
+.hyper-prompt-code {
+  margin-block: 0.25em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+}
+.hyper-prompt-code-header {
+  background: color-mix(in oklab, var(--muted-foreground) 6%, transparent);
+  border-bottom: 1px solid var(--border);
+  padding: 0.125rem 0.75rem;
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+}
+.hyper-prompt-code-header select { max-width: 100%; }
+.hyper-prompt-code-header option { color: var(--foreground); background: var(--background); }
+.hyper-prompt-code pre {
+  min-height: 1lh;
+  margin: 0;
+  overflow: auto;
+  padding: 0.25rem 0.75rem 0.5rem;
+  font: var(--font-size-code, 0.875rem) / 1.5 var(--font-mono);
+  white-space: pre-wrap;
+}
