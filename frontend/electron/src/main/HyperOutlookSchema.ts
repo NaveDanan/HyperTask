@@ -19,10 +19,24 @@ function dates(value: { start: string; end: string; allDay?: boolean }) {
 }
 const fewRecipients = (value: { to: string[]; cc: string[] }) => value.to.length + value.cc.length <= 20;
 export const HyperPersonSchema = z.strictObject({ name: z.string().max(512), email: z.email().max(320), title: z.string().max(1024), department: z.string().max(1024), phone: z.string().max(256), office: z.string().max(1024), company: z.string().max(1024), photo: z.string().regex(/^data:image\/(?:jpeg|png);base64,[A-Za-z0-9+/=]+$/).max(90000).optional(), source: z.enum(['ad', 'outlook']) });
+const hubFolder = z.enum(['inbox', 'sent']);
+const mailTarget = z.strictObject({ storeId: entry, entryId: entry, folder: hubFolder });
+const mailCursor = z.strictObject({ modified: instant, entryId: entry });
+const mailDate = instant.nullish().catch(null).transform(v => v && +v.slice(0, 4) > 1601 && +v.slice(0, 4) < 4000 ? v : null);
+const visibility = z.enum(['public', 'unknown']).catch('unknown');
+const headerText = z.string().min(1).max(4096).nullish().catch(null);
 export const HyperOutlookArgs = {
   'people.search': z.strictObject({ query: z.string().trim().min(2, 'Type at least two characters.').max(128), limit: z.number().int().min(1).max(20).default(20) }),
   'people.lookup': z.strictObject({ email: z.email().max(320) }),
   status: z.undefined(),
+  'hub.mailHeaders': z.strictObject({ storeId: entry, folder: hubFolder, since: instant, activeFlags: z.boolean(),
+    after: mailCursor.nullable(), limit: z.number().int().min(1).max(200) }),
+  'hub.mailDetail': mailTarget.extend({ headerOnly: z.boolean() }),
+  'mail.open': mailTarget,
+  'hub.occurrence': z.strictObject({ storeId: entry, entryId: entry, originalStart: instant, start: instant, modified: instant, open: z.boolean() }),
+  'calendar.resolve': z.strictObject({ storeId: entry, entryId: entry, originalStart: instant, start: instant }),
+  'hub.store': z.strictObject({ storeId: entry }).optional(),
+  'hub.calendar': z.strictObject({ storeId: entry, start: instant, end: instant, markers: z.boolean().optional(), seriesIds: z.array(z.string().min(1).max(4096)).max(2000).optional() }).refine(dates),
   list: z.strictObject({ start: instant, end: instant }).refine(value => dates(value) && Date.parse(value.end) - Date.parse(value.start) <= 740 * 86400000, 'Choose a calendar range of at most two years.'),
   // onlineMeeting presses the add-in's ribbon button on the new item; account sends invitations from that Outlook account only.
   create: fields.extend({ attendees: z.array(z.email().max(320)).max(200), send: z.boolean(), onlineMeeting: z.enum(['teams', 'skype']).nullable().optional(), account: email.optional() })
@@ -74,10 +88,35 @@ export const HyperOutlookMailSchema = HyperOutlookMailSummarySchema.extend({
   version: z.union([version, z.literal('')]),
 });
 const Delivered = z.strictObject({ delivery, subject: z.string().max(4096), to: z.array(z.string().max(1024)).max(200), cc: z.array(z.string().max(1024)).max(200) });
+const hubInterval = { start: instant, end: instant };
+const hubOccurrence = z.discriminatedUnion('private', [
+  z.strictObject({ ...hubInterval, private: z.literal(true) }),
+  z.strictObject({ ...hubInterval, private: z.literal(false), entryId: entry, originalStart: instant,
+    marker: z.object({ attendeeCount: z.int().nonnegative(), categories: z.array(z.string()), responseStatus: z.number(), recurrenceState: z.number(), isOrganizer: z.boolean(), start: dateTime, end: dateTime, modified: instant }).optional(),
+    title: z.string(), allDay: z.boolean(), availability: z.enum(['busy', 'tentative', 'oof', 'free', 'working-elsewhere']),
+    isMeeting: z.boolean(), organizerIsOwner: z.boolean(),
+    details: z.strictObject({ sensitivity: z.enum(['normal', 'personal']), modified: instant, excerpt: z.string().max(1024),
+      organizer: z.string(), organizerEmail: z.string().nullish(), joinUrl: z.url().nullable(), attendees: z.array(z.strictObject({ name: z.string(), email: z.string() })).max(200),
+      seriesId: z.string().optional() }).optional() }),
+]);
 export const HyperOutlookValues = {
   'people.search': z.array(HyperPersonSchema).max(20),
   'people.lookup': HyperPersonSchema.nullable(),
   status: z.strictObject({ available: z.boolean(), userName: z.string(), email: z.string(), reason: z.string().optional() }),
+  'hub.mailHeaders': z.strictObject({ storeId: entry, exhausted: z.boolean(), complete: z.boolean(), replyCoverage: z.boolean(), excludedIds: z.array(entry), next: mailCursor.nullable(),
+    headers: z.array(z.object({ visibility, entryId: entry, modified: instant, authoredAt: mailDate,
+      authoredZone: z.string().regex(/^[+-](?:[01]\d|2[0-3]):[0-5]\d$/).nullish().catch(null), flag: z.enum(['active', 'complete', 'none', 'unknown']).catch('unknown'),
+      flagStart: mailDate, flagDue: mailDate, flagCompleted: mailDate, conversationId: headerText, messageId: headerText, inReplyTo: headerText,
+    })).max(200) }).refine(p => p.exhausted === (p.next === null)),
+  'hub.mailDetail': z.object({ visibility, storeId: entry, entryId: entry, subject: z.string().max(4096), body: z.string().max(20000),
+    bodyTruncated: z.boolean().default(false), ownerSender: z.boolean().nullish().catch(null), attachmentNames: z.array(z.string().max(1024)).max(50).default([]), to: z.array(z.string()).max(100), sender: z.string(), distributionList: z.boolean().nullable(), modified: instant,
+  }).nullable().transform(detail => detail?.visibility === 'public' ? detail : null),
+  'mail.open': z.null(),
+  'hub.occurrence': z.null(),
+  'calendar.resolve': HyperOutlookEventSchema,
+  'hub.store': entry,
+  'hub.calendar': z.strictObject({ storeId: entry, ...hubInterval, exhausted: z.boolean(), completeness: z.enum(['complete', 'partial']), events: z.array(hubOccurrence).max(2000) })
+    .refine(read => read.exhausted || read.completeness === 'partial'),
   list: z.array(HyperOutlookEventSchema).max(2000), create: HyperOutlookEventSchema, update: HyperOutlookEventSchema,
   delete: z.null(), respond: z.null(), open: z.null(),
   'event.get': HyperOutlookEventSchema,

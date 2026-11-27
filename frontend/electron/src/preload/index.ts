@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import { IpcChannel as C, type HypertaskApi } from '@shared/api';
 import { HyperBotsChannel as B } from '@shared/HyperBots';
+import { HyperTaskHubChannel as H } from '@shared/HyperTaskHub';
 import { HyperDesktopChannel as D } from '@shared/HyperDesktop';
 import { HyperAssistantChannel as A } from '@shared/HyperAssistant';
 import { HyperVoiceChannel as V } from '@shared/hyper-voice/api';
@@ -58,7 +59,35 @@ export function createHyperBufferedListener<T>(
 const onOverlayEvent = createHyperBufferedListener<import('@shared/HyperDesktop').HyperDesktopOverlayEvent>(D.OverlayEvent);
 const onMainEvent = createHyperBufferedListener<import('@shared/HyperDesktop').HyperDesktopMainEvent>(D.MainEvent);
 
+async function hubRead<T>(channel: string, request?: unknown): Promise<T> {
+  const reply = await ipcRenderer.invoke(channel, request);
+  if (reply?.ok === false) throw Object.assign(new Error(reply.message ?? reply.code), { code: reply.code });
+  return reply;
+}
+
 const api: HypertaskApi = {
+  taskHub: {
+    previewStatus: request => ipcRenderer.invoke(H.PreviewStatus, request),
+    approveStatus: request => ipcRenderer.invoke(H.ApproveStatus, request),
+    discardStatus: request => ipcRenderer.invoke(H.DiscardStatus, request),
+    releaseHold: request => ipcRenderer.invoke(H.ReleaseHold, request),
+    previewWeights: request => ipcRenderer.invoke(H.PreviewWeights, request),
+    saveWeights: request => ipcRenderer.invoke(H.SaveWeights, request),
+    previewMirror: request => ipcRenderer.invoke(H.PreviewMirror, request),
+    applyMirror: request => ipcRenderer.invoke(H.ApplyMirror, request),
+    getBrief: request => ipcRenderer.invoke(H.GetBrief, request),
+    summarizeBrief: request => ipcRenderer.invoke(H.SummarizeBrief, request),
+    openBriefEvidence: request => ipcRenderer.invoke(H.OpenBriefEvidence, request),
+    getSnapshot: () => hubRead(H.GetSnapshot),
+    refresh: request => hubRead(H.Refresh, request),
+    sendFeedback: event => ipcRenderer.invoke(H.SendFeedback, event),
+    openSource: handle => ipcRenderer.invoke(H.OpenSource, handle),
+    onSnapshot: listener => on(H.Snapshot, listener),
+    getSetupOptions: () => hubRead(H.GetSetupOptions),
+    setFocusVisible: visible => hubRead(H.SetFocusVisible, visible),
+    getSetupScope: () => hubRead(H.GetSetupScope),
+    setSetupScope: request => hubRead(H.SetSetupScope, request),
+  },
   auth: { devJwtSession: () => ipcRenderer.invoke(C.AuthDevJwtSession), entraIdToken: config => ipcRenderer.invoke(C.AuthEntraIdToken, config), entraCancel: () => ipcRenderer.invoke(C.AuthEntraCancel) },
   outlook: {
     people: { search: args => ipcRenderer.invoke(C.OutlookPeopleSearch, args), lookup: args => ipcRenderer.invoke(C.OutlookPeopleLookup, args) },
@@ -66,6 +95,10 @@ const api: HypertaskApi = {
     presence: () => ipcRenderer.invoke(C.OutlookPresenceRead),
     launch: () => ipcRenderer.invoke(C.OutlookLaunch),
     onPresence: listener => on(C.OutlookPresence, listener),
+    subscribeRange: (id, range, refresh) => ipcRenderer.invoke(C.OutlookSubscribeRange, { id, range, refresh }),
+    unsubscribeRange: id => ipcRenderer.invoke(C.OutlookUnsubscribeRange, id),
+    onRange: listener => on(C.OutlookRangeChanged, listener),
+    resolveOccurrence: handle => ipcRenderer.invoke(C.OutlookResolveOccurrence, handle),
     list: args => ipcRenderer.invoke(C.OutlookList, args),
     create: args => ipcRenderer.invoke(C.OutlookCreate, args),
     update: args => ipcRenderer.invoke(C.OutlookUpdate, args),

@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
+import { HyperOutlookValues } from './HyperOutlookSchema';
 import { HyperOutlookScript } from './HyperOutlookScript';
 
 const addressListFixture = String.raw`
@@ -121,3 +122,56 @@ function Hyper-MailSummary($item) { return @{ subject = 'Test message'; from = @
     rmSync(folder, { recursive: true, force: true });
   }
 }, 10000);
+
+it.skipIf(process.platform !== 'win32')('pages modification ties, reports exhaustion and filters protected mail inside the PowerShell host', () => {
+  const folder = mkdtempSync(join(tmpdir(), 'HyperTask-Outlook-mail-'));
+  try {
+    const script = join(folder, 'fixture.ps1');
+    const mocks = `
+function Reset-Hyper {}
+function Connect-Hyper {}
+function Hyper-ComGet($item,$field) { return $item.$field }
+function Hyper-HubStore { return 'AA' }
+function Hyper-HubMapi($item,$tag) { if ($tag -eq '0x007D001F') { return 'Date: Sun, 1 Nov 2026 02:00:00 +0200' }; return $null }
+$items = New-Object Collections.ArrayList
+foreach ($id in @('33','11','22','44','55')) {
+  $time = [datetime]::SpecifyKind([datetime]'2026-11-01', [DateTimeKind]::Utc)
+  [void]$items.Add([pscustomobject]@{ EntryID = $id; Class = 43; MessageClass = 'IPM.Note'; Sensitivity = $(if ($id -eq '22') {3} else {0});
+    Permission = $(if ($id -eq '55') {1} else {0}); SentOn = $time; LastModificationTime = $time; FlagStatus = 2;
+    TaskDueDate = [datetime]'4501-01-01'; ConversationID = 'thread'; Subject = 'Sensitive marker' })
+}
+Add-Member -InputObject $items -MemberType ScriptMethod -Name Sort -Value { param($field) } -Force
+$container = [pscustomobject]@{ Rows = $items }
+$container | Add-Member ScriptMethod Restrict { return ,$this.Rows }
+function Hyper-Folder($name) { return @{ Items = $container; StoreID = 'AA' } }
+`;
+    writeFileSync(script, '\uFEFF' + HyperOutlookScript.replace('\nwhile ($null -ne ($line', '\n' + mocks + '\nwhile ($null -ne ($line'), 'utf8');
+    const modified = '2026-11-01T00:00:00.0000000Z';
+    const args = { storeId: 'AA', folder: 'inbox', since: '2026-10-01T00:00:00Z', activeFlags: false, limit: 2 };
+    const input = [null, { modified, entryId: '22' }, { modified, entryId: '44' }].map(after =>
+      JSON.stringify({ id: 'test', op: 'hub.mailHeaders', args: { ...args, after } })).join('\n') + '\n';
+    const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script], {
+      encoding: 'utf8', input, windowsHide: true, timeout: 8000,
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const replies = result.stdout.trim().split(/\r?\n/).map(line => JSON.parse(line));
+    expect(replies.every(r => r.ok), result.stdout).toBe(true);
+    const pages = replies.map(r => HyperOutlookValues['hub.mailHeaders'].parse(r.value));
+    expect(pages.map(p => p.next?.entryId)).toEqual(['22', '44', undefined]);
+    expect(pages.map(p => p.exhausted)).toEqual([false, false, true]);
+    expect(pages.flatMap(p => p.headers.map((h: { entryId: string }) => h.entryId))).toEqual(['11', '33', '44']);
+    expect(pages.flatMap(p => p.excludedIds)).toEqual(['22', '55']);
+    expect(pages[0].headers[0]).toMatchObject({ flagDue: null, authoredZone: '+02:00' });
+    expect(result.stdout).not.toContain('Sensitive marker');
+  } finally { rmSync(folder, { recursive: true, force: true }); }
+}, 10000);
+
+it('decodes unknown mail metadata conservatively and removes unclassified details', () => {
+  const modified = '2026-11-29T07:00:00Z';
+  const page = HyperOutlookValues['hub.mailHeaders'].parse({ storeId: 'AA', exhausted: true, complete: false,
+    replyCoverage: false, next: null, excludedIds: [], headers: [{ entryId: '11', modified, flag: 9, flagDue: '4501-01-01T00:00:00Z' }] });
+  expect(page.headers[0]).toMatchObject({ visibility: 'unknown', flag: 'unknown', flagDue: null, authoredAt: null });
+  expect(HyperOutlookValues['hub.mailDetail'].parse({ storeId: 'AA', entryId: '11', modified, body: 'Hidden text',
+    subject: 'Hidden subject', to: [], sender: '', distributionList: null })).toBeNull();
+  expect(HyperOutlookValues['hub.mailHeaders'].safeParse({ ...page, exhausted: false }).success).toBe(false);
+});

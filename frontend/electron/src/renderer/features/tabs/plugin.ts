@@ -22,7 +22,7 @@ export interface PluginArguments {
   rowId?: string;
 }
 
-export type LocalToolId = 'home' | 'jira' | 'templates' | 'nod' | 'bots';
+export type LocalToolId = 'home' | 'jira' | 'templates' | 'nod' | 'bots' | 'taskhub';
 
 /**
  * What a tab shows. Tab identity is `id`: the view id for view plugins, "TrashStack",
@@ -53,7 +53,7 @@ export const localToolPlugin = (toolId: LocalToolId): Plugin => ({
   type: PluginType.blank,
   toolId,
   prefersCollapsedMenu: toolId === 'bots',
-  title: toolId === 'home' ? 'Home' : toolId === 'jira' ? 'Jira' : toolId === 'nod' ? 'Nod assistant' : toolId === 'bots' ? 'Hyper-Bot' : 'Templates',
+  title: toolId === 'home' ? 'Home' : toolId === 'jira' ? 'Jira' : toolId === 'nod' ? 'Nod assistant' : toolId === 'bots' ? 'Hyper-Bot' : toolId === 'taskhub' ? 'Task Hub' : 'Templates',
 });
 
 export function pluginTypeForLayout(layout: ViewLayoutPB): PluginType {

@@ -16,6 +16,7 @@ import { SidebarTopMenu, SidebarUser } from './header/SidebarHeader';
 import {
   HyperBotsButton,
   HyperHomeButton,
+  HyperTaskHubButton,
   HyperProjectsFilterBar,
   HyperSidebarActionBar,
   HyperTemplatesButton,
@@ -136,6 +137,7 @@ export function SidebarBody({ user }: { user: UserProfilePB }) {
         <HyperSidebarActionBar role={role} />
         <HyperProjectsFilterBar />
         <HyperHomeButton />
+        <HyperTaskHubButton />
         <HyperBotsButton />
         <JiraButton />
         <HyperTemplatesButton />

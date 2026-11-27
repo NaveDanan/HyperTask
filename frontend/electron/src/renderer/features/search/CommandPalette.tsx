@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useStore } from 'zustand';
 import {
+  CalendarClock,
   CalendarDays,
+  Crosshair,
   FileText,
+  Inbox,
   MessageSquareText,
   Search,
   SearchX,
@@ -44,6 +47,7 @@ import {
   type SearchResultItem,
 } from './command-palette-store';
 import { recentViews, resetRecentViews, useRecentViewsStore } from './recent-views-store';
+import { useHyperTaskHubCommands } from '../hyper-task-hub/HyperTaskHubCommands';
 import { onelinePath, useViewAncestors } from './view-ancestor-cache';
 
 /** NavigationBlocExtension.navigateTo → ActionNavigationBloc → TabsBloc.openPlugin(view). */
@@ -346,6 +350,29 @@ function SectionTitle({ children }: { children: ReactNode }) {
   return <div className="px-2 pt-2 pb-1 text-xs font-medium text-muted-foreground">{children}</div>;
 }
 
+// ---- [CUSTOM] Task Hub commands (HyperTaskHub spec D9.1) ------------------------------------
+
+function HyperTaskHubCommandsSection({ query, onSelected }: { query: string | null; onSelected: () => void }) {
+  const commands = useHyperTaskHubCommands(query);
+  const [hovered, setHovered] = useState<string | null>(null);
+  if (!commands.length) return null;
+  return (
+    <div className="shrink-0 border-b p-2" data-hyper-task-hub-commands>
+      <SectionTitle>Task Hub</SectionTitle>
+      {commands.map((command) => (
+        <SearchCell key={command.id} selected={hovered === command.id} onHover={() => setHovered(command.id)}
+          onSelect={() => { onSelected(); command.run(); }}>
+          <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+            {command.id === 'prep' ? <CalendarClock className="size-4" /> : command.id === 'triage' ? <Inbox className="size-4" /> : <Crosshair className="size-4" />}
+          </span>
+          <bdi dir="auto" className="min-w-0 truncate font-medium">{command.label}</bdi>
+          {command.detail && <bdi dir="auto" className="min-w-0 truncate text-xs text-muted-foreground">{command.detail}</bdi>}
+        </SearchCell>
+      ))}
+    </div>
+  );
+}
+
 // ---- RecentViewsList (widgets/recent_views_list.dart) ---------------------------------------
 
 function RecentViewsList({ hidePreview, onSelected }: { hidePreview: boolean; onSelected: () => void }) {
@@ -518,6 +545,7 @@ function CommandPaletteModal({ close }: { close: () => void }) {
         className="command-palette fixed top-[12vh] left-1/2 z-50 flex max-h-[min(36rem,76vh)] w-[min(40rem,calc(100vw-3rem))] -translate-x-1/2 flex-col overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/10 animate-in fade-in-0 zoom-in-95 duration-100 md:has-data-[search-preview]:w-[min(56rem,calc(100vw-3rem))]"
       >
         <SearchField query={state.query} />
+        <HyperTaskHubCommandsSection query={state.query} onSelected={close} />
         {noQuery && <RecentViewsList hidePreview={hidePreview} onSelected={close} />}
         {hasResult && !noQuery ? (
           <SearchResultList

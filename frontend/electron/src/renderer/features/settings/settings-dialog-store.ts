@@ -26,6 +26,8 @@ export enum SettingsPage {
   featureFlags = 'featureFlags',
   /** [CUSTOM] the Trash page, which moved out of the sidebar footer. */
   archived = 'archived',
+  /** [CUSTOM] HyperTaskHub settings (M5 E5): sources, write-back, ranking weights. */
+  taskHub = 'taskhub',
 }
 
 export type SettingsMenuPage = Exclude<SettingsPage, SettingsPage.jira | SettingsPage.ai | SettingsPage.cloud>;
@@ -83,6 +85,7 @@ export function visibleSettingsPages({
     SettingsPage.archived,
     SettingsPage.notifications,
     SettingsPage.connections,
+    SettingsPage.taskHub,
     SettingsPage.skills,
     SettingsPage.companyCertificates,
     SettingsPage.shortcuts,

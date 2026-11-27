@@ -15,7 +15,7 @@ export const HyperOutlookUnavailable = 'Classic Outlook for Windows is required.
 /** The request may already have reached Outlook (timeout, lost host, unreadable reply): its outcome is unknown, so a send is never treated as refused. */
 export class HyperOutlookLost extends SettingsError { constructor(message: string) { super('state', message); this.name = 'HyperOutlookLost'; } }
 // An online-meeting button opens the meeting window and waits for its add-in; mail lists scan up to 500 items.
-const HyperOutlookSlow: ReadonlySet<HyperOutlookOp> = new Set(['list', 'create', 'mail.list', 'event.forward']);
+const HyperOutlookSlow: ReadonlySet<HyperOutlookOp> = new Set(['list', 'hub.calendar', 'hub.mailHeaders', 'create', 'mail.list', 'event.forward']);
 interface HyperOutlookPending { op: HyperOutlookOp; resolve: (value: any) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }
 // Colour ids become the Outlook category write here, so the renderer never handles Outlook colour numbers.
 function hyperOutlookWire(op: HyperOutlookOp, args: unknown): unknown {
@@ -27,7 +27,7 @@ function hyperOutlookWire(op: HyperOutlookOp, args: unknown): unknown {
   if (op === 'update') return { ...(args as object), patch: wire((args as { patch: object }).patch) };
   return args;
 }
-interface HyperOutlookQueued { op: HyperOutlookOp; args: unknown; resolve: (value: any) => void; reject: (error: Error) => void }
+interface HyperOutlookQueued { beforeDispatch?: () => void; op: HyperOutlookOp; args: unknown; resolve: (value: any) => void; reject: (error: Error) => void }
 export class HyperOutlookBridge {
   private child: ChildProcessWithoutNullStreams | null = null;
   private pending = new Map<string, HyperOutlookPending>();
@@ -109,7 +109,7 @@ export class HyperOutlookBridge {
     });
     return child;
   }
-  request<K extends HyperOutlookOp>(op: K, args: z.input<(typeof HyperOutlookArgs)[K]>): Promise<z.output<(typeof HyperOutlookValues)[K]>> {
+  request<K extends HyperOutlookOp>(op: K, args: z.input<(typeof HyperOutlookArgs)[K]>, beforeDispatch?: () => void): Promise<z.output<(typeof HyperOutlookValues)[K]>> {
     return new Promise((resolve, reject) => {
       const valid = HyperOutlookArgs[op].safeParse(args);
       if (!valid.success) { reject(new SettingsError('format', valid.error.issues[0]?.message ?? 'Invalid Outlook request.')); return; }
@@ -127,7 +127,7 @@ export class HyperOutlookBridge {
           done(value);
         };
       }
-      this.queue.push({ op, args: hyperOutlookWire(op, valid.data) ?? {}, resolve, reject });
+      this.queue.push({ op, beforeDispatch, args: hyperOutlookWire(op, valid.data) ?? {}, resolve, reject });
       this.pump();
     });
   }
@@ -137,7 +137,12 @@ export class HyperOutlookBridge {
    */
   private pump() {
     if (this.pending.size || !this.queue.length) return;
-    const next = this.queue.shift()!;
+    let next: HyperOutlookQueued | undefined;
+    while ((next = this.queue.shift())) {
+      try { next.beforeDispatch?.(); break; }
+      catch (error) { next.reject(error as Error); }
+    }
+    if (!next) return;
     let child: ChildProcessWithoutNullStreams;
     try { child = this.start(); } catch (error) { next.reject(error as Error); this.pump(); return; }
     const id = randomUUID();

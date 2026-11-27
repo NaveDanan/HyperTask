@@ -93,6 +93,21 @@ function HyperCalendarViewContent(props: HyperDatabaseViewProps) {
   const selection = useMemo(() => ({ eventKeys: selectedKey ? [selectedKey] : [], slot: null }), [selectedKey]);
   const close = () => { setDraft(null); setOutlookItem(null); setSelectedKey(null); };
   const create = (initial: HyperCalendarDraft) => { setSelectedKey(null); setOutlookItem(null); setSaveTo('outlook'); setDraft(initial); };
+  // The shared cache lists Outlook items with an opaque handle; the editor needs the full item (M5 E6).
+  // Protected items arrive as anonymous Busy spans without a handle and never open.
+  const openOutlook = async (key: string, listed: HyperOutlookEvent) => {
+    if (!listed.occurrenceHandle && listed.isPrivate) return;
+    setSelectedKey(key);
+    try {
+      // Eligibility can change between listing and opening, so only the resolved item decides Prep.
+      const item = await hyperOutlookClient.resolve(listed);
+      setOutlookItem(item);
+      setDraft(hyperOutlookDraft(item, timeZone));
+    } catch (error) {
+      setSelectedKey(null);
+      showToast({ type: 'error', message: hyperCalendarError(error) });
+    }
+  };
   const destination = (value: 'outlook' | 'calendar', current: HyperCalendarDraft) => <HyperOutlookSaveTo value={value} onChange={value => { setDraft(current); setSaveTo(value); }} />;
   const openRow = async (rowId: string, occurrence?: EventCalendarOccurrence<HyperCalendarEventData>) => {
     if (!calendar.dateField) return;
@@ -128,7 +143,7 @@ function HyperCalendarViewContent(props: HyperDatabaseViewProps) {
       fixedWeeks snapDuration={15} slotDuration={60} scrollToHour={7} maxEventsPerCell={2} showDayAddButton nowIndicator enableShortcuts
       navButtonVariant="ghost" navButtonSize="sm" interactions={{ drag: true, resize: true, selectSlot: true }} eventTooltip={false}
       loading={calendar.loading} classNames={HyperCalendarClasses} todayClassName="border-b-0!" renderEvent={renderEvent} renderAgendaEvent={renderEvent} selection={selection} onRangeChange={onRangeChange} onEventUpdate={onEventUpdate} onDragBlocked={occurrence => { if (hyperIsOutlook(occurrence.event.data)) showToast({ type: 'error', message: 'This Outlook event is read-only. Respond to the invitation or open it in Outlook.' }); }}
-      renderMoreContent={({ day, close }) => <HyperCalendarMoreContent day={day} close={close} />} renderNoEvents={HyperCalendarNoEvents} onEventClick={(occurrence, event) => { event.preventDefault(); if (hyperIsOutlook(occurrence.event.data)) { setSelectedKey(occurrence.key); setOutlookItem(occurrence.event.data.item); setDraft(hyperOutlookDraft(occurrence.event.data.item, timeZone)); } else void openRow(occurrence.eventId, occurrence as EventCalendarOccurrence<HyperCalendarEventData>); }}
+      renderMoreContent={({ day, close }) => <HyperCalendarMoreContent day={day} close={close} />} renderNoEvents={HyperCalendarNoEvents} onEventClick={(occurrence, event) => { event.preventDefault(); if (hyperIsOutlook(occurrence.event.data)) { void openOutlook(occurrence.key, occurrence.event.data.item); } else void openRow(occurrence.eventId, occurrence as EventCalendarOccurrence<HyperCalendarEventData>); }}
       onSlotClick={slot => { create(hyperCalendarDraft(slot.date, slot.end, slot.allDay, timeZone)); }}
       onSelectSlot={slot => { create(hyperCalendarDraft(slot.start, slot.end, slot.allDay, timeZone)); }}>
       <HyperCalendarToolbar disabled={calendar.loading || !calendar.dateField} onCreate={() => { create(hyperCalendarDraft(setHours(startOfDay(new Date()), 9), undefined, true, timeZone)); }}

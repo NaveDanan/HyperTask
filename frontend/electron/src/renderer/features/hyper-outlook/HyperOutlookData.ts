@@ -27,7 +27,7 @@ export function hyperOutlookDate(value: string, allDay: boolean, timeZone: strin
 }
 export function hyperOutlookMapEvents(items: HyperOutlookEvent[], timeZone: string): CalendarEvent<HyperOutlookCalendarData>[] {
   return items.filter(item => !item.isCancelled).map(item => ({
-    id: `outlook:${item.id}`, title: item.isPrivate ? 'Private' : item.subject || 'Untitled', start: hyperOutlookDate(item.start, item.allDay, timeZone), end: hyperOutlookDate(item.end, item.allDay, timeZone),
+    id: `outlook:${item.id}`, title: item.isPrivate ? (item.subject === 'Busy' ? 'Busy' : 'Private') : item.subject || 'Untitled', start: hyperOutlookDate(item.start, item.allDay, timeZone), end: hyperOutlookDate(item.end, item.allDay, timeZone),
     allDay: item.allDay, color: hyperOutlookColorToken(hyperOutlookColorOf(item.categories)), readOnly: !item.isOrganizer || item.recurrenceState === 1 || item.isPrivate,
     data: { source: 'outlook', item },
   }));

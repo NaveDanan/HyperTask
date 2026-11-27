@@ -12,6 +12,7 @@ export interface HyperBotsHttpDeps<A extends HyperBotsHttpAccess> {
 }
 export interface HyperBotsHttpRequest {
   path: string;
+  expectedStatus?: number;
   method?: 'POST' | 'PUT' | 'PATCH';
   body?: unknown;
 }
@@ -64,6 +65,9 @@ export async function hyperBotsHttpRequest(
   const sanitized = hyperBotsRedactSecrets(text, secrets);
   if (!response.ok) throw new HyperBotsToolError(response.status >= 500 ? 'transport' : 'refused',
     `${service} returned HTTP ${response.status}. ${hyperBotsSafeError(sanitized, secrets)}`.trim());
+  if (request.expectedStatus !== undefined && response.status !== request.expectedStatus) {
+    throw new HyperBotsToolError('transport', service + ' returned an unexpected acknowledgement.');
+  }
   if (response.status === 204) return null;
   try {
     return JSON.parse(sanitized);

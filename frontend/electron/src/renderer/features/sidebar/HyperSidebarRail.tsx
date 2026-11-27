@@ -1,6 +1,6 @@
 // HyperSidebarRail: the 56px icon rail the sidebar collapses to (as in CPA-Desktop). Built on the
 // shared ReUI/base-ui primitives: base-ui Tooltip, the app's sidebar tokens and nav icons.
-import { BotMessageSquare, FolderPlus, House, LayoutTemplate, ListFilter, PanelLeftOpen, Search, SquareCheckBig } from 'lucide-react';
+import { BotMessageSquare, FolderPlus, House, LayoutTemplate, ListFilter, ListTodo, PanelLeftOpen, Search, SquareCheckBig } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AFRolePB } from '@shared/protobuf/hyper-user/workspace_pb';
 import type { UserProfilePB } from '@shared/protobuf/hyper-user/user_profile_pb';
@@ -109,6 +109,8 @@ export function HyperSidebarRail({ user }: { user: UserProfilePB }) {
         )}
         <HyperRailButton label="Home" icon={<House />} active={activeTab === 'local-tool:home'}
           onClick={() => tabsActions.openPlugin(localToolPlugin('home'))} tooltip="Home" />
+        <HyperRailButton label="Task Hub" icon={<ListTodo />} active={activeTab === 'local-tool:taskhub'}
+          onClick={() => tabsActions.openPlugin(localToolPlugin('taskhub'))} tooltip="Task Hub" />
         <HyperRailButton label="Hyper-Bot" icon={<BotMessageSquare />} active={activeTab === 'local-tool:bots'}
           onClick={() => tabsActions.openPlugin(localToolPlugin('bots'))} tooltip="Hyper-Bot" />
         <HyperRailButton label="Jira" icon={<SquareCheckBig />} active={activeTab === 'local-tool:jira'}

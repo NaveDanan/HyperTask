@@ -7,6 +7,7 @@ import {
   House,
   LayoutTemplate,
   ListFilter,
+  ListTodo,
   Search,
   SquareCheckBig,
   SquarePen,
@@ -242,6 +243,13 @@ export function HyperHomeButton() {
   const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:home');
   return <NavItem icon={<House />} label="Home" active={active}
     onClick={() => tabsActions.openPlugin(localToolPlugin('home'))} />;
+}
+
+/** HyperTaskHub: tasks from every connection, ranked, with today's plan. */
+export function HyperTaskHubButton() {
+  const active = useTabsStore((s) => s.tabs[s.currentIndex]?.plugin.id === 'local-tool:taskhub');
+  return <NavItem icon={<ListTodo />} label="Task Hub" active={active}
+    onClick={() => tabsActions.openPlugin(localToolPlugin('taskhub'))} />;
 }
 
 export function JiraButton() {

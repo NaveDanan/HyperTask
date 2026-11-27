@@ -1,3 +1,4 @@
+import { TZDate } from '@date-fns/tz';
 import { fromBinary } from '@bufbuild/protobuf';
 import { addDays, format, isValid, parseISO, startOfDay } from 'date-fns';
 import {
@@ -43,6 +44,24 @@ export class HyperBotsGanttTasks {
     const config = await this.config();
     const { start, end } = this.readRange(config, await this.loadCells(rowId, config));
     return { startDate: start && format(start, 'yyyy-MM-dd'), endDate: end && format(end, 'yyyy-MM-dd') };
+  }
+
+  async sourceSchedule(rowId: string, zone: string) {
+    const config = await this.config();
+    const cells = await this.loadCells(rowId, config);
+    const first = config.start_field_id ? cells[config.start_field_id] : undefined;
+    const last = config.end_field_id ? cells[config.end_field_id] : first;
+    const start = hyperGanttDate(first?.timestamp ?? null);
+    const end = hyperGanttDate((config.end_field_id ? last?.timestamp : first?.isRange ? first.endTimestamp : null) ?? null);
+    const marker = (d: Date | null, timed?: boolean) => d ? timed ? { kind: 'instant' as const, iso: d.toISOString() } :
+      { kind: 'civil-date' as const, date: format(d, 'yyyy-MM-dd'), zone } : undefined;
+    const paired = config.end_field_id ? config.start_field_id === this.stored.start_field_id &&
+      config.end_field_id === this.stored.end_field_id && config.start_field_id !== config.end_field_id : first?.isRange;
+    const midnight = (d: Date, offset: number) => +new TZDate(d.getFullYear(), d.getMonth(), d.getDate() + offset, zone);
+    const a = start && (first?.includeTime ? +start : midnight(start, 0));
+    const b = end && (last?.includeTime ? +end : midnight(end, 1));
+    return { planned: marker(start, first?.includeTime), due: marker(end, last?.includeTime),
+      interval: paired && a !== null && b !== null && b > a ? { start: a, end: b } : undefined };
   }
 
   async prepareSchedule(input: HyperBotsGanttScheduleInput, rowId?: string): Promise<(targetRowId: string) => Promise<void>> {

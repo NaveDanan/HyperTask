@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { HyperOutlookEvent } from '@shared/api';
 import type { EventCalendarRangeInfo } from '@/components/reui/event-calendar/event-calendar-types';
 const hooks = vi.hoisted(() => ({ index: 0, values: [] as any[], effects: [] as any[], pending: [] as (() => void)[] }));
-const client = vi.hoisted(() => ({ status: vi.fn(), list: vi.fn() }));
+const client = vi.hoisted(() => ({ status: vi.fn(), subscribe: vi.fn(), stop: vi.fn() }));
 vi.mock('./hyper-outlook-client', () => ({ hyperOutlookClient: client }));
 vi.mock('zustand', async () => ({ ...await vi.importActual('zustand/vanilla'), useStore: (store: any) => store.getState() }));
 vi.mock('react', () => ({
@@ -21,39 +21,39 @@ beforeEach(() => {
   vi.useFakeTimers(); vi.clearAllMocks(); hooks.index = 0; hooks.values = []; hooks.effects = []; hooks.pending = []; visible = true; enabled = true;
   const storage = new Map<string, string>(); vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
   vi.stubGlobal('window', new EventTarget()); vi.stubGlobal('document', Object.assign(new EventTarget(), { visibilityState: 'visible' }));
-  client.status.mockResolvedValue({ available: true, userName: 'Me', email: 'me@example.invalid' }); client.list.mockResolvedValue([item]);
+  client.status.mockResolvedValue({ available: true, userName: 'Me', email: 'me@example.invalid' }); client.subscribe.mockImplementation((_range, receive) => { receive([item]); return client.stop; });
 });
 afterEach(() => { for (const effect of hooks.effects) effect?.cleanup?.(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 it('never accesses Outlook for other calendars and persists the per-view overlay toggle', async () => {
   enabled = false; render().onRangeChange(range); render(); await settle(); expect(client.status).not.toHaveBeenCalled();
   enabled = true; render(); await settle(); expect(render().events).toHaveLength(1);
   render().toggle(false); render(); await settle(); expect(render().events).toHaveLength(0); expect(localStorage.getItem('hyper.calendar.outlook.general')).toBe('false');
-  client.list.mockClear(); render().refresh(); render(); await settle(); expect(client.list).not.toHaveBeenCalled();
+  client.subscribe.mockClear(); render().refresh(); render(); await settle(); expect(client.subscribe).not.toHaveBeenCalled();
 });
 it('keeps events and only the refresh button busy during background refresh, dropping stale ranges', async () => {
   render().onRangeChange(range); render(); await settle(); expect(render().events).toHaveLength(1); expect(render().lastSyncedAt).toBeInstanceOf(Date);
-  let finish!: (items: HyperOutlookEvent[]) => void; client.list.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  let finish!: (items: HyperOutlookEvent[]) => void; client.subscribe.mockImplementationOnce((_range, receive) => { finish = receive; return client.stop; });
   render().refresh(); render(); await settle(); expect(render().refreshing).toBe(true); expect(render().events[0].title).toBe('Planning');
-  client.list.mockResolvedValueOnce([{ ...item, subject: 'New range' }]); render().onRangeChange({ ...range, range: { ...range.range, start: new Date('2026-11-02T00:00:00Z') } }); render(); await settle();
+  client.subscribe.mockImplementationOnce((_range, receive) => { receive([{ ...item, subject: 'New range' }]); return client.stop; }); render().onRangeChange({ ...range, range: { ...range.range, start: new Date('2026-11-02T00:00:00Z') } }); render(); await settle();
   finish([{ ...item, subject: 'Old range' }]); await settle(); expect(render().events[0].title).toBe('New range'); expect(render().refreshing).toBe(false);
 });
-it('refreshes manually, every minute while visible, and on focus; removes timers on unmount', async () => {
-  render().onRangeChange(range); render(); await settle(); client.list.mockClear();
-  await vi.advanceTimersByTimeAsync(60000); render(); await settle(); expect(client.list).toHaveBeenCalledTimes(1);
-  visible = false; await vi.advanceTimersByTimeAsync(60000); render(); await settle(); expect(client.list).toHaveBeenCalledTimes(1);
-  visible = true; Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }); window.dispatchEvent(new Event('focus')); render(); await settle(); expect(client.list).toHaveBeenCalledTimes(1);
-  Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true }); window.dispatchEvent(new Event('focus')); render(); await settle(); expect(client.list).toHaveBeenCalledTimes(2);
-  render().refresh(); render(); await settle(); expect(client.list).toHaveBeenCalledTimes(3);
-  for (const effect of hooks.effects) effect?.cleanup?.(); hooks.effects = []; expect(vi.getTimerCount()).toBe(0);
+it('subscribes to the visible range, refreshes on focus and unsubscribes on unmount', async () => {
+  render().onRangeChange(range); render(); await settle(); expect(client.subscribe.mock.calls.at(-1)?.[0]).toEqual({ start: range.range.start.toISOString(), end: range.range.end.toISOString() });
+  client.subscribe.mockClear();
+  visible = false; await vi.advanceTimersByTimeAsync(60000); render(); await settle(); expect(client.subscribe).not.toHaveBeenCalled();
+  visible = true; Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }); window.dispatchEvent(new Event('focus')); render(); await settle(); expect(client.subscribe).not.toHaveBeenCalled();
+  Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true }); window.dispatchEvent(new Event('focus')); render(); await settle(); expect(client.subscribe).toHaveBeenCalledOnce();
+  render().refresh(); render(); await settle(); expect(client.subscribe).toHaveBeenCalledTimes(2);
+  for (const effect of hooks.effects) effect?.cleanup?.(); hooks.effects = []; expect(client.stop).toHaveBeenCalled(); expect(vi.getTimerCount()).toBe(0);
 });
 it('surfaces unavailable and failed Outlook requests without throwing into the database calendar', async () => {
-  client.status.mockResolvedValueOnce({ available: false, userName: '', email: '', reason: 'Classic Outlook required' }); render(); await settle(); expect(render()).toMatchObject({ error: 'Classic Outlook required', refreshing: false }); expect(client.list).not.toHaveBeenCalled();
-  render().onRangeChange(range); client.list.mockRejectedValueOnce(new Error('COM unavailable')); render(); await settle(); expect(render()).toMatchObject({ error: 'COM unavailable', status: { available: false } });
+  client.status.mockResolvedValueOnce({ available: false, userName: '', email: '', reason: 'Classic Outlook required' }); render(); await settle(); expect(render()).toMatchObject({ error: 'Classic Outlook required', refreshing: false }); expect(client.subscribe).not.toHaveBeenCalled();
+  render().onRangeChange(range); client.subscribe.mockImplementationOnce((_range, _receive, fail) => { fail(new Error('COM unavailable')); return client.stop; }); render(); await settle(); expect(render()).toMatchObject({ error: 'COM unavailable', status: { available: false } });
 });
 it('swaps a written event in place so its chip takes the new colour without another list call', async () => {
-  render().onRangeChange(range); render(); await settle(); client.list.mockClear();
+  render().onRangeChange(range); render(); await settle(); client.subscribe.mockClear();
   render().replace({ ...item, categories: ['HyperTask Red'], lastModified: '2026-11-16T07:30:00Z' }); render(); await settle();
-  expect(client.list).not.toHaveBeenCalled(); expect(render().events).toHaveLength(1); expect(render().events[0].color).toBe('var(--color-red-500)'); expect(render().items[0].lastModified).toBe('2026-11-16T07:30:00Z');
+  expect(client.subscribe).not.toHaveBeenCalled(); expect(render().events).toHaveLength(1); expect(render().events[0].color).toBe('var(--color-red-500)'); expect(render().items[0].lastModified).toBe('2026-11-16T07:30:00Z');
 });
 
 it('clears stale events immediately on closure and reloads as soon as presence reconnects', async () => {
@@ -61,9 +61,9 @@ it('clears stale events immediately on closure and reloads as soon as presence r
   const unsubscribe = vi.fn();
   Object.assign(window, { hypertask: { outlook: { onPresence: (listener: typeof presence) => { presence = listener; return unsubscribe; } } } });
   render().onRangeChange(range); render(); await settle(); expect(render().events).toHaveLength(1);
-  client.list.mockClear(); presence({ installed: true, running: false, connected: false });
+  client.subscribe.mockClear(); presence({ installed: true, running: false, connected: false });
   expect(render()).toMatchObject({ events: [], refreshing: false, status: { available: false }, error: 'Outlook is closed. Open Outlook to use your calendar and mail.' });
   presence({ installed: true, running: true, connected: true }); render(); await settle();
-  expect(client.list).toHaveBeenCalledOnce(); expect(render().events).toHaveLength(1);
+  expect(client.subscribe).toHaveBeenCalledOnce(); expect(render().events).toHaveLength(1);
   for (const effect of hooks.effects) effect?.cleanup?.(); hooks.effects = []; expect(unsubscribe).toHaveBeenCalled();
 });

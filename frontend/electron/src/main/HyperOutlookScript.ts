@@ -49,6 +49,56 @@ function Hyper-Original($item) {
   }
   return $original
 }
+function Hyper-HubStore {
+  $store = [string]$ns.DefaultStore.StoreID
+  if (!$store -or $store -ne [string]$calendar.StoreID) { throw 'Outlook calendar store changed.' }
+  return $store
+}
+function Hyper-HubOccurrence($item) {
+  if ($item.MeetingStatus -in @(5,7) -or (!$a.markers -and $item.ResponseStatus -eq 4)) { return }
+  $busy = $item.BusyStatus
+  $start = $item.Start; $end = $item.End
+  if ($null -eq $start -or $end -le $start -or $end.Year -ge 4500) { throw 'Unavailable occurrence interval.' }
+  $result = @{ start = (Hyper-Utc $start); end = (Hyper-Utc $end); private = $true }
+  $sensitivity = $null
+  try { $sensitivity = $item.Sensitivity } catch {}
+  if ($null -eq $sensitivity -or $sensitivity -notin @(0,1)) {
+    if ($busy -notin @(0,4) -and $item.ResponseStatus -ne 4) { return $result }
+    return
+  }
+  $original = Hyper-Original $item
+  if (!$original -or $original.Year -ge 4500) { throw 'Unavailable occurrence identity.' }
+  $result.private = $false
+  $result.entryId = [string]$item.EntryID
+  $result.originalStart = Hyper-Utc $original
+  if ($a.markers) { $result.marker = @{ attendeeCount = [int]$item.Recipients.Count; responseStatus = [int]$item.ResponseStatus; recurrenceState = [int]$item.RecurrenceState
+    isOrganizer = ([int]$item.MeetingStatus -in @(0,1)); categories = @(Hyper-Categories $item); modified = (Hyper-Utc $item.LastModificationTime)
+    start = $(if ($item.AllDayEvent) { $start.ToString('yyyy-MM-dd') } else { $result.start })
+    end = $(if ($item.AllDayEvent) { $end.ToString('yyyy-MM-dd') } else { $result.end }) } }
+  $result.title = [string]$item.Subject
+  $result.allDay = [bool]$item.AllDayEvent
+  $result.availability = switch ($busy) { 0 { 'free' } 1 { 'tentative' } 3 { 'oof' } 4 { 'working-elsewhere' } default { 'busy' } }
+  $result.organizerIsOwner = $item.MeetingStatus -eq 1
+  $result.isMeeting = $result.organizerIsOwner -or ($item.MeetingStatus -eq 3 -and $item.ResponseStatus -eq 3)
+  if ($result.isMeeting -and $item.LastModificationTime) {
+    $details = Hyper-Map $item
+    $result.details = @{
+      modified = $details.lastModified; sensitivity = $(if ($sensitivity -eq 0) { 'normal' } else { 'personal' })
+      excerpt = $details.body.Substring(0, [Math]::Min(1024, $details.body.Length))
+      organizer = $details.organizer; joinUrl = $details.joinUrl
+      attendees = @(for ($i = 0; $i -lt $details.attendees.Count; $i++) {
+        $person = $details.attendees[$i]
+        @{ name = $person.name; email = $(if ($item.Recipients.Item($i + 1).Resolved) { $person.email } else { '' }) }
+      })
+    }
+    try {
+      $org = $item.GetOrganizer()
+      $result.details.organizerEmail = (Hyper-Address $org '' $org.Address $org.PropertyAccessor).email
+    } catch {}
+    if ($item.IsRecurring -and $item.GlobalAppointmentID) { $result.details.seriesId = [string]$item.GlobalAppointmentID }
+  }
+  return $result
+}
 function Hyper-Map($item) {
   $private = [int]$item.Sensitivity -eq 2
   $allDay = [bool]$item.AllDayEvent
@@ -256,6 +306,91 @@ function Hyper-MailResolve([string]$id) {
   return $item
 }
 function Hyper-Folder([string]$name) { switch ($name) { 'inbox' { return $ns.GetDefaultFolder(6) } 'sent' { return $ns.GetDefaultFolder(5) } 'drafts' { return $ns.GetDefaultFolder(16) } default { throw 'Unknown mail folder.' } } }
+function Hyper-HubMailFolder($a) {
+  $folder = Hyper-Folder $a.folder
+  if ((Hyper-HubStore) -ne $a.storeId -or $folder.StoreID -ne $a.storeId) { throw 'Outlook mail store changed.' }
+  return $folder
+}
+function Hyper-HubPublicMail($item) {
+  try {
+    $sensitivity = Hyper-ComGet $item 'Sensitivity'
+    $permission = Hyper-ComGet $item 'Permission'
+    return $item.Class -eq 43 -and $item.MessageClass -eq 'IPM.Note' -and $null -ne $sensitivity -and $sensitivity -in @(0,1) -and $null -ne $permission -and $permission -eq 0
+  } catch { return $false }
+}
+function Hyper-HubMailDate($date) {
+  if ($null -ne $date -and $date.Year -gt 1601 -and $date.Year -lt 4000) { return Hyper-Utc $date }
+  return $null
+}
+function Hyper-HubMapi($item, $tag) {
+  try { return $item.PropertyAccessor.GetProperty('http://schemas.microsoft.com/mapi/proptag/' + $tag) } catch { return $null }
+}
+function Hyper-HubAuthoredZone($item) {
+  $headers = Hyper-HubMapi $item '0x007D001F'
+  if ($headers -match '(?im)^Date:[^\r\n]*?\s([+-])([01][0-9]|2[0-3])([0-5][0-9])(?:\s*\([^\r\n]*\))?\s*$') {
+    $zone = $Matches[1] + $Matches[2] + ':' + $Matches[3]
+    if ($zone -ne '-00:00') { return $zone }
+  }
+  return $null
+}
+function Hyper-HubMailPage($a) {
+  $folder = Hyper-HubMailFolder $a
+  $items = $folder.Items
+  $lower = Hyper-Date $a.since
+  if ($a.after) { $lower = Hyper-Date $a.after.modified }
+  $stamp = $lower.ToString('dd MMM yyyy HH:mm', [Globalization.CultureInfo]::InvariantCulture)
+  $filter = "[LastModificationTime] >= '$stamp'"
+  if ($a.activeFlags) {
+    $filter = '[FlagStatus] = 2'
+    if ($a.after) { $filter += " AND [LastModificationTime] >= '$stamp'" }
+  }
+  $found = $items.Restrict($filter)
+  $found.Sort('[LastModificationTime]')
+  $rows = New-Object Collections.ArrayList
+  $complete = $true; $cutoff = $null; $more = $false
+  foreach ($item in $found) {
+    try {
+      $modified = Hyper-HubMailDate $item.LastModificationTime
+      $id = [string]$item.EntryID
+      if (!$modified -or !$id) { $complete = $false; continue }
+      if ($a.after -and ($modified -lt $a.after.modified -or ($modified -eq $a.after.modified -and [string]::CompareOrdinal($id, $a.after.entryId) -le 0))) { continue }
+      if (!$a.activeFlags -and (Hyper-Date $modified) -lt (Hyper-Date $a.since)) { continue }
+      if ($cutoff -and $modified -gt $cutoff) { $more = $true; break }
+      $header = $null
+      if (Hyper-HubPublicMail $item) {
+        $flag = switch ($item.FlagStatus) { 0 { 'none' } 1 { 'complete' } 2 { 'active' } default { 'unknown' } }
+        $header = @{ visibility = 'public'; entryId = $id; modified = $modified; authoredAt = (Hyper-HubMailDate $item.SentOn)
+          authoredZone = (Hyper-HubAuthoredZone $item); flag = $flag; flagStart = (Hyper-HubMailDate $item.TaskStartDate); flagDue = (Hyper-HubMailDate $item.TaskDueDate); flagCompleted = (Hyper-HubMailDate $item.TaskCompletedDate)
+          conversationId = [string]$item.ConversationID; messageId = (Hyper-HubMapi $item '0x1035001F'); inReplyTo = (Hyper-HubMapi $item '0x1042001F') }
+      }
+      [void]$rows.Add([pscustomobject]@{ modified = $modified; entryId = $id; header = $header })
+      if ($rows.Count -eq $a.limit) { $cutoff = $modified }
+    } catch { $complete = $false }
+    finally { if ([Runtime.InteropServices.Marshal]::IsComObject($item)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($item) } }
+  }
+  $rows.Sort([Collections.Generic.Comparer[object]]::Create([Comparison[object]]{
+    param($left, $right)
+    $timeOrder = [string]::CompareOrdinal($left.modified, $right.modified)
+    if ($timeOrder -ne 0) { return $timeOrder }
+    return [string]::CompareOrdinal($left.entryId, $right.entryId)
+  }))
+  $page = @($rows | Select-Object -First $a.limit)
+  $more = $more -or $rows.Count -gt $a.limit
+  $next = $null
+  if ($more) { $next = @{ modified = $page[-1].modified; entryId = $page[-1].entryId } }
+  $excluded = @($page | Where-Object { !$_.header } | ForEach-Object { $_.entryId })
+  if ((Hyper-HubStore) -ne $a.storeId) { throw 'Outlook mail store changed.' }
+  return @{ storeId = $a.storeId; complete = $complete; exhausted = !$more; next = $next; replyCoverage = ($complete -and !$excluded.Count)
+    excludedIds = $excluded; headers = @($page | Where-Object { $_.header } | ForEach-Object { $_.header }) }
+}
+function Hyper-HubMailItem($a) {
+  $folder = Hyper-HubMailFolder $a
+  try { $item = $ns.GetItemFromID($a.entryId, $a.storeId) } catch {
+    if ($_.Exception.HResult.ToString('X8') -in @('8004010F','80070005')) { return $null }; throw
+  }
+  if ($item.Parent.StoreID -ne $a.storeId -or $item.Parent.EntryID -ne $folder.EntryID -or !(Hyper-HubPublicMail $item)) { return $null }
+  return $item
+}
 function Hyper-MailDeleteFolder($item) {
   $parent = $item.Parent
   $folder = [string]$parent.EntryID
@@ -583,6 +718,8 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
   $request = $null; $HyperCommitted = $false
   try {
     $request = ConvertFrom-Json -InputObject $line; $a = $request.args; $value = $null
+    # A still-readable COM folder can belong to the previous profile after a switch.
+    if ($request.op -like 'hub.*' -or $request.op -eq 'mail.open') { Reset-Hyper }
     if ($request.op -notlike 'people.*') { Connect-Hyper }
     switch ($request.op) {
       'people.search' { $value = @(Hyper-People $a.query ([Math]::Min(20, [int]$a.limit)) $false) }
@@ -592,6 +729,91 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
         $current = Hyper-ComGet $ns 'CurrentUser'; $name = [string](Hyper-ComGet $current 'Name')
         if (!$name) { throw 'Outlook profile is still loading.' }
         $value = @{ available = $true; userName = $name; email = $email }
+      }
+      'hub.store' {
+        $value = Hyper-HubStore
+        if ($a.storeId -and $value -ne $a.storeId) { throw 'Outlook calendar store changed.' }
+      }
+      'hub.mailHeaders' { $value = Hyper-HubMailPage $a }
+      'hub.mailDetail' {
+        $item = Hyper-HubMailItem $a
+        if ($null -ne $item) {
+          $body = ''; $truncated = $false; $subject = [string]$item.Subject; $sender = ''; $to = @(); $distribution = $null; $ownerSender = $false
+          if (!$a.headerOnly) {
+            $body = [string]$item.Body; if ($body.Length -gt 20000) { $truncated = $true; $body = $body.Substring(0,20000) }
+            $sender = (Hyper-Sender $item).email
+            $to = @((Hyper-MailRecipients $item 1).list | ForEach-Object { $_.name; $_.email })
+            $transport = Hyper-HubMapi $item '0x007D001F'
+            $distribution = [bool]($transport -match '(?im)^(?:List-Id:|List-Unsubscribe:|Precedence:\s*(?:bulk|list|junk))')
+            $account = Hyper-Account
+            $ownerSender = [bool]($sender -and $account.DeliveryStore.StoreID -eq $a.storeId -and $sender -eq $account.SmtpAddress)
+            foreach ($recipient in $item.Recipients) {
+              $type = $recipient.AddressEntry.AddressEntryUserType
+              if ($null -eq $type -or $type -notin @(0,5,10,30)) { $distribution = $true; break }
+            }
+          }
+          $attachments = @()
+          if (!$a.headerOnly) {
+            $attachments = @(for ($i = 1; $i -le [Math]::Min(50, $item.Attachments.Count); $i++) {
+              $name = $item.Attachments.Item($i).FileName
+              if ($name) { [string]$name }
+            })
+          }
+          $value = @{ bodyTruncated = $truncated; visibility = 'public'; ownerSender = $ownerSender; attachmentNames = $attachments; storeId = $a.storeId; entryId = $a.entryId; modified = (Hyper-Utc $item.LastModificationTime); subject = $subject; body = $body; sender = $sender; to = $to; distributionList = $distribution }
+        }
+      }
+      'mail.open' {
+        $item = Hyper-HubMailItem $a
+        if ($null -eq $item) { throw 'Outlook mail access lost.' }
+        $item.Display()
+      }
+      'calendar.resolve' {
+        if ((Hyper-HubStore) -ne $a.storeId) { throw 'Outlook calendar store changed.' }
+        $item = $ns.GetItemFromID($a.entryId, $a.storeId)
+        if (!$item -or $item.Class -ne 26 -or $item.Parent.EntryID -ne $calendar.EntryID) { throw 'Occurrence access lost.' }
+        if ($item.IsRecurring -and [int]$item.RecurrenceState -eq 1) {
+          $pattern = $item.GetRecurrencePattern()
+          try { $item = $pattern.GetOccurrence((Hyper-Date $a.originalStart)) }
+          catch { $item = $pattern.GetOccurrence((Hyper-Date $a.start)) }
+        }
+        if ($null -eq $item.Sensitivity -or $item.Sensitivity -notin @(0,1) -or
+            (Hyper-Original $item) -ne (Hyper-Date $a.originalStart) -or $item.Start -ne (Hyper-Date $a.start)) { throw 'Occurrence changed.' }
+        $value = Hyper-Map $item
+      }
+      'hub.occurrence' {
+        if ((Hyper-HubStore) -ne $a.storeId) { throw 'Outlook calendar store changed.' }
+        $item = $ns.GetItemFromID($a.entryId, $a.storeId)
+        if (!$item -or $item.Class -ne 26 -or $item.Parent.EntryID -ne $calendar.EntryID) { throw 'Occurrence access lost.' }
+        if ($item.IsRecurring -and [int]$item.RecurrenceState -eq 1) {
+          $pattern = $item.GetRecurrencePattern()
+          try { $item = $pattern.GetOccurrence((Hyper-Date $a.originalStart)) }
+          catch { $item = $pattern.GetOccurrence((Hyper-Date $a.start)) }
+        }
+        $event = Hyper-HubOccurrence $item
+        if (!$event -or $event.private -or !$event.isMeeting -or !$event.details -or
+            $event.entryId -ne $a.entryId -or (Hyper-Date $event.originalStart) -ne (Hyper-Date $a.originalStart)) { throw 'Occurrence access lost.' }
+        if ((Hyper-Date $event.start) -ne (Hyper-Date $a.start) -or $event.details.modified -ne $a.modified) { throw 'Occurrence changed.' }
+        if ((Hyper-HubStore) -ne $a.storeId) { throw 'Outlook calendar store changed.' }
+        if ($a.open) { $item.Display() }
+      }
+      'hub.calendar' {
+        if ((Hyper-HubStore) -ne $a.storeId) { throw 'Outlook calendar store changed.' }
+        $items = $calendar.Items; $items.Sort('[Start]'); $items.IncludeRecurrences = $true
+        $culture = [Globalization.CultureInfo]::InvariantCulture
+        $start = (Hyper-Date $a.start).ToString('dd MMM yyyy HH:mm', $culture)
+        $end = (Hyper-Date $a.end).ToString('dd MMM yyyy HH:mm', $culture)
+        $found = $items.Restrict("[Start] < '$end' AND [End] > '$start'")
+        $list = New-Object Collections.ArrayList; $seen = 0; $exhausted = $true; $complete = $true
+        foreach ($item in $found) {
+          try {
+            $mapped = Hyper-HubOccurrence $item
+            if ($null -ne $mapped -and (!$a.seriesIds -or ($mapped.details.seriesId -and $mapped.details.seriesId -in $a.seriesIds))) { [void]$list.Add($mapped) }
+          } catch { $complete = $false }
+          finally { if ([Runtime.InteropServices.Marshal]::IsComObject($item)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($item) } }
+          if (++$seen -ge 2000) { $exhausted = $false; break }
+        }
+        if ((Hyper-HubStore) -ne $a.storeId) { throw 'Outlook calendar store changed.' }
+        $value = @{ storeId = $a.storeId; start = $a.start; end = $a.end; exhausted = $exhausted; completeness = $(if ($exhausted -and $complete) { 'complete' } else { 'partial' }); events = @($list) }
       }
       'list' {
         $items = $calendar.Items; $items.Sort('[Start]'); $items.IncludeRecurrences = $true
@@ -830,6 +1052,20 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
   } catch {
     $reason = $_.Exception.Message
     if (Hyper-Disconnected $_.Exception) { Reset-Hyper; $reason = 'Outlook disconnected. Open Outlook to reconnect. RPC_E_DISCONNECTED: ' + $reason }
+    if ($request.op -like 'hub.mail*' -or $request.op -eq 'mail.open') {
+      $cause = $_.Exception
+      while ($null -ne $cause) {
+        if ($cause.HResult.ToString('X8') -eq '80070005') { $reason = 'Outlook mailbox access lost.'; break }
+        $cause = $cause.InnerException
+      }
+    }
+    if ($request.op -in @('hub.calendar','hub.occurrence')) {
+      $cause = $_.Exception
+      while ($null -ne $cause) {
+        if ($cause.HResult.ToString('X8') -in @('80070005','8004010F')) { $reason = 'Occurrence access lost.'; break }
+        $cause = $cause.InnerException
+      }
+    }
     if ($request.op -eq 'status') { $reply = @{ id = [string]$request.id; ok = $true; value = @{ available = $false; userName = ''; email = ''; reason = $reason } }; Reset-Hyper }
     elseif ($HyperCommitted -and $reason -ne 'hyper_conflict') { $reply = @{ id = [string]$request.id; ok = $false; kind = 'unknown'; message = ('Outlook failed after it began saving or sending, so the change may have happened. Check Outlook before trying again. ' + $reason) } }
     else { $reply = @{ id = [string]$request.id; ok = $false; kind = $(if ($reason -eq 'hyper_conflict') { 'conflict' } else { 'state' }); message = $reason } }
